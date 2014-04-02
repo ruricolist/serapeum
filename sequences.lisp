@@ -404,34 +404,41 @@ The arguments START, END, and KEY are as for `reduce'.
         (list (list-runs seq start end key test))
         (sequence (seq-runs seq start end key test)))))
 
-(declaim (ftype (-> (sequence &optional (integer 0 *)) list) batches))
-(defun batches (seq &optional (n 2))
+(defun batches (seq n &key (start 0) end)
   "Return SEQ in batches of N elements.
 
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))"
+  (check-type n (integer 0 *))
   (etypecase seq
     (list
-     (loop while seq
-           collect (loop for i below n
-                         for (elt . rest) on seq
-                         collect elt
-                         finally (setf seq rest))))
+     (let ((seq (nthcdr start seq)))
+       (if (null end)
+           (loop while seq
+                 collect (loop for i below n
+                               for (elt . rest) on seq
+                               collect elt
+                               finally (setf seq rest)))
+           (loop while seq
+                 for i from start below end by n
+                 collect (loop for i below (min n (- end i))
+                               for (elt . rest) on seq
+                               collect elt
+                               finally (setf seq rest))))))
     (sequence
-     (let ((len (length seq)))
-       (nlet batches ((i 0)
+     (let ((end (or end (length seq))))
+       (nlet batches ((i start)
                       (acc '()))
-         (if (> i len)
+         (if (>= i end)
              (nreverse acc)
              (batches (+ i n)
-                      (cons
-                       (subseq seq i
-                               (min (+ i n)
-                                    len))
-                       acc))))))))
+                      (cons (subseq seq i (min (+ i n) end))
+                            acc))))))))
 
 (assert (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
 (assert (equal '("ab" "cd" "e") (batches "abcde" 2)))
+(assert (equal '("a") (batches "abc" 2 :end 1)))
+(assert (equal '((a)) (batches '(a b c) 2 :end 1)))
 
 (defsubst safe-sort (seq pred &rest args)
   "Like `sort', but not destructive."

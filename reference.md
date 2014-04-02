@@ -763,21 +763,6 @@ Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-## `(zip &rest lists)`
-
-Like `pairlis`, but for an arbitrary number of lists.
-
-## `(unzip &rest lists)`
-
-Inverse of `zip`.
-
-## `(riffle &rest lists)`
-
-`riffle` is like `zip`, but using `mappend` instead of `mapcar`.
-
-    (riffle '(1 2 3) '(4 5 6))
-    => '(1 4 2 5 3 6)
-
 ## `(mapply fn &rest lists)`
 
 `mapply` is a cousin of `mapcar`.
@@ -827,7 +812,7 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints x)`
+## `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1403,7 +1388,7 @@ The arguments START, END, and KEY are as for `reduce`.
     (runs '(head tail head head tail))
     => '((head) (tail) (head head) (tail))
 
-## `(batches seq &optional n)`
+## `(batches seq n &key start end)`
 
 Return SEQ in batches of N elements.
 
@@ -1414,7 +1399,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g18296 pred &rest args)`
+## `(sortf g39859 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1586,11 +1571,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-## `(shrinkf g18925 n)`
+## `(shrinkf g40488 n)`
 
 Shrink the value in a place by a factor.
 
-## `(growf g18947 n)`
+## `(growf g40510 n)`
 
 Grow the value in a place by a factor.
 
@@ -1689,14 +1674,12 @@ After Eulisp.
 
 ## `(class-name-safe x)`
 
-The class name of X.
-
+The class name of the class of X.
 If X is a class, the name of the class itself.
 
 ## `(find-class-safe x)`
 
 The class designated by X.
-
 If X is a class, it designates itself.
 
 # Hooks

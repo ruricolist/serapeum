@@ -4,8 +4,6 @@
           filter-map
           memq delq
           append1
-          zip unzip
-          riffle
           assocdr assocadr rassocar
           firstn
           toposort
@@ -136,21 +134,6 @@ Almost always used as (delq nil ...)."
        (list2 (delq nil list1)))
   (assert (not (memq nil list2)))
   (assert (eq list1 list2)))
-
-(defun zip (&rest lists)
-  "Like `pairlis', but for an arbitrary number of lists."
-  (apply #'mapcar #'list lists))
-
-(defun unzip (&rest lists)
-  "Inverse of `zip'."
-  (apply #'zip lists))
-
-(defun riffle (&rest lists)
-  "`riffle' is like `zip', but using `mappend' instead of `mapcar'.
-
-    (riffle '(1 2 3) '(4 5 6))
-    => '(1 4 2 5 3 6)"
-  (apply #'mappend #'list lists))
 
 (defun mapply (fn &rest lists)
   "`mapply` is a cousin of `mapcar`.

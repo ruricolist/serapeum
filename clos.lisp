@@ -1,12 +1,10 @@
 (in-package :serapeum)
 
 (export '(class-name-safe find-class-safe
-          undefclass undefgeneric undefmethod
           make standard/context))
 
 (defsubst make (class &rest initargs)
   "Shorthand for `make-instance'.
-
 After Eulisp."
   (declare (dynamic-extent initargs))
   (apply #'make-instance class initargs))

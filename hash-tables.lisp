@@ -1,7 +1,7 @@
 (in-package :serapeum)
 
 (export '(pophash swaphash
-          dict @ href
+          dict dict* @ href href-default
           merge-tables flip-hash-table
           maphash-return
           set-hash-table hash-table-set))
@@ -61,6 +61,13 @@ understood as the test.
                              append `((gethash ,key ,ht) ,value)))))
          ,ht))))
 
+(defun dict* (dict &rest args)
+  "Merge new bindings into DICT.
+Roughly equivalent to `(merge-tables DICT (dict args...))'."
+  (doplist (k v args)
+    (setf (gethash k dict) v))
+  dict)
+
 (defun href (table &rest keys)
   "A concise way of doings lookups in (potentially nested) hash tables.
 
@@ -68,14 +75,32 @@ understood as the test.
     (href (dict :x (dict :y 2)) :x :y)  => y"
   (nlet href ((table table)
               (keys keys))
-    (cond ((no keys) table)
+    (cond ((endp keys) table)
           ((single keys) (gethash (car keys) table))
           (t (href (gethash (car keys) table) (cdr keys))))))
+
+(defun href-default (default table &rest keys)
+  "Like `href', with a default.
+As soon as one of KEYS fails to match, DEFAULT is returned."
+  (nlet href (table keys)
+    (cond ((endp keys)
+           (values default nil))
+          ((single keys)
+           (multiple-value-bind (value ok?)
+               (gethash (car keys) table)
+             (if ok?
+                 (values value t)
+                 (values default nil))))
+          (t (multiple-value-bind (value ok?)
+                 (gethash (car keys) table)
+               (if ok?
+                   (href value (cdr keys))
+                   (values default nil)))))))
 
 (defun (setf href) (value table &rest keys)
   (nlet hset ((table table)
               (keys keys))
-    (cond ((no keys) value)
+    (cond ((endp keys) value)
           ((single keys) (setf (gethash (car keys) table) value))
           (t (hset (gethash (car keys) table) (cdr keys))))))
 
@@ -194,7 +219,7 @@ every value."
       (error "Not a set: ~a" set)))
   (lret* ((hash-table-args (remove-from-plist hash-table-args :key))
           (table (apply #'make-hash-table hash-table-args)))
-    (fbind key
+    (fbind (key)
       (if (not strict)
           (dolist (item set)
             (setf (gethash (key item) table) t))

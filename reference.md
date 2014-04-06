@@ -812,7 +812,7 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints inconsistent-graph)`
+## `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1085,13 +1085,13 @@ Like `string^=`, but case-insensitive.
 
 Is S1 a prefix of S2?
 
-## `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string$=`, but case-insensitive.
-
 ## `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
+
+## `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
+
+Like `string$=`, but case-insensitive.
 
 ## `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
@@ -1147,12 +1147,22 @@ understood as the test.
      (gethash "string" (dict "string" t)) => t
      (gethash "string" (dict 'eq "string" t)) => nil
 
+## `(dict* dict &rest args)`
+
+Merge new bindings into DICT.
+Roughly equivalent to `(merge-tables DICT (dict args...))'.
+
 ## `(href table &rest keys)`
 
 A concise way of doings lookups in (potentially nested) hash tables.
 
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y
+
+## `(href-default default table &rest keys)`
+
+Like `href`, with a default.
+As soon as one of KEYS fails to match, DEFAULT is returned.
 
 ## `(@ table key &rest keys)`
 
@@ -1399,7 +1409,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g39859 pred &rest args)`
+## `(sortf g38862 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1669,7 +1679,6 @@ after the runs before it.
 ## `(make class &rest initargs)`
 
 Shorthand for `make-instance`.
-
 After Eulisp.
 
 ## `(class-name-safe x)`

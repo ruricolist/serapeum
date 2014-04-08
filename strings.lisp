@@ -9,8 +9,9 @@
           nstring-invert-case
           words tokens lines
           fmt
+          with-string
           downcase upcase capitalize
-          escape escape-to-stream
+          escape
           ellipsize
           string^= string$= string~= string*=
           string-prefixp string-suffixp string-containsp string-tokenp
@@ -45,6 +46,58 @@ are considered whitespace."
   "STRING without whitespace at ends."
   (string-trim whitespace string))
 
+(defun call/string (fn stream)
+  "Resolve STREAM like `format' and call FN with the result."
+  (fbind (fn)
+    (declare (dynamic-extent #'fn))
+    (etypecase stream
+      ((eql t) (fn *standard-output*))
+      ((eql nil)
+       (with-output-to-string (s)
+         (fn s)))
+      (string
+       (with-output-to-string (s stream)
+         (fn s)))
+      (stream (fn stream)))))
+
+(defmacro with-string ((var &optional stream) &body body)
+  "Bind VAR to the character stream designated by STREAM.
+
+STREAM is resolved like the DESTINATION argument to `format': it can
+be any of t (for `*standard-output*'), nil (for a string stream), a
+string with a fill pointer, or a stream to be used directly.
+
+When possible, it is a good idea for functions that build strings to
+take a stream to write to, so callers can avoid consing a string just
+to write it to a stream. This macro makes it easy to write such
+functions.
+
+    (defun format-x (x &key stream)
+      (with-string (s stream)
+        ...))"
+  (with-thunk (body var)
+    `(call/string #',body ,stream)))
+
+(flet ((test (designator)
+         (with-string (s designator)
+           (write-string "string" s))))
+  (assert (equal "string" (test nil)))
+  (assert (equal "string"
+                 (with-output-to-string (*standard-output*)
+                   (test t))))
+  (assert (equal "string"
+                 (with-output-to-string (str)
+                   (test str))))
+  (assert (equal "the string"
+                 (let ((out (make-array 4
+                                        :adjustable t
+                                        :fill-pointer 4
+                                        :element-type 'character
+                                        :initial-contents "the ")))
+                   (with-output-to-string (str out)
+                     (test str))
+                   out))))
+
 (defun collapse-whitespace (string)
   "Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
@@ -53,7 +106,7 @@ replaced by a single space character."
   (check-type string string)
   (if (< (length string) 1)
       string
-      (with-output-to-string (s nil)
+      (with-output-to-string (s)
         (write-char (aref string 0) s)
         (loop for i of-type array-length from 0
               for j of-type array-length from 1
@@ -91,8 +144,7 @@ satisfy `whitespacep'."
 From Emacs Lisp."
   (apply #'concatenate 'string strings))
 
-(-> mapconcat ((or function symbol) sequence string) string)
-(defun mapconcat (fun seq separator)
+(defun mapconcat (fun seq separator &key stream)
   "Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
 
@@ -102,7 +154,7 @@ but more efficient.
 
 From Emacs Lisp."
   (fbind (fun)
-    (with-output-to-string (out)
+    (with-string (out stream)
       (etypecase seq
         (list
          (loop for (elt . more?) on seq
@@ -309,7 +361,7 @@ Has a compiler macro with `formatter'."
     (string (string-capitalize x))
     (character (char-upcase x))))
 
-(defun escape-to-stream (string stream table &key (start 0) end)
+(defun escape (string table &key (start 0) end stream)
   "Write STRING to STREAM, escaping with TABLE.
 
 TABLE should be either a hash table, with characters for keys and
@@ -317,36 +369,24 @@ strings for values, or a function that takes a character and returns a
 string."
   (unless end
     (setf end (length string)))
-  (fbind ((rep (if (functionp table)
-                   table
-                   (lambda (c)
-                     (gethash c table)))))
-    (nlet escape ((start start))
-      (when (< start end)
-        (let ((next (position-if #'rep string
-                                 :start start
-                                 :end end)))
-          (if (not next)
-              (write-string string stream :start start :end end)
-              (progn
-                (write-string string stream :start start :end next)
-                (let ((escape (rep (char string next))))
-                  (unless (emptyp escape)
-                    (write-string escape stream))
-                  (escape (1+ next))))))))))
-
-(defun escape (string table &key (start 0) end)
-  "Given a STRING and a table of escapes, return another, escaped
-string.
-
-From Clojure.
-
-Cf. `escape-to-stream'."
-  (declare (string string))
-  (with-output-to-string (s)
-    (escape-to-stream string s table
-                      :start start
-                      :end end)))
+  (with-string (stream stream)
+    (fbind ((rep (if (functionp table)
+                     table
+                     (lambda (c)
+                       (gethash c table)))))
+      (nlet escape ((start start))
+        (when (< start end)
+          (let ((next (position-if #'rep string
+                                   :start start
+                                   :end end)))
+            (if (not next)
+                (write-string string stream :start start :end end)
+                (progn
+                  (write-string string stream :start start :end next)
+                  (let ((escape (rep (char string next))))
+                    (unless (emptyp escape)
+                      (write-string escape stream))
+                    (escape (1+ next)))))))))))
 
 (let ((in (concatenate 'string "foo" '(#\Tab) "bar" '(#\Tab) "baz"))
       (out "foo\\tbar\\tbaz")
@@ -455,7 +495,7 @@ but without consing."
 (assert (not (string~= "foo" "foobar baz")))
 (assert (string~= "foo-bar" "foo-bar"))
 
-(defun string-replace-all (old string new &key (start 0) end)
+(defun string-replace-all (old string new &key (start 0) end stream)
   "Do regex-style search-and-replace for constant strings.
 
 Note that START and END only affect where the replacements are made:
@@ -476,7 +516,7 @@ always included verbatim.
   (let* ((end (or end (length string)))
          (len (length old)))
     (declare (array-length len))
-    (with-output-to-string (s)
+    (with-string (s stream)
       (unless (zerop start)
         (write-string string s :start 0 :end start))
       (nlet rep ((start start))

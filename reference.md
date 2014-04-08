@@ -812,7 +812,7 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints x)`
+## `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -936,6 +936,23 @@ are considered whitespace.
 
 STRING without whitespace at ends.
 
+## `(with-string (var &optional stream) &body body)`
+
+Bind VAR to the character stream designated by STREAM.
+
+STREAM is resolved like the DESTINATION argument to `format`: it can
+be any of t (for `*standard-output*`), nil (for a string stream), a
+string with a fill pointer, or a stream to be used directly.
+
+When possible, it is a good idea for functions that return strings to
+take a stream to write to, so callers can avoid consing a string just
+to write it to a stream. This macro makes it easy to write such
+functions.
+
+    (defun format-x (x &key stream)
+      (with-string (s stream)
+        ...))
+
 ## `(collapse-whitespace string)`
 
 Collapse runs of whitespace in STRING.
@@ -953,7 +970,7 @@ Abbreviation for (concatenate 'string ...).
 
 From Emacs Lisp.
 
-## `(mapconcat fun seq separator)`
+## `(mapconcat fun seq separator &key stream)`
 
 Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
@@ -1048,22 +1065,13 @@ Upcase a string or character.
 
 Capitalize a string or character.
 
-## `(escape-to-stream string stream table &key start end)`
+## `(escape string table &key start end stream)`
 
 Write STRING to STREAM, escaping with TABLE.
 
 TABLE should be either a hash table, with characters for keys and
 strings for values, or a function that takes a character and returns a
 string.
-
-## `(escape string table &key start end)`
-
-Given a STRING and a table of escapes, return another, escaped
-string.
-
-From Clojure.
-
-Cf. `escape-to-stream`.
 
 ## `(ellipsize string n &key ellipsis)`
 
@@ -1120,7 +1128,7 @@ but without consing.
 
 Like `string~=`, but case-insensitive.
 
-## `(string-replace-all old string new &key start end)`
+## `(string-replace-all old string new &key start end stream)`
 
 Do regex-style search-and-replace for constant strings.
 
@@ -1169,7 +1177,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned.
 A concise way of doings lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => x
-    (@ (dict :x (dict :y 2)) :x :y)  => y 
+    (@ (dict :x (dict :y 2)) :x :y)  => y
 
 ## `(pophash key hash-table)`
 
@@ -1199,7 +1207,15 @@ Return a table like TABLE, but with keys and values flipped.
 
 TEST filters which values to set. KEY defaults to `identity`.
 
-## `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
+## `(set-hash-table
+      set
+      &rest
+      hash-table-args
+      &key
+      test
+      key
+      strict
+      &allow-other-keys)`
 
 Return SET, a list considered as a set, as a hash table.
 This is the equivalent of `alist-hash-table` and `plist-hash-table`
@@ -1219,7 +1235,12 @@ Without STRICT, equivalent to `hash-table-keys`.
 
 # Files
 
-## `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
+## `(write-stream-into-file
+      stream
+      pathname
+      &key
+      if-exists
+      if-does-not-exist)`
 
 Read STREAM and write the contents into PATHNAME.
 
@@ -1332,12 +1353,30 @@ operations on the subsequence returned may mutate the original.
 `nsubseq` also works with `setf`, with the same behavior as
 `replace`.
 
-## `(filter pred seq &rest args &key count from-end start end key &allow-other-keys)`
+## `(filter pred
+            seq
+            &rest
+            args
+            &key
+            count
+            from-end
+            start
+            end
+            key
+            &allow-other-keys)`
 
 Almost the opposite of `remove-if-not`.
 The difference is the handling of COUNT.
 
-## `(keep item seq &rest args &key test from-end count &allow-other-keys)`
+## `(keep item
+          seq
+          &rest
+          args
+          &key
+          test
+          from-end
+          count
+          &allow-other-keys)`
 
 Almost the opposite of `remove`.
 Keep only those items in SEQ that are equivalent, under TEST and KEY,
@@ -1409,7 +1448,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g38862 pred &rest args)`
+## `(sortf g11779 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1651,7 +1690,16 @@ Return seconds since TIME.
 
 Return seconds until TIME.
 
-## `(interval &key seconds minutes hours days weeks months years month-days year-days)`
+## `(interval &key
+              seconds
+              minutes
+              hours
+              days
+              weeks
+              months
+              years
+              month-days
+              year-days)`
 
 A verbose but readable way of specifying intervals in seconds.
 
@@ -1718,4 +1766,3 @@ Like `run-hook-with-args`, but quit once a function returns nil.
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
-

@@ -458,8 +458,10 @@ From Zetalisp.
 ## `(atomic &body body)`
 
 Run BODY as an anonymous critical section.
-
 Only one thread can run BODY at a time.
+
+From Arc.
+
 
 # Iter
 
@@ -944,7 +946,7 @@ STREAM is resolved like the DESTINATION argument to `format`: it can
 be any of t (for `*standard-output*`), nil (for a string stream), a
 string with a fill pointer, or a stream to be used directly.
 
-When possible, it is a good idea for functions that return strings to
+When possible, it is a good idea for functions that build strings to
 take a stream to write to, so callers can avoid consing a string just
 to write it to a stream. This macro makes it easy to write such
 functions.
@@ -979,11 +981,17 @@ Equivalent to
         (reduce #'concat (intersperse SEP SEQ) :key FUN)
 but more efficient.
 
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format`.
+
 From Emacs Lisp.
 
-## `(join strings &optional sep)`
+## `(join strings sep &key stream)`
 
-Join STRINGS into one string, perhaps interspersing with SEP.
+Join STRINGS into one string, interspersing with SEP.
+
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format`.
 
 ## `(string-upcase-initials string)`
 
@@ -1073,6 +1081,10 @@ TABLE should be either a hash table, with characters for keys and
 strings for values, or a function that takes a character and returns a
 string.
 
+STREAM can be used to specify a stream to write to, like the first
+argument to `format`. The default behavior, with no stream specified,
+is to return a string.
+
 ## `(ellipsize string n &key ellipsis)`
 
 If STRING is longer than N, truncate it and append ELLIPSIS.
@@ -1140,11 +1152,16 @@ always included verbatim.
                          :start 3 :end 6)
      => "The new old way"
 
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format`.
+
 # Hash Tables
 
 ## `(dict &rest keys-and-values)`
 
 A concise constructor for hash tables.
+
+    (gethash :c (dict :a 1 :b 2 :c 3)) => 3, T
 
 By default, return an 'equal hash table containing each successive
 pair of keys and values from KEYS-AND-VALUES.
@@ -1177,7 +1194,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned.
 A concise way of doings lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => x
-    (@ (dict :x (dict :y 2)) :x :y)  => y
+    (@ (dict :x (dict :y 2)) :x :y)  => y 
 
 ## `(pophash key hash-table)`
 
@@ -1207,15 +1224,7 @@ Return a table like TABLE, but with keys and values flipped.
 
 TEST filters which values to set. KEY defaults to `identity`.
 
-## `(set-hash-table
-      set
-      &rest
-      hash-table-args
-      &key
-      test
-      key
-      strict
-      &allow-other-keys)`
+## `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
 Return SET, a list considered as a set, as a hash table.
 This is the equivalent of `alist-hash-table` and `plist-hash-table`
@@ -1235,12 +1244,7 @@ Without STRICT, equivalent to `hash-table-keys`.
 
 # Files
 
-## `(write-stream-into-file
-      stream
-      pathname
-      &key
-      if-exists
-      if-does-not-exist)`
+## `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
 Read STREAM and write the contents into PATHNAME.
 
@@ -1353,30 +1357,12 @@ operations on the subsequence returned may mutate the original.
 `nsubseq` also works with `setf`, with the same behavior as
 `replace`.
 
-## `(filter pred
-            seq
-            &rest
-            args
-            &key
-            count
-            from-end
-            start
-            end
-            key
-            &allow-other-keys)`
+## `(filter pred seq &rest args &key count from-end start end key &allow-other-keys)`
 
 Almost the opposite of `remove-if-not`.
 The difference is the handling of COUNT.
 
-## `(keep item
-          seq
-          &rest
-          args
-          &key
-          test
-          from-end
-          count
-          &allow-other-keys)`
+## `(keep item seq &rest args &key test from-end count &allow-other-keys)`
 
 Almost the opposite of `remove`.
 Keep only those items in SEQ that are equivalent, under TEST and KEY,
@@ -1448,7 +1434,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g11779 pred &rest args)`
+## `(sortf g22719 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1620,11 +1606,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-## `(shrinkf g40488 n)`
+## `(shrinkf g23348 n)`
 
 Shrink the value in a place by a factor.
 
-## `(growf g40510 n)`
+## `(growf g23370 n)`
 
 Grow the value in a place by a factor.
 
@@ -1690,16 +1676,7 @@ Return seconds since TIME.
 
 Return seconds until TIME.
 
-## `(interval &key
-              seconds
-              minutes
-              hours
-              days
-              weeks
-              months
-              years
-              month-days
-              year-days)`
+## `(interval &key seconds minutes hours days weeks months years month-days year-days)`
 
 A verbose but readable way of specifying intervals in seconds.
 
@@ -1766,3 +1743,4 @@ Like `run-hook-with-args`, but quit once a function returns nil.
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
+

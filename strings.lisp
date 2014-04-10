@@ -152,6 +152,9 @@ Equivalent to
         (reduce #'concat (intersperse SEP SEQ) :key FUN)
 but more efficient.
 
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format'.
+
 From Emacs Lisp."
   (fbind (fun)
     (with-string (out stream)
@@ -366,7 +369,11 @@ Has a compiler macro with `formatter'."
 
 TABLE should be either a hash table, with characters for keys and
 strings for values, or a function that takes a character and returns a
-string."
+string.
+
+STREAM can be used to specify a stream to write to, like the first
+argument to `format'. The default behavior, with no stream specified,
+is to return a string."
   (unless end
     (setf end (length string)))
   (with-string (stream stream)
@@ -504,7 +511,10 @@ always included verbatim.
 
      (string-replace-all \"old\" \"The old old way\" \"new\"
                          :start 3 :end 6)
-     => \"The new old way\""
+     => \"The new old way\"
+
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format'."
   (declare (array-length start)
            ((or array-length null) end)
            (optimize speed))

@@ -418,8 +418,10 @@ From Zetalisp."
 
 (defmacro atomic (&body body)
   "Run BODY as an anonymous critical section.
+Only one thread can run BODY at a time.
 
-Only one thread can run BODY at a time."
+From Arc.
+"
   (with-gensyms (lock)
     `(let ((,lock (load-time-value (bt:make-lock "Anonymous critical section"))))
        (bt:with-lock-held (,lock)

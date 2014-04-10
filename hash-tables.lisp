@@ -36,6 +36,8 @@ TABLE, but empty."
 (defun dict (&rest keys-and-values)
   "A concise constructor for hash tables.
 
+    (gethash :c (dict :a 1 :b 2 :c 3)) => 3, T
+
 By default, return an 'equal hash table containing each successive
 pair of keys and values from KEYS-AND-VALUES.
 

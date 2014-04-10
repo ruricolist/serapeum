@@ -178,14 +178,15 @@ From Emacs Lisp."
 (assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
 (assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))
 
-(-> join (list &optional (or null string-designator)) string)
-(defun join (strings &optional sep)
-  "Join STRINGS into one string, perhaps interspersing with SEP."
+(defun join (strings sep &key stream)
+  "Join STRINGS into one string, interspersing with SEP.
+
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format'."
   (the string
-       (or (if (not sep)
-               (apply #'concat strings)
-               (mapconcat #'identity strings (string sep)))
-           "")))
+       (if (not strings)
+           ""
+           (mapconcat #'identity strings (string sep) :stream stream))))
 
 (-> string-upcase-initials (string) string)
 (defun string-upcase-initials (string)

@@ -34,7 +34,7 @@
 (defmethod make-load-form ((queue queue) &optional env)
   (declare (ignore env))
   (values `(make-queue)
-          `(queue-conc ',queue (list ,@(qlist queue)))))
+          `(qconc ',queue (list ,@(qlist queue)))))
 
 (defun queue (&rest initial-contents)
   "Build a new queue with INITIAL-CONTENTS."

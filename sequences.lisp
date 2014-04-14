@@ -716,8 +716,34 @@ are left in no particular order."
                    (sort (shuffle (copy-list list))
                          (ordering list))))))
 
-;;;# `bestn'
+(defsubst take (n seq)
+  "Return the first N elements of SEQ, as a *new* sequence of the same
+type as SEQ."
+  (subseq seq 0 n))
 
+(defsubst drop (n seq)
+  "Return all but the first N elements of SEQ.
+The sequence returned is a new sequence of the same type as SEQ."
+  (subseq seq n))
+
+(defsubst take-while (pred seq)
+  (etypecase seq
+    (list
+     (ldiff seq (member-if-not pred seq)))
+    (sequence
+     (subseq seq 0 (position-if-not pred seq)))))
+
+(defsubst drop-while (pred seq)
+  (etypecase seq
+    (list
+     (member-if-not pred seq))
+    (sequence
+     (subseq seq (position-if-not pred seq)))))
+
+(defsubst count-while (pred seq)
+  (position-if-not pred seq))
+
+;;;# `bestn'
 (defun bisect-left (vec item pred &key key)
   "Return the index in VEC to insert ITEM and keep VEC sorted."
   (declare ((simple-array * (*)) vec))
@@ -733,52 +759,131 @@ are left in no particular order."
                 (setf end mid)))
               finally (return start))))))
 
-(defun bestn (n seq pred &key (key #'identity))
+;;; The heap implementation is borrowed from Zach Beane's timers
+;;; package for SBCL.
+
+;;; TODO Allow the heap to have variable arity?
+;;; http://www.pvk.ca/Blog/2014/04/13/number-systems-for-implicit-data-structures/
+
+(defsubst heap-parent (i)
+  (ash (1- i) -1))
+
+(defsubst heap-left (i)
+  (1+ (ash i 1)))
+
+(defsubst heap-right (i)
+  (+ 2 (ash i 1)))
+
+(defun heapify (heap start &key (key #'identity) (test #'>=))
+  (declare (function key test))
+  (fbind (key (ge test))
+    (let ((l (heap-left start))
+          (r (heap-right start))
+          (size (length heap))
+          largest)
+      (setf largest (if (and (< l size)
+                             (not (ge (key (aref heap start))
+                                      (key (aref heap l)))))
+                        l
+                        start))
+      (when (and (< r size)
+                 (not (ge (key (aref heap largest))
+                          (key (aref heap r)))))
+        (setf largest r))
+      (when (/= largest start)
+        (rotatef (aref heap largest) (aref heap start))
+        (heapify heap largest :key key :test test)))
+    heap))
+
+(defun heap-insert (heap new-item &key (key #'identity) (test #'>=))
+  (declare (function key test))
+  (fbind (key (ge test))
+    (vector-push-extend nil heap)
+    (loop for i = (1- (length heap)) then parent-i
+          for parent-i = (heap-parent i)
+          while (and (> i 0)
+                     (not (ge (key (aref heap parent-i))
+                              (key new-item))))
+          do (setf (aref heap i) (aref heap parent-i))
+          finally (setf (aref heap i) new-item)
+                  (return-from heap-insert i))))
+
+(defun heap-maximum (heap)
+  (unless (zerop (length heap))
+    (aref heap 0)))
+
+(defun heap-extract (heap i &key (key #'identity) (test #'>=))
+  (unless (> (length heap) i)
+    (error "Heap underflow"))
+  (prog1
+      (aref heap i)
+    (setf (aref heap i) (aref heap (1- (length heap))))
+    (decf (fill-pointer heap))
+    (heapify heap i :key key :test test)))
+
+(defun heap-extract-maximum (heap &key (key #'identity) (test #'>=))
+  (heap-extract heap 0 :key key :test test))
+
+(defun heap-extract-all (heap &key (key #'identity) (test #'>=))
+  (loop while (> (length heap) 0)
+        collect (heap-extract-maximum heap :key key :test test)))
+
+(defun make-heap (&optional (size 100))
+  (make-array size :adjustable t :fill-pointer 0))
+
+(defun coerce-by-example (seq1 seq2)
+  (typecase seq2
+    (list (coerce seq1 'list))
+    (vector (coerce seq1 'vector))
+    (t (replace (subseq seq2 0 (length seq1)) seq1))))
+
+(defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
 The name is from Arc."
-  (declare (optimize speed) (array-length n))
-  (flet ((coerce-by-example (buf seq)
-           "Hack to return a sequence \"like\" SEQ."
-           (etypecase seq
-             (list (coerce buf 'list))
-             (vector (coerce buf 'vector))
-             (t (replace (subseq seq 0 (length buf)) buf)))))
-    (cond ((= n 0)
-           (coerce-by-example '() seq))
-          ((= n 1)
-           (coerce-by-example (list (extremum seq pred :key key)) seq))
-          ((length<= seq n)
-           (sort (copy-seq seq) pred :key key))
-          (t (let ((buf (make-array n)))
-               ;; Put the first N elements of SEQ in the buffer.
-               (replace buf seq)
-               ;; Sort the buffer in advance.
-               (sortf buf pred :key key)
-               (flet ((insort (item)
-                        (let ((index (bisect-left buf item pred :key key)))
-                          (declare (array-length index))
-                          (when (< index n)
-                            (replace buf buf :start1 (1+ index) :start2 index)
-                            (setf (svref buf index) item)))))
-                 (declare (dynamic-extent #'insort))
-                 (etypecase seq
-                   (list
-                    (dolist (item (nthcdr n seq))
-                      (insort item)))
-                   (vector
-                    (loop for i from n below (length seq) do
-                      (insort (aref seq i))))
-                   (sequence (map nil #'insort (subseq seq n)))))
-               (coerce-by-example buf seq))))))
+  (declare (array-length n) (optimize speed))
+  (cond ((= n 0)
+         (coerce-by-example '() seq))
+        ((= n 1)
+         (coerce-by-example (list (extremum seq pred :key key)) seq))
+        ((length<= seq n)
+         (sort (copy-seq seq) pred :key key))
+        (t (fbind ((key (if memo
+                            (let ((dict (dict)))
+                              (lambda (&rest args)
+                                (ensure2 (gethash args dict)
+                                  (apply key args))))
+                            key))
+                   (test (complement pred)))
+             (let ((heap (make-heap n))
+                   (i 0))
+               (declare (array heap) (array-length i))
+               (map nil
+                    (lambda (elt)
+                      (cond ((< i n)
+                             (heap-insert heap elt :key key :test #'test))
+                            ((test (key (heap-maximum heap)) (key elt))
+                             (heap-extract-maximum heap :key key
+                                                        :test #'test)
+                             (heap-insert heap elt :key key :test #'test)))
+                      (incf i))
+                    seq)
+               (coerce-by-example
+                (take n (nreverse (heap-extract-all heap :key key :test #'test)))
+                seq))))))
 
 (dotimes (i 100)
   (let ((list (map-into (make-list 1000) (lambda () (random 1000)))))
     (assert
      (equal (firstn 20 (sort (copy-list list) #'>))
             (bestn 20 list #'>)))))
+(dotimes (i 100)
+  (let ((list (map-into (make-list 1000) (lambda () (random 1000)))))
+    (assert
+     (equal (firstn 20 (sort (copy-list list) #'string> :key #'princ-to-string))
+            (bestn 20 list #'string> :key #'princ-to-string)))))
 
 (defun extrema (seq pred &key (key #'identity) (start 0) end)
   "Like EXTREMUM, but returns both the minimum and the maximum (as two
@@ -819,33 +924,6 @@ values).
          (loop for i from start1 below end1
                for j from start2 below end2
                always (funcall test (aref v1 i) (aref v2 j))))))
-
-(defsubst take (n seq)
-  "Return the first N elements of SEQ, as a *new* sequence of the same
-type as SEQ."
-  (subseq seq 0 n))
-
-(defsubst drop (n seq)
-  "Return all but the first N elements of SEQ.
-The sequence returned is a new sequence of the same type as SEQ."
-  (subseq seq n))
-
-(defsubst take-while (pred seq)
-  (etypecase seq
-    (list
-     (ldiff seq (member-if-not pred seq)))
-    (sequence
-     (subseq seq 0 (position-if-not pred seq)))))
-
-(defsubst drop-while (pred seq)
-  (etypecase seq
-    (list
-     (member-if-not pred seq))
-    (sequence
-     (subseq seq (position-if-not pred seq)))))
-
-(defsubst count-while (pred seq)
-  (position-if-not pred seq))
 
 (defun halves (seq &optional split)
   "Return, as two values, the first and second halves of SEQ.

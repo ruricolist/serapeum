@@ -116,9 +116,9 @@ The function which groups the like elements of a sequence is called
     => '((0 3 6 9) (1 4 7) (2 5 8))
 
 The function that takes a predicate and a sequence, and returns two
-sequences, one of the elements for which the function returns true,
-and one of the elements for which it returns false, is (still) called
-`partition`.
+sequences – one sequence of the elements for which the function
+returns true, and one sequence of the elements for which it returns
+false – is (still) called `partition`.
 
     (partition #'oddp (iota 10))
     => (1 3 5 7 9), (0 2 4 6 8)

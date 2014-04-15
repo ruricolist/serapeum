@@ -43,7 +43,7 @@ operations on the subsequence returned may mutate the original.
             (end (or end len)))
        (if (and (= start 0) (= end len))
            seq
-           (make-array (- (or end (length seq)) start)
+           (make-array (- end start)
                        :element-type (array-element-type seq)
                        :displaced-to seq
                        :displaced-index-offset start))))
@@ -233,7 +233,7 @@ Items are assigned to the first predicate they match."
                             :element-type (array-element-type seq)
                             :adjustable t
                             :fill-pointer 0))))
-       (let ((buckets (loop for nil in preds collect (make-buffer) ))
+       (let ((buckets (loop for nil in preds collect (make-buffer)))
              (extra (make-buffer)))
          (loop for item across seq do
            (loop for pred in preds
@@ -249,9 +249,8 @@ Items are assigned to the first predicate they match."
                                   :end end
                                   :key key)))))
 
-#+ () (assert (equal (multiple-value-list
-                (assort (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9)))
-               '((1 3 5 7 9) (0 2 4 6 8) nil)))
+(assert (equal (partitions (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9))
+               '((1 3 5 7 9) (0 2 4 6 8))))
 
 (defun cut-list-if (fn list &key (start 0))
   (setf list (nthcdr start list))
@@ -358,7 +357,7 @@ You can think of `assort' as being akin to `remove-duplicates':
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
-    (declare (dynamic-extent test))
+    (declare (dynamic-extent #'test))
     (nreverse
      (reduce
       (lambda (runs y)
@@ -378,7 +377,7 @@ You can think of `assort' as being akin to `remove-duplicates':
 
 (defun seq-runs (seq start end key test)
   (fbind ((test (key-test key test)))
-    (declare (dynamic-extent test))
+    (declare (dynamic-extent #'test))
     (collecting*
       (nlet runs ((start start))
         (let* ((elt (elt seq start))

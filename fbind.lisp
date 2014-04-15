@@ -97,7 +97,7 @@ analyze it into an environment, declarations, and a lambda."
                `(lambda (&rest args)
                   (declare (ignore args))
                   ,temp))))
-    ;; TODO Disjoin, conjoin, and rcurry. don't have compiler macros.
+    ;; TODO Disjoin, conjoin, and rcurry don't have compiler macros.
     ((list* (and fun (or 'conjoin 'disjoin)) pred preds)
      (let* ((preds (cons pred preds))
             (temps (loop for nil in preds collect (gensym))))
@@ -126,7 +126,7 @@ analyze it into an environment, declarations, and a lambda."
     ((or (list* 'lambda args body)
          (list 'function (list* 'lambda args body)))
      (values nil nil `(lambda ,args ,@body)))
-    ;; let* with single binding. Note that Clozure at least expands
+    ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
     ((list* 'let*
             (list binding)

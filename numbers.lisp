@@ -107,44 +107,6 @@ float will do."
          0.0)
      index)))
 
-(defun digits (n &optional (base 10))
-  "Return the digits of N in BASE as a list. Supports bases up to 62."
-  (declare ((integer 2 *) base))
-  (collecting
-    (labels ((digits (n)
-               (declare (integer n))
-               (multiple-value-bind (q r)
-                   (truncate n base)
-                 (unless (zerop q)
-                   (digits q))
-                 (collect r))))
-      (digits n))))
-
-(defun undigits (digits &optional (base 10))
-  "Return a list of DIGITS as a number with BASE."
-  (reduce
-   (lambda (n d)
-     (+ (* n base) d))
-   digits :initial-value 0))
-
-(defparameter *digits* (concat "0123456789" alphabet (string-upcase alphabet)))
-
-(defun digit-weight (digit)
-  (position digit *digits*))
-
-(defun weight-digit (weight)
-  (schar *digits* weight))
-
-(defun base-encode (base n)
-  "Print N in BASE.
-Supports bases through 62."
-  (map 'string #'weight-digit (digits n base)))
-
-(defun base-decode (base string)
-  "Decode STRING as a number in BASE.
-Supports bases through 62."
-  (undigits (map 'list #'digit-weight string) base))
-
 (defsubst round-to (number &optional (divisor 1))
   "Like `round', but return the resulting number.
 

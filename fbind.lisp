@@ -70,12 +70,13 @@ it only applies to functions not yet bound.")
       (values simple complex lambda decls))))
 
 (defun expand-fbindings (bindings)
-  (if (symbolp bindings)
-      `((,bindings ,bindings))
-      (loop for binding in bindings
-            if (symbolp binding)
-              collect `(,binding ,binding)
-            else collect binding)))
+  (cond ((null bindings) nil)
+        ((symbolp bindings)
+         `((,bindings ,bindings)))
+        (t (loop for binding in bindings
+                 if (symbolp binding)
+                   collect `(,binding ,binding)
+                 else collect binding))))
 
 ;;; TODO Handle let*, mvbind?
 (defun let-over-lambda (form)

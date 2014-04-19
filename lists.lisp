@@ -21,7 +21,6 @@
 (-> riffle (&rest list) list)
 (-> firstn ((integer 0 *) list) list)
 (-> intersperse (t list) list)
-(-> intercalate (list list) list)
 (-> powerset (list) list)
 (-> efface (t list) list)
 (-> mapcar-into ((or function symbol) list) list)

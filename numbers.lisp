@@ -42,7 +42,7 @@ can prevent optimization."
   "Based on the venerable `parse-float' from the CMU Lisp repository.
 Of course you could just use `parse-number', but sometimes only a
 float will do."
-  (declare (array-length start end))
+  (declare (string string) (array-length start end))
   (let ((index (or (position-if-not #'whitespacep string
                                     :start start :end end)
                    (return-from parse-float (values 0.0 end))))
@@ -71,11 +71,7 @@ float will do."
                 (incf decimal-counter))
                ((and (char= char #\.) (not decimalp))
                 (setq decimalp t))
-               ((and (or (char-equal char #\e)
-                         (char-equal char #\d)
-                         (char-equal char #\f)
-                         (char-equal char #\s)
-                         (char-equal char #\l))
+               ((and (case char ((#\e #\d #\f #\s #\l) t))
                      (= radix 10))
                 (multiple-value-bind (num idx)
                     (parse-integer string :start (1+ index) :end end

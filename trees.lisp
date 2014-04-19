@@ -34,8 +34,8 @@ FUN can skip the current subtree with (throw TAG nil)."
                           (walk-tree (cdr tree)))))))
       (if tagp
           (walk-tree/tag tree tag)
-          (walk-tree tree))
-      (values))))
+          (walk-tree tree))))
+  (values))
 
 (defun map-tree (fun tree &optional (tag nil tagp))
   "Walk FUN over TREE and build a tree from the results.
@@ -80,23 +80,27 @@ case SUBTREE will be used as the value of the subtree."
 (defun leaf-map (fn tree)
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
-  (map-tree (lambda (x)
-              (if (listp x)
-                  x
-                  (funcall fn x)))
-            tree))
+  (fbind fn
+    (map-tree (lambda (x)
+                (if (listp x)
+                    x
+                    (fn x)))
+              tree)))
 
 (assert (equal (leaf-map (compose #'round #'sqrt) '(((4 1) 25) (9 100) 64))
                '(((2 1) 5) (3 10) 8)))
 
 (defun occurs-if (test tree &key (key #'identity))
   "Is there a node (leaf or cons) in TREE that satisfies TEST?"
-  (fbind (key test)
-    (walk-tree (lambda (node)
-                 (when (test (key node))
-                   (return-from occurs-if
-                     t)))
-               tree)))
+  (fbind* (key
+           test
+           (walker (lambda (node)
+                     (when (test (key node))
+                       (return-from occurs-if
+                         t)))))
+    ;; SBCL asks for this.
+    (declare (dynamic-extent #'walker))
+    (walk-tree #'walker tree)))
 
 (defun prune-if (test tree &key (key #'identity))
   "Remove any atoms satisfying TEST from TREE."

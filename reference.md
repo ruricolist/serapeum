@@ -814,7 +814,7 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints inconsistent-graph)`
+## `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1244,6 +1244,21 @@ Without STRICT, equivalent to `hash-table-keys`.
 
 # Files
 
+## `(build-path path &rest parts)`
+
+Build a pathname by merging from right to left.
+With `build-path` you can pass the elements of the pathname being
+built in the order they appear in it:
+
+    (build-path (user-homedir-pathname) config-dir config-file)
+    ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
+
+Note that `build-path` does not coerce the parts of the pathname into
+directories; you have to do that yourself.
+
+    (build-path "dir1" "dir2" "file") -> "file"
+    (build-path "dir1/" "dir2/" "file") -> "dir1/dir2/file"
+
 ## `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
 Read STREAM and write the contents into PATHNAME.
@@ -1434,7 +1449,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g22719 pred &rest args)`
+## `(sortf g54501 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1524,7 +1539,17 @@ the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order.
 
-## `(bestn n seq pred &key key)`
+## `(take n seq)`
+
+Return the first N elements of SEQ, as a *new* sequence of the same
+type as SEQ.
+
+## `(drop n seq)`
+
+Return all but the first N elements of SEQ.
+The sequence returned is a new sequence of the same type as SEQ.
+
+## `(bestn n seq pred &key key memo)`
 
 Partial sorting.
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
@@ -1543,16 +1568,6 @@ values).
 ## `(vector= v1 v2 &key test start1 end1 start2 end2)`
 
 Like `string=` for any vector.
-
-## `(take n seq)`
-
-Return the first N elements of SEQ, as a *new* sequence of the same
-type as SEQ.
-
-## `(drop n seq)`
-
-Return all but the first N elements of SEQ.
-The sequence returned is a new sequence of the same type as SEQ.
 
 ## `(halves seq &optional split)`
 
@@ -1606,11 +1621,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-## `(shrinkf g23348 n)`
+## `(shrinkf g55156 n)`
 
 Shrink the value in a place by a factor.
 
-## `(growf g23370 n)`
+## `(growf g55178 n)`
 
 Grow the value in a place by a factor.
 

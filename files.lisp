@@ -1,9 +1,25 @@
 (in-package :serapeum)
 
-(export '(write-stream-into-file
+(export '(build-path
+          write-stream-into-file
           file=
           file-size
           delete-file-if-exists))
+
+(defun build-path (path &rest parts)
+  "Build a pathname by merging from right to left.
+With `build-path' you can pass the elements of the pathname being
+built in the order they appear in it:
+
+    (build-path (user-homedir-pathname) config-dir config-file)
+    ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
+
+Note that `build-path' does not coerce the parts of the pathname into
+directories; you have to do that yourself.
+
+    (build-path \"dir1\" \"dir2\" \"file\") -> \"file\"
+    (build-path \"dir1/\" \"dir2/\" \"file\") -> \"dir1/dir2/file\""
+  (the pathname (reduce (flip #'merge-pathnames) parts :initial-value path)))
 
 (defun touch (pathname)
   "Ensure that PATHNAME exists, is not a directory, and can be opened."

@@ -43,6 +43,7 @@ operations on the subsequence returned may mutate the original.
             (end (or end len)))
        (if (and (= start 0) (= end len))
            seq
+           ;; TODO Would it be better to undisplace the vector first?
            (make-array (- end start)
                        :element-type (array-element-type seq)
                        :displaced-to seq

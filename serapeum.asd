@@ -53,7 +53,8 @@
                (:file "hash-tables"
                 :depends-on ("iter"))
                (:file "files"
-                :depends-on ("conditions"))
+                :depends-on ("functions"
+                             "conditions"))
                (:file "symbols"
                 :depends-on ("package"))
                (:file "arrays"

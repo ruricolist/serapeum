@@ -191,7 +191,7 @@ Clojure's `merge'."
           tables
           :initial-value table))
 
-(defun flip-hash-table (table &key (test #'identity) (key #'identity))
+(defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
   "Return a table like TABLE, but with keys and values flipped.
 
 TEST filters which values to set. KEY defaults to `identity'."
@@ -213,31 +213,27 @@ for a list that denotes a set.
 
 STRICT determines whether to check that the list actually is a set.
 
-The resulting table has the members of SET for its keys and `t' for
-every value."
+The resulting table has the elements of SET for its keys and values.
+That is, each element of SET is stored as if by
+     (setf (gethash (key element) table) element)"
   (check-type test ok-hash-table-test)
-  (when strict
-    (unless (setp set :test test :key key)
-      (error "Not a set: ~a" set)))
   (lret* ((hash-table-args (remove-from-plist hash-table-args :key))
           (table (apply #'make-hash-table hash-table-args)))
     (fbind (key)
       (if (not strict)
           (dolist (item set)
-            (setf (gethash (key item) table) t))
+            (setf (gethash (key item) table) item))
           (dolist (item set)
-            (when (nth-value 1 (swaphash item t table))
+            (when (nth-value 1 (swaphash (key item) item table))
               (error "Not a set: ~a" set)))))))
 
-(defun hash-table-set (table &key (strict t))
+(defun hash-table-set (table &key (strict t) (test #'eql) (key #'identity))
   "Return the set denoted by TABLE.
-Given STRICT, check that each value is `t'.
+Given STRICT, check that the table actually denotes a set.
 
-Without STRICT, equivalent to `hash-table-keys'."
-  (if (not strict)
-      (hash-table-keys table)
-      (maphash-return (lambda (k v)
-                        (unless (eq v t)
-                          (error "~a does not denoted a set" table))
-                        k)
-                      table)))
+Without STRICT, equivalent to `hash-table-values'."
+  (let ((set (hash-table-values table)))
+    (when strict
+      (unless (setp set :test test :key key)
+        (error "Not a set: ~a" set)))
+    set))

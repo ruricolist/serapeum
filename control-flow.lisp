@@ -179,24 +179,36 @@ If a clause begins with `cl:otherwise', it runs only if no preceding
 form has succeeded.
 
 From Zetalisp."
-  (with-gensyms (ret any)
-    `(let (,ret ,any)
-       (declare (ignorable ,any))
-       ,@(mapcar
-          (lambda (clause)
-            (match clause
-              ((list test)
-               (once-only (test)
-                 `(when ,test
-                    (setq ,any t ,ret ,test))))
-              ((list* 'otherwise body)
-               `(unless ,any
-                  (setq ,any t ,ret (progn ,@body))))
-              ((list* test body)
-               `(when ,test
-                  (setq ,any t ,ret (progn ,@body))))))
-          clauses)
-       ,ret)))
+  (with-gensyms (sat ret any)
+    (labels ((expand (clauses)
+               (if (null clauses)
+                   ret
+                   (multiple-value-bind (test body)
+                       (match (first clauses)
+                         ;; Test without body (return the value of the test).
+                         ((list test)
+                          (values t (list test)))
+                         ;; Otherwise; only run if nothing else has.
+                         ((list* 'otherwise body)
+                          (values `(not ,any) body))
+                         ;; An ordinary clause.
+                         ((list* test body)
+                          (values test body)))
+                     `(let* ((,sat ,test)
+                             (,ret (if ,sat (progn ,@body) ,ret))
+                             (,any (or ,any ,sat)))
+                        (declare (ignorable ,ret ,any))
+                        ,(expand (rest clauses)))))))
+      `(let ((,any nil)
+             (,ret nil))
+         (declare (ignorable ,ret ,any))
+         ,(expand clauses)))))
+
+(assert (null (cond-every)))
+(assert (eql (cond-every (t 1) (otherwise 2)) 1))
+(assert (eql (cond-every (otherwise 1)) 1))
+(assert (eql (cond-every (t 1) (nil 2)) 1))
+(assert (eql (let ((x 1)) (cond-every (x) (nil 2))) 1))
 
 (defmacro case-let ((var expr) &body cases)
   "Like (let ((VAR EXPR)) (case VAR ...))"

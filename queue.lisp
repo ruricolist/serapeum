@@ -95,8 +95,10 @@ allowing the queue to be declared dynamic-extent."
   (not (qlist queue)))
 
 (defun qconc (queue list)
-  "Destructively concatenate LIST onto the end of QUEUE."
+  "Destructively concatenate LIST onto the end of QUEUE.
+Return the queue."
   (check-type queue queue)
   (let ((q (queue-cons queue)))
     (setf (car q)
-          (last (setf (cdr (car q)) list)))))
+          (last (setf (cdr (car q)) list))))
+  queue)

@@ -188,7 +188,7 @@ like the first argument to `format'."
            ""
            (mapconcat #'identity strings (string sep) :stream stream))))
 
-(-> string-upcase-initials (string) string)
+(-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)
   "Return STRING with the first letter of each word capitalized.
 This differs from CAPITALIZE in that the other characters in each word
@@ -200,7 +200,7 @@ are not changed.
 From Emacs Lisp (where it is simply `upcase-initials')."
   (nstring-upcase-initials (copy-string string)))
 
-(-> nstring-upcase-initials (string) string)
+(-> nstring-upcase-initials (string-designator) string)
 (defun nstring-upcase-initials (string)
   "Destructive version of `string-upcase-initials'."
   (lret ((string (string string)))
@@ -255,7 +255,7 @@ Return `:upper' or `:lower' as appropriate."
 (assert (not (same-case-p "Foo")))
 (assert (not (same-case-p "-Foo")))
 
-(-> nstring-invert-case (string) string)
+(-> nstring-invert-case (string-designator) string)
 (defun nstring-invert-case (string)
   "Destructive version of `string-invert-case'."
   (let ((string (string string)))
@@ -264,7 +264,7 @@ Return `:upper' or `:lower' as appropriate."
       (:lower (nstring-upcase string))
       (t string))))
 
-(-> string-invert-case (string) string)
+(-> string-invert-case (string-designator) string)
 (defun string-invert-case (string)
   "Invert the case of STRING.
 This does the same thing as a case-inverting readtable."

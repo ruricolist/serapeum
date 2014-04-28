@@ -14,7 +14,6 @@
           shrink grow
           shrinkf growf
           ln lb lg
-          phi e
           random-in-range))
 
 (defconst phi (/ (+ 1 (sqrt 5.0d0)) 2))

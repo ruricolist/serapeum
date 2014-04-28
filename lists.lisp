@@ -337,7 +337,7 @@ From Newlisp."
   (multiple-value-bind (vars vals new setter getter)
       (get-setf-expansion alist env)
     (with-gensyms (match)
-      `(let* (,@(mapcar vars vals)
+      `(let* (,@(mapcar #'list vars vals)
               (,(car new) ,getter))
          (let ((,match (assoc ,key ,(car new) ,@args)))
            (declare (list ,match))

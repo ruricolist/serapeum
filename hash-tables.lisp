@@ -11,6 +11,9 @@
 (-> swaphash (t t hash-table) (values t boolean))
 (-> merge-tables (hash-table &rest hash-table) hash-table)
 
+(defconst hash-table-default-size
+  (hash-table-size (make-hash-table)))
+
 (deftype ok-hash-table-test ()
   '(and (or symbol function)
     (satisfies hash-table-test-p)))
@@ -56,7 +59,11 @@ understood as the test.
                   (pop keys-and-values)
                   ''equal)))
     (with-gensyms (ht)
-      `(let ((,ht (make-hash-table :test ,test)))
+      `(let ((,ht (make-hash-table
+                   :test ,test
+                   :size ,(max hash-table-default-size
+                               (truncate (length keys-and-values)
+                                         2)))))
          ,@(unsplice
             (when keys-and-values
               `(setf ,@(loop for (key value . nil) on keys-and-values by #'cddr
@@ -179,7 +186,13 @@ From Zetalisp."
 The resulting hash table has the same test as TABLE.
 
 Clojure's `merge'."
-  (apply #'merge-tables! (copy-hash-table table) tables))
+  (let ((size (max hash-table-default-size
+                   (reduce #'+ tables
+                           :key #'hash-table-count
+                           :initial-value (hash-table-count table)))))
+    (apply #'merge-tables!
+           (copy-hash-table table :size size)
+           tables)))
 
 (defun merge-tables! (table &rest tables)
   (reduce (lambda (x y)

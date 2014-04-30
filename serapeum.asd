@@ -51,7 +51,8 @@
                              "iter"
                              "types"))
                (:file "hash-tables"
-                :depends-on ("iter"))
+                :depends-on ("iter"
+                             "definitions"))
                (:file "files"
                 :depends-on ("functions"
                              "conditions"))

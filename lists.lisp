@@ -272,7 +272,7 @@ If the graph is inconsistent, signals an error of type
   "Insert NEW-ELT between each element of LIST."
   (cons (car list)
         (mapcan (lambda (x)
-                  (list x new-elt))
+                  (list new-elt x))
                 (cdr list))))
 
 (defun intercalate (new-list list)

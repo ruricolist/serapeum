@@ -9,7 +9,8 @@
 (-> dict (&rest t) hash-table)
 (-> pophash (t hash-table) (values t boolean))
 (-> swaphash (t t hash-table) (values t boolean))
-(-> merge-tables (hash-table &rest hash-table) hash-table)
+(-> merge-tables (hash-table &rest hash-table)
+    hash-table)
 
 (defconst hash-table-default-size
   (hash-table-size (make-hash-table)))
@@ -52,7 +53,7 @@ understood as the test.
   (let ((test (if (oddp (length keys-and-values))
                   (pop keys-and-values)
                   'equal)))
-    (plist-hash-table keys-and-values :test test)))
+    (values (plist-hash-table keys-and-values :test test))))
 
 (define-compiler-macro dict (&rest keys-and-values)
   (let ((test (if (oddp (length keys-and-values))
@@ -190,9 +191,10 @@ Clojure's `merge'."
                    (reduce #'+ tables
                            :key #'hash-table-count
                            :initial-value (hash-table-count table)))))
-    (apply #'merge-tables!
-           (copy-hash-table table :size size)
-           tables)))
+    (values
+     (apply #'merge-tables!
+            (copy-hash-table table :size size)
+            tables))))
 
 (defun merge-tables! (table &rest tables)
   (reduce (lambda (x y)

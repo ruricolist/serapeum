@@ -207,13 +207,13 @@ Clojure's `merge'."
 (defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
   "Return a table like TABLE, but with keys and values flipped.
 
-TEST filters which values to set. KEY defaults to `identity'."
+TEST filters which keys to set. KEY defaults to `identity'."
   (lret ((table2 (copy-hash-table/empty table)))
     (fbind (test key)
       (maphash (lambda (k v)
                  (let ((key (key k)))
                    (when (test key)
-                     (setf (gethash key table2) v))))
+                     (setf (gethash v table2) key))))
                table))))
 
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)

@@ -11,7 +11,9 @@
                #:string-case
                #:parse-number
                #:trivial-garbage
-               #:bordeaux-threads)
+               #:bordeaux-threads
+               #:named-readtables
+               #:fare-quasiquote-extras)
   ;; Having had to untangle the dependencies once it seems worthwhile
   ;; to be explicit about them, if only to keep them under control.
   :components ((:file "package")

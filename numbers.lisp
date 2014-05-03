@@ -109,23 +109,37 @@ float will do."
      (round-to 15 10) => 20"
   (* (round number divisor) divisor))
 
-(defun bits (int)
-  "Return a bit vector of the bits in INT."
+(defun bits (int &key big-endian)
+  "Return a bit vector of the bits in INT.
+Defaults to little-endian."
   (lret ((bits (make-array (integer-length int)
                            :element-type 'bit)))
-    (loop for i below (integer-length int)
-          for j downfrom (1- (integer-length int)) to 0
-          do (setf (sbit bits j)
-                   (if (logbitp i int)
-                       1
-                       0)))))
+    (if big-endian
+        (loop for i below (integer-length int)
+              for j downfrom (1- (integer-length int)) to 0
+              do (setf (sbit bits j)
+                       (if (logbitp i int)
+                           1
+                           0)))
+        (loop for i below (integer-length int)
+              do (setf (sbit bits i)
+                       (if (logbitp i int)
+                           1
+                           0))))))
 
-;; TODO Doesn't work on negative numbers.
-(defun unbits (bits)
-  "Turn a sequence of BITS into an integer."
-  (reduce (lambda (x y)
-            (+ (ash x 1) y))
-          bits))
+(defun unbits (bits &key big-endian)
+  "Turn a sequence of BITS into an integer.
+Defaults to little-endian."
+  (declare (bit-vector bits))
+  (if big-endian
+      (reduce (lambda (x y)
+                (+ (ash x 1) y))
+              bits)
+      (loop with int = 0
+            for bit across bits
+            for i from 0
+            do (setf int (logior int (ash bit i)))
+            finally (return int))))
 
 (assert (let ((n (random most-positive-fixnum)))
           (= n (unbits (bits n)))))

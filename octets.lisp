@@ -1,8 +1,7 @@
 (in-package :serapeum)
 
 (export '(octet octet-vector octet-vector-p
-          make-octet-vector octets unoctets
-          write-u32 read-u32 write-u64 read-u64))
+          make-octet-vector octets unoctets))
 
 (declaim (optimize speed))
 
@@ -30,25 +29,37 @@
             (lambda () (random 256))))
 
 ;;; Adapted from Ironclad.
-(-> octets (integer) octet-vector)
-(defun octets (n)
-  "Return N, an integer, as a little-endian octet vector."
+(-> octets (integer &key (:big-endian t)) octet-vector)
+(defun octets (n &key big-endian)
+  "Return N, an integer, as an octet vector.
+Defaults to little-endian order."
   (let* ((n-bits (integer-length n))
          (n-bytes (ceiling n-bits 8))
          (vec (make-octet-vector n-bytes)))
     (declare (octet-vector vec))
-    (loop for i from 0 below n-bytes
-          for byte from 0 by 8
-          do (setf (aref vec i)
-                   (ldb (byte 8 byte) n))
-          finally (return vec))))
+    (if big-endian
+        (loop for i from (1- n-bytes) downto 0
+              for j from 0
+              do (setf (aref vec j)
+                       (ldb (byte 8 (* i 8)) n)))
+        (loop for i from 0 below n-bytes
+              for byte from 0 by 8
+              do (setf (aref vec i)
+                       (ldb (byte 8 byte) n))))
+    vec))
 
-(-> unoctets (octet-vector) integer)
-(defun unoctets (bytes)
-  "Concatenate BYTES into an integer in little-endian order."
-  (declare (octet-vector bytes))
-  (loop for i from (1- (length bytes)) downto 0
-        sum (ash (aref bytes i) (* i 8))))
+(-> unoctets (octet-vector &key (:big-endian t)) integer)
+(defun unoctets (bytes &key big-endian)
+  "Concatenate BYTES, an octet vecotor, into an integer.
+Defaults to little-endian order."
+  (declare (octet-vector bytes) (inline reduce))
+  (if big-endian
+      (reduce (lambda (sum octet)
+                (+ octet (ash sum 8)))
+              bytes
+              :initial-value 0)
+      (loop for i from (1- (length bytes)) downto 0
+            sum (ash (aref bytes i) (* i 8)))))
 
 (assert
  (= (unoctets (octets (random-in-range most-negative-fixnum

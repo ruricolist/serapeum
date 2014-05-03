@@ -1,4 +1,5 @@
 (in-package :serapeum)
+(in-readtable :fare-quasiquote)
 
 (export '(unsplice string-gensym with-thunk
           expand-macro expand-macro-recursively
@@ -32,7 +33,7 @@
 (defun extract-function-name (x)
   "If possible, extract the name from X, a function designator."
   (match x
-    ((list 'function name) name)
+    (`(function ,name) name)
     (otherwise x)))
 
 (defmacro rebinding-functions (bindings &body body)

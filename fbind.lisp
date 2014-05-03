@@ -1,4 +1,5 @@
 (in-package #:serapeum)
+(in-readtable :fare-quasiquote)
 
 (export '(fbind fbind* fbindrec fbindrec*
           letrec-restriction-violation))
@@ -9,8 +10,6 @@
 ;;; Sullivan and Wand, "Incremental Lambda Lifting".
 
 ;;; TODO
-
-;;; Rewrite to use fare-quasiquote.
 
 ;;; The binding of lifted environments in fbindrec* is inefficient and
 ;;; disregards the declarations. In at least some cases, like
@@ -84,107 +83,103 @@ it only applies to functions not yet bound.")
 analyze it into an environment, declarations, and a lambda."
   (match form
     ;; Special cases for `complement` and `constantly`.
-    ((list 'complement fn)
-     (with-gensyms (temp)
-       (values `((,temp (ensure-function ,fn)))
-               `((function ,temp))
-               `(lambda (&rest args)
-                  (declare (dynamic-extent args))
-                  (not (apply ,temp args))))))
-    ((list 'constantly x)
-     (with-gensyms (temp)
-       (values `((,temp ,x))
-               nil
-               `(lambda (&rest args)
-                  (declare (ignore args))
-                  ,temp))))
+    (`(complement ,fn)
+      (with-gensyms (temp)
+        (values `((,temp (ensure-function ,fn)))
+                `((function ,temp))
+                `(lambda (&rest args)
+                   (declare (dynamic-extent args))
+                   (not (apply ,temp args))))))
+    (`(constantly ,x)
+      (with-gensyms (temp)
+        (values `((,temp ,x))
+                nil
+                `(lambda (&rest args)
+                   (declare (ignore args))
+                   ,temp))))
     ;; TODO Disjoin, conjoin, and rcurry don't have compiler macros.
-    ((list* (and fun (or 'conjoin 'disjoin)) pred preds)
-     (let* ((preds (cons pred preds))
-            (temps (loop for nil in preds collect (gensym))))
-       (values (mapcar (lambda (temp pred)
-                         `(,temp (ensure-function ,pred)))
-                       temps preds)
-               nil
-               `(lambda (&rest args)
-                  (,(case fun
-                      (conjoin 'and)
-                      (disjoin 'or))
-                   ,@(loop for temp in temps
-                           collect `(apply ,temp args)))))))
-    ((list* 'rcurry fun args)
-     (let ((tempfn (string-gensym 'fn))
-           (temps (loop for nil in args collect (gensym))))
-       (values `((,tempfn (ensure-function ,fun))
-                 ,@(loop for temp in temps
-                         for arg in args
-                         collect `(,temp ,arg)))
-               nil
-               `(lambda (&rest more)
-                  (declare (dynamic-extent more))
-                  (multiple-value-call ,tempfn (values-list more) ,@temps)))))
+    (`(,(and fun (or 'conjoin 'disjoin)) ,pred ,@preds)
+      (let* ((preds (cons pred preds))
+             (temps (loop for nil in preds collect (gensym))))
+        (values (mapcar (lambda (temp pred)
+                          `(,temp (ensure-function ,pred)))
+                        temps preds)
+                nil
+                `(lambda (&rest args)
+                   (,(case fun
+                       (conjoin 'and)
+                       (disjoin 'or))
+                    ,@(loop for temp in temps
+                            collect `(apply ,temp args)))))))
+    (`(rcurry ,fun ,@args)
+      (let ((tempfn (string-gensym 'fn))
+            (temps (loop for nil in args collect (gensym))))
+        (values `((,tempfn (ensure-function ,fun))
+                  ,@(loop for temp in temps
+                          for arg in args
+                          collect `(,temp ,arg)))
+                nil
+                `(lambda (&rest more)
+                   (declare (dynamic-extent more))
+                   (multiple-value-call ,tempfn (values-list more) ,@temps)))))
     ;; A plain lambda.
-    ((or (list* 'lambda args body)
-         (list 'function (list* 'lambda args body)))
+    ((or `(lambda ,args ,@body)
+         `(function (lambda ,args ,@body)))
      (values nil nil `(lambda ,args ,@body)))
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
-    ((list* 'let*
-            (list binding)
-            body)
-     (let-over-lambda `(let ,binding ,@body)))
+    (`(let* (,binding) ,@body)
+      (let-over-lambda `(let ,binding ,@body)))
     ;; let-over-lambda.
-    ((list* 'let
-            (and bindings (type list))
-            body)
-     (multiple-value-bind (forms decls)
-         (parse-body body)
-       (match forms
-         ((list (or (list* 'lambda args body)
-                    (list 'function (list* 'lambda args body))))
-          (if (every #'gensym? (mapcar #'ensure-car bindings))
-              ;; If all the bindings are gensyms, don't worry about
-              ;; shadowing or duplicates.
-              (values bindings
-                      (remove 'optimize
-                              (mappend #'cdr decls)
-                              :key #'car)
-                      `(lambda ,args ,@body))
-              ;; Otherwise, we have to rebind some variables.
-              (multiple-value-bind (bindings rebindings)
-                  (let ((binds '())
-                        (rebinds '()))
-                    (loop for binding in bindings
-                          for (var init) = (if (listp binding)
-                                               binding
-                                               (list binding nil))
-                          if (gensym? var)
-                            do (push (list var init) binds)
-                          else do (let ((temp (string-gensym var)))
-                                    (push `(,temp ,init) binds)
-                                    (push `(,var ,temp) rebinds)))
-                    (values (nreverse binds)
-                            (nreverse rebinds)))
-                (values bindings
-                        ;; TODO
-                        nil
-                        (if (simple-lambda-list? args)
-                            ;; The lambda list has no inits, so we don't
-                            ;; have to worry about refs to the vars
-                            ;; being rebound.
-                            `(lambda ,args
-                               (symbol-macrolet ,rebindings
-                                 ,@body))
-                            (with-gensyms (temp-args)
-                              ;; The lambda list might refer to the
-                              ;; rebindings, so leave it to the
-                              ;; compiler.
-                              `(lambda (&rest ,temp-args)
-                                 (declare (dynamic-extent ,temp-args))
-                                 (symbol-macrolet ,rebindings
-                                   (apply (lambda ,args
-                                            ,@body)
-                                          ,temp-args))))))))))))
+    (`(let ,(and bindings (type list)) ,@body)
+      (multiple-value-bind (forms decls)
+          (parse-body body)
+        (match forms
+          (`(,(or `(lambda ,args ,@body)
+                  `(function (lambda ,args ,@body))))
+           (if (every #'gensym? (mapcar #'ensure-car bindings))
+               ;; If all the bindings are gensyms, don't worry about
+               ;; shadowing or duplicates.
+               (values bindings
+                       (remove 'optimize
+                               (mappend #'cdr decls)
+                               :key #'car)
+                       `(lambda ,args ,@body))
+               ;; Otherwise, we have to rebind some variables.
+               (multiple-value-bind (bindings rebindings)
+                   (let ((binds '())
+                         (rebinds '()))
+                     (loop for binding in bindings
+                           for (var init) = (if (listp binding)
+                                                binding
+                                                (list binding nil))
+                           if (gensym? var)
+                             do (push (list var init) binds)
+                           else do (let ((temp (string-gensym var)))
+                                     (push `(,temp ,init) binds)
+                                     (push `(,var ,temp) rebinds)))
+                     (values (nreverse binds)
+                             (nreverse rebinds)))
+                 (values bindings
+                         ;; TODO
+                         nil
+                         (if (simple-lambda-list? args)
+                             ;; The lambda list has no inits, so we don't
+                             ;; have to worry about refs to the vars
+                             ;; being rebound.
+                             `(lambda ,args
+                                (symbol-macrolet ,rebindings
+                                  ,@body))
+                             (with-gensyms (temp-args)
+                               ;; The lambda list might refer to the
+                               ;; rebindings, so leave it to the
+                               ;; compiler.
+                               `(lambda (&rest ,temp-args)
+                                  (declare (dynamic-extent ,temp-args))
+                                  (symbol-macrolet ,rebindings
+                                    (apply (lambda ,args
+                                             ,@body)
+                                           ,temp-args))))))))))))
     (otherwise (let ((exp (expand-macro form)))
                  (if (eq exp form)
                      nil
@@ -281,15 +276,15 @@ BODY is needed because we detect unreferenced bindings by looking for
                (let ((expr (expand-macro expr)))
                  (match expr
                    ((and _ (type symbol)) t)
-                   ((list 'quote _) t)
-                   ((list 'function _) t)
-                   ((list* 'if body)
+                   (`(quote ,_) t)
+                   (`(function ,_) t)
+                   (`(if ,@body)
                     (and (simple? (first body))
                          (if (not (second body))
                              t
                              (simple? (second body)))))
                    ;; TODO Locally.
-                   ((list* 'progn body)
+                   (`(progn ,@body)
                     (every #'simple? body)))))
              (tag-expr (var expr)
                (cond ((unreferenced? var) 'unreferenced)

@@ -1,4 +1,5 @@
 (in-package :serapeum)
+(in-readtable :fare-quasiquote)
 
 (export '(eval-and-compile
           no nor
@@ -146,13 +147,13 @@ clause succeeds."
 Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
-    ((list* (list test) clauses)
+    (`((,test) ,@clauses)
      `(if-let (,var ,test)
         ,var
         (cond-let ,var ,@clauses)))
-    ((list* (list* t body) _)
+    (`((t ,@body) ,@_)
      `(progn ,@body))
-    ((list* (list* test body) clauses)
+    (`((,test ,@body) ,@clauses)
      `(if-let (,var ,test)
         (progn ,@body)
         (cond-let ,var ,@clauses)))))
@@ -186,13 +187,13 @@ From Zetalisp."
                    (multiple-value-bind (test body)
                        (match (first clauses)
                          ;; Test without body (return the value of the test).
-                         ((list test)
+                         (`(,test)
                           (values t (list test)))
                          ;; Otherwise; only run if nothing else has.
-                         ((list* 'otherwise body)
+                         (`(otherwise ,@body)
                           (values `(not ,any) body))
                          ;; An ordinary clause.
-                         ((list* test body)
+                         (`(test ,@body)
                           (values test body)))
                      `(let* ((,sat ,test)
                              (,ret (if ,sat (progn ,@body) ,ret))

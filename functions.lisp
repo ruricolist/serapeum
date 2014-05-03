@@ -1,4 +1,5 @@
 (in-package :serapeum)
+(in-readtable :fare-quasiquote)
 
 (export '(flip nth-arg
           distinct
@@ -239,7 +240,7 @@ propagate the current value of `*standard-output*':
 (define-compiler-macro dynamic-closure (&whole decline
                                                symbols fn)
   (match symbols
-    ((list 'quote symbols)
+    (`(quote ,symbols)
      (let* ((temps (mapcar #'string-gensym symbols)))
        (rebinding-functions (fn)
          `(let ,(mapcar #'list temps symbols)

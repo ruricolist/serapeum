@@ -6,7 +6,7 @@
   :license "MIT"
   :depends-on (#:alexandria
                #:optima
-               #:cl-fad
+               #:uiop
                #:split-sequence
                #:string-case
                #:parse-number

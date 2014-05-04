@@ -193,7 +193,7 @@ From Zetalisp."
                          (`(otherwise ,@body)
                           (values `(not ,any) body))
                          ;; An ordinary clause.
-                         (`(test ,@body)
+                         (`(,test ,@body)
                           (values test body)))
                      `(let* ((,sat ,test)
                              (,ret (if ,sat (progn ,@body) ,ret))

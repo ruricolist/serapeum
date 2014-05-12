@@ -14,8 +14,7 @@
           ensure ensure2
           callf callf2
           ~> ~>>
-          cond-every
-          atomic))
+          cond-every))
 
 (defmacro eval-and-compile (&body body)
   "Emacs's `eval-and-compile'.
@@ -413,14 +412,3 @@ From Zetalisp."
  (let ((x 1))
    (select 1
      (x t))))
-
-(defmacro atomic (&body body)
-  "Run BODY as an anonymous critical section.
-Only one thread can run BODY at a time.
-
-From Arc.
-"
-  (with-gensyms (lock)
-    `(let ((,lock (load-time-value (bt:make-lock "Anonymous critical section"))))
-       (bt:with-lock-held (,lock)
-         ,@body))))

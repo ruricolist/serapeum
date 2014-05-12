@@ -28,6 +28,8 @@
                 :depends-on ("macro-tools"))
                (:file "control-flow"
                 :depends-on ("macro-tools"))
+               (:file "threads"
+                :depends-on ("package"))
                (:file "iter"
                 :depends-on ("macro-tools"))
                (:file "conditions"

@@ -27,7 +27,7 @@
                (:file "binding"
                 :depends-on ("macro-tools"))
                (:file "control-flow"
-                :depends-on ("package"))
+                :depends-on ("macro-tools"))
                (:file "iter"
                 :depends-on ("macro-tools"))
                (:file "conditions"

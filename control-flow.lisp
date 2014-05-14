@@ -366,7 +366,7 @@ instead of the first."
                                (append hole '(_)))
                            (list hole '_)))))
 
-(defmacro select (keyform &body clauses &environment env)
+(defmacro select (keyform &body clauses)
   "Like `case', but with evaluated keys.
 
 Note that, like `case', `select' interprets a list as the first
@@ -381,24 +381,9 @@ must add an extra set of parentheses.
        (((+ 2 2)) t))
      => T
 
-This version of `select' is smart enough to compile itself to a `case'
-statement if all its keys are constants.
-
 From Zetalisp."
-  (multiple-value-bind (cases default)
-      (normalize-cases clauses)
-    (let ((keys (mapcar (lambda (key)
-                          (expand-macro key env))
-                        (mappend #'car cases))))
-      (if (every (rcurry #'constant? env) keys)
-          `(case ,keyform
-             ,@(loop for (keys . body) in cases
-                     collect (cons (mapcar (rcurry #'eval-constant env) keys)
-                                   body))
-             ,@(when default
-                 (unsplice `(otherwise ,default))))
-          `(selector ,keyform eql
-             ,@clauses)))))
+  `(selector ,keyform eql
+     ,@clauses))
 
 (defmacro selector (keyform fn &body clauses)
   "Like `select', but compare using FN.

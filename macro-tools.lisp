@@ -9,25 +9,6 @@
 
 ;;;# Basics
 
-;;; `constant?' and `eval-constant' are used in the definition of
-;;; `select'. They may not be general enough to be worth exporting.
-
-(defun constant? (x &optional env)
-  "Like `constantp', but expand symbol macros."
-  (when (symbolp x)
-    (setf x (macroexpand x env)))
-  (constantp x env))
-
-(defun eval-constant (x &optional env)
-  "Evaluate X, a constant."
-  (when (symbolp x)
-    (setf x (macroexpand x env)))
-  (unless (constant? x env)
-    (error "~a may not be a constant" x))
-  #+ccl (ccl::eval-constant x)
-  #+sbcl (sb-int:constant-form-value x env)
-  (eval x))
-
 ;;; Borrowed from the internals of Alexandria.
 
 (defun extract-function-name (x)

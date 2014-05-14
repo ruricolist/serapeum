@@ -24,7 +24,7 @@
 ;;; When rebinding non-gensyms, analyze the lambda lists and elide the
 ;;; inner lambda when possible.
 
-(defcondition letrec-restriction-violation (error)
+(define-condition letrec-restriction-violation (error)
   ((args :initarg :args :accessor args-of))
   (:documentation "Violation of the letrec restriction.
 

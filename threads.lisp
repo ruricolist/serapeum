@@ -2,7 +2,8 @@
 
 (export '(synchronized monitor))
 
-(defconstant +lock-class+ (class-of (bt:make-lock)))
+(eval-and-compile
+  (defconstant +lock-class+ (class-of (bt:make-lock))))
 
 (defmacro synchronized ((&optional (object nil objectp)) &body body &environment env)
   "Run BODY holding a unique lock associated with OBJECT.

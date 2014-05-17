@@ -1,6 +1,6 @@
 (in-package #:serapeum)
 
-(export '(ignoring))
+(export '(ignoring maybe-invoke-restart))
 
 (defmacro ignoring (type &body body)
   "An improved version of `ignore-errors`.
@@ -27,3 +27,8 @@ NB `(ignoring t)` is a bad idea."
        (progn ,@body)
      (,type (c)
        (values nil c))))
+
+(defun maybe-invoke-restart (restart &rest values)
+  "When RESTART is active, invoke it with VALUES."
+  (when (find-restart restart)
+    (apply #'invoke-restart restart values)))

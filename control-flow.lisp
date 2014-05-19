@@ -180,29 +180,31 @@ form has succeeded.
 
 From Zetalisp."
   (with-gensyms (sat ret any)
-    (labels ((expand (clauses)
-               (if (null clauses)
-                   ret
-                   (multiple-value-bind (test body)
-                       (match (first clauses)
-                         ;; Test without body (return the value of the test).
-                         (`(,test)
-                          (values t (list test)))
-                         ;; Otherwise; only run if nothing else has.
-                         (`(otherwise ,@body)
-                          (values `(not ,any) body))
-                         ;; An ordinary clause.
-                         (`(,test ,@body)
-                          (values test body)))
-                     `(let* ((,sat ,test)
-                             (,ret (if ,sat (progn ,@body) ,ret))
-                             (,any (or ,any ,sat)))
-                        (declare (ignorable ,ret ,any))
-                        ,(expand (rest clauses)))))))
-      `(let ((,any nil)
-             (,ret nil))
-         (declare (ignorable ,ret ,any))
-         ,(expand clauses)))))
+    (let* ((otherwise-clause (find 'otherwise clauses :key #'car))
+           (any-decl (if otherwise-clause `(declare (ignorable ,any)))))
+      (labels ((expand (clauses)
+                 (if (null clauses)
+                     ret
+                     (multiple-value-bind (test body)
+                         (match (first clauses)
+                           ;; Test without body (return the value of the test).
+                           (`(,test)
+                             (values t (list test)))
+                           ;; Otherwise; only run if nothing else has.
+                           (`(otherwise ,@body)
+                             (values `(not ,any) body))
+                           ;; An ordinary clause.
+                           (`(,test ,@body)
+                             (values test body)))
+                       `(let* ((,sat ,test)
+                               (,ret (if ,sat (progn ,@body) ,ret))
+                               ,@(unsplice (if otherwise-clause `(,any (or ,any ,sat)))))
+                          ,@(unsplice any-decl)
+                          ,(expand (rest clauses)))))))
+        `(let (,@(unsplice (if otherwise-clause `(,any nil)))
+               (,ret nil))
+           ,@(unsplice any-decl)
+           ,(expand clauses))))))
 
 (assert (null (cond-every)))
 (assert (eql (cond-every (t 1) (otherwise 2)) 1))

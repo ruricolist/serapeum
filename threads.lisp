@@ -21,7 +21,8 @@ If no OBJECT is provided, run BODY as an anonymous critical section."
 
 (defvar *monitors-lock* (bt:make-lock "Monitor lock"))
 
-(defgeneric monitor (object))
+(defgeneric monitor (object)
+  (:documentation "Return a unique lock associated with OBJECT."))
 
 (defmethod monitor ((object #.+lock-class+))
   object)

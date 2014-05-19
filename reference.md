@@ -442,9 +442,6 @@ must add an extra set of parentheses.
        (((+ 2 2)) t))
      => T
 
-This version of `select` is smart enough to compile itself to a `case`
-statement if all its keys are constants.
-
 From Zetalisp.
 
 ## `(selector keyform fn &body clauses)`
@@ -455,13 +452,16 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-## `(atomic &body body)`
+# Threads
 
-Run BODY as an anonymous critical section.
-Only one thread can run BODY at a time.
+## `(synchronized (&optional (object nil objectp)) &body body)`
 
-From Arc.
+Run BODY holding a unique lock associated with OBJECT.
+If no OBJECT is provided, run BODY as an anonymous critical section.
 
+## `(monitor object)`
+
+Return a unique lock associated with OBJECT.
 
 # Iter
 
@@ -544,6 +544,10 @@ character:
       ...)
 
 NB `(ignoring t)` is a bad idea.
+
+## `(maybe-invoke-restart restart &rest values)`
+
+When RESTART is active, invoke it with VALUES.
 
 # Op
 
@@ -814,7 +818,7 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints x)`
+## `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1105,13 +1109,13 @@ Like `string^=`, but case-insensitive.
 
 Is S1 a prefix of S2?
 
-## `(string$= s1 s2 &key start1 end1 start2 end2)`
-
-Is S1 a suffix of S2?
-
 ## `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
+
+## `(string$= s1 s2 &key start1 end1 start2 end2)`
+
+Is S1 a suffix of S2?
 
 ## `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
@@ -1222,7 +1226,7 @@ Clojure's `merge`.
 
 Return a table like TABLE, but with keys and values flipped.
 
-TEST filters which values to set. KEY defaults to `identity`.
+TEST filters which keys to set. KEY defaults to `identity`.
 
 ## `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -1232,15 +1236,16 @@ for a list that denotes a set.
 
 STRICT determines whether to check that the list actually is a set.
 
-The resulting table has the members of SET for its keys and `t` for
-every value.
+The resulting table has the elements of SET for its keys and values.
+That is, each element of SET is stored as if by
+     (setf (gethash (key element) table) element)
 
-## `(hash-table-set table &key strict)`
+## `(hash-table-set table &key strict test key)`
 
 Return the set denoted by TABLE.
-Given STRICT, check that each value is `t`.
+Given STRICT, check that the table actually denotes a set.
 
-Without STRICT, equivalent to `hash-table-keys`.
+Without STRICT, equivalent to `hash-table-values`.
 
 # Files
 
@@ -1307,6 +1312,14 @@ Given an array and a row-major index, return a list of subscripts.
      (apply #'aref (array-index-row-major i))
      ≡ (array-row-major-aref i)
 
+## `(undisplace-array array)`
+
+Recursively get the fundamental array that ARRAY is displaced to.
+
+Return the fundamental array, and the start and end positions into it.
+
+Borrowed from Erik Naggum.
+
 # Queue
 
 ## `(queuep x)`
@@ -1348,6 +1361,7 @@ Is QUEUE empty?
 ## `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
+Return the queue.
 
 # Box
 
@@ -1449,7 +1463,7 @@ Return SEQ in batches of N elements.
 
 Like `sort`, but not destructive.
 
-## `(sortf g54501 pred &rest args)`
+## `(sortf g110981 pred &rest args)`
 
 Sort a place with `sort`.
 
@@ -1605,13 +1619,15 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
-## `(bits int)`
+## `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
+Defaults to little-endian.
 
-## `(unbits bits)`
+## `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
+Defaults to little-endian.
 
 ## `(shrink n by)`
 
@@ -1621,11 +1637,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-## `(shrinkf g55156 n)`
+## `(shrinkf g111641 n)`
 
 Shrink the value in a place by a factor.
 
-## `(growf g55178 n)`
+## `(growf g111663 n)`
 
 Grow the value in a place by a factor.
 
@@ -1657,13 +1673,15 @@ Is X an octet vector?
 
 Make an octet vector of SIZE elements.
 
-## `(octets n)`
+## `(octets n &key big-endian)`
 
-Return N, an integer, as a little-endian octet vector.
+Return N, an integer, as an octet vector.
+Defaults to little-endian order.
 
-## `(unoctets bytes)`
+## `(unoctets bytes &key big-endian)`
 
-Concatenate BYTES into an integer in little-endian order.
+Concatenate BYTES, an octet vecotor, into an integer.
+Defaults to little-endian order.
 
 # Time
 

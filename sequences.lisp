@@ -359,22 +359,26 @@ You can think of `assort' as being akin to `remove-duplicates':
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
-    (nreverse
-     (reduce
-      (lambda (runs y)
-        (if (null runs)
-            (list (list y))
-            (let ((x (caar runs)))
-              (if (test x y)
-                  (cons (cons y (car runs))
-                        (cdr runs))
-                  (list* (list y)
-                         (nreverse (car runs))
-                         (cdr runs))))))
-      list
-      :start start
-      :end end
-      :initial-value nil))))
+    (let ((runs
+            (reduce
+             (lambda (runs y)
+               (if (null runs)
+                   (list (list y))
+                   (let ((x (caar runs)))
+                     (if (test x y)
+                         (cons (cons y (car runs))
+                               (cdr runs))
+                         (list* (list y)
+                                (nreverse (car runs))
+                                (cdr runs))))))
+             list
+             :start start
+             :end end
+             :initial-value nil)))
+      (nreverse (cons (nreverse (car runs)) (cdr runs))))))
+
+(assert (equal '((1 2) (3 4 5 6 11 12 13))
+               (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
 
 (defun seq-runs (seq start end key test)
   (fbind ((test (key-test key test)))

@@ -377,9 +377,6 @@ You can think of `assort' as being akin to `remove-duplicates':
              :initial-value nil)))
       (nreverse (cons (nreverse (car runs)) (cdr runs))))))
 
-(assert (equal '((1 2) (3 4 5 6 11 12 13))
-               (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
-
 (defun seq-runs (seq start end key test)
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
@@ -407,6 +404,9 @@ The arguments START, END, and KEY are as for `reduce'.
       (etypecase seq
         (list (list-runs seq start end key test))
         (sequence (seq-runs seq start end key test)))))
+
+(assert (equal '((1 2) (3 4 5 6 11 12 13))
+               (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
 
 (defun batches (seq n &key (start 0) end)
   "Return SEQ in batches of N elements.

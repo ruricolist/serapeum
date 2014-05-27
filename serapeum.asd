@@ -72,7 +72,8 @@
                 :depends-on ("definitions"
                              "binding"
                              "fbind"
-                             "iter"))
+                             "iter"
+                             "control-flow"))
                (:file "numbers"
                 :depends-on ("definitions"))
                (:file "octets"

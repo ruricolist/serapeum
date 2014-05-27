@@ -53,7 +53,7 @@ operations on the subsequence returned may mutate the original.
                   (or (no end)
                       (= end (length seq))))
              seq
-             (subseq start start end))))))
+             (subseq seq start end))))))
 
 (defun (setf nsubseq) (value seq start &optional end)
   "Destructively set SEQ between START and END to VALUE.
@@ -855,7 +855,8 @@ The name is from Arc."
         ((length<= seq n)
          (sort (copy-seq seq) pred :key key))
         (t (fbind ((key (if memo
-                            (let ((dict (dict)))
+                            (let ((dict (dict))
+                                  (key (ensure-function key)))
                               (lambda (&rest args)
                                 (ensure2 (gethash args dict)
                                   (apply key args))))

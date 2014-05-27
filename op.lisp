@@ -93,7 +93,7 @@ placeholder. It is not necessary to use APPLY.
                             y)))
                      (t x))))
       (let ((body (walk-op `(progn ,@body)))
-            (rest (and (rest-op? body) `(&rest _*))))
+            (rest (and (rest-op? body) `(&rest ,(intern (string '_*))))))
         `(lambda (,@(reverse vars) ,@rest)
            (declare (ignorable ,@vars))
            ,body)))))

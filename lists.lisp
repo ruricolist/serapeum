@@ -27,7 +27,7 @@
 (-> nthrest ((integer 0 *) list) list)
 
 (defun filter-map (fn list &rest lists)
-  "Map FN over LISTS like `mapcar', but omit empty results.
+  "Map FN over (LIST . LISTS) like `mapcar', but omit empty results.
 
      (filter-map fn ...)
      ≅ (remove nil (mapcar fn ...))"

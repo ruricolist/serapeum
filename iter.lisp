@@ -134,7 +134,7 @@ with MACROLET."
                    (collect i)))))
 
 (defmacro collecting (&body body)
-  "Within BODY, bind `collect' to a function of one arguments that
+  "Within BODY, bind `collect' to a function of one argument that
 accumulate all the arguments it has been called with in order, like
 the collect clause in `loop', finally returning the collection.
 

@@ -4,7 +4,7 @@
 (export '(flip nth-arg
           distinct
           throttle #+ () debounce
-          partial juxt
+          juxt
           dynamic-closure))
 
 (defmacro ensuring-functions  (vars &body body)
@@ -12,13 +12,6 @@
                collect `(,var (ensure-function ,var)))
      (declare (optimize (speed 3) (safety 1) (debug 1)))
      ,@body))
-
-(defun partial (fn &rest args)
-  "Alias for `alexandria:curry'."
-  (apply #'curry fn args))
-
-(define-compiler-macro partial (fn &rest args)
-  `(curry ,fn ,@args))
 
 (defun eqs (x)
   "A predicate for equality (under EQ) with X."

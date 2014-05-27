@@ -1,11 +1,12 @@
 (in-package #:serapeum)
 
-(export '(box unbox))
+(export '(box unbox boxp))
 
 ;;; TODO Weak boxes.
 
 (declaim (inline box))                  ;Allow dynamic-extent.
-(defstruct (box (:constructor box (value)))
+(defstruct (box (:constructor box (value))
+                (:predicate boxp))
   "A box: a minimal mutable cell, like a cons without a cdr. Use
   unbox to access the current value."
   value)
@@ -15,7 +16,7 @@
 
 (defmethod print-object ((self box) stream)
   (print-unreadable-object (self stream :type t :identity t)
-    (format stream "~a" (type-of (unbox self)))))
+    (format stream "~a" (unbox self))))
 
 (defmethod make-load-form ((self box) &optional env)
   (declare (ignore env))

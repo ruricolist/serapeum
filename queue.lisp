@@ -1,7 +1,7 @@
 (in-package #:serapeum)
 
-;; Norvig-style queues, but wrapped in objects so they don't overflow
-;; the printer, and with a more concise, Arc-inspired API.
+;;; Norvig-style queues, but wrapped in objects so they don't overflow
+;;; the printer, and with a more concise, Arc-inspired API.
 
 (export '(queue queuep
           enq deq front
@@ -15,13 +15,10 @@
 
 (declaim (inline make-queue))
 
-(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons)))))
+(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
+                  (:predicate queuep))
   "A structure wrapping a cons queue."
   (cons nil :type cons :read-only t))
-
-(defun queuep (x)
-  "Is X a queue?"
-  (queue-p x))
 
 (defmethod print-object ((queue queue) stream)
   (if (and *print-readably* *read-eval*)

@@ -16,9 +16,9 @@
           car-safe cdr-safe
           mapcar-into
           nthrest
-          deltas))
+          deltas
+          plist-keys plist-values))
 
-(-> riffle (&rest list) list)
 (-> firstn ((integer 0 *) list) list)
 (-> intersperse (t list) list)
 (-> powerset (list) list)
@@ -377,3 +377,16 @@ From Q."
   (if x
       (cons x xs)
       xs))
+
+
+(defun plist-keys (plist)
+  "Return the keys of a plist."
+  (collecting*
+    (doplist (k v plist)
+      (collect k))))
+
+(defun plist-values (plist)
+  "Return the values of a plist."
+  (collecting*
+    (doplist (k v plist)
+      (collect v))))

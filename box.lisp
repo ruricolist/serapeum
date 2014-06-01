@@ -1,6 +1,6 @@
 (in-package #:serapeum)
 
-(export '(box unbox boxp))
+(export '(box unbox))
 
 ;;; TODO Weak boxes.
 

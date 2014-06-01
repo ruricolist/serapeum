@@ -23,6 +23,8 @@ string is provided, it is attached to both the name |VAR| and the name
 'VARIABLE. The new VAR will have lexical scope and thus may be
 shadowed by LET bindings without affecting its dynamic (global) value.
 
+It is possible for VAL to close over VAR.
+
 In implementations that support it (SBCL and CCL, at the moment) this
 version creates a backing variable that is \"global\" or \"static\",
 so there is not just a change in semantics, but also a gain in
@@ -33,25 +35,30 @@ The original `deflex' is due to Rob Warnock."
          (s1 (symbol-name var))
          (s2 (symbol-name '#:*))
          (s3 (symbol-package var))	; BUGFIX [see above]
-         (backing-var (intern (concatenate 'string s0 s1 s2) s3)))
-    ;; Note: The DEFINE-SYMBOL-MACRO must be the last thing we do so
-    ;; that the value of the form is the symbol VAR.
+         (backing-var (intern (concatenate 'string s0 s1 s2) s3))
+         ;; Silence compiler warnings.
+         (val `(locally (declare (special ,backing-var)) ,val)))
+    ;; Note: The DEFINE-SYMBOL-MACRO must precede VAL so VAL can close
+    ;; over VAR.
     #+sbcl
     `(progn
+       (define-symbol-macro ,var ,backing-var)
        (sb-ext:defglobal ,backing-var nil ,@(unsplice doc))
        (setq ,backing-var ,val)
        ,@(unsplice (when docp `(setf (documentation ',var 'variable) ,doc)))
-       (define-symbol-macro ,var ,backing-var))
+       ',var)
     #+ccl
     `(progn
+       (define-symbol-macro ,var ,backing-var)
        (ccl:defstatic ,backing-var ,val ,@(unsplice doc))
        ,@(unsplice (when docp `(setf (documentation ',var 'variable) ,doc)))
-       (define-symbol-macro ,var ,backing-var))
+       ',var)
     #-(or sbcl ccl)
     `(progn
+       (define-symbol-macro ,var ,backing-var)
        (defparameter ,backing-var ,val ,doc)
        ,@(when docp (unsplice `(setf (documentation ',var 'variable) ,doc)))
-       (define-symbol-macro ,var ,backing-var))))
+       ',var)))
 
 (defmacro defconst (symbol init &optional docstring)
   "Define a constant, lexically.

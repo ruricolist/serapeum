@@ -283,7 +283,7 @@ Items are assigned to the first predicate they match."
 (assert (equal (cut-if #'oddp '(2 2 3 4 5 5 6 7))
                '((2 2) (3 4) (5) (5 6) (7))))
 
-(defun list-assort (list &key (key #'identity) (test #'equal) (start 0) end)
+(defun list-assort (list &key (key #'identity) (test #'eql) (start 0) end)
   (declare (list list) (optimize speed))
   (fbind ((key key) (test test))
     (let ((list (nthcdr start list))
@@ -310,7 +310,7 @@ Items are assigned to the first predicate they match."
                                    (mod x 3)))
                '((0 3 6 9) (1 4 7) (2 5 8))))
 
-(defun vector-assort (vec &key (key #'identity) (test #'equal) (start 0) end)
+(defun vector-assort (vec &key (key #'identity) (test #'eql) (start 0) end)
   (let* ((end (or end (length vec)))
          (element-type (array-element-type vec))
          (groups (queue)))
@@ -335,7 +335,7 @@ Items are assigned to the first predicate they match."
 (assert (equal (vector-assort "How Now Brown Cow" :key #'upper-case-p)
                '("HNBC" "ow ow rown ow")))
 
-(defun assort (seq &key (key #'identity) (test #'equal) (start 0) end)
+(defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
 
      (assort (iota 10)

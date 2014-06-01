@@ -456,8 +456,8 @@ From Arc."
 
 This is similar, but not identical, to SEARCH.
 
-     (search nil \"foo\") => T
-     (search \"nil\" \"nil\") => NIL
+     (search nil \"foo\") => 0
+     (search \"nil\" \"nil\") => 0
      (string*= nil \"foo\") => NIL
      (string*= nil \"nil\") => T"
     (call search s1 s2))
@@ -465,7 +465,7 @@ This is similar, but not identical, to SEARCH.
   (defcmp (string~= string-tokenp) (s1 s2)
     "Does S1 occur in S2 as a token?
 
-This is equivalent to
+Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing."
     ;; Adapted from split-sequence.
@@ -482,8 +482,8 @@ but without consing."
               for right of-type array-length
                 = (min (or (position-if #'whitespacep s2 :start left) length)
                        end)
-              thereis (and (not (= right left))
-                           (compare-segment left right))
+                  thereis (and (not (= right left))
+                               (compare-segment left right))
               until (>= right end))))))
 
 (assert (string^= "foo" "foobar"))

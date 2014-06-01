@@ -9,6 +9,7 @@
           econd econd-failure
           econd-let ecase-let
           cond-let case-let
+          bcond
           comment example
           nix
           ensure ensure2
@@ -211,6 +212,48 @@ From Zetalisp."
 (assert (eql (cond-every (otherwise 1)) 1))
 (assert (eql (cond-every (t 1) (nil 2)) 1))
 (assert (eql (let ((x 1)) (cond-every (x) (nil 2))) 1))
+
+(defmacro bcond (&rest clauses)
+  "Scheme's extended COND.
+
+This is exactly like COND, except for clauses having the form
+
+     (test :=> recipient)
+
+In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
+function, is called with that result, and the result of RECIPIENT is
+return as the value of the `cond`.
+
+The name `bcond' for a “binding cond” goes back at least to the days
+of the Lisp Machines. I do not know who was first to use it, but the
+oldest examples I have found are by Michael Parker and Scott L.
+Burson."
+  (flet ((send-clause? (clause)
+           (let ((second (second clause)))
+             (and (symbolp second)
+                  (string= second :=>))))
+         (parse-send-clause (clause)
+           (destructuring-bind (test => fn . excessive)
+               clause
+             (declare (ignore =>))
+             (when excessive (error "Too many terms in => clause"))
+             (values test fn))))
+    ;; Note that we expand into `cond' rather than `if' so we don't
+    ;; have to handle tests without bodies.
+    (cond ((null clauses) nil)
+          ((member-if #'send-clause? clauses)
+           (let* ((tail (member-if #'send-clause? clauses))
+                  (preceding (ldiff clauses tail))
+                  (clause (car tail))
+                  (clauses (cdr tail)))
+             (multiple-value-bind (test fn)
+                 (parse-send-clause clause)
+               (with-gensyms (tmp)
+                 `(cond ,@preceding
+                        (t (if-let (,tmp ,test)
+                             (funcall ,fn ,tmp)
+                             (bcond ,@clauses))))))))
+          (t `(cond ,@clauses)))))
 
 (defmacro case-let ((var expr) &body cases)
   "Like (let ((VAR EXPR)) (case VAR ...))"

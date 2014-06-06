@@ -134,43 +134,61 @@ Almost always used as (delq nil ...)."
   (assert (not (memq nil list2)))
   (assert (eq list1 list2)))
 
-(defun mapply (fn &rest lists)
-  "`mapply` is a cousin of `mapcar`.
+(defun mapply (fn list &rest lists)
+  "`mapply' is a cousin of `mapcar'.
 
-If you think of `mapcar` as using `funcall`:
+If you think of `mapcar' as using `funcall':
 
     (mapcar #'- '(1 2 3))
-    ≡ (loop for item in '(1 2 3)
-             collect (funcall #'- item))
+    ≅ (loop for item in '(1 2 3)
+            collect (funcall #'- item))
 
-Then `mapply` does the same thing, but using `apply`.
+Then `mapply' does the same thing, but with `apply' instead.
+
+    (loop for item in '((1 2 3) (4 5 6))
+            collect (apply #'+ item))
+    => (6 15)
 
     (mapply #'+ '((1 2 3) (4 5 6)))
     => (6 15)
 
-In variadic use, `mapply` acts as if `mapcar #'append` had first been
-used:
+In variadic use, `mapply' acts as if `append' had first been used:
 
     (mapply #'+ xs ys)
     ≡ (mapply #'+ (mapcar #'append xs ys))
 
-But the actual implementation is more efficient."
-  (apply #'mapcar
-         (lambda (&rest args)
-           (apply fn (apply #'append args)))
-         lists))
+But the actual implementation is more efficient.
 
-(define-compiler-macro mapply (fn &rest lists)
-  "Translate from apply to multiple-value-call."
-  (let ((vars (loop for nil in lists collect (string-gensym 'arg))))
+`mapply' can convert a list of two-element lists in an alist:
+
+    (mapply #'cons '((x 1) (y 2))
+    => '((x . 1) (y . 2))"
+  (let ((fn (ensure-function fn)))
+    (multiple-value-call #'mapcar
+      (lambda (&rest args)
+        (apply fn (apply #'append args)))
+      list
+      (values-list lists))))
+
+(assert (equal (mapply #'cons '((x 1) (y 2))) '((x . 1) (y . 2))))
+
+(define-compiler-macro mapply (fn list &rest lists)
+  (let* ((lists (cons list lists))
+         (vars (loop for nil in lists collect (string-gensym 'arg))))
     (with-gensyms (gfn)
       `(let ((,gfn (ensure-function ,fn)))
          (mapcar
-          (lambda (,@vars)
-            (multiple-value-call ,gfn
-              ,@(loop for var in vars
-                      collect `(values-list ,var))))
+          (lambda ,vars
+            ,(if (single vars)
+                 `(apply ,gfn ,@vars)
+                 ;; Use multiple-value-call to avoid consing.
+                 `(multiple-value-call ,gfn
+                    ,@(loop for var in vars
+                            collect `(values-list ,var)))))
           ,@lists)))))
+
+(assert (equal (mapply #'list '((a 1) (b 2)) '((c 3) (d 4)))
+               '((a 1 c 3) (b 2 d 4))))
 
 (defsubst assocdr (item alist &rest args)
   "Like (cdr (assoc ...))"
@@ -284,7 +302,7 @@ If the graph is inconsistent, signals an error of type
 
 (defun delete-dups (list)
   "Destructively remove duplicates from a list, starting from the end,
-testing with #'equal.
+testing with `equal'.
 
 Equivalent to Emacs's `delete-dups`."
   (declare (list list) (inline delete-duplicates))
@@ -319,6 +337,7 @@ Uses a non-recursive algorithm."
   "Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5."
+  ;; Cf. `delq'.
   (let ((splice '()))
     (loop for x = list then (cdr x) do
       (cond ((endp x) (return list))

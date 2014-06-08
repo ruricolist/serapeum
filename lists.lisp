@@ -384,9 +384,13 @@ From PAIP."
      (deltas '(4 9 -5 1 2))
      => '(4 5 -14 6 1)
 
+Note that the first element of LIST is also the first element of the
+return value.
+
 From Q."
-  (cons (car list)
-        (mapcar op (cdr list) list)))
+  (let ((op (ensure-function op)))
+    (cons (car list)
+          (mapcar op (cdr list) list))))
 
 (assert
  (equal '(4 5 -14 6 1)
@@ -396,7 +400,6 @@ From Q."
   (if x
       (cons x xs)
       xs))
-
 
 (defun plist-keys (plist)
   "Return the keys of a plist."

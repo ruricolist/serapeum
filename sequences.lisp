@@ -6,6 +6,7 @@
           single
           sortf safe-sort
           frequencies
+          scan
           nub
           gcp gcs
           length< length<= length> length>=
@@ -468,20 +469,26 @@ From Clojure."
            (incf (gethash elt table 0)))
          seq)))
 
-(defun scan (fun seq &rest args)
-  "APL's scan. Return a list where element N is the result of reducing
-the first N elements of SEQ by FUN."
-  (fbind fun
+(defun scan (fn seq)
+  "A version of `reduce' that shows its work.
+
+Instead of returning just the final result, `scan' returns a list of
+the successive results at each step.
+
+    (reduce #'+ '(1 2 3 4))
+    => 10
+
+    (scan #'+ '(1 2 3 4))
+    => '(1 3 6 10)
+
+From APL and descendants."
+  (fbind fn
     (nreverse
      (the list
-          (apply #'reduce
-                 (lambda (acc x)
-                   (if (not acc)
-                       (cons x acc)
-                       (cons (fun x (car acc)) acc)))
-                 seq
-                 :initial-value '()
-                 args)))))
+          (reduce (lambda (acc x)
+                    (cons (fn x (car acc)) acc))
+                  (nsubseq seq 1)
+                  :initial-value (list (elt seq 0)))))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.

@@ -10,10 +10,13 @@
   "The hook currently being run.")
 (declaim (type symbol *hook*))
 
-(defun add-hook (name fn)
+(defun add-hook (name fn &key append)
   "Add FN to the value of NAME, a hook."
   (check-type fn (or function symbol))
-  (pushnew fn (symbol-value name)))
+  (if (not append)
+      (pushnew fn (symbol-value name))
+      (unless (member fn (symbol-value name))
+        (appendf (symbol-value name) (list fn)))))
 
 (defun remove-hook (name fn)
   "Remove fn from the symbol value of NAME."

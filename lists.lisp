@@ -179,7 +179,7 @@ But the actual implementation is more efficient.
       `(let ((,gfn (ensure-function ,fn)))
          (mapcar
           (lambda ,vars
-            ,(if (single vars)
+            ,(if (null (cdr vars))
                  `(apply ,gfn ,@vars)
                  ;; Use multiple-value-call to avoid consing.
                  `(multiple-value-call ,gfn

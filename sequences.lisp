@@ -10,7 +10,6 @@
           gcp gcs
           length< length<= length> length>=
           longer longest
-          cut
           ordering
           bestn
           extrema
@@ -252,36 +251,6 @@ Items are assigned to the first predicate they match."
 
 (assert (equal (partitions (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9))
                '((1 3 5 7 9) (0 2 4 6 8))))
-
-(defun cut-list-if (fn list &key (start 0))
-  (setf list (nthcdr start list))
-  (nlet cut-list-if ((list list)
-                     (acc '()))
-    (if (endp list)
-        (nreverse acc)
-        (let ((tail (member-if fn (cdr list))))
-          (if (null tail)
-              (nreverse (cons list acc))
-              (let ((diff (ldiff list tail)))
-                (cut-list-if tail (cons diff acc))))))))
-
-(defun cut-seq-if (fn seq &key (start 0) (end (length seq)))
-  (collecting*
-    (nlet cut-seq-if ((start start))
-      (let ((pos (position-if fn seq :start (1+ start) :end end)))
-        (cond ((null pos)
-               (collect (subseq seq start end)))
-              (t (collect (subseq seq start pos))
-                 (cut-seq-if pos)))))))
-
-(defun cut-if (fn seq &key (start 0) end)
-  (the list
-       (if (and (listp seq) (not end))
-           (cut-list-if fn seq :start start)
-           (cut-seq-if fn seq :start start :end (length seq)))))
-
-(assert (equal (cut-if #'oddp '(2 2 3 4 5 5 6 7))
-               '((2 2) (3 4) (5) (5 6) (7))))
 
 (defun list-assort (list &key (key #'identity) (test #'eql) (start 0) end)
   (declare (list list) (optimize speed))
@@ -593,32 +562,6 @@ If X and Y are of equal length, return X."
              (x y)
              (y x))))
     (reduce #'shorter seqs)))
-
-(defun cut (seq indices)
-  "Divide up SEQ at INDICES.
-
-     (cut (iota 8) '(2 4 6))
-     => ((0 1) (2 3) (4 5) (6 7))
-
-From Q."
-  (unless (eql 0 (first indices))
-    (push 0 indices))
-  (etypecase seq
-    (list
-     (let ((offsets (mapcar #'- (rest indices) indices)))
-       (collecting*
-         (nlet cut ((list seq)
-                    (offsets offsets))
-           (let ((offset (first offsets)))
-             (if (no offset)
-                 (collect list)
-                 (let ((tail (nthcdr offset list)))
-                   (collect (ldiff list tail))
-                   (cut tail (rest offsets)))))))))
-    (sequence
-     (loop for (start . rest) on indices
-           for end = (car rest)
-           collect (subseq seq start end)))))
 
 (defun slice-bounds (seq start end)
   "Normalize START and END, which may be negative, to offsets

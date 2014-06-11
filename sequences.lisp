@@ -4,7 +4,6 @@
           partition partitions
           runs batches assort
           single
-          sortf safe-sort
           frequencies
           scan
           nub
@@ -444,17 +443,6 @@ The arguments START, END, and KEY are as for `reduce'.
 (assert (equal '("ab" "cd" "e") (batches "abcde" 2)))
 (assert (equal '("a") (batches "abc" 2 :end 1)))
 (assert (equal '((a)) (batches '(a b c) 2 :end 1)))
-
-(defsubst safe-sort (seq pred &rest args)
-  "Like `sort', but not destructive."
-  (declare (dynamic-extent args))
-  (apply #'sort (copy-seq seq) pred args))
-
-(define-modify-macro sortf (pred &rest args) sort
-  "Sort a place with `sort'.")
-
-(define-modify-macro safe-sortf (pred &rest args) sort
-  "Sort a place with `safe-sort'.")
 
 (defun frequencies (seq &rest hash-table-args)
   "Return a hash table with the count of each unique item in SEQ.

@@ -6,6 +6,7 @@
           append1
           assocdr assocadr rassocar
           firstn
+          intersperse
           toposort
           inconsistent-graph
           inconsistent-graph-constraints

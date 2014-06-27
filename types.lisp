@@ -13,7 +13,7 @@
      (defun mod-fixnum+ (x y) ...)"
   `(declaim (ftype (-> ,args ,values) ,function)))
 
-(defmacro check-the (type-spec form)
+(defmacro check-the (type-spec &body (form))
   "Cross between CHECK-TYPE and THE for inline type checking.
 The syntax is the same as THE; the semantics are the same as
 CHECK-TYPE."

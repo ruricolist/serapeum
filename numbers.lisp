@@ -13,12 +13,7 @@
           finc fdec
           shrink grow
           shrinkf growf
-          ln lb lg
           random-in-range))
-
-(defconst phi (/ (+ 1 (sqrt 5.0d0)) 2))
-
-(defconst e (exp 1.0d0))
 
 (defmacro finc (place &optional (delta 1))
   "Like `incf', but returns the old value instead of the new.
@@ -157,19 +152,6 @@ Defaults to little-endian."
 
 (define-modify-macro growf (n) shrink
   "Grow the value in a place by a factor.")
-
-(defsubst ln (n)
-  "Natural logarithm."
-  (log n))
-
-(defsubst lb (n)
-  "Binary logarithm."
-  (log n 2))
-
-(defsubst lg (n)
-  "Decimal logarithm."
-  (log n 10))
-
 (defsubst random-in-range (low high)
   "Random number in the range [low,high).
 

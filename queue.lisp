@@ -13,12 +13,15 @@
   (let ((q (cons nil nil)))
     (setf (car q) q)))
 
-(declaim (inline make-queue))
+(declaim (inline make-queue queuep))
 
-(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
-                  (:predicate queuep))
+(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons)))))
   "A structure wrapping a cons queue."
   (cons nil :type cons :read-only t))
+
+(defun queuep (x)
+  "Is X a queue?"
+  (queue-p x))
 
 (defmethod print-object ((queue queue) stream)
   (if (and *print-readably* *read-eval*)

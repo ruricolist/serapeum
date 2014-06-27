@@ -132,6 +132,12 @@ Declaim the ftype of a function from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
+## `(check-the type-spec &body (form))`
+
+Cross between CHECK-TYPE and THE for inline type checking.
+The syntax is the same as THE; the semantics are the same as
+CHECK-TYPE.
+
 # Definitions
 
 ## `(def var &body (val &optional (doc nil docp)))`
@@ -144,6 +150,8 @@ string is provided, it is attached to both the name |VAR| and the name
 *STORAGE-FOR-DEFLEX-VAR-|VAR|* as a documentation string of kind
 'VARIABLE. The new VAR will have lexical scope and thus may be
 shadowed by LET bindings without affecting its dynamic (global) value.
+
+It is possible for VAL to close over VAR.
 
 In implementations that support it (SBCL and CCL, at the moment) this
 version creates a backing variable that is "global" or "static",
@@ -355,6 +363,23 @@ form has succeeded.
 
 From Zetalisp.
 
+## `(bcond &rest clauses)`
+
+Scheme's extended COND.
+
+This is exactly like COND, except for clauses having the form
+
+     (test :=> recipient)
+
+In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
+function, is called with that result, and the result of RECIPIENT is
+return as the value of the `cond`.
+
+The name `bcond` for a “binding cond” goes back at least to the days
+of the Lisp Machines. I do not know who was first to use it, but the
+oldest examples I have found are by Michael Parker and Scott L.
+Burson.
+
 ## `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...))
@@ -492,7 +517,7 @@ are being evaluated, and it is safe to close over the arguments.
 
 ## `(collecting &body body)`
 
-Within BODY, bind `collect` to a function of one arguments that
+Within BODY, bind `collect` to a function of one argument that
 accumulate all the arguments it has been called with in order, like
 the collect clause in `loop`, finally returning the collection.
 
@@ -617,10 +642,6 @@ used in successive bindings.
 
 # Functions
 
-## `(partial fn &rest args)`
-
-Alias for `alexandria:curry`.
-
 ## `(flip f)`
 
 Flip around the arguments of a binary function.
@@ -718,7 +739,7 @@ propagate the current value of `*standard-output*`:
 
 ## `(filter-map fn list &rest lists)`
 
-Map FN over LISTS like `mapcar`, but omit empty results.
+Map FN over (LIST . LISTS) like `mapcar`, but omit empty results.
 
      (filter-map fn ...)
      ≅ (remove nil (mapcar fn ...))
@@ -769,28 +790,36 @@ Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-## `(mapply fn &rest lists)`
+## `(mapply fn list &rest lists)`
 
 `mapply` is a cousin of `mapcar`.
 
 If you think of `mapcar` as using `funcall`:
 
     (mapcar #'- '(1 2 3))
-    ≡ (loop for item in '(1 2 3)
-             collect (funcall #'- item))
+    ≅ (loop for item in '(1 2 3)
+            collect (funcall #'- item))
 
-Then `mapply` does the same thing, but using `apply`.
+Then `mapply` does the same thing, but with `apply` instead.
+
+    (loop for item in '((1 2 3) (4 5 6))
+            collect (apply #'+ item))
+    => (6 15)
 
     (mapply #'+ '((1 2 3) (4 5 6)))
     => (6 15)
 
-In variadic use, `mapply` acts as if `mapcar #'append` had first been
-used:
+In variadic use, `mapply` acts as if `append` had first been used:
 
     (mapply #'+ xs ys)
     ≡ (mapply #'+ (mapcar #'append xs ys))
 
 But the actual implementation is more efficient.
+
+`mapply` can convert a list of two-element lists in an alist:
+
+    (mapply #'cons '((x 1) (y 2))
+    => '((x . 1) (y . 2))
 
 ## `(assocdr item alist &rest args)`
 
@@ -849,6 +878,10 @@ If the graph is inconsistent, signals an error of type
     (toposort '(chicken egg) '((chicken egg) (egg chicken)))
     => Inconsistent graph: ((CHICKEN EGG) (EGG CHICKEN))
 
+## `(intersperse new-elt list)`
+
+Insert NEW-ELT between each element of LIST.
+
 ## `(powerset set)`
 
 Return the powerset of SET.
@@ -876,14 +909,31 @@ From PAIP.
 
 Alias for `nthcdr`.
 
-## `(deltas list &optional op)`
+## `(deltas list &optional fn)`
 
 Return the successive differences in LIST.
 
      (deltas '(4 9 -5 1 2))
      => '(4 5 -14 6 1)
 
+Note that the first element of LIST is also the first element of the
+return value.
+
+By default, the delta is the difference, but you can specify another
+function as a second argument:
+
+    (deltas '(2 4 2 6) #'/)
+    => '(2 2 1/2 3)
+
 From Q.
+
+## `(plist-keys plist)`
+
+Return the keys of a plist.
+
+## `(plist-values plist)`
+
+Return the values of a plist.
 
 # Trees
 
@@ -1127,8 +1177,8 @@ Is S1 a substring of S2?
 
 This is similar, but not identical, to SEARCH.
 
-     (search nil "foo") => T
-     (search "nil" "nil") => NIL
+     (search nil "foo") => 0
+     (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
@@ -1136,7 +1186,7 @@ This is similar, but not identical, to SEARCH.
 
 Does S1 occur in S2 as a token?
 
-This is equivalent to
+Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing.
 
@@ -1322,10 +1372,6 @@ Borrowed from Erik Naggum.
 
 # Queue
 
-## `(queuep x)`
-
-Is X a queue?
-
 ## `(queue &rest initial-contents)`
 
 Build a new queue with INITIAL-CONTENTS.
@@ -1459,19 +1505,26 @@ Return SEQ in batches of N elements.
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
 
-## `(safe-sort seq pred &rest args)`
-
-Like `sort`, but not destructive.
-
-## `(sortf g110981 pred &rest args)`
-
-Sort a place with `sort`.
-
 ## `(frequencies seq &rest hash-table-args)`
 
 Return a hash table with the count of each unique item in SEQ.
 
 From Clojure.
+
+## `(scan fn seq)`
+
+A version of `reduce` that shows its work.
+
+Instead of returning just the final result, `scan` returns a list of
+the successive results at each step.
+
+    (reduce #'+ '(1 2 3 4))
+    => 10
+
+    (scan #'+ '(1 2 3 4))
+    => '(1 3 6 10)
+
+From APL and descendants.
 
 ## `(nub seq &rest args &key start end key test)`
 
@@ -1488,21 +1541,25 @@ The greatest common prefix of SEQS.
 
 The greatest common suffix of SEQS.
 
-## `(length< seq n)`
+## `(length< &rest seqs)`
 
-Is SEQ less than N elements long?
+Is each length-designator in SEQS shorter than the next?
+A length designator may be a sequence or an integer.
 
-## `(length> seq n)`
+## `(length> &rest seqs)`
 
-Is SEQ more than N elements long?
+Is each length-designator in SEQS longer than the next?
+A length designator may be a sequence or an integer.
 
-## `(length>= seq n)`
+## `(length>= &rest seqs)`
 
-Is SEQ at least N elements long?
+Is each length-designator in SEQS longer or as long as the next?
+A length designator may be a sequence or an integer.
 
-## `(length<= seq n)`
+## `(length<= &rest seqs)`
 
-Is SEQ no more than N elements long?
+Is each length-designator in SEQS as long or shorter than the next?
+A length designator may be a sequence or an integer.
 
 ## `(longer x y)`
 
@@ -1513,15 +1570,6 @@ If X and Y are of equal length, return X.
 ## `(longest seqs)`
 
 Return the longest seq in SEQS.
-
-## `(cut seq indices)`
-
-Divide up SEQ at INDICES.
-
-     (cut (iota 8) '(2 4 6))
-     => ((0 1) (2 3) (4 5) (6 7))
-
-From Q.
 
 ## `(slice seq start &optional end)`
 
@@ -1593,6 +1641,11 @@ If SEQ is of an odd length, the split is made using `ceiling` rather
 than `truncate`. This is on the theory that, if SEQ is a
 single-element list, it should be returned unchanged.
 
+## `(dsu-sort seq fn &key key)`
+
+Decorate-sort-undecorate using KEY.
+Useful when KEY is an expensive function (e.g. database access).
+
 # Numbers
 
 ## `(finc place &optional (delta 1))`
@@ -1637,25 +1690,13 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-## `(shrinkf g111641 n)`
+## `(shrinkf g11934 n)`
 
 Shrink the value in a place by a factor.
 
-## `(growf g111663 n)`
+## `(growf g11956 n)`
 
 Grow the value in a place by a factor.
-
-## `(ln n)`
-
-Natural logarithm.
-
-## `(lb n)`
-
-Binary logarithm.
-
-## `(lg n)`
-
-Decimal logarithm.
 
 ## `(random-in-range low high)`
 
@@ -1751,7 +1792,7 @@ If X is a class, it designates itself.
 
 # Hooks
 
-## `(add-hook name fn)`
+## `(add-hook name fn &key append)`
 
 Add FN to the value of NAME, a hook.
 

@@ -17,7 +17,8 @@
           slice
           vector=
           take drop
-          halves))
+          halves
+          dsu-sort))
 
 (export '(split-sequence:split-sequence
           split-sequence:split-sequence-if
@@ -490,42 +491,92 @@ From Haskell."
 
 (assert (equal (gcs '("how" "now")) "ow"))
 
-(defun length< (seq n)
-  "Is SEQ less than N elements long?"
-  (check-type n array-length)
-  (etypecase seq
-    (list (nlet len< ((list seq)
-                      (n n))
-            (cond ((zerop n) nil)
-                  ((endp list) t)
-                  (t (len< (rest list) (1- n))))))
-    (sequence (< (length seq) n))))
+(defun as-len ()
+  "Return a closure that returns the length of the length
+designators (sequences or integers) it is called with.
+
+The idea is to minimize needless traversal of lists in length< and
+length> by tracking the least length seen so far."
+  (let ((min array-dimension-limit))
+    (lambda (x)
+      (etypecase x
+        (array-length
+         (minf min x)
+         x)
+        (list
+         (loop for nil in x
+               for i from 1
+               repeat (1+ min)
+               finally (minf min i)
+                       (return i)))
+        (sequence
+         (let ((x (length x)))
+           (minf min x)
+           x))))))
+
+(defun length< (&rest seqs)
+  "Is each length-designator in SEQS shorter than the next?
+A length designator may be a sequence or an integer."
+  (nlet rec ((last 0)
+             (seqs seqs))
+    (if (endp seqs)
+        t
+        (destructuring-bind (seq . seqs) seqs
+          (etypecase seq
+            (array-length
+             (when (< last seq)
+               (rec seq seqs)))
+            (list
+             (when-let (tail (nthcdr last seq))
+               (rec (+ last (length tail)) seqs)))
+            (sequence
+             (let ((len (length seq)))
+               (when (< last len)
+                 (rec len seqs)))))))))
 
 (assert (length< '(1) 2))
 (assert (not (length< '(1 2) 2)))
 (assert (not (length< '(1 2 3) 2)))
 
-(defun length> (seq n)
-  "Is SEQ more than N elements long?"
-  (etypecase seq
-    (list (nlet len> ((list seq)
-                      (n n))
-            (cond ((endp list) nil)
-                  ((zerop n) t)
-                  (t (len> (rest list) (1- n))))))
-    (sequence (> (length seq) n))))
+(defun length> (&rest seqs)
+  "Is each length-designator in SEQS longer than the next?
+A length designator may be a sequence or an integer."
+  (nlet rec ((last most-positive-fixnum)
+             (seqs seqs))
+    (if (endp seqs)
+        t
+        (destructuring-bind (seq . seqs) seqs
+            (etypecase seq
+              (array-length
+               (when (> last seq)
+                 (rec seq seqs)))
+              (list
+               (let ((len
+                       ;; Get the length of SEQ, but only up to LAST.
+                       (loop for nil in seq
+                             for i from 1
+                             repeat last
+                             finally (return i))))
+                 (when (> last len)
+                   (rec len seqs))))
+              (sequence
+               (let ((len (length seq)))
+                 (when (> last len)
+                   (rec len seqs)))))))))
 
 (assert (not (length> '(1) 2)))
 (assert (not (length> '(1 2) 2)))
 (assert (length> '(1 2 3) 2))
 
-(defun length>= (seq n)
-  "Is SEQ at least N elements long?"
-  (not (length< seq n)))
+(defun length>= (&rest seqs)
+  "Is each length-designator in SEQS longer or as long as the next?
+A length designator may be a sequence or an integer."
+  (not (apply #'length< seqs)))
 
-(defun length<= (seq n)
-  "Is SEQ no more than N elements long?"
-  (not (length> seq n)))
+(defun length<= (&rest seqs)
+  "Is each length-designator in SEQS as long or shorter than the next?
+A length designator may be a sequence or an integer."
+  (not (apply #'length> seqs)))
 
 (defun longer (x y)
   "Return the longer of X and Y.
@@ -897,3 +948,17 @@ single-element list, it should be returned unchanged."
 (assert (equal (halves '(x)) '(x)))
 (assert (equal (multiple-value-list (halves '(x y))) '((x) (y))))
 (assert (equal (multiple-value-list (halves '(x y z))) '((x y) (z))))
+
+(defun dsu-sort (seq fn &key (key #'identity))
+  "Decorate-sort-undecorate using KEY.
+Useful when KEY is an expensive function (e.g. database access)."
+  (fbind (key)
+    (map-into seq
+              #'cdr
+              ;; Vectors sort faster.
+              (sort (map 'vector
+                         (lambda (item)
+                           (cons (key item) item))
+                         seq)
+                    fn
+                    :key #'car))))

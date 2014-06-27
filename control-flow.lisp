@@ -94,8 +94,10 @@ clause."
   "Efficient `case'-like macro with string keys.
 
 This uses Paul Khuong's `string-case' macro internally."
-  `(string-case:string-case (,stringform :default nil)
-     ,@(expand-string-case cases)))
+  (let* ((default (find t cases :key #'car))
+         (cases (remove default cases)))
+    `(string-case:string-case (,stringform :default (progn ,@(cdr default)))
+       ,@(expand-string-case cases))))
 
 ;; TODO More informative error.
 (defmacro string-ecase (stringform &body cases)

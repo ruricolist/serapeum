@@ -40,7 +40,7 @@
                 :depends-on ("macro-tools" "binding"))
                ;; Runtime.
                (:file "functions"
-                :depends-on ("types"))
+                :depends-on ("macro-tools" "types"))
                (:file "lists"
                 :depends-on ("types"
                              "definitions"
@@ -70,6 +70,7 @@
                 :depends-on ("package"))
                (:file "sequences"
                 :depends-on ("definitions"
+                             "types"
                              "binding"
                              "fbind"
                              "iter"

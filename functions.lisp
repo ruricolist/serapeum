@@ -234,15 +234,15 @@ propagate the current value of `*standard-output*':
                                                symbols fn)
   (match symbols
     (`(quote ,symbols)
-     (let* ((temps (mapcar #'string-gensym symbols)))
-       (rebinding-functions (fn)
-         `(let ,(mapcar #'list temps symbols)
-            (lambda (&rest args)
-              (declare (dynamic-extent args))
-              (let ,(mapcar #'list symbols temps)
-                (multiple-value-prog1
-                    (apply ,fn args)
-                  (setf ,@(mappend #'list temps symbols)))))))))
+      (let ((temps (make-gensym-list (length symbols))))
+        (rebinding-functions (fn)
+          `(let ,(mapcar #'list temps symbols)
+             (lambda (&rest args)
+               (declare (dynamic-extent args))
+               (let ,(mapcar #'list symbols temps)
+                 (multiple-value-prog1
+                     (apply ,fn args)
+                   (setf ,@(mappend #'list temps symbols)))))))))
     (otherwise decline)))
 
 (let ((fn (lambda ()

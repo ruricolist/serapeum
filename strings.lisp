@@ -158,22 +158,20 @@ like the first argument to `format'.
 From Emacs Lisp."
   (fbind (fun)
     (with-string (out stream)
-      (etypecase seq
-        (list
-         (loop for (elt . more?) on seq
-               do (write-string (fun elt) out)
-               if more?
-                 do (write-string separator out)))
-        (sequence
-         (let ((i 0)
-               (ult (1- (length seq))))
-           (declare (array-index i ult))
-           (map nil
-                (lambda (elt)
-                  (write-string (fun elt) out)
-                  (unless (= (prog1 i (incf i)) ult)
-                    (write-string separator out)))
-                seq)))))))
+      (seq-dispatch seq
+        (loop for (elt . more?) on seq
+              do (write-string (fun elt) out)
+              if more?
+                do (write-string separator out))
+        (let ((i 0)
+              (ult (1- (length seq))))
+          (declare (array-index i ult))
+          (map nil
+               (lambda (elt)
+                 (write-string (funcall fun elt) out)
+                 (unless (= (prog1 i (incf i)) ult)
+                   (write-string separator out)))
+               seq))))))
 
 (assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
 (assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))

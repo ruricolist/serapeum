@@ -33,27 +33,25 @@ operations on the subsequence returned may mutate the original.
 
 `nsubseq' also works with `setf', with the same behavior as
 `replace'."
-  (etypecase seq
-    (list
-     (cond (end (subseq seq start end))
-           ((= start 0) seq)
-           (t (nthcdr start seq))))
-    (vector
-     (let* ((len (length seq))
-            (end (or end len)))
-       (if (and (= start 0) (= end len))
-           seq
-           ;; TODO Would it be better to undisplace the vector first?
-           (make-array (- end start)
-                       :element-type (array-element-type seq)
-                       :displaced-to seq
-                       :displaced-index-offset start))))
-    (t (let ((end (length seq)))
-         (if (and (= start 0)
-                  (or (no end)
-                      (= end (length seq))))
-             seq
-             (subseq seq start end))))))
+  (seq-dispatch seq
+    (cond (end (subseq seq start end))
+          ((= start 0) seq)
+          (t (nthcdr start seq)))
+    (let* ((len (length seq))
+           (end (or end len)))
+      (if (and (= start 0) (= end len))
+          seq
+          ;; TODO Would it be better to undisplace the vector first?
+          (make-array (- end start)
+                      :element-type (array-element-type seq)
+                      :displaced-to seq
+                      :displaced-index-offset start)))
+    (let ((end (length seq)))
+      (if (and (= start 0)
+               (or (no end)
+                   (= end (length seq))))
+          seq
+          (subseq seq start end)))))
 
 (defun (setf nsubseq) (value seq start &optional end)
   "Destructively set SEQ between START and END to VALUE.
@@ -145,9 +143,9 @@ The difference is the handling of COUNT."
 
 (defsubst single (seq)
   "Is SEQ a sequence of one element?"
-  (etypecase seq
-    (list (and seq (null (cdr seq))))
-    (sequence (= (length seq) 1))))
+  (seq-dispatch seq
+    (and seq (null (cdr seq)))
+    (= (length seq) 1)))
 
 (defun partition (pred seq &key (start 0) end (key #'identity))
   "Partition elements of SEQ into those for which PRED returns true
@@ -166,37 +164,39 @@ the sequence; `partition` always returns the “true” elements first.
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
   (fbind ((test (compose pred key)))
-    (etypecase seq
-      (list
-       (setf seq (nthcdr start seq))
-       (let ((pass (queue))
-             (fail (queue)))
-         (flet ((pass/fail (item)
-                  (if (test item)
-                      (enq item pass)
-                      (enq item fail))))
-           (declare (dynamic-extent #'pass/fail))
-           (if (null end)
-               (dolist (item seq)
-                 (pass/fail item))
-               (loop for i from 0 below (- end start)
-                     for item in seq
-                     do (pass/fail item))))
-         (values (qlist pass) (qlist fail))))
-      (vector
-       (let* ((pass (make-array 0
-                                :element-type (array-element-type seq)
-                                :adjustable t
-                                :fill-pointer 0))
-              (fail (copy-array pass)))
-         (loop for i from start below (or end (length seq))
-               for item = (aref seq i)
-               do (if (test item)
-                      (vector-push-extend item pass)
-                      (vector-push-extend item fail)))
-         (values pass fail)))
-      (t (values (remove-if pred seq :key key)
-                 (remove-if-not pred seq :key key))))))
+    (seq-dispatch seq
+      (progn
+        (setf seq (nthcdr start seq))
+        (let ((pass (queue))
+              (fail (queue)))
+          (flet ((pass/fail (item)
+                   (if (test item)
+                       (enq item pass)
+                       (enq item fail))))
+            (declare (dynamic-extent #'pass/fail))
+            (if (null end)
+                (dolist (item seq)
+                  (pass/fail item))
+                (loop for i from 0 below (- end start)
+                      for item in seq
+                      do (pass/fail item))))
+          (values (qlist pass) (qlist fail))))
+      ;; Vector.
+      (progn
+        (let* ((pass (make-array 0
+                                 :element-type (array-element-type seq)
+                                 :adjustable t
+                                 :fill-pointer 0))
+               (fail (copy-array pass)))
+          (loop for i from start below (or end (length seq))
+                for item = (aref seq i)
+                do (if (test item)
+                       (vector-push-extend item pass)
+                       (vector-push-extend item fail)))
+          (values pass fail)))
+      ;; Generic sequence.
+      (values (remove-if pred seq :key key)
+              (remove-if-not pred seq :key key)))))
 
 (defun partitions (preds seq &key (start 0) end (key #'identity))
   "Generalized version of PARTITION.
@@ -206,55 +206,54 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (etypecase seq
-    (list
-     (fbind key
-       (setf seq (nthcdr start seq))
-       (let ((buckets (loop for nil in preds collect (queue)))
-             (extra (queue)))
-         (flet ((bucket (item)
-                  (loop for pred in preds
-                        for bucket in buckets
-                        if (funcall pred (key item))
-                          return (enq item bucket)
-                        finally (enq item extra))))
-           (declare (dynamic-extent #'bucket))
-           (if (no end)
-               (mapc #'bucket seq)
-               (loop for i from start below end
-                     for item in seq
-                     do (bucket item)))
-           (values (mapcar #'qlist buckets)
-                   (qlist extra))))))
-    (vector
-     (fbind ((key key)
-             (make-buffer
-              (lambda ()
-                (make-array 0
-                            :element-type (array-element-type seq)
-                            :adjustable t
-                            :fill-pointer 0))))
-       (let ((buckets (loop for nil in preds collect (make-buffer)))
-             (extra (make-buffer)))
-         (loop for item across seq do
-           (loop for pred in preds
-                 for bucket in buckets
-                 if (funcall pred (key item))
-                   return (vector-push-extend item bucket)
-                 finally (vector-push-extend item extra)))
-         (values buckets extra))))
-    (sequence
-     (loop for pred in preds
-           collect (remove-if-not pred seq
-                                  :start start
-                                  :end end
-                                  :key key)))))
+  (seq-dispatch seq
+    (fbind key
+      (setf seq (nthcdr start seq))
+      (let ((buckets (loop for nil in preds collect (queue)))
+            (extra (queue)))
+        (flet ((bucket (item)
+                 (loop for pred in preds
+                       for bucket in buckets
+                       if (funcall pred (key item))
+                         return (enq item bucket)
+                       finally (enq item extra))))
+          (declare (dynamic-extent #'bucket))
+          (if (no end)
+              (mapc #'bucket seq)
+              (loop for i from start below end
+                    for item in seq
+                    do (bucket item)))
+          (values (mapcar #'qlist buckets)
+                  (qlist extra)))))
+    ;; Vector
+    (fbind ((key key)
+            (make-buffer
+             (lambda ()
+               (make-array 0
+                           :element-type (array-element-type seq)
+                           :adjustable t
+                           :fill-pointer 0))))
+      (let ((buckets (loop for nil in preds collect (make-buffer)))
+            (extra (make-buffer)))
+        (loop for item across seq do
+          (loop for pred in preds
+                for bucket in buckets
+                if (funcall pred (key item))
+                  return (vector-push-extend item bucket)
+                finally (vector-push-extend item extra)))
+        (values buckets extra)))
+    ;; Generic sequence.
+    (loop for pred in preds
+          collect (remove-if-not pred seq
+                                 :start start
+                                 :end end
+                                 :key key))))
 
 (assert (equal (partitions (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9))
                '((1 3 5 7 9) (0 2 4 6 8))))
 
 (defun list-assort (list &key (key #'identity) (test #'eql) (start 0) end)
-  (declare (list list) (optimize speed))
+  (declare (list list))
   (fbind ((key key) (test test))
     (let ((list (nthcdr start list))
           (groups (queue)))
@@ -316,15 +315,15 @@ You can think of `assort' as being akin to `remove-duplicates':
 
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
-  (etypecase seq
-    (list (list-assort seq :key key :test test :start start :end end))
-    (vector (vector-assort seq :key key :test test :start start :end end))
+  (seq-dispatch seq
+    (list-assort seq :key key :test test :start start :end end)
+    (vector-assort seq :key key :test test :start start :end end)
     ;; Is there a more efficient way to do this while remaining
     ;; completely generic?
-    (t (let* ((seq (nsubseq seq start end))
-              (keys (nub (map 'list key seq) :test test)))
-         (loop for k in keys
-               collect (keep k seq :key key :test test))))))
+    (let* ((seq (nsubseq seq start end))
+           (keys (nub (map 'list key seq) :test test)))
+      (loop for k in keys
+            collect (keep k seq :key key :test test)))))
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
@@ -347,22 +346,6 @@ You can think of `assort' as being akin to `remove-duplicates':
              :initial-value nil)))
       (nreverse (cons (nreverse (car runs)) (cdr runs))))))
 
-(defun seq-runs (seq start end key test)
-  (fbind ((test (key-test key test)))
-    (declare (dynamic-extent #'test))
-    (collecting*
-      (nlet runs ((start start))
-        (let* ((elt (elt seq start))
-               (pos (position-if-not (curry #'test elt)
-                                     seq
-                                     :start (1+ start)
-                                     :end end)))
-          (if (null pos)
-              (collect (subseq seq start end))
-              (progn
-                (collect (subseq seq start pos))
-                (runs pos))))))))
-
 (defun runs (seq &key (start 0) end (key #'identity) (test #'eql))
   "Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce'.
@@ -371,9 +354,22 @@ The arguments START, END, and KEY are as for `reduce'.
     => '((head) (tail) (head head) (tail))"
   (if (emptyp seq)
       (list seq)
-      (etypecase seq
-        (list (list-runs seq start end key test))
-        (sequence (seq-runs seq start end key test)))))
+      (seq-dispatch seq
+        (list-runs seq start end key test)
+        (fbind ((test (key-test key test)))
+          (declare (dynamic-extent #'test))
+          (collecting*
+            (nlet runs ((start start))
+              (let* ((elt (elt seq start))
+                     (pos (position-if-not (curry #'test elt)
+                                           seq
+                                           :start (1+ start)
+                                           :end end)))
+                (if (null pos)
+                    (collect (subseq seq start end))
+                    (progn
+                      (collect (subseq seq start pos))
+                      (runs pos))))))))))
 
 (assert (equal '((1 2) (3 4 5 6 11 12 13))
                (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
@@ -384,30 +380,28 @@ The arguments START, END, and KEY are as for `reduce'.
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))"
   (check-type n (integer 0 *))
-  (etypecase seq
-    (list
-     (let ((seq (nthcdr start seq)))
-       (if (null end)
-           (loop while seq
-                 collect (loop for i below n
-                               for (elt . rest) on seq
-                               collect elt
-                               finally (setf seq rest)))
-           (loop while seq
-                 for i from start below end by n
-                 collect (loop for i below (min n (- end i))
-                               for (elt . rest) on seq
-                               collect elt
-                               finally (setf seq rest))))))
-    (sequence
-     (let ((end (or end (length seq))))
-       (nlet batches ((i start)
-                      (acc '()))
-         (if (>= i end)
-             (nreverse acc)
-             (batches (+ i n)
-                      (cons (subseq seq i (min (+ i n) end))
-                            acc))))))))
+  (seq-dispatch seq
+    (let ((seq (nthcdr start seq)))
+      (if (null end)
+          (loop while seq
+                collect (loop for i below n
+                              for (elt . rest) on seq
+                              collect elt
+                              finally (setf seq rest)))
+          (loop while seq
+                for i from start below end by n
+                collect (loop for i below (min n (- end i))
+                              for (elt . rest) on seq
+                              collect elt
+                              finally (setf seq rest)))))
+    (let ((end (or end (length seq))))
+      (nlet batches ((i start)
+                     (acc '()))
+        (if (>= i end)
+            (nreverse acc)
+            (batches (+ i n)
+                     (cons (subseq seq i (min (+ i n) end))
+                           acc)))))))
 
 (assert (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
 (assert (equal '("ab" "cd" "e") (batches "abcde" 2)))
@@ -416,16 +410,21 @@ The arguments START, END, and KEY are as for `reduce'.
 
 (defun frequencies (seq &rest hash-table-args)
   "Return a hash table with the count of each unique item in SEQ.
+As a second value, return the length of SEQ.
 
 From Clojure."
-  (lret ((table (multiple-value-call #'make-hash-table
-                  (values-list hash-table-args)
-                  :size (values (floor (length seq) 2))
-                  :test 'equal)))
+  (let ((total 0)
+        (table (multiple-value-call #'make-hash-table
+                 (values-list hash-table-args)
+                 :size (values (floor (length seq) 2))
+                 :test 'equal)))
+    (declare (fixnum total))
     (map nil
          (lambda (elt)
+           (incf total)
            (incf (gethash elt table 0)))
-         seq)))
+         seq)
+    (values table total)))
 
 (defun scan (fn seq)
   "A version of `reduce' that shows its work.
@@ -720,18 +719,14 @@ The sequence returned is a new sequence of the same type as SEQ."
   (subseq seq n))
 
 (defsubst take-while (pred seq)
-  (etypecase seq
-    (list
-     (ldiff seq (member-if-not pred seq)))
-    (sequence
-     (subseq seq 0 (position-if-not pred seq)))))
+  (seq-dispatch seq
+    (ldiff seq (member-if-not pred seq))
+    (subseq seq 0 (position-if-not pred seq))))
 
 (defsubst drop-while (pred seq)
-  (etypecase seq
-    (list
-     (member-if-not pred seq))
-    (sequence
-     (subseq seq (position-if-not pred seq)))))
+  (seq-dispatch seq
+    (member-if-not pred seq)
+    (subseq seq (position-if-not pred seq))))
 
 (defsubst count-while (pred seq)
   (position-if-not pred seq))
@@ -836,7 +831,7 @@ Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
 The name is from Arc."
-  (declare (array-length n) (optimize speed))
+  (declare (array-length n))
   (cond ((= n 0)
          (coerce-by-example '() seq))
         ((= n 1)
@@ -856,12 +851,13 @@ The name is from Arc."
                (declare (array heap) (array-length i))
                (map nil
                     (lambda (elt)
-                      (cond ((< i n)
-                             (heap-insert heap elt :key key :test #'test))
-                            ((test (key (heap-maximum heap)) (key elt))
-                             (heap-extract-maximum heap :key key
-                                                        :test #'test)
-                             (heap-insert heap elt :key key :test #'test)))
+                      (locally (declare (optimize speed))
+                        (cond ((< i n)
+                               (heap-insert heap elt :key key :test #'test))
+                              ((test (key (heap-maximum heap)) (key elt))
+                               (heap-extract-maximum heap :key key
+                                                          :test #'test)
+                               (heap-insert heap elt :key key :test #'test))))
                       (incf i))
                     seq)
                (coerce-by-example

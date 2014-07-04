@@ -35,9 +35,7 @@ The original `deflex' is due to Rob Warnock."
          (s1 (symbol-name var))
          (s2 (symbol-name '#:*))
          (s3 (symbol-package var))	; BUGFIX [see above]
-         (backing-var (intern (concatenate 'string s0 s1 s2) s3))
-         ;; Silence compiler warnings.
-         (val `(locally (declare (special ,backing-var)) ,val)))
+         (backing-var (intern (concatenate 'string s0 s1 s2) s3)))
     ;; Note: The DEFINE-SYMBOL-MACRO must precede VAL so VAL can close
     ;; over VAR.
     #+sbcl
@@ -50,14 +48,18 @@ The original `deflex' is due to Rob Warnock."
     #+ccl
     `(progn
        (define-symbol-macro ,var ,backing-var)
-       (ccl:defstatic ,backing-var ,val ,@(unsplice doc))
+       (ccl:defstatic ,backing-var nil ,@(unsplice doc))
+       (setq ,backing-var ,val)
        ,@(unsplice (when docp `(setf (documentation ',var 'variable) ,doc)))
        ',var)
     #-(or sbcl ccl)
     `(progn
        (define-symbol-macro ,var ,backing-var)
-       (defparameter ,backing-var ,val ,doc)
-       ,@(when docp (unsplice `(setf (documentation ',var 'variable) ,doc)))
+       (defvar ,backing-var nil ,doc)
+       (setq ,backing-var ,val)
+       ,@(when docp
+           (unsplice `(setf (documentation ',backing-var 'variable) ,doc
+                            (documentation ',var 'variable) ,doc)))
        ',var)))
 
 (defmacro defconst (symbol init &optional docstring)

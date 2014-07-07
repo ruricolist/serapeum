@@ -21,13 +21,6 @@ directories; you have to do that yourself.
     (build-path \"dir1/\" \"dir2/\" \"file\") -> \"dir1/dir2/file\""
   (the pathname (reduce (flip #'merge-pathnames) parts :initial-value path)))
 
-(defun touch (pathname)
-  "Ensure that PATHNAME exists, is not a directory, and can be opened."
-  (check-type pathname pathname)
-  (when (uiop:directory-pathname-p pathname)
-    (error "~A is a directory" pathname))
-  (open pathname :direction :probe :if-does-not-exist :create))
-
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.
 

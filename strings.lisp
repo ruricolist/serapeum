@@ -2,7 +2,7 @@
 
 (export '(whitespace collapse-whitespace
           whitespacep blankp trim-whitespace
-          concat mapconcat join
+          concat mapconcat
           string-upcase-initials
           nstring-upcase-initials
           string-invert-case
@@ -175,16 +175,6 @@ From Emacs Lisp."
 
 (assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
 (assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))
-
-(defun join (strings sep &key stream)
-  "Join STRINGS into one string, interspersing with SEP.
-
-STREAM can be used to specify a stream to write to. It is resolved
-like the first argument to `format'."
-  (the string
-       (if (not strings)
-           ""
-           (mapconcat #'identity strings (string sep) :stream stream))))
 
 (-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)

@@ -1,10 +1,6 @@
 (in-package #:serapeum)
 
-(export '(nlet
-          collecting
-          summing
-          minimizing
-          maximizing))
+(export '(nlet collecting summing))
 
 ;;;# nlet
 
@@ -52,15 +48,6 @@ are being evaluated, and it is safe to close over the arguments."
                        if (symbolp binding)
                          collect `(,binding ,binding)
                        else collect binding))
-  `(nlet-2 ,name ,bindings ,@body))
-
-(defmacro nlet-1 (name (&rest bindings) &body body)
-  `(funcall
-    (named-lambda ,name (mapcar #'first bindings)
-      ,@body)
-    ,@(mapcar #'second bindings)))
-
-(defmacro nlet-2 (name (&rest bindings) &body body)
   (multiple-value-bind (body decls)
       (parse-body body)
     (let* ((bindings (mapcar #'ensure-list bindings))
@@ -108,25 +95,20 @@ are being evaluated, and it is safe to close over the arguments."
                       collect `(,(first sym) (symbolicate ',(second sym))))
      ,@body))
 
-(defmacro collect1 (collector &body body)
-  "Bind COLLECTOR (with MACROLET) as a collector."
-  (with-gensyms (head tail)
-    `(let* ((,head (list nil))
-            (,tail ,head))
-       (macrolet ((,collector (&optional (x nil x-p))
-                    (if x-p
-                        `(setf (cdr ,',tail)
-                               (setf ,',tail (list ,x)))
-                        `(cdr ,',head))))
-         ,@body)
-       (the list (cdr ,head)))))
-
 (defmacro collecting* (&body body)
   "Intern COLLECT in the current package and bind it as a collector
 with MACROLET."
   (with-syms (collect)
-    `(collect1 ,collect
-       ,@body)))
+    (with-gensyms (head tail)
+      `(let* ((,head (list nil))
+              (,tail ,head))
+         (macrolet ((,collect (&optional (x nil x-p))
+                      (if x-p
+                          `(setf (cdr ,',tail)
+                                 (setf ,',tail (list ,x)))
+                          `(cdr ,',head))))
+           ,@body)
+         (the list (cdr ,head))))))
 
 (assert (equal '(0 1 2 3 4)
                (collecting*
@@ -152,64 +134,6 @@ other function."
          (declare (inline ,collect))
          ,@body))))
 
-(defmacro with-collectors* (collectors &body body)
-  (if (null collectors)
-      `(progn ,@body)
-      `(collect1 ,(first collectors)
-         (with-collectors* ,(rest collectors)
-           ,@body))))
-
-(defmacro with-collectors (collectors &body body)
-  (if (endp collectors)
-      `(progn ,@body)
-      (let ((collector (first collectors)))
-        `(collect1 ,collector
-           (flet ((,collector (&optional (x nil x?))
-                    (if x?
-                        (,collector x)
-                        (,collector))))
-             (declare (inline ,collector))
-             (with-collectors ,(rest collectors)
-               ,@body))))))
-
-(defmacro hashing ((&rest hash-table-args)
-                   &body body)
-  "Within BODY, bind HASH to a function that adds its two args to a
-hash table; return the hash table at the end."
-  (with-syms (hash)
-    (with-gensyms (table)
-      `(let ((,table (make-hash-table ,@hash-table-args)))
-         (flet ((,hash (k v)
-                  (setf (gethash k ,table) v)))
-           ,@body
-           ,table)))))
-
-(defmacro reducing (name fun &body body)
-  (with-gensyms (first-run so-far new newp)
-    `(block ,name
-       (let ((,so-far nil)
-             (,first-run t))
-         (flet ((,name (&optional (,new nil ,newp))
-                  (if ,newp
-                      (if ,first-run
-                          (setf ,first-run nil
-                                ,so-far ,new)
-                          (callf ,fun ,so-far ,new))
-                      ,so-far)))
-           ,@body
-           ,so-far)))))
-
-(defmacro folding (name initial fun &body body)
-  (with-gensyms (value new newp)
-    `(block ,name
-       (let ((,value ,initial))
-         (flet ((,name (&optional (,new nil ,newp))
-                  (if ,newp
-                      (callf ,fun ,value ,new)
-                      ,value)))
-           ,@body
-           ,value)))))
-
 (defmacro summing (&body body)
   "Within BODY, bind `sum' to a function that gathers numbers to sum.
 
@@ -224,44 +148,3 @@ Return the total."
                 (declare (ignorable (function ,sum)))
                 ,@body)
               ,n)))))
-
-(defmacro minimizing (&body body)
-  "Within BODY, bind `minimize' to a function that tracks its least argument.
-
-Return the minimum."
-  (with-syms (minimize)
-    `(the number
-          (reducing ,minimize #'min
-            ,@body))))
-
-(defmacro maximizing (&body body)
-  "Within BODY, bind `maximize' to a function that tracks its greatest argument.
-
-Return the maximum."
-  (with-syms (maximize)
-    `(the number
-          (reducing ,maximize #'max
-            ,@body))))
-
-(defmacro testing (&body body)
-  "Within BODY, bind ALWAYS, NEVER, and THEREIS.
-
-If you mix THEREIS with ALWAYS or NEVER, the return value may not be
-what you expect."
-  (with-gensyms (ret block)
-    (with-syms (always never thereis)
-      `(block ,block
-         (let ((,ret t))
-           (flet ((,always (x)
-                    (unless x
-                      (return-from ,block nil)))
-                  (,never (x)
-                    (when x
-                      (return-from ,block nil)))
-                  (,thereis (x)
-                    (if x
-                        (return-from ,block x)
-                        (setf ,ret nil))))
-             (declare (ignorable #',always #',never #',thereis))
-             ,@body
-             ,ret))))))

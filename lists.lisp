@@ -289,25 +289,11 @@ If the graph is inconsistent, signals an error of type
 
 (defun intersperse (new-elt list)
   "Insert NEW-ELT between each element of LIST."
-  (cons (car list)
-        (mapcan (lambda (x)
-                  (list new-elt x))
-                (cdr list))))
-
-(defun intercalate (new-list list)
-  "Splice the elements of NEW-LIST between each element of LIST."
-  (append (car list)
-          (mapcan
-           (curry #'append new-list)
-           (cdr list))))
-
-(defun delete-dups (list)
-  "Destructively remove duplicates from a list, starting from the end,
-testing with `equal'.
-
-Equivalent to Emacs's `delete-dups`."
-  (declare (list list) (inline delete-duplicates))
-  (delete-duplicates list :test #'equal :from-end t))
+  (loop for (item . rest) on list
+        if (null rest)
+          collect item
+        else collect item
+             and collect new-elt))
 
 (defun powerset (set)
   "Return the powerset of SET.
@@ -319,20 +305,6 @@ Uses a non-recursive algorithm."
                       for x in set
                       when (logbitp j i)
                         collect x)))
-
-(defmacro drain (expr &optional (eof nil))
-  "Collect values for EXPR until one equals EOF."
-  (with-gensyms (res)
-    `(loop for ,res = ,expr
-           until (eql ,res ,eof)
-           collect ,res)))
-
-(defmacro draining ((var expr &optional eof) &body body)
-  (with-gensyms (res)
-     `(loop for ,res = ,expr
-            until (eql ,res ,eof)
-            collect (let ((,var ,res))
-                      ,@body))))
 
 (defun efface (item list)
   "Destructively remove only the first occurence of ITEM in LIST.

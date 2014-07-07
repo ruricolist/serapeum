@@ -62,17 +62,26 @@ The original `deflex' is due to Rob Warnock."
                             (documentation ',var 'variable) ,doc)))
        ',var)))
 
+(defun same-literal-p (x y)
+  "A predicate that compares whether X and Y have the same literal
+  representation."
+  ;; Crude, but reliable.
+  (string= (prin1-to-string x) (prin1-to-string y)))
+
 (defmacro defconst (symbol init &optional docstring)
   "Define a constant, lexically.
 
 `defconst' defines a constant using a strategy similar to `def', so
 you don’t have to +cage+ your constants.
 
+The constant is only redefined on re-evaluation if INIT has a
+different literal representation than the old value.
+
 The name is from Emacs Lisp."
   (let ((backing-var (symbolicate '#:+storage-for-deflex-var- symbol '+)))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (define-constant ,backing-var ,init
-         :test 'equal
+         :test 'same-literal-p
          :documentation ,docstring)
        (define-symbol-macro ,symbol ,backing-var))))
 

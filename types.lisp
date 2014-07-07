@@ -18,14 +18,16 @@
 The syntax is the same as THE; the semantics are the same as
 CHECK-TYPE."
   (with-gensyms (temp)
-    `(let ((,temp ,form))
-       (check-type ,temp ,type-spec)
-       ,temp)))
+    `(the (let ((,temp ,form))
+            (check-type ,temp ,type-spec)
+            ,temp)
+          ,type-spec)))
 
 (defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
   "Efficiently dispatch on the type of SEQ."
   (declare (ignorable other-form))
   #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
+  ;; Only SBCL and ABCL support extensible sequences right now.
   #+(or sbcl abcl)
   `(if (listp ,seq)
        ,list-form

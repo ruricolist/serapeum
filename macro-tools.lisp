@@ -31,7 +31,7 @@ The value being rebound will be wrapped in `ensure-function'."
 
 (defun normalize-cases (cases &key (allow-default t))
   "Normalize CASES, clauses for a case-like macro.
-Return each non-default clauses normalized to `(keys . body)', where
+Return each non-default clause normalized to `(keys . body)', where
 keys is a *list* of keys.
 
 Return the default clause as a second value.
@@ -303,11 +303,3 @@ directly into Lisp code:
         else collect decl into removed
         finally (return (values (mapcar #'expand-declaration kept)
                                 (mapcar #'expand-declaration removed)))))
-
-(defun substitute-declarations (substitutions declarations)
-  (let ((decls (parse-declarations declarations)))
-    (mapcar #'expand-declaration
-            (loop for (var . ds) in decls
-                  collect (cons (or (cdr (assoc var substitutions))
-                                    var)
-                                ds)))))

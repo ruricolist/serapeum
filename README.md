@@ -163,11 +163,6 @@ Serapeum provides basic cons queues. The implementation is based on
 PAIP and the original Norvig & Waters paper; the API is mostly
 borrowed from Arc.
 
-About Arc. For the most part, Arc’s identifiers are pessimal, neither
-quite opaque nor quite explicit, like riddles. But the queue API is
-clear; and, by using abbreviated names, we avoid the danger of
-clashing with special-purpose queue implementations.
-
 Create a queue with `queue`, like `list`:
 
     (queue 1 2 3) => #<QUEUE (1 2 3)>

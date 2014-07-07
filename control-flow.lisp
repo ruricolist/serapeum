@@ -53,13 +53,11 @@ From Arc."
 Note that, no matter the predicate, the keys are not evaluated.
 
 This version supports both single-item clauses (x ...) and
-multiple-item clauses ((x y) ...), as well as (t ...) for the default
-clause."
+multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
+...) for the default clause."
   (case (extract-function-name pred)
     (eql `(case ,keyform ,@clauses))
     (string= `(string-case ,keyform ,@clauses))
-    #+ () ((eq equal equalp) `(hash-case ,keyform ,pred ,@clauses))
-    #+ () (= `(tree-case ,keyform ,@clauses))
     (t (once-only (keyform)
          (rebinding-functions (pred)
            `(case-using-aux ,pred ,keyform ,@clauses))))))
@@ -81,34 +79,30 @@ clause."
 (eval-and-compile
   (defun expand-string-case (cases)
     (loop for (keys . body) in cases
-          if (or (stringp keys) (eql keys t))
-            collect (cons keys body)
-          else if (eql keys 'otherwise)
-                 collect (cons t body)
-          else if (and (consp keys)
-                       (every #'stringp keys))
-                 append (loop for case in keys
-                              collect (cons case body)))))
+          append (loop for key in keys
+                       collect (cons key body)))))
 
 (defmacro string-case (stringform &body cases)
   "Efficient `case'-like macro with string keys.
 
 This uses Paul Khuong's `string-case' macro internally."
-  (let* ((default (find t cases :key #'car))
-         (cases (remove default cases)))
-    `(string-case:string-case (,stringform :default (progn ,@(cdr default)))
-       ,@(expand-string-case cases))))
+  (multiple-value-bind (cases default)
+      (normalize-cases cases)
+    (once-only (stringform)
+      `(string-case:string-case (,stringform :default (progn ,@default))
+         ,@(expand-string-case cases)))))
 
 ;; TODO More informative error.
 (defmacro string-ecase (stringform &body cases)
   "Efficient `ecase'-like macro with string keys.
 
 Cf. `string-case'."
-  (let* ((keys (mappend (compose #'ensure-list #'car) cases))
-         (error (format nil "~~a is not one of ~a" keys)))
+  (let* ((cases (normalize-cases cases :allow-default nil))
+         (keys (mappend (compose #'ensure-list #'car) cases))
+         (err-string (format nil "~~a is not one of ~a" keys)))
     (once-only (stringform)
       `(string-case:string-case (,stringform
-                                 :default (error ,error ,stringform))
+                                 :default (error ,err-string ,stringform))
          ,@(expand-string-case cases)))))
 
 (assert (eql 'two
@@ -172,6 +166,7 @@ Cf. `acond' in Anaphora."
 ;;; preceding condition is satisfied. The value returned is the value
 ;;; of the last body form in the last clause whose condition is
 ;;; satisfied. Multiple values are not returned.
+
 (defmacro cond-every (&body clauses)
   "Like `cond', but instead of stopping after the first clause that
 succeeds, run all the clauses that succeed.

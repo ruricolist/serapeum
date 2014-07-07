@@ -11,6 +11,11 @@
   "Return the initial value of the last binding in BINDINGS. The idea
 is to create something, initialize it, and then return it.
 
+    (lret ((x 1)
+           (y (make-array 1)))
+      (setf (aref y 0) x))
+    => #(1)
+
 `lret' may seem trivial, but it fufills the highest purpose a macro
 can: it eliminates a whole class of bugs (initializing an object, but
 forgetting to return it).
@@ -44,8 +49,8 @@ Cf. `aprog1' in Anaphora."
 The idea is that functions created in BINDINGS can close over one
 another, and themselves.
 
-Note that `letrec' only binds variables: it can define functions, but
-can't bind them as functions. (But see `fbindrec'.)"
+Note that `letrec' only binds variables: it can define recursive
+functions, but can't bind them as functions. (But see `fbindrec'.)"
   `(let (,@(mapcar #'car bindings))
      (psetq ,@(apply #'append bindings))
      (locally ,@body)))

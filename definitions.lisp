@@ -65,8 +65,9 @@ The original `deflex' is due to Rob Warnock."
 (defun same-literal-p (x y)
   "A predicate that compares whether X and Y have the same literal
   representation."
-  ;; Crude, but reliable.
-  (string= (prin1-to-string x) (prin1-to-string y)))
+  (or (equal x y)
+      ;; Crude, but reliable.
+      (string= (prin1-to-string x) (prin1-to-string y))))
 
 (defmacro defconst (symbol init &optional docstring)
   "Define a constant, lexically.

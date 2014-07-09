@@ -19,7 +19,10 @@
           take drop
           halves
           dsu-sort
-          deltas))
+          deltas
+          toposort
+          inconsistent-graph
+          inconsistent-graph-constraints))
 
 (export '(split-sequence:split-sequence
           split-sequence:split-sequence-if
@@ -699,6 +702,7 @@ are left in no particular order."
             (if unordered-to-end
                 (1+ i)
                 -1)))
+      (declare (fixnum default))
       (lambda (x y)
         (< (gethash x table default)
            (gethash y table default))))))
@@ -986,3 +990,76 @@ From Q."
 
 (assert (equal '(4 5 -14 6 1) (deltas '(4 9 -5 1 2))))
 (assert (equal '(4 5 -14 6 1) (deltas #(4 9 -5 1 2))))
+
+(defcondition inconsistent-graph (error)
+  ((constraints :initarg :constraints
+                :reader inconsistent-graph-constraints
+                :documentation "The offending constraints"))
+  (:documentation "A graph that cannot be consistently sorted.")
+  (:report (lambda (self stream)
+             (format stream
+                     "Inconsistent graph: ~a"
+                     (inconsistent-graph-constraints self)))))
+
+(setf (documentation 'inconsistent-graph-constraints 'function)
+      "The constraints of an `inconsistent-graph' error.
+Cf. `toposort'.")
+
+(defun default-tie-breaker (min-elts constraints)
+  "The default tie breaker for a topological sort."
+  (declare (ignore constraints))
+  (first min-elts))
+
+(defun tsort (elts constraints tie-breaker)
+  "Do the initial topological sort."
+  (loop while elts
+        for min-elts = (or (remove-if
+                            (lambda (x)
+                              (member x constraints
+                                      :key #'second))
+                            elts)
+                           (error 'inconsistent-graph
+                                  :constraints constraints))
+        for choice = (if (null (rest min-elts))
+                         (first min-elts)
+                         (funcall tie-breaker min-elts (reverse results)))
+        do (removef elts choice)
+           (removef constraints choice :test #'member)
+        collect choice into results
+        finally (return results)))
+
+(defun toposort (constraints
+                 &key (test #'eql)
+                      (tie-breaker #'default-tie-breaker)
+                      from-end unordered-to-end)
+  "Turn CONSTRAINTS into a predicate for use with SORT.
+
+Each constraint should be two-element list.
+
+    (def dem-bones '((toe foot)
+                     (foot heel)
+                     (heel ankle)
+                     (ankle shin)
+                     (shin knee)
+                     (knee back)
+                     (back shoulder)
+                     (shoulder neck)
+                     (neck head)))
+    (sort (shuffle (mapcar #'car dem-bones))
+          (toposort dem-bones))
+    => (TOE FOOT HEEL ANKLE SHIN KNEE BACK SHOULDER NECK)
+
+If the graph is inconsistent, signals an error of type
+`inconsistent-graph`:
+
+    (toposort '((chicken egg) (egg chicken)))
+    => Inconsistent graph: ((CHICKEN EGG) (EGG CHICKEN))
+
+TEST, FROM-END, and UNORDERED-TO-END are passed through to
+`ordering'."
+  ;; Adapted from AMOP.
+  (let ((elts (remove-duplicates (flatten constraints))))
+    (ordering (tsort elts constraints tie-breaker)
+              :test test
+              :unordered-to-end unordered-to-end
+              :from-end from-end)))

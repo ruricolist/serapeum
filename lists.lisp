@@ -7,9 +7,6 @@
           assocdr assocadr rassocar
           firstn
           intersperse
-          toposort
-          inconsistent-graph
-          inconsistent-graph-constraints
           powerset
           efface
           pop-assoc
@@ -219,72 +216,6 @@ Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)"
   ;; NB This is faster than the DO version in the Pitmanual.
   (loop repeat n for x in list collect x))
-
-(defcondition inconsistent-graph (error)
-  ((constraints :initarg :constraints
-                :reader inconsistent-graph-constraints
-                :documentation "The offending constraints"))
-  (:documentation "A graph that cannot be consistently sorted.")
-  (:report (lambda (self stream)
-             (format stream
-                     "Inconsistent graph: ~a"
-                     (inconsistent-graph-constraints self)))))
-
-(setf (documentation 'inconsistent-graph-constraints 'function)
-      "The constraints of an `inconsistent-graph' error.
-Cf. `toposort'.")
-
-(defun toposort (elts constraints
-                 &key (key #'identity)
-                      (tie-breaker (constantly nil) tie-breaker-supplied-p))
-  "The topographical sort routine from AMOP.
-
-Takes a list of elements to sort, and a list of constraints, where each
-constraint is a two-element list.
-
-    (def dem-bones '((toe foot)
-                     (foot heel)
-                     (heel ankle)
-                     (ankle shin)
-                     (shin knee)
-                     (knee back)
-                     (back shoulder)
-                     (shoulder neck)
-                     (neck head)))
-    (toposort (shuffle (mapcar #'car dem-bones))
-              dem-bones)
-    => (TOE FOOT HEEL ANKLE SHIN KNEE BACK SHOULDER NECK)
-
-If the graph is inconsistent, signals an error of type
-`inconsistent-graph`:
-
-    (toposort '(chicken egg) '((chicken egg) (egg chicken)))
-    => Inconsistent graph: ((CHICKEN EGG) (EGG CHICKEN))"
-  ;; Adapted from AMOP.
-  (fbind ((key key) (tie-breaker tie-breaker))
-    (nlet tsort ((elts elts)
-                 (constraints constraints)
-                 (result '()))
-      (if elts
-          (let ((min-elts (remove-if
-                           (lambda (x)
-                             (member (key x) constraints
-                                     :key #'second))
-                           elts)))
-            (if (not min-elts)
-                (error 'inconsistent-graph
-                       :constraints constraints)
-                (let ((choice (if (not (rest min-elts))
-                                  (first min-elts)
-                                  (if tie-breaker-supplied-p
-                                      (tie-breaker min-elts (reverse result))
-                                      (first min-elts)))))
-                  (tsort (remove choice elts)
-                         (remove (key choice)
-                                 constraints
-                                 :test #'member)
-                         (cons choice result)))))
-          (nreverse result)))))
 
 (defun intersperse (new-elt list)
   "Insert NEW-ELT between each element of LIST."

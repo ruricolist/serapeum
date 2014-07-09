@@ -17,7 +17,6 @@
           car-safe cdr-safe
           mapcar-into
           nthrest
-          deltas
           plist-keys plist-values))
 
 (-> firstn ((integer 0 *) list) list)
@@ -350,30 +349,6 @@ From PAIP."
 (defsubst nthrest (n list)
   "Alias for `nthcdr'."
   (nthcdr n list))
-
-(defun deltas (list &optional (fn #'-))
-  "Return the successive differences in LIST.
-
-     (deltas '(4 9 -5 1 2))
-     => '(4 5 -14 6 1)
-
-Note that the first element of LIST is also the first element of the
-return value.
-
-By default, the delta is the difference, but you can specify another
-function as a second argument:
-
-    (deltas '(2 4 2 6) #'/)
-    => '(2 2 1/2 3)
-
-From Q."
-  (let ((fn (ensure-function fn)))
-    (cons (car list)
-          (mapcar fn (cdr list) list))))
-
-(assert
- (equal '(4 5 -14 6 1)
-        (deltas '(4 9 -5 1 2))))
 
 (defun cons-if (x xs)
   (if x

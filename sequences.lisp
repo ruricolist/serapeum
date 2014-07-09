@@ -18,7 +18,8 @@
           vector=
           take drop
           halves
-          dsu-sort))
+          dsu-sort
+          deltas))
 
 (export '(split-sequence:split-sequence
           split-sequence:split-sequence-if
@@ -958,3 +959,30 @@ Useful when KEY is an expensive function (e.g. database access)."
                          seq)
                     fn
                     :key #'car))))
+
+(defun deltas (seq &optional (fn #'-))
+  "Return the successive differences in SEQ.
+
+     (deltas '(4 9 -5 1 2))
+     => '(4 5 -14 6 1)
+
+Note that the first element of SEQ is also the first element of the
+return value.
+
+By default, the delta is the difference, but you can specify another
+function as a second argument:
+
+    (deltas '(2 4 2 6) #'/)
+    => '(2 2 1/2 3)
+
+From Q."
+  (let ((fn (ensure-function fn)))
+    (seq-dispatch seq
+      (cons (car seq)
+            (mapcar fn (cdr seq) seq))
+      (when (> (length seq) 0)
+        (cons (elt seq 0)
+              (map 'list fn (nsubseq seq 1) seq))))))
+
+(assert (equal '(4 5 -14 6 1) (deltas '(4 9 -5 1 2))))
+(assert (equal '(4 5 -14 6 1) (deltas #(4 9 -5 1 2))))

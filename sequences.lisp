@@ -28,6 +28,14 @@
           split-sequence:split-sequence-if
           split-sequence:split-sequence-if-not))
 
+(defun make-sequence-like (seq len &rest args &key initial-element (initial-contents nil ic?))
+  (seq-dispatch seq
+    (if ic?
+        (map 'list #'identity initial-contents)
+        (make-list len :initial-element initial-element))
+    (apply #'make-array len :element-type (array-element-type seq) args)
+    #+(or sbcl abcl) (apply #'sequence:make-sequence-like seq len args)))
+
 (defun nsubseq (seq start &optional end)
   "Return a subsequence that may share structure with SEQ.
 
@@ -82,7 +90,7 @@ Uses `replace' internally."
 
 (defun filter (pred seq &rest args &key count from-end (start 0) end
                                         (key #'identity)
-                        &allow-other-keys)
+               &allow-other-keys)
   "Almost the opposite of `remove-if-not'.
 The difference is the handling of COUNT."
   (if (null count)
@@ -94,12 +102,10 @@ The difference is the handling of COUNT."
                                     (nsubseq seq start end)
                                     count
                                     from-end)))
-        (if (listp seq)
-            items
-            ;; Return a sequence that is "like" the original.
-            (replace (subseq seq 0 (length items)) items)))))
+        (make-sequence-like seq (length items) :initial-contents items))))
 
 (assert (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
+(assert (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))
 (assert (equal '(90 92 94 96 98)
                (filter #'evenp (iota 100) :count 5 :from-end t)))
 
@@ -824,12 +830,6 @@ The sequence returned is a new sequence of the same type as SEQ."
 (defun make-heap (&optional (size 100))
   (make-array size :adjustable t :fill-pointer 0))
 
-(defun coerce-by-example (seq1 seq2)
-  (typecase seq2
-    (list (coerce seq1 'list))
-    (vector (coerce seq1 'vector))
-    (t (replace (subseq seq2 0 (length seq1)) seq1))))
-
 (defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
@@ -838,9 +838,10 @@ for small values of N.
 The name is from Arc."
   (declare (array-length n))
   (cond ((= n 0)
-         (coerce-by-example '() seq))
+         (make-sequence-like seq 0))
         ((= n 1)
-         (coerce-by-example (list (extremum seq pred :key key)) seq))
+         (make-sequence-like seq 1
+                             :initial-contents (list (extremum seq pred :key key))))
         ((length<= seq n)
          (sort (copy-seq seq) pred :key key))
         (t (fbind ((key (if memo
@@ -865,9 +866,8 @@ The name is from Arc."
                                (heap-insert heap elt :key key :test #'test))))
                       (incf i))
                     seq)
-               (coerce-by-example
-                (take n (nreverse (heap-extract-all heap :key key :test #'test)))
-                seq))))))
+               (let ((bestn (take n (nreverse (heap-extract-all heap :key key :test #'test)))))
+                 (make-sequence-like seq n :initial-contents bestn)))))))
 
 (dotimes (i 100)
   (let ((list (map-into (make-list 1000) (lambda () (random 1000)))))

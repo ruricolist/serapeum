@@ -68,6 +68,8 @@
                 :depends-on ("binding" "types"))
                (:file "box"
                 :depends-on ("package"))
+               (:file "vectors"
+                :depends-on ("package"))
                (:file "sequences"
                 :depends-on ("definitions"
                              "types"

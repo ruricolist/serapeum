@@ -150,7 +150,7 @@ Defaults to little-endian."
 (define-modify-macro shrinkf (n) shrink
   "Shrink the value in a place by a factor.")
 
-(define-modify-macro growf (n) shrink
+(define-modify-macro growf (n) grow
   "Grow the value in a place by a factor.")
 (defsubst random-in-range (low high)
   "Random number in the range [low,high).

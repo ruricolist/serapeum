@@ -436,7 +436,7 @@ From Clojure."
          seq)
     (values table total)))
 
-(defun scan (fn seq)
+(defun scan (fn seq &key (key #'identity))
   "A version of `reduce' that shows its work.
 
 Instead of returning just the final result, `scan' returns a list of
@@ -449,11 +449,11 @@ the successive results at each step.
     => '(1 3 6 10)
 
 From APL and descendants."
-  (fbind fn
+  (fbind (fn key)
     (nreverse
      (the list
           (reduce (lambda (acc x)
-                    (cons (fn x (car acc)) acc))
+                    (cons (fn x (key (car acc))) acc))
                   (nsubseq seq 1)
                   :initial-value (list (elt seq 0)))))))
 

@@ -97,7 +97,8 @@ float will do."
          0.0)
      index)))
 
-(defsubst round-to (number &optional (divisor 1))
+(declaim (inline round-to))
+(defun round-to (number &optional (divisor 1))
   "Like `round', but return the resulting number.
 
      (round 15 10) => 2

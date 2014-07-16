@@ -7,12 +7,6 @@
           juxt
           dynamic-closure))
 
-(defmacro ensuring-functions  (vars &body body)
-  `(let ,(loop for var in vars
-               collect `(,var (ensure-function ,var)))
-     (declare (optimize (speed 3) (safety 1) (debug 1)))
-     ,@body))
-
 (defun eqs (x)
   "A predicate for equality (under EQ) with X."
   (lambda (y) (eq x y)))
@@ -183,7 +177,6 @@ The general idea is that `juxt` takes things apart."
 (assert (equal (funcall (juxt #'+ #'max #'min) 2 3 5 1 6 4)
                '(21 6 1)))
 
-(-> key-test (function function) function)
 (defun key-test (key test)
   "Return a function of two arguments which uses KEY to extract the
 part of the arguments to compare, and compares them using TEST.

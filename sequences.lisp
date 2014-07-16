@@ -722,12 +722,16 @@ are left in no particular order."
 (defsubst take (n seq)
   "Return the first N elements of SEQ, as a *new* sequence of the same
 type as SEQ."
-  (subseq seq 0 n))
+  (seq-dispatch seq
+    (firstn n seq)
+    (subseq seq 0 n)))
 
 (defsubst drop (n seq)
   "Return all but the first N elements of SEQ.
 The sequence returned is a new sequence of the same type as SEQ."
-  (subseq seq n))
+  (seq-dispatch seq
+    (nthcdr n seq)
+    (subseq seq n)))
 
 (defsubst take-while (pred seq)
   (seq-dispatch seq

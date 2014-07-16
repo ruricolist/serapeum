@@ -303,3 +303,24 @@ directly into Lisp code:
         else collect decl into removed
         finally (return (values (mapcar #'expand-declaration kept)
                                 (mapcar #'expand-declaration removed)))))
+
+(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
+  "Efficiently dispatch on the type of SEQ."
+  (declare (ignorable other-form))
+  #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
+  ;; Only SBCL and ABCL support extensible sequences right now.
+  #+(or sbcl abcl)
+  `(if (listp ,seq)
+       ,list-form
+       ,(if other-form
+            `(if (arrayp ,seq)
+                 ,array-form
+                 ,other-form)
+            array-form))
+  #-(or sbcl ccl)
+  `(if (listp ,seq) ,list-form ,array-form))
+
+(defmacro ensuring-functions  (vars &body body)
+  `(let ,(loop for var in vars
+               collect `(,var (ensure-function ,var)))
+     ,@body))

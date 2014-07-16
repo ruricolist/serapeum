@@ -36,7 +36,7 @@
 
 (define-compiler-macro filter-map (fn list &rest lists)
   (let* ((lists (cons list lists))
-         (gs (loop for nil in lists collect (gensym))))
+         (gs (make-gensym-list (length lists))))
     (with-gensyms (f result)
       `(let ((,f (ensure-function ,fn)))
          (loop ,@(loop for g in gs
@@ -62,14 +62,6 @@ From Emacs Lisp."
   "The cdr of X, or nil if X is not a cons.
 From Emacs Lisp."
   (if (consp x) (cdr x) nil))
-
-;; From Q.
-(defsubst enlist (x)
-  (if (listp x) x (list x)))
-
-(defsubst mklist (x)
-  "If X is a list, return it; otherwise, return (list x)."
-  (if (listp x) x (list x)))
 
 (defsubst append1 (list item)
   "Append an atom to a list.
@@ -205,7 +197,7 @@ But the actual implementation is more efficient.
   (let ((found (apply #'rassoc item alist args)))
     (values (car found) found)))
 
-(defun firstn (n list)
+(defsubst firstn (n list)
   "The first N elements of LIST, as a fresh list:
 
     (firstn 4 (iota 10))
@@ -280,11 +272,6 @@ From PAIP."
 (defsubst nthrest (n list)
   "Alias for `nthcdr'."
   (nthcdr n list))
-
-(defun cons-if (x xs)
-  (if x
-      (cons x xs)
-      xs))
 
 (defun plist-keys (plist)
   "Return the keys of a plist."

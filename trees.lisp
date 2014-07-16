@@ -5,6 +5,7 @@
           walk-tree map-tree
           leaf-walk leaf-map))
 
+;; Ensure TCO when possible.
 (declaim (optimize (speed 3) (debug 1)))
 
 (defun reuse-cons (x y x-y)
@@ -20,16 +21,16 @@ Otherwise, return a fresh cons of X and Y."
   "Call FUN in turn over each atom and cons of TREE.
 
 FUN can skip the current subtree with (throw TAG nil)."
-  (fbind fun
+  (let ((fun (ensure-function fun)))
     (labels ((walk-tree (tree)
-               (cond ((atom tree) (fun tree))
-                     (t (fun tree)
+               (cond ((atom tree) (funcall fun tree))
+                     (t (funcall fun tree)
                         (walk-tree (car tree))
                         (walk-tree (cdr tree)))))
              (walk-tree/tag (tree tag)
                (catch tag
-                 (cond ((atom tree) (fun tree))
-                       (t (fun tree)
+                 (cond ((atom tree) (funcall fun tree))
+                       (t (funcall fun tree)
                           (walk-tree (car tree))
                           (walk-tree (cdr tree)))))))
       (if tagp
@@ -46,7 +47,7 @@ The new tree may share structure with the old tree.
 
 FUN can skip the current subtree with (throw TAG SUBTREE), in which
 case SUBTREE will be used as the value of the subtree."
-  (ensuring-functions (fun)
+  (let ((fun (ensure-function fun)))
     (labels ((map-tree (tree)
                (let ((tree2 (funcall fun tree)))
                  (if (atom tree2)
@@ -69,9 +70,9 @@ case SUBTREE will be used as the value of the subtree."
 (defun leaf-walk (fun tree)
   "Call FUN on each leaf of TREE."
   (declare (optimize speed (debug 1)))
-  (fbind fun
+  (let ((fun (ensure-function fun)))
     (cond ((atom tree)
-           (fun tree))
+           (funcall fun tree))
           (t (leaf-walk fun (car tree))
              (leaf-walk fun (cdr tree)))))
   (values))
@@ -80,11 +81,11 @@ case SUBTREE will be used as the value of the subtree."
 (defun leaf-map (fn tree)
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
-  (fbind fn
+  (let ((fn (ensure-function fn)))
     (map-tree (lambda (x)
                 (if (listp x)
                     x
-                    (fn x)))
+                    (funcall fn x)))
               tree)))
 
 (assert (equal (leaf-map (compose #'round #'sqrt) '(((4 1) 25) (9 100) 64))
@@ -92,19 +93,17 @@ Return a new tree possibly sharing structure with TREE."
 
 (defun occurs-if (test tree &key (key #'identity))
   "Is there a node (leaf or cons) in TREE that satisfies TEST?"
-  (fbind* (key
-           test
-           (walker (lambda (node)
-                     (when (test (key node))
-                       (return-from occurs-if
-                         t)))))
-    ;; SBCL asks for this.
-    (declare (dynamic-extent #'walker))
-    (walk-tree #'walker tree)))
+  (ensuring-functions (key test)
+    ;; SBCL wants the walker to be fbound and dynamic-extent.
+    (flet ((walker (node)
+             (when (funcall test (funcall key node))
+               (return-from occurs-if t))))
+      (declare (dynamic-extent #'walker))
+      (walk-tree #'walker tree))))
 
 (defun prune-if (test tree &key (key #'identity))
   "Remove any atoms satisfying TEST from TREE."
-  (fbind (test key)
+  (ensuring-functions (key test)
     (labels ((prune (tree acc)
                (cond ((null tree)
                       (nreverse acc))
@@ -112,7 +111,7 @@ Return a new tree possibly sharing structure with TREE."
                       (prune (cdr tree)
                              (cons (prune (car tree) nil) acc)))
                      (t (prune (cdr tree)
-                               (if (test (key (car tree)))
+                               (if (funcall test (funcall key (car tree)))
                                    acc
                                    (cons (car tree) acc)))))))
       (prune tree nil))))

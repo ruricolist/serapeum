@@ -223,18 +223,19 @@ Clojure's `merge'."
   "Return a table like TABLE, but with keys and values flipped.
 
 TEST filters which keys to set. KEY defaults to `identity'."
-  (lret ((table2 (copy-hash-table/empty table)))
-    (fbind (test key)
+  (let ((table2 (copy-hash-table/empty table)))
+    (ensuring-functions (key test)
       (maphash (lambda (k v)
-                 (let ((key (key k)))
-                   (when (test key)
+                 (let ((key (funcall key k)))
+                   (when (funcall test key)
                      (setf (gethash v table2) key))))
-               table))))
+               table))
+    table2))
 
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)
                                                       (key #'identity)
                                                       (strict t)
-                           &allow-other-keys)
+                       &allow-other-keys)
   "Return SET, a list considered as a set, as a hash table.
 This is the equivalent of `alist-hash-table' and `plist-hash-table'
 for a list that denotes a set.
@@ -245,16 +246,17 @@ The resulting table has the elements of SET for its keys and values.
 That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)"
   (check-type test ok-hash-table-test)
-  (lret* ((hash-table-args (remove-from-plist hash-table-args
-                                              :key :strict))
-          (table (apply #'make-hash-table hash-table-args)))
-    (fbind (key)
+  (let* ((hash-table-args (remove-from-plist hash-table-args
+                                             :key :strict))
+         (table (apply #'make-hash-table hash-table-args)))
+    (ensuring-functions (key)
       (if (not strict)
           (dolist (item set)
-            (setf (gethash (key item) table) item))
+            (setf (gethash (funcall key item) table) item))
           (dolist (item set)
-            (when (nth-value 1 (swaphash (key item) item table))
-              (error "Not a set: ~a" set)))))))
+            (when (nth-value 1 (swaphash (funcall key item) item table))
+              (error "Not a set: ~a" set)))))
+    table))
 
 (defun hash-table-set (table &key (strict t) (test #'eql) (key #'identity))
   "Return the set denoted by TABLE.

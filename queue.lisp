@@ -38,8 +38,8 @@
 
 (defun queue (&rest initial-contents)
   "Build a new queue with INITIAL-CONTENTS."
-  (lret ((q (make-queue)))
-    (dolist (x initial-contents)
+  (let ((q (make-queue)))
+    (dolist (x initial-contents q)
       (enq x q))))
 
 (defun clear-queue (queue)
@@ -60,7 +60,7 @@ allowing the queue to be declared dynamic-extent."
   "The number of items in QUEUE."
   (length (qlist queue)))
 
-(-> qlist (queue) list)
+(declaim (ftype (function (queue) list) qlist))
 (defun qlist (queue)
   "A list of the times in QUEUE."
   (cdr (queue-cons queue)))

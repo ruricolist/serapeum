@@ -102,7 +102,6 @@ functions.
   "Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character."
-  (declare (optimize speed))
   (check-type string string)
   (if (< (length string) 1)
       string
@@ -505,8 +504,7 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'."
   (declare (array-length start)
-           ((or array-length null) end)
-           (optimize speed))
+           ((or array-length null) end))
   (check-type old string)
   (check-type new string)
   (check-type string string)

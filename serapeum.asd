@@ -36,49 +36,27 @@
                 :depends-on ("package"))
                (:file "op"
                 :depends-on ("package"))
-               (:file "fbind"
-                :depends-on ("macro-tools" "binding"))
                ;; Runtime.
                (:file "functions"
-                :depends-on ("macro-tools" "types"))
-               (:file "lists"
-                :depends-on ("types"
-                             "definitions"
-                             "fbind"
-                             "iter"))
+                :depends-on ("macro-tools"))
                (:file "trees"
-                :depends-on ("fbind"
-                             "functions"))
-               (:file "strings"
-                :depends-on ("definitions"
-                             "fbind"
-                             "iter"
-                             "types"))
+                :depends-on ("macro-tools"))
                (:file "hash-tables"
-                :depends-on ("iter"
-                             "definitions"))
+                :depends-on ("iter"))   ;nlet
                (:file "files"
-                :depends-on ("functions"
-                             "conditions"))
+                :depends-on ("package"))
                (:file "symbols"
                 :depends-on ("package"))
                (:file "arrays"
                 :depends-on ("package"))
                (:file "queue"
-                :depends-on ("binding" "types"))
+                :depends-on ("package"))
                (:file "box"
                 :depends-on ("package"))
                (:file "vectors"
                 :depends-on ("package"))
-               (:file "sequences"
-                :depends-on ("definitions"
-                             "types"
-                             "binding"
-                             "fbind"
-                             "iter"
-                             "control-flow"))
                (:file "numbers"
-                :depends-on ("definitions"))
+                :depends-on ("package"))
                (:file "octets"
                 :depends-on ("types"))
                (:file "time"
@@ -86,4 +64,16 @@
                (:file "clos"
                 :depends-on ("package"))
                (:file "hooks"
-                :depends-on ("package"))))
+                :depends-on ("package"))
+               (:file "fbind"
+                :depends-on ("binding"))
+               (:file "lists"
+                :depends-on ("definitions"
+                             "types"
+                             "binding"
+                             "fbind"
+                             "iter"
+                             "control-flow"
+                             "queue"))
+               (:file "strings" :depends-on ("lists"))
+               (:file "sequences" :depends-on ("lists"))))

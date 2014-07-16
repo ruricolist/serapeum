@@ -3,7 +3,7 @@
 (export '(pophash swaphash
           dict dict* @ href href-default
           merge-tables flip-hash-table
-          maphash-return
+          hash-fold maphash-return
           set-hash-table hash-table-set))
 
 (-> dict (&rest t) hash-table)
@@ -12,7 +12,7 @@
 (-> merge-tables (hash-table &rest hash-table)
     hash-table)
 
-(defconst hash-table-default-size
+(defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 
 (deftype ok-hash-table-test ()
@@ -62,7 +62,7 @@ understood as the test.
     (with-gensyms (ht)
       `(let ((,ht (make-hash-table
                    :test ,test
-                   :size ,(max hash-table-default-size
+                   :size ,(max +hash-table-default-size+
                                (truncate (length keys-and-values)
                                          2)))))
          ,@(unsplice
@@ -170,16 +170,29 @@ From Zetalisp."
   (multiple-value-prog1 (gethash key hash-table)
     (setf (gethash key hash-table) value)))
 
+(declaim (inline hash-fold))
+(defun hash-fold (fn init hash-table)
+  "Reduce TABLE by calling FN with three values: a key from the hash
+table, its value, and the return value of the last call to FN. On the
+first call, INIT is supplied in place of the previous value.
+
+From Guile."
+  (with-hash-table-iterator (next hash-table)
+    (let ((prior init))
+      (loop (multiple-value-bind (more k v) (next)
+              (if more
+                  (setf prior (funcall fn k v prior))
+                  (return prior)))))))
+
 (defun maphash-return (fn hash-table)
   "Like MAPHASH, but collect and return the values from FN.
 From Zetalisp."
-  (declare (function fn) (hash-table hash-table))
-  (let ((ret '()))
-    (maphash (lambda (k v)
-               (push (funcall fn k v) ret))
-             hash-table)
+  (let ((fn (ensure-function fn)))
     ;; You were expecting nreverse? Hash tables are unordered.
-    ret))
+    (hash-fold (lambda (k v prior)
+                 (cons (funcall fn k v) prior))
+               '()
+               hash-table)))
 
 ;; Clojure
 (defun merge-tables (table &rest tables)
@@ -187,7 +200,7 @@ From Zetalisp."
 The resulting hash table has the same test as TABLE.
 
 Clojure's `merge'."
-  (let ((size (max hash-table-default-size
+  (let ((size (max +hash-table-default-size+
                    (reduce #'+ tables
                            :key #'hash-table-count
                            :initial-value (hash-table-count table)))))

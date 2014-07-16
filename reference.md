@@ -1,6 +1,36 @@
-# Macro Tools
+# Function Listing For Serapeum (27 files, 222 functions)
 
-## `(string-gensym x)`
+- [Macro Tools](#macro-tools)
+- [Types](#types)
+- [Definitions](#definitions)
+- [Binding](#binding)
+- [Control Flow](#control-flow)
+- [Threads](#threads)
+- [Iter](#iter)
+- [Conditions](#conditions)
+- [Op](#op)
+- [Functions](#functions)
+- [Trees](#trees)
+- [Hash Tables](#hash-tables)
+- [Files](#files)
+- [Symbols](#symbols)
+- [Arrays](#arrays)
+- [Queue](#queue)
+- [Box](#box)
+- [Vectors](#vectors)
+- [Numbers](#numbers)
+- [Octets](#octets)
+- [Time](#time)
+- [Clos](#clos)
+- [Hooks](#hooks)
+- [Fbind](#fbind)
+- [Lists](#lists)
+- [Strings](#strings)
+- [Sequences](#sequences)
+
+## Macro Tools
+
+### `(string-gensym x)`
 
 Equivalent to (gensym (string x)).
 
@@ -10,7 +40,7 @@ respects the current read table.
 The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
 in every other macro.
 
-## `(unsplice form)`
+### `(unsplice form)`
 
 If FORM is non-nil, wrap it in a list.
 
@@ -18,7 +48,7 @@ This is useful with ,@ in macros, and with `mapcan`.
 
 From Lparallel.
 
-## `(with-thunk (var &rest args) &body body)`
+### `(with-thunk (var &rest args) &body body)`
 
 A macro-writing macro for the `call-with-` style.
 
@@ -62,17 +92,17 @@ It is also possible to construct a "thunk" with arguments.
 
 Needs a better name.
 
-## `(expand-macro form &optional env)`
+### `(expand-macro form &optional env)`
 
 Like `macroexpand-1`, but also expand compiler macros.
 From Swank.
 
-## `(expand-macro-recursively form &optional env)`
+### `(expand-macro-recursively form &optional env)`
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
 
-## `(parse-declarations declarations)`
+### `(parse-declarations declarations)`
 
 Pick apart a list of `declare` forms.
 
@@ -100,7 +130,7 @@ Ftype declarations are also normalized.
 
 Return any optimizations declared as a second value.
 
-## `(expand-declaration decl)`
+### `(expand-declaration decl)`
 
 Opposite of `parse-declarations`.
 
@@ -113,7 +143,7 @@ used in Lisp code.
 Might be used to transfer declarations made for a variable to another,
 temporary variable.
 
-## `(partition-declarations xs declarations)`
+### `(partition-declarations xs declarations)`
 
 Split DECLARATIONS into those that do and do not apply to XS.
 Return two values, one with each set.
@@ -123,24 +153,24 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
 
-# Types
+## Types
 
-## `(-> function args values)`
+### `(-> function args values)`
 
 Declaim the ftype of a function from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-## `(check-the type-spec &body (form))`
+### `(check-the type-spec &body (form))`
 
 Cross between CHECK-TYPE and THE for inline type checking.
 The syntax is the same as THE; the semantics are the same as
 CHECK-TYPE.
 
-# Definitions
+## Definitions
 
-## `(def var &body (val &optional (doc nil docp)))`
+### `(def var &body (val &optional (doc nil docp)))`
 
 The famous "deflex".
 
@@ -160,16 +190,19 @@ efficiency.
 
 The original `deflex` is due to Rob Warnock.
 
-## `(defconst symbol init &optional docstring)`
+### `(defconst symbol init &optional docstring)`
 
 Define a constant, lexically.
 
 `defconst` defines a constant using a strategy similar to `def`, so
 you don’t have to +cage+ your constants.
 
+The constant is only redefined on re-evaluation if INIT has a
+different literal representation than the old value.
+
 The name is from Emacs Lisp.
 
-## `(defsubst name params &body body)`
+### `(defsubst name params &body body)`
 
 Define an inline function.
 
@@ -183,7 +216,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-## `(defalias alias &body (def &optional docstring))`
+### `(defalias alias &body (def &optional docstring))`
 
 Define a value as a top-level function.
 
@@ -194,13 +227,13 @@ documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp.
 
-## `(defplace name args &body (form &optional docstring))`
+### `(defplace name args &body (form &optional docstring))`
 
 Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-## `(defcondition name supers &body (slots &rest options))`
+### `(defcondition name supers &body (slots &rest options))`
 
 Alias for `define-condition`.
 
@@ -208,12 +241,17 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-# Binding
+## Binding
 
-## `(lret (&rest bindings) &body body)`
+### `(lret (&rest bindings) &body body)`
 
 Return the initial value of the last binding in BINDINGS. The idea
 is to create something, initialize it, and then return it.
+
+    (lret ((x 1)
+           (y (make-array 1)))
+      (setf (aref y 0) x))
+    => #(1)
 
 `lret` may seem trivial, but it fufills the highest purpose a macro
 can: it eliminates a whole class of bugs (initializing an object, but
@@ -221,27 +259,27 @@ forgetting to return it).
 
 Cf. `aprog1` in Anaphora.
 
-## `(lret* (&rest bindings) &body body)`
+### `(lret* (&rest bindings) &body body)`
 
 Cf. `lret`.
 
-## `(letrec (&rest bindings) &body body)`
+### `(letrec (&rest bindings) &body body)`
 
 Recursive LET.
 The idea is that functions created in BINDINGS can close over one
 another, and themselves.
 
-Note that `letrec` only binds variables: it can define functions, but
-can't bind them as functions. (But see `fbindrec`.)
+Note that `letrec` only binds variables: it can define recursive
+functions, but can't bind them as functions. (But see `fbindrec`.)
 
-## `(letrec* (&rest bindings) &body body)`
+### `(letrec* (&rest bindings) &body body)`
 
 Like LETREC, but the bindings are evaluated in order.
 See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*`.
 
-## `(mvlet* (&rest bindings) &body body)`
+### `(mvlet* (&rest bindings) &body body)`
 
 Expand a series of nested `multiple-value-bind` forms.
 
@@ -264,11 +302,11 @@ the motivation:
 
 Note that declarations work just like `let*`.
 
-## `(mvlet (&rest bindings) &body body)`
+### `(mvlet (&rest bindings) &body body)`
 
 Parallel (`let`-like) version of `mvlet*`.
 
-## `(and-let* (&rest clauses) &body body)`
+### `(and-let* (&rest clauses) &body body)`
 
 Scheme's guarded LET* (SRFI-2).
 
@@ -286,28 +324,28 @@ Each clause should have one of the following forms:
 Note of course that the semantics are different in Common Lisp,
 because our AND short-circuits on null, not false.
 
-# Control Flow
+## Control Flow
 
-## `(eval-and-compile &body body)`
+### `(eval-and-compile &body body)`
 
 Emacs's `eval-and-compile`.
 
 Shorthand for
         (eval-when (:compile-toplevel :load-toplevel :execute) ...)
 
-## `(no x)`
+### `(no x)`
 
 Another alias for `not` and `null`.
 
 From Arc.
 
-## `(nor &rest forms)`
+### `(nor &rest forms)`
 
 Equivalent to (not (or ...)).
 
 From Arc.
 
-## `(case-using pred keyform &body clauses)`
+### `(case-using pred keyform &body clauses)`
 
 ISLISP's case-using.
 
@@ -317,27 +355,27 @@ ISLISP's case-using.
 Note that, no matter the predicate, the keys are not evaluated.
 
 This version supports both single-item clauses (x ...) and
-multiple-item clauses ((x y) ...), as well as (t ...) for the default
-clause.
+multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
+...) for the default clause.
 
-## `(string-case stringform &body cases)`
+### `(string-case stringform &body cases)`
 
 Efficient `case`-like macro with string keys.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-## `(string-ecase stringform &body cases)`
+### `(string-ecase stringform &body cases)`
 
 Efficient `ecase`-like macro with string keys.
 
 Cf. `string-case`.
 
-## `(econd &rest clauses)`
+### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-## `(cond-let var &body clauses)`
+### `(cond-let var &body clauses)`
 
 Cross between COND and LET.
 
@@ -347,11 +385,11 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-## `(econd-let symbol &rest clauses)`
+### `(econd-let symbol &rest clauses)`
 
 Like `cond-let` for `econd`.
 
-## `(cond-every &body clauses)`
+### `(cond-every &body clauses)`
 
 Like `cond`, but instead of stopping after the first clause that
 succeeds, run all the clauses that succeed.
@@ -363,7 +401,7 @@ form has succeeded.
 
 From Zetalisp.
 
-## `(bcond &rest clauses)`
+### `(bcond &rest clauses)`
 
 Scheme's extended COND.
 
@@ -380,15 +418,15 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-## `(case-let (var expr) &body cases)`
+### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...))
 
-## `(ecase-let (var expr) &body cases)`
+### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...))
 
-## `(comment &body body)`
+### `(comment &body body)`
 
 A macro that ignores its body and does nothing. Useful for
 comments-by-example.
@@ -398,18 +436,18 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-## `(example &body body)`
+### `(example &body body)`
 
 Like `comment`.
 
-## `(nix place)`
+### `(nix place)`
 
 Set PLACE to nil and return the old value of PLACE.
 
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-## `(ensure place &body newval)`
+### `(ensure place &body newval)`
 
 Essentially (or place (setf place newval)).
 
@@ -421,20 +459,20 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-## `(ensure2 place &body newval)`
+### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-## `(callf function place &rest args)`
+### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
-## `(callf2 function arg1 place &rest args)`
+### `(callf2 function arg1 place &rest args)`
 
 Like CALLF, but with the place as the second argument.
 
-## `(~> needle &rest holes)`
+### `(~> needle &rest holes)`
 
 Threading macro from Clojure (by way of Racket).
 
@@ -446,12 +484,12 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-## `(~>> needle &rest holes)`
+### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-## `(select keyform &body clauses)`
+### `(select keyform &body clauses)`
 
 Like `case`, but with evaluated keys.
 
@@ -469,7 +507,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-## `(selector keyform fn &body clauses)`
+### `(selector keyform fn &body clauses)`
 
 Like `select`, but compare using FN.
 
@@ -477,20 +515,20 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-# Threads
+## Threads
 
-## `(synchronized (&optional (object nil objectp)) &body body)`
+### `(synchronized (&optional (object nil objectp)) &body body)`
 
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-## `(monitor object)`
+### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
 
-# Iter
+## Iter
 
-## `(nlet name (&rest bindings) &body body)`
+### `(nlet name (&rest bindings) &body body)`
 
 Within BODY, bind NAME as a function, somewhat like LABELS, but
 with the guarantee that recursive calls to NAME will not grow the
@@ -515,7 +553,7 @@ The name comes from `Let Over Lambda', but this is a different
 implementation: the function is not bound while the initial arguments
 are being evaluated, and it is safe to close over the arguments.
 
-## `(collecting &body body)`
+### `(collecting &body body)`
 
 Within BODY, bind `collect` to a function of one argument that
 accumulate all the arguments it has been called with in order, like
@@ -527,27 +565,15 @@ Note that this version of `collecting` binds `collect` to a closure,
 not a macro: you can pass the collector around or return it like any
 other function.
 
-## `(summing &body body)`
+### `(summing &body body)`
 
 Within BODY, bind `sum` to a function that gathers numbers to sum.
 
 Return the total.
 
-## `(minimizing &body body)`
+## Conditions
 
-Within BODY, bind `minimize` to a function that tracks its least argument.
-
-Return the minimum.
-
-## `(maximizing &body body)`
-
-Within BODY, bind `maximize` to a function that tracks its greatest argument.
-
-Return the maximum.
-
-# Conditions
-
-## `(ignoring type &body body)`
+### `(ignoring type &body body)`
 
 An improved version of `ignore-errors`.
 
@@ -570,13 +596,13 @@ character:
 
 NB `(ignoring t)` is a bad idea.
 
-## `(maybe-invoke-restart restart &rest values)`
+### `(maybe-invoke-restart restart &rest values)`
 
 When RESTART is active, invoke it with VALUES.
 
-# Op
+## Op
 
-## `(op &body body)`
+### `(op &body body)`
 
 GOO's simple macro for positional lambdas.
 
@@ -611,38 +637,9 @@ placeholder. It is not necessary to use APPLY.
 
      (apply (op (+ _*)) '(1 2 3 4)) => 10
 
-# Fbind
+## Functions
 
-## `(fbind bindings &body body)`
-
-Binds values in the function namespace.
-
-That is,
-     (fbind ((fn (lambda () ...))))
-     ≡ (flet ((fn () ...))),
-
-except that a bare symbol in BINDINGS is rewritten as (symbol
-symbol).
-
-## `(fbind* bindings &body body)`
-
-Like `fbind`, but creates bindings sequentially.
-
-## `(fbindrec bindings &body body)`
-
-Like `fbind`, but creates recursive bindings.
-
-The consequences of referring to one binding in the expression that
-generates another are undefined.
-
-## `(fbindrec* bindings &body body)`
-
-Like `fbindrec`, but the function defined in each binding can be
-used in successive bindings.
-
-# Functions
-
-## `(flip f)`
+### `(flip f)`
 
 Flip around the arguments of a binary function.
 
@@ -651,7 +648,7 @@ that takes its two arguments in the opposite order.
 
 From Haskell.
 
-## `(nth-arg n)`
+### `(nth-arg n)`
 
 Return a function that returns only its NTH argument, ignoring all others.
 
@@ -667,7 +664,7 @@ define it thus:
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))
 
-## `(distinct &key key test)`
+### `(distinct &key key test)`
 
 Return a function that echoes only values it has not seen before.
 
@@ -684,7 +681,7 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
-## `(throttle fn wait &key synchronized)`
+### `(throttle fn wait &key synchronized)`
 
 Wrap FN so it can be called no more than every WAIT seconds.
 If FN was called less than WAIT seconds ago, return the values from the
@@ -695,7 +692,7 @@ WAIT, of course, may be a fractional number of seconds.
 The throttled function is not thread-safe by default; use SYNCHRONIZED
 to get a version with a lock.
 
-## `(juxt &rest fns)`
+### `(juxt &rest fns)`
 
 Clojure's `juxt`.
 
@@ -712,7 +709,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-## `(dynamic-closure symbols fn)`
+### `(dynamic-closure symbols fn)`
 
 Create a dynamic closure.
 
@@ -735,16 +732,497 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-# Lists
+## Trees
 
-## `(filter-map fn list &rest lists)`
+### `(walk-tree fun tree &optional tag)`
+
+Call FUN in turn over each atom and cons of TREE.
+
+FUN can skip the current subtree with (throw TAG nil).
+
+### `(map-tree fun tree &optional tag)`
+
+Walk FUN over TREE and build a tree from the results.
+
+The new tree may share structure with the old tree.
+
+     (eq tree (map-tree #'identity tree)) => T
+
+FUN can skip the current subtree with (throw TAG SUBTREE), in which
+case SUBTREE will be used as the value of the subtree.
+
+### `(leaf-walk fun tree)`
+
+Call FUN on each leaf of TREE.
+
+### `(leaf-map fn tree)`
+
+Call FN on each leaf of TREE.
+Return a new tree possibly sharing structure with TREE.
+
+### `(occurs-if test tree &key key)`
+
+Is there a node (leaf or cons) in TREE that satisfies TEST?
+
+### `(prune-if test tree &key key)`
+
+Remove any atoms satisfying TEST from TREE.
+
+### `(occurs leaf tree &key key test)`
+
+Is LEAF present in TREE?
+
+### `(prune leaf tree &key key test)`
+
+Remove LEAF from TREE wherever it occurs.
+
+## Hash Tables
+
+### `(dict &rest keys-and-values)`
+
+A concise constructor for hash tables.
+
+    (gethash :c (dict :a 1 :b 2 :c 3)) => 3, T
+
+By default, return an 'equal hash table containing each successive
+pair of keys and values from KEYS-AND-VALUES.
+
+If the number of KEYS-AND-VALUES is odd, then the first argument is
+understood as the test.
+
+     (gethash "string" (dict "string" t)) => t
+     (gethash "string" (dict 'eq "string" t)) => nil
+
+### `(dict* dict &rest args)`
+
+Merge new bindings into DICT.
+Roughly equivalent to `(merge-tables DICT (dict args...))'.
+
+### `(href table &rest keys)`
+
+A concise way of doings lookups in (potentially nested) hash tables.
+
+    (href (dict :x 1) :x) => x
+    (href (dict :x (dict :y 2)) :x :y)  => y
+
+### `(href-default default table &rest keys)`
+
+Like `href`, with a default.
+As soon as one of KEYS fails to match, DEFAULT is returned.
+
+### `(@ table key &rest keys)`
+
+A concise way of doings lookups in (potentially nested) hash tables.
+
+    (@ (dict :x 1) :x) => x
+    (@ (dict :x (dict :y 2)) :x :y)  => y 
+
+### `(pophash key hash-table)`
+
+Lookup KEY in HASH-TABLE, return its value, and remove it.
+From Zetalisp.
+
+### `(swaphash key value hash-table)`
+
+Set KEY and VALUE in HASH-TABLE, returning the old values of KEY.
+From Zetalisp.
+
+### `(hash-fold fn init hash-table)`
+
+Reduce TABLE by calling FN with three values: a key from the hash
+table, its value, and the return value of the last call to FN. On the
+first call, INIT is supplied in place of the previous value.
+
+From Guile.
+
+### `(maphash-return fn hash-table)`
+
+Like MAPHASH, but collect and return the values from FN.
+From Zetalisp.
+
+### `(merge-tables table &rest tables)`
+
+Merge TABLE and TABLES, working from left to right.
+The resulting hash table has the same test as TABLE.
+
+Clojure's `merge`.
+
+### `(flip-hash-table table &key test key)`
+
+Return a table like TABLE, but with keys and values flipped.
+
+TEST filters which keys to set. KEY defaults to `identity`.
+
+### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
+
+Return SET, a list considered as a set, as a hash table.
+This is the equivalent of `alist-hash-table` and `plist-hash-table`
+for a list that denotes a set.
+
+STRICT determines whether to check that the list actually is a set.
+
+The resulting table has the elements of SET for its keys and values.
+That is, each element of SET is stored as if by
+     (setf (gethash (key element) table) element)
+
+### `(hash-table-set table &key strict test key)`
+
+Return the set denoted by TABLE.
+Given STRICT, check that the table actually denotes a set.
+
+Without STRICT, equivalent to `hash-table-values`.
+
+## Files
+
+### `(build-path path &rest parts)`
+
+Build a pathname by merging from right to left.
+With `build-path` you can pass the elements of the pathname being
+built in the order they appear in it:
+
+    (build-path (user-homedir-pathname) config-dir config-file)
+    ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
+
+Note that `build-path` does not coerce the parts of the pathname into
+directories; you have to do that yourself.
+
+    (build-path "dir1" "dir2" "file") -> "file"
+    (build-path "dir1/" "dir2/" "file") -> "dir1/dir2/file"
+
+### `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
+
+Read STREAM and write the contents into PATHNAME.
+
+STREAM will be closed afterwards, so wrap it with
+`make-concatenated-stream` if you want it left open.
+
+### `(file= file1 file2 &key buffer-size)`
+
+Compare FILE1 and FILE2 octet by octet, using buffers of
+BUFFER-SIZE.
+
+### `(file-size file &key element-type)`
+
+The size of FILE, in bytes.
+
+### `(delete-file-if-exists file)`
+
+Delete FILE if it exists.
+
+## Symbols
+
+### `(find-keyword string)`
+
+If STRING has been interned as a keyword, return it.
+
+Like `make-keyword`, but preferable in most cases, because it doesn't
+intern a keyword -- which is usually both unnecessary and unwise.
+
+### `(bound-value s &optional default)`
+
+If S is bound, return (values s t). Otherwise, return DEFAULT.
+
+### `(special-variable-p symbol)`
+
+Is SYMBOL a special variable?
+
+## Arrays
+
+### `(array-index-row-major array row-major-index)`
+
+The inverse of ARRAY-ROW-MAJOR-INDEX.
+
+Given an array and a row-major index, return a list of subscripts.
+
+     (apply #'aref (array-index-row-major i))
+     ≡ (array-row-major-aref i)
+
+### `(undisplace-array array)`
+
+Recursively get the fundamental array that ARRAY is displaced to.
+
+Return the fundamental array, and the start and end positions into it.
+
+Borrowed from Erik Naggum.
+
+## Queue
+
+### `(queuep x)`
+
+Is X a queue?
+
+### `(queue &rest initial-contents)`
+
+Build a new queue with INITIAL-CONTENTS.
+
+### `(clear-queue queue)`
+
+Return QUEUE's contents and reset it.
+
+### `(qlen queue)`
+
+The number of items in QUEUE.
+
+### `(qlist queue)`
+
+A list of the times in QUEUE.
+
+### `(enq item queue)`
+
+Insert ITEM at end of QUEUE.
+
+### `(deq queue)`
+
+Remove item from the front of the QUEUE.
+
+### `(front queue)`
+
+The first element in QUEUE.
+
+### `(queue-empty-p queue)`
+
+Is QUEUE empty?
+
+### `(qconc queue list)`
+
+Destructively concatenate LIST onto the end of QUEUE.
+Return the queue.
+
+## Box
+
+### `(box value)`
+
+Box a value.
+
+### `(unbox x)`
+
+The value in the box X.
+
+## Vectors
+
+### `(vect &rest initial-contents)`
+
+Succint constructor for adjustable vectors with fill pointers.
+
+    (vect 1 2 3)
+    ≡ (make-array 3
+            :adjustable t
+            :fill-pointer 3
+            :initial-contents (list 1 2 3))
+
+The fill pointer is placed after the last element in INITIAL-CONTENTS.
+
+## Numbers
+
+### `(finc place &optional (delta 1))`
+
+Like `incf`, but returns the old value instead of the new.
+
+An alternative to using -1 as the starting value of a counter, which
+can prevent optimization.
+
+### `(fdec place &optional (delta 1))`
+
+Like `decf`, but returns the old value instead of the new.
+
+### `(parse-float string &key start end junk-allowed)`
+
+Based on the venerable `parse-float` from the CMU Lisp repository.
+Of course you could just use `parse-number`, but sometimes only a
+float will do.
+
+### `(round-to number &optional divisor)`
+
+Like `round`, but return the resulting number.
+
+     (round 15 10) => 2
+     (round-to 15 10) => 20
+
+### `(bits int &key big-endian)`
+
+Return a bit vector of the bits in INT.
+Defaults to little-endian.
+
+### `(unbits bits &key big-endian)`
+
+Turn a sequence of BITS into an integer.
+Defaults to little-endian.
+
+### `(shrink n by)`
+
+Decrease N by a factor.
+
+### `(grow n by)`
+
+Increase N by a factor.
+
+### `(shrinkf g11442 n)`
+
+Shrink the value in a place by a factor.
+
+### `(growf g11464 n)`
+
+Grow the value in a place by a factor.
+
+### `(random-in-range low high)`
+
+Random number in the range [low,high).
+
+From Zetalisp.
+
+## Octets
+
+### `(octet-vector-p x)`
+
+Is X an octet vector?
+
+### `(make-octet-vector size)`
+
+Make an octet vector of SIZE elements.
+
+### `(octets n &key big-endian)`
+
+Return N, an integer, as an octet vector.
+Defaults to little-endian order.
+
+### `(unoctets bytes &key big-endian)`
+
+Concatenate BYTES, an octet vecotor, into an integer.
+Defaults to little-endian order.
+
+## Time
+
+### `(universal-to-unix time)`
+
+Convert a universal time to a Unix time.
+
+### `(unix-to-universal time)`
+
+Convert a Unix time to a universal time.
+
+### `(get-unix-time)`
+
+The current time as a count of seconds from the Unix epoch.
+
+### `(date-leap-year-p year)`
+
+Is YEAR a leap year in the Gregorian calendar?
+
+### `(time-since time)`
+
+Return seconds since TIME.
+
+### `(time-until time)`
+
+Return seconds until TIME.
+
+### `(interval &key seconds minutes hours days weeks months years month-days year-days)`
+
+A verbose but readable way of specifying intervals in seconds.
+
+Intended as a more readable alternative to idioms
+like (let ((day-in-seconds #.(* 24 60 60))) ...)
+
+Has a compiler macro.
+
+### `(with-timing (&key quiet gc repeat) &body body)`
+
+A convenience wrapper around TIME.
+
+QUIET suppresses both the return value and any output to
+`*standard-output*`.
+
+REPEAT specifies a number of repetitions.
+
+If GC is non-nil, perform a garbage collection before running BODY.
+This can be useful with repeated trials, when you want to make sure
+the running time of the *nth* run is not distorted by cleaning up
+after the runs before it.
+
+## Clos
+
+### `(make class &rest initargs)`
+
+Shorthand for `make-instance`.
+After Eulisp.
+
+### `(class-name-safe x)`
+
+The class name of the class of X.
+If X is a class, the name of the class itself.
+
+### `(find-class-safe x)`
+
+The class designated by X.
+If X is a class, it designates itself.
+
+## Hooks
+
+### `(add-hook name fn &key append)`
+
+Add FN to the value of NAME, a hook.
+
+### `(remove-hook name fn)`
+
+Remove fn from the symbol value of NAME.
+
+### `(run-hooks &rest hookvars)`
+
+Run all the hooks in all the HOOKVARS.
+The variable `*hook*` is bound to each hook as it is being run.
+
+### `(run-hook-with-args hook &rest args)`
+
+Apply each function in the symbol value of HOOK to ARGS.
+
+### `(run-hook-with-args-until-failure hook &rest args)`
+
+Like `run-hook-with-args`, but quit once a function returns nil.
+
+### `(run-hook-with-args-until-success hook &rest args)`
+
+Like `run-hook-with-args`, but quit once a function returns
+non-nil.
+
+## Fbind
+
+### `(fbind bindings &body body)`
+
+Binds values in the function namespace.
+
+That is,
+     (fbind ((fn (lambda () ...))))
+     ≡ (flet ((fn () ...))),
+
+except that a bare symbol in BINDINGS is rewritten as (symbol
+symbol).
+
+### `(fbind* bindings &body body)`
+
+Like `fbind`, but creates bindings sequentially.
+
+### `(fbindrec bindings &body body)`
+
+Like `fbind`, but creates recursive bindings.
+
+The consequences of referring to one binding in the expression that
+generates another are undefined.
+
+### `(fbindrec* bindings &body body)`
+
+Like `fbindrec`, but the function defined in each binding can be
+used in successive bindings.
+
+## Lists
+
+### `(filter-map fn list &rest lists)`
 
 Map FN over (LIST . LISTS) like `mapcar`, but omit empty results.
 
      (filter-map fn ...)
      ≅ (remove nil (mapcar fn ...))
 
-## `(car-safe x)`
+### `(car-safe x)`
 
 The car of X, or nil if X is not a cons.
 
@@ -757,19 +1235,19 @@ This is different from Alexandria’s `ensure-car`, which returns the atom.
 
 From Emacs Lisp.
 
-## `(cdr-safe x)`
+### `(cdr-safe x)`
 
 The cdr of X, or nil if X is not a cons.
 From Emacs Lisp.
 
-## `(append1 list item)`
+### `(append1 list item)`
 
 Append an atom to a list.
 
     (append1 list item)
     ≡ (append list (list item))
 
-## `(in x &rest items)`
+### `(in x &rest items)`
 
 Is X equal to any of ITEMS?
 
@@ -779,18 +1257,18 @@ candidate matches are constant.
 
 From Arc.
 
-## `(memq item list)`
+### `(memq item list)`
 
 Like (member ... :test #'eq).
 Should only be used for symbols.
 
-## `(delq item list)`
+### `(delq item list)`
 
 Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-## `(mapply fn list &rest lists)`
+### `(mapply fn list &rest lists)`
 
 `mapply` is a cousin of `mapcar`.
 
@@ -821,22 +1299,22 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
 
-## `(assocdr item alist &rest args)`
+### `(assocdr item alist &rest args)`
 
 Like (cdr (assoc ...))
 
-## `(assocadr item alist &rest args)`
+### `(assocadr item alist &rest args)`
 
 Like `assocdr` for alists of proper lists.
 
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
-## `(rassocar item alist &rest args)`
+### `(rassocar item alist &rest args)`
 
 Like (car (rassoc ...))
 
-## `(firstn n list)`
+### `(firstn n list)`
 
 The first N elements of LIST, as a fresh list:
 
@@ -847,152 +1325,59 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-## `(inconsistent-graph-constraints inconsistent-graph)`
-
-The constraints of an `inconsistent-graph` error.
-Cf. `toposort`.
-
-## `(toposort elts constraints &key key tie-breaker)`
-
-The topographical sort routine from AMOP.
-
-Takes a list of elements to sort, and a list of constraints, where each
-constraint is a two-element list.
-
-    (def dem-bones '((toe foot)
-                     (foot heel)
-                     (heel ankle)
-                     (ankle shin)
-                     (shin knee)
-                     (knee back)
-                     (back shoulder)
-                     (shoulder neck)
-                     (neck head)))
-    (toposort (shuffle (mapcar #'car dem-bones))
-              dem-bones)
-    => (TOE FOOT HEEL ANKLE SHIN KNEE BACK SHOULDER NECK)
-
-If the graph is inconsistent, signals an error of type
-`inconsistent-graph`:
-
-    (toposort '(chicken egg) '((chicken egg) (egg chicken)))
-    => Inconsistent graph: ((CHICKEN EGG) (EGG CHICKEN))
-
-## `(intersperse new-elt list)`
+### `(intersperse new-elt list)`
 
 Insert NEW-ELT between each element of LIST.
 
-## `(powerset set)`
+### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
 
-## `(efface item list)`
+### `(efface item list)`
 
 Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
-## `(pop-assoc key alist &rest args)`
+### `(pop-assoc key alist &rest args)`
 
 Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
 
-## `(mapcar-into fn list)`
+### `(mapcar-into fn list)`
 
 Like (map-into list fn list).
 
 From PAIP.
 
-## `(nthrest n list)`
+### `(nthrest n list)`
 
 Alias for `nthcdr`.
 
-## `(deltas list &optional fn)`
-
-Return the successive differences in LIST.
-
-     (deltas '(4 9 -5 1 2))
-     => '(4 5 -14 6 1)
-
-Note that the first element of LIST is also the first element of the
-return value.
-
-By default, the delta is the difference, but you can specify another
-function as a second argument:
-
-    (deltas '(2 4 2 6) #'/)
-    => '(2 2 1/2 3)
-
-From Q.
-
-## `(plist-keys plist)`
+### `(plist-keys plist)`
 
 Return the keys of a plist.
 
-## `(plist-values plist)`
+### `(plist-values plist)`
 
 Return the values of a plist.
 
-# Trees
+## Strings
 
-## `(walk-tree fun tree &optional tag)`
-
-Call FUN in turn over each atom and cons of TREE.
-
-FUN can skip the current subtree with (throw TAG nil).
-
-## `(map-tree fun tree &optional tag)`
-
-Walk FUN over TREE and build a tree from the results.
-
-The new tree may share structure with the old tree.
-
-     (eq tree (map-tree #'identity tree)) => T
-
-FUN can skip the current subtree with (throw TAG SUBTREE), in which
-case SUBTREE will be used as the value of the subtree.
-
-## `(leaf-walk fun tree)`
-
-Call FUN on each leaf of TREE.
-
-## `(leaf-map fn tree)`
-
-Call FN on each leaf of TREE.
-Return a new tree possibly sharing structure with TREE.
-
-## `(occurs-if test tree &key key)`
-
-Is there a node (leaf or cons) in TREE that satisfies TEST?
-
-## `(prune-if test tree &key key)`
-
-Remove any atoms satisfying TEST from TREE.
-
-## `(occurs leaf tree &key key test)`
-
-Is LEAF present in TREE?
-
-## `(prune leaf tree &key key test)`
-
-Remove LEAF from TREE wherever it occurs.
-
-# Strings
-
-## `(whitespacep char)`
+### `(whitespacep char)`
 
 Is CHAR whitespace?
 
 Spaces, tabs, any kind of line break, page breaks, and no-break spaces
 are considered whitespace.
 
-## `(trim-whitespace string)`
+### `(trim-whitespace string)`
 
 STRING without whitespace at ends.
 
-## `(with-string (var &optional stream) &body body)`
+### `(with-string (var &optional stream) &body body)`
 
 Bind VAR to the character stream designated by STREAM.
 
@@ -1009,24 +1394,24 @@ functions.
       (with-string (s stream)
         ...))
 
-## `(collapse-whitespace string)`
+### `(collapse-whitespace string)`
 
 Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character.
 
-## `(blankp seq)`
+### `(blankp seq)`
 
 SEQ is either empty, or consists entirely of characters that
 satisfy `whitespacep`.
 
-## `(concat &rest strings)`
+### `(concat &rest strings)`
 
 Abbreviation for (concatenate 'string ...).
 
 From Emacs Lisp.
 
-## `(mapconcat fun seq separator &key stream)`
+### `(mapconcat fun seq separator &key stream)`
 
 Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
@@ -1040,14 +1425,7 @@ like the first argument to `format`.
 
 From Emacs Lisp.
 
-## `(join strings sep &key stream)`
-
-Join STRINGS into one string, interspersing with SEP.
-
-STREAM can be used to specify a stream to write to. It is resolved
-like the first argument to `format`.
-
-## `(string-upcase-initials string)`
+### `(string-upcase-initials string)`
 
 Return STRING with the first letter of each word capitalized.
 This differs from CAPITALIZE in that the other characters in each word
@@ -1058,20 +1436,20 @@ are not changed.
 
 From Emacs Lisp (where it is simply `upcase-initials`).
 
-## `(nstring-upcase-initials string)`
+### `(nstring-upcase-initials string)`
 
 Destructive version of `string-upcase-initials`.
 
-## `(nstring-invert-case string)`
+### `(nstring-invert-case string)`
 
 Destructive version of `string-invert-case`.
 
-## `(string-invert-case string)`
+### `(string-invert-case string)`
 
 Invert the case of STRING.
 This does the same thing as a case-inverting readtable.
 
-## `(words string &key start end)`
+### `(words string &key start end)`
 
 Split STRING into words.
 
@@ -1092,7 +1470,7 @@ The definition of a word is the same as that used by
 
 Cf. `tokens`.
 
-## `(tokens string &key start end)`
+### `(tokens string &key start end)`
 
 Separate STRING into tokens.
 Tokens are runs of non-whitespace characters.
@@ -1102,11 +1480,11 @@ Tokens are runs of non-whitespace characters.
 
 Cf. `words`.
 
-## `(lines string)`
+### `(lines string)`
 
 A list of lines in STRING.
 
-## `(fmt control-string &rest args)`
+### `(fmt control-string &rest args)`
 
 A cousin of `format` expressly for fast formatting of strings.
 
@@ -1115,19 +1493,19 @@ some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
 
-## `(downcase x)`
+### `(downcase x)`
 
 Downcase a string or character.
 
-## `(upcase x)`
+### `(upcase x)`
 
 Upcase a string or character.
 
-## `(capitalize x)`
+### `(capitalize x)`
 
 Capitalize a string or character.
 
-## `(escape string table &key start end stream)`
+### `(escape string table &key start end stream)`
 
 Write STRING to STREAM, escaping with TABLE.
 
@@ -1139,7 +1517,7 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
-## `(ellipsize string n &key ellipsis)`
+### `(ellipsize string n &key ellipsis)`
 
 If STRING is longer than N, truncate it and append ELLIPSIS.
 
@@ -1151,27 +1529,27 @@ ELLIPSIS, so the string may come out longer than it started.
 
 From Arc.
 
-## `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
+### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
-## `(string^= s1 s2 &key start1 end1 start2 end2)`
+### `(string^= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a prefix of S2?
 
-## `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string$=`, but case-insensitive.
-
-## `(string$= s1 s2 &key start1 end1 start2 end2)`
+### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
 
-## `(string-containsp s1 s2 &key start1 end1 start2 end2)`
+### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
+
+Like `string$=`, but case-insensitive.
+
+### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-## `(string*= s1 s2 &key start1 end1 start2 end2)`
+### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a substring of S2?
 
@@ -1182,7 +1560,7 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-## `(string~= s1 s2 &key start1 end1 start2 end2)`
+### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
 Does S1 occur in S2 as a token?
 
@@ -1190,11 +1568,11 @@ Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing.
 
-## `(string-tokenp s1 s2 &key start1 end1 start2 end2)`
+### `(string-tokenp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-## `(string-replace-all old string new &key start end stream)`
+### `(string-replace-all old string new &key start end stream)`
 
 Do regex-style search-and-replace for constant strings.
 
@@ -1209,219 +1587,9 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-# Hash Tables
+## Sequences
 
-## `(dict &rest keys-and-values)`
-
-A concise constructor for hash tables.
-
-    (gethash :c (dict :a 1 :b 2 :c 3)) => 3, T
-
-By default, return an 'equal hash table containing each successive
-pair of keys and values from KEYS-AND-VALUES.
-
-If the number of KEYS-AND-VALUES is odd, then the first argument is
-understood as the test.
-
-     (gethash "string" (dict "string" t)) => t
-     (gethash "string" (dict 'eq "string" t)) => nil
-
-## `(dict* dict &rest args)`
-
-Merge new bindings into DICT.
-Roughly equivalent to `(merge-tables DICT (dict args...))'.
-
-## `(href table &rest keys)`
-
-A concise way of doings lookups in (potentially nested) hash tables.
-
-    (href (dict :x 1) :x) => x
-    (href (dict :x (dict :y 2)) :x :y)  => y
-
-## `(href-default default table &rest keys)`
-
-Like `href`, with a default.
-As soon as one of KEYS fails to match, DEFAULT is returned.
-
-## `(@ table key &rest keys)`
-
-A concise way of doings lookups in (potentially nested) hash tables.
-
-    (@ (dict :x 1) :x) => x
-    (@ (dict :x (dict :y 2)) :x :y)  => y 
-
-## `(pophash key hash-table)`
-
-Lookup KEY in HASH-TABLE, return its value, and remove it.
-From Zetalisp.
-
-## `(swaphash key value hash-table)`
-
-Set KEY and VALUE in HASH-TABLE, returning the old values of KEY.
-From Zetalisp.
-
-## `(maphash-return fn hash-table)`
-
-Like MAPHASH, but collect and return the values from FN.
-From Zetalisp.
-
-## `(merge-tables table &rest tables)`
-
-Merge TABLE and TABLES, working from left to right.
-The resulting hash table has the same test as TABLE.
-
-Clojure's `merge`.
-
-## `(flip-hash-table table &key test key)`
-
-Return a table like TABLE, but with keys and values flipped.
-
-TEST filters which keys to set. KEY defaults to `identity`.
-
-## `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
-
-Return SET, a list considered as a set, as a hash table.
-This is the equivalent of `alist-hash-table` and `plist-hash-table`
-for a list that denotes a set.
-
-STRICT determines whether to check that the list actually is a set.
-
-The resulting table has the elements of SET for its keys and values.
-That is, each element of SET is stored as if by
-     (setf (gethash (key element) table) element)
-
-## `(hash-table-set table &key strict test key)`
-
-Return the set denoted by TABLE.
-Given STRICT, check that the table actually denotes a set.
-
-Without STRICT, equivalent to `hash-table-values`.
-
-# Files
-
-## `(build-path path &rest parts)`
-
-Build a pathname by merging from right to left.
-With `build-path` you can pass the elements of the pathname being
-built in the order they appear in it:
-
-    (build-path (user-homedir-pathname) config-dir config-file)
-    ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
-
-Note that `build-path` does not coerce the parts of the pathname into
-directories; you have to do that yourself.
-
-    (build-path "dir1" "dir2" "file") -> "file"
-    (build-path "dir1/" "dir2/" "file") -> "dir1/dir2/file"
-
-## `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
-
-Read STREAM and write the contents into PATHNAME.
-
-STREAM will be closed afterwards, so wrap it with
-`make-concatenated-stream` if you want it left open.
-
-## `(file= file1 file2 &key buffer-size)`
-
-Compare FILE1 and FILE2 octet by octet, using buffers of
-BUFFER-SIZE.
-
-## `(file-size file &key element-type)`
-
-The size of FILE.
-
-## `(delete-file-if-exists file)`
-
-Delete FILE if it exists.
-
-# Symbols
-
-## `(find-keyword string)`
-
-If STRING has been interned as a keyword, return it.
-
-Like `make-keyword`, but preferable in most cases, because it doesn't
-intern a keyword -- which is usually both unnecessary and unwise.
-
-## `(bound-value s &optional default)`
-
-If S is bound, return (values s t). Otherwise, return DEFAULT.
-
-## `(special-variable-p symbol)`
-
-Is SYMBOL a special variable?
-
-# Arrays
-
-## `(array-index-row-major array row-major-index)`
-
-The inverse of ARRAY-ROW-MAJOR-INDEX.
-
-Given an array and a row-major index, return a list of subscripts.
-
-     (apply #'aref (array-index-row-major i))
-     ≡ (array-row-major-aref i)
-
-## `(undisplace-array array)`
-
-Recursively get the fundamental array that ARRAY is displaced to.
-
-Return the fundamental array, and the start and end positions into it.
-
-Borrowed from Erik Naggum.
-
-# Queue
-
-## `(queue &rest initial-contents)`
-
-Build a new queue with INITIAL-CONTENTS.
-
-## `(clear-queue queue)`
-
-Return QUEUE's contents and reset it.
-
-## `(qlen queue)`
-
-The number of items in QUEUE.
-
-## `(qlist queue)`
-
-A list of the times in QUEUE.
-
-## `(enq item queue)`
-
-Insert ITEM at end of QUEUE.
-
-## `(deq queue)`
-
-Remove item from the front of the QUEUE.
-
-## `(front queue)`
-
-The first element in QUEUE.
-
-## `(queue-empty-p queue)`
-
-Is QUEUE empty?
-
-## `(qconc queue list)`
-
-Destructively concatenate LIST onto the end of QUEUE.
-Return the queue.
-
-# Box
-
-## `(box value)`
-
-Box a value.
-
-## `(unbox x)`
-
-The value in the box X.
-
-# Sequences
-
-## `(nsubseq seq start &optional end)`
+### `(nsubseq seq start &optional end)`
 
 Return a subsequence that may share structure with SEQ.
 
@@ -1432,12 +1600,12 @@ operations on the subsequence returned may mutate the original.
 `nsubseq` also works with `setf`, with the same behavior as
 `replace`.
 
-## `(filter pred seq &rest args &key count from-end start end key &allow-other-keys)`
+### `(filter pred seq &rest args &key count from-end start end key &allow-other-keys)`
 
 Almost the opposite of `remove-if-not`.
 The difference is the handling of COUNT.
 
-## `(keep item seq &rest args &key test from-end count &allow-other-keys)`
+### `(keep item seq &rest args &key test from-end count &allow-other-keys)`
 
 Almost the opposite of `remove`.
 Keep only those items in SEQ that are equivalent, under TEST and KEY,
@@ -1445,11 +1613,11 @@ to ITEM.
 
 The difference is the handling of COUNT.
 
-## `(single seq)`
+### `(single seq)`
 
 Is SEQ a sequence of one element?
 
-## `(partition pred seq &key start end key)`
+### `(partition pred seq &key start end key)`
 
 Partition elements of SEQ into those for which PRED returns true
 and false.
@@ -1467,7 +1635,7 @@ the sequence; `partition` always returns the “true” elements first.
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)
 
-## `(partitions preds seq &key start end key)`
+### `(partitions preds seq &key start end key)`
 
 Generalized version of PARTITION.
 
@@ -1477,7 +1645,7 @@ sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match.
 
-## `(assort seq &key key test start end)`
+### `(assort seq &key key test start end)`
 
 Return SEQ assorted by KEY.
 
@@ -1490,7 +1658,7 @@ You can think of `assort` as being akin to `remove-duplicates`:
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)
 
-## `(runs seq &key start end key test)`
+### `(runs seq &key start end key test)`
 
 Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce`.
@@ -1498,20 +1666,21 @@ The arguments START, END, and KEY are as for `reduce`.
     (runs '(head tail head head tail))
     => '((head) (tail) (head head) (tail))
 
-## `(batches seq n &key start end)`
+### `(batches seq n &key start end)`
 
 Return SEQ in batches of N elements.
 
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
 
-## `(frequencies seq &rest hash-table-args)`
+### `(frequencies seq &rest hash-table-args)`
 
 Return a hash table with the count of each unique item in SEQ.
+As a second value, return the length of SEQ.
 
 From Clojure.
 
-## `(scan fn seq)`
+### `(scan fn seq &key key)`
 
 A version of `reduce` that shows its work.
 
@@ -1526,52 +1695,52 @@ the successive results at each step.
 
 From APL and descendants.
 
-## `(nub seq &rest args &key start end key test)`
+### `(nub seq &rest args &key start end key test)`
 
 Remove duplicates from SEQ, starting from the end.
 TEST defaults to `equal`.
 
 From Haskell.
 
-## `(gcp seqs &key test)`
+### `(gcp seqs &key test)`
 
 The greatest common prefix of SEQS.
 
-## `(gcs seqs &key test)`
+### `(gcs seqs &key test)`
 
 The greatest common suffix of SEQS.
 
-## `(length< &rest seqs)`
+### `(length< &rest seqs)`
 
 Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer.
 
-## `(length> &rest seqs)`
+### `(length> &rest seqs)`
 
 Is each length-designator in SEQS longer than the next?
 A length designator may be a sequence or an integer.
 
-## `(length>= &rest seqs)`
+### `(length>= &rest seqs)`
 
 Is each length-designator in SEQS longer or as long as the next?
 A length designator may be a sequence or an integer.
 
-## `(length<= &rest seqs)`
+### `(length<= &rest seqs)`
 
 Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer.
 
-## `(longer x y)`
+### `(longer x y)`
 
 Return the longer of X and Y.
 
 If X and Y are of equal length, return X.
 
-## `(longest seqs)`
+### `(longest seqs)`
 
 Return the longest seq in SEQS.
 
-## `(slice seq start &optional end)`
+### `(slice seq start &optional end)`
 
 Like `subseq`, but allows negative bounds to specify offsets.
 Both START and END accept negative bounds.
@@ -1581,7 +1750,7 @@ Both START and END accept negative bounds.
 Setf of `slice` is like setf of `ldb`: afterwards, the place being set
 holds a new sequence which is not EQ to the old.
 
-## `(ordering seq &key unordered-to-end from-end test)`
+### `(ordering seq &key unordered-to-end from-end test)`
 
 Given a sequence, return a function that, when called with `sort`,
 restores the original order of the sequence.
@@ -1601,17 +1770,17 @@ the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order.
 
-## `(take n seq)`
+### `(take n seq)`
 
 Return the first N elements of SEQ, as a *new* sequence of the same
 type as SEQ.
 
-## `(drop n seq)`
+### `(drop n seq)`
 
 Return all but the first N elements of SEQ.
 The sequence returned is a new sequence of the same type as SEQ.
 
-## `(bestn n seq pred &key key memo)`
+### `(bestn n seq pred &key key memo)`
 
 Partial sorting.
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
@@ -1619,7 +1788,7 @@ for small values of N.
 
 The name is from Arc.
 
-## `(extrema seq pred &key key start end)`
+### `(extrema seq pred &key key start end)`
 
 Like EXTREMUM, but returns both the minimum and the maximum (as two
 values).
@@ -1627,11 +1796,11 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-## `(vector= v1 v2 &key test start1 end1 start2 end2)`
+### `(vector= v1 v2 &key test start1 end1 start2 end2)`
 
 Like `string=` for any vector.
 
-## `(halves seq &optional split)`
+### `(halves seq &optional split)`
 
 Return, as two values, the first and second halves of SEQ.
 SPLIT designates where to split SEQ; it defaults to half the length,
@@ -1641,180 +1810,59 @@ If SEQ is of an odd length, the split is made using `ceiling` rather
 than `truncate`. This is on the theory that, if SEQ is a
 single-element list, it should be returned unchanged.
 
-## `(dsu-sort seq fn &key key)`
+### `(dsu-sort seq fn &key key)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-# Numbers
+### `(deltas seq &optional fn)`
 
-## `(finc place &optional (delta 1))`
+Return the successive differences in SEQ.
 
-Like `incf`, but returns the old value instead of the new.
+     (deltas '(4 9 -5 1 2))
+     => '(4 5 -14 6 1)
 
-An alternative to using -1 as the starting value of a counter, which
-can prevent optimization.
+Note that the first element of SEQ is also the first element of the
+return value.
 
-## `(fdec place &optional (delta 1))`
+By default, the delta is the difference, but you can specify another
+function as a second argument:
 
-Like `decf`, but returns the old value instead of the new.
+    (deltas '(2 4 2 6) #'/)
+    => '(2 2 1/2 3)
 
-## `(parse-float string &key start end junk-allowed)`
+From Q.
 
-Based on the venerable `parse-float` from the CMU Lisp repository.
-Of course you could just use `parse-number`, but sometimes only a
-float will do.
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
-## `(round-to number &optional divisor)`
+The constraints of an `inconsistent-graph` error.
+Cf. `toposort`.
 
-Like `round`, but return the resulting number.
+### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
-     (round 15 10) => 2
-     (round-to 15 10) => 20
+Turn CONSTRAINTS into a predicate for use with SORT.
 
-## `(bits int &key big-endian)`
+Each constraint should be two-element list.
 
-Return a bit vector of the bits in INT.
-Defaults to little-endian.
+    (def dem-bones '((toe foot)
+                     (foot heel)
+                     (heel ankle)
+                     (ankle shin)
+                     (shin knee)
+                     (knee back)
+                     (back shoulder)
+                     (shoulder neck)
+                     (neck head)))
+    (sort (shuffle (mapcar #'car dem-bones))
+          (toposort dem-bones))
+    => (TOE FOOT HEEL ANKLE SHIN KNEE BACK SHOULDER NECK)
 
-## `(unbits bits &key big-endian)`
+If the graph is inconsistent, signals an error of type
+`inconsistent-graph`:
 
-Turn a sequence of BITS into an integer.
-Defaults to little-endian.
+    (toposort '((chicken egg) (egg chicken)))
+    => Inconsistent graph: ((CHICKEN EGG) (EGG CHICKEN))
 
-## `(shrink n by)`
-
-Decrease N by a factor.
-
-## `(grow n by)`
-
-Increase N by a factor.
-
-## `(shrinkf g11934 n)`
-
-Shrink the value in a place by a factor.
-
-## `(growf g11956 n)`
-
-Grow the value in a place by a factor.
-
-## `(random-in-range low high)`
-
-Random number in the range [low,high).
-
-From Zetalisp.
-
-# Octets
-
-## `(octet-vector-p x)`
-
-Is X an octet vector?
-
-## `(make-octet-vector size)`
-
-Make an octet vector of SIZE elements.
-
-## `(octets n &key big-endian)`
-
-Return N, an integer, as an octet vector.
-Defaults to little-endian order.
-
-## `(unoctets bytes &key big-endian)`
-
-Concatenate BYTES, an octet vecotor, into an integer.
-Defaults to little-endian order.
-
-# Time
-
-## `(universal-to-unix time)`
-
-Convert a universal time to a Unix time.
-
-## `(unix-to-universal time)`
-
-Convert a Unix time to a universal time.
-
-## `(get-unix-time)`
-
-The current time as a count of seconds from the Unix epoch.
-
-## `(date-leap-year-p year)`
-
-Is YEAR a leap year in the Gregorian calendar?
-
-## `(time-since time)`
-
-Return seconds since TIME.
-
-## `(time-until time)`
-
-Return seconds until TIME.
-
-## `(interval &key seconds minutes hours days weeks months years month-days year-days)`
-
-A verbose but readable way of specifying intervals in seconds.
-
-Intended as a more readable alternative to idioms
-like (let ((day-in-seconds #.(* 24 60 60))) ...)
-
-Has a compiler macro.
-
-## `(with-timing (&key quiet gc repeat) &body body)`
-
-A convenience wrapper around TIME.
-
-QUIET suppresses both the return value and any output to
-`*standard-output*`.
-
-REPEAT specifies a number of repetitions.
-
-If GC is non-nil, perform a garbage collection before running BODY.
-This can be useful with repeated trials, when you want to make sure
-the running time of the *nth* run is not distorted by cleaning up
-after the runs before it.
-
-# Clos
-
-## `(make class &rest initargs)`
-
-Shorthand for `make-instance`.
-After Eulisp.
-
-## `(class-name-safe x)`
-
-The class name of the class of X.
-If X is a class, the name of the class itself.
-
-## `(find-class-safe x)`
-
-The class designated by X.
-If X is a class, it designates itself.
-
-# Hooks
-
-## `(add-hook name fn &key append)`
-
-Add FN to the value of NAME, a hook.
-
-## `(remove-hook name fn)`
-
-Remove fn from the symbol value of NAME.
-
-## `(run-hooks &rest hookvars)`
-
-Run all the hooks in all the HOOKVARS.
-The variable `*hook*` is bound to each hook as it is being run.
-
-## `(run-hook-with-args hook &rest args)`
-
-Apply each function in the symbol value of HOOK to ARGS.
-
-## `(run-hook-with-args-until-failure hook &rest args)`
-
-Like `run-hook-with-args`, but quit once a function returns nil.
-
-## `(run-hook-with-args-until-success hook &rest args)`
-
-Like `run-hook-with-args`, but quit once a function returns
-non-nil.
+TEST, FROM-END, and UNORDERED-TO-END are passed through to
+`ordering`.
 

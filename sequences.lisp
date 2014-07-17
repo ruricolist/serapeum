@@ -15,7 +15,6 @@
           extrema
           nsubseq
           slice
-          vector=
           take drop
           halves
           dsu-sort
@@ -908,21 +907,6 @@ values).
     (values min max)))
 
 (assert (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5)))
-
-(defun vector= (v1 v2 &key (test #'eql)
-                           (start1 0)
-                           (end1 nil)
-                           (start2 0)
-                           (end2 nil))
-  "Like `string=' for any vector."
-  (declare (vector v1 v2))
-  (let ((end1 (or end1 (length v1)))
-        (end2 (or end2 (length v2))))
-    (and (= (- end1 start1)
-            (- end2 start2))
-         (loop for i from start1 below end1
-               for j from start2 below end2
-               always (funcall test (aref v1 i) (aref v2 j))))))
 
 (defun halves (seq &optional split)
   "Return, as two values, the first and second halves of SEQ.

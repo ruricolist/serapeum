@@ -171,8 +171,8 @@ From Emacs Lisp."
 (-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)
   "Return STRING with the first letter of each word capitalized.
-This differs from CAPITALIZE in that the other characters in each word
-are not changed.
+This differs from STRING-CAPITALIZE in that the other characters in
+each word are not changed.
 
      (capitalize \"an ACRONYM\") -> \"An Acronym\")
      (string-upcase-initials \"an ACRONYM\") -> \"An ACRONYM\")

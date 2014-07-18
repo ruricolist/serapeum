@@ -10,7 +10,6 @@
           words tokens lines
           fmt
           with-string
-          downcase upcase capitalize
           escape
           ellipsize
           string^= string$= string~= string*=
@@ -25,7 +24,7 @@
   "The 26 lowercase letters of the English alphabet.")
 
 (defconst whitespace
-  #.(coerce '(#\Space #\Tab #\Linefeed #\Return #\Newline #\Page #\No-break_space) 'string)
+  #.(remove-duplicates (coerce '(#\Space #\Tab #\Linefeed #\Return #\Newline #\Page #\No-break_space) 'string))
   "Whitespace characters.")
 
 (defsubst whitespacep (char)
@@ -33,14 +32,8 @@
 
 Spaces, tabs, any kind of line break, page breaks, and no-break spaces
 are considered whitespace."
-  ;; Can't use CASE because chars may be repeated.
-  (or (eql char #\Space)
-      (eql char #\Tab)
-      (eql char #\Newline)
-      (eql char #\Linefeed)
-      (eql char #\Return)
-      (eql char #\Page)
-      (eql char #\No-break_space)))
+  (case char
+    (#.(coerce whitespace 'list) t)))
 
 (defsubst trim-whitespace (string)
   "STRING without whitespace at ends."
@@ -309,9 +302,9 @@ Cf. `words'."
 
 (defun newline? (c)
   (declare (character c))
-  (or (char= c #\Newline)
-      (char= c #\Return)
-      (char= c #\Linefeed)))
+  (case c
+    (#.(remove-duplicates (list #\Newline #\Return #\Linefeed))
+     t)))
 
 (-> lines (string) list)
 (defun lines (string)
@@ -333,24 +326,6 @@ Has a compiler macro with `formatter'."
   (if (stringp control-string)
       `(fmt (formatter ,control-string) ,@args)
       decline))
-
-(defsubst downcase (x)
-  "Downcase a string or character."
-  (etypecase x
-    (string (string-downcase x))
-    (character (char-downcase x))))
-
-(defsubst upcase (x)
-  "Upcase a string or character."
-  (etypecase x
-    (string (string-upcase x))
-    (character (char-upcase x))))
-
-(defsubst capitalize (x)
-  "Capitalize a string or character."
-  (etypecase x
-    (string (string-capitalize x))
-    (character (char-upcase x))))
 
 (defun escape (string table &key (start 0) end stream)
   "Write STRING to STREAM, escaping with TABLE.

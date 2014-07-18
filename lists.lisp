@@ -6,7 +6,6 @@
           append1
           assocdr assocadr rassocar
           firstn
-          intersperse
           powerset
           efface
           pop-assoc
@@ -17,7 +16,6 @@
           plist-keys plist-values))
 
 (-> firstn ((integer 0 *) list) list)
-(-> intersperse (t list) list)
 (-> powerset (list) list)
 (-> efface (t list) list)
 (-> mapcar-into ((or function symbol) list) list)
@@ -208,14 +206,6 @@ Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)"
   ;; NB This is faster than the DO version in the Pitmanual.
   (loop repeat n for x in list collect x))
-
-(defun intersperse (new-elt list)
-  "Insert NEW-ELT between each element of LIST."
-  (loop for (item . rest) on list
-        if (null rest)
-          collect item
-        else collect item
-             and collect new-elt))
 
 (defun powerset (set)
   "Return the powerset of SET.

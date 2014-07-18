@@ -19,6 +19,7 @@
           halves
           dsu-sort
           deltas
+          intersperse
           toposort
           inconsistent-graph
           inconsistent-graph-constraints))
@@ -1051,3 +1052,40 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
               :test test
               :unordered-to-end unordered-to-end
               :from-end from-end)))
+
+(defun intersperse/list (new-elt list)
+  (loop for (item . rest) on list
+        if (null rest)
+          collect item
+        else collect item
+             and collect new-elt))
+
+(assert (null (intersperse/list 'x '())))
+(assert (equal (intersperse/list 'x '(z)) '(z)))
+(assert (equal (intersperse/list 'y '(x z)) '(x y z)))
+
+(defun intersperse/seq (new-elt seq)
+  (if (emptyp seq)
+      (copy-seq seq)
+      (let* ((len1 (length seq))
+             (len2 (1- (* 2 len1)))
+             (ret (make-sequence-like seq len2))
+             (j 0))
+        (loop for i below len2 do
+          (if (oddp i)
+              (setf (elt ret i) new-elt)
+              (progn
+                (setf (elt ret i) (elt seq j))
+                (incf j))))
+        ret)))
+
+(assert (emptyp (intersperse/seq #\x "")))
+(assert (equal (intersperse/seq #\x "z") "z"))
+(assert (equal (intersperse/seq #\y "xz") "xyz"))
+
+(defsubst intersperse (new-elt seq)
+  "Return a sequence like SEQ, but with NEW-ELT inserted between each
+element."
+  (seq-dispatch seq
+    (intersperse/list new-elt seq)
+    (intersperse/seq new-elt seq)))

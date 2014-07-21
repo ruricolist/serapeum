@@ -136,6 +136,25 @@ satisfy `whitespacep'."
 From Emacs Lisp."
   (apply #'concatenate 'string strings))
 
+(defun mapconcat/list (fun list sep stream)
+  (declare (list list) (function fun) (string sep) (optimize speed))
+  (loop for (elt . more?) on list
+        do (write-string (funcall fun elt) stream)
+        if more?
+          do (write-string sep stream)))
+
+(defun mapconcat/seq (fun seq sep stream)
+  (declare (function fun) (string sep))
+  (let ((i 0)
+        (ult (1- (length seq))))
+    (declare (type array-index i ult))
+    (map nil
+         (lambda (elt)
+           (write-string (funcall fun elt) stream)
+           (unless (= (prog1 i (incf i)) ult)
+             (write-string sep stream)))
+         seq)))
+
 (defun mapconcat (fun seq separator &key stream)
   "Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
@@ -148,22 +167,15 @@ STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'.
 
 From Emacs Lisp."
-  (fbind (fun)
-    (with-string (out stream)
-      (seq-dispatch seq
-        (loop for (elt . more?) on seq
-              do (write-string (fun elt) out)
-              if more?
-                do (write-string separator out))
-        (let ((i 0)
-              (ult (1- (length seq))))
-          (declare (array-index i ult))
-          (map nil
-               (lambda (elt)
-                 (write-string (funcall fun elt) out)
-                 (unless (= (prog1 i (incf i)) ult)
-                   (write-string separator out)))
-               seq))))))
+  (values
+   (if (emptyp seq)
+       (make-string 0)
+       (let ((fun (ensure-function fun)))
+         (check-type separator string)
+         (with-string (stream stream)
+           (seq-dispatch seq
+             (mapconcat/list fun seq separator stream)
+             (mapconcat/seq fun seq separator stream)))))))
 
 (assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
 (assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))

@@ -74,6 +74,10 @@ Cf. `fbindrec*'."
                   (a (funcall f)))
           a))
 
+(eval-when (:compile-toplevel :load-toplevel)
+  (defun simple-binding-p (binding)
+    (= (length binding) 2)))
+
 ;;;# `mvlet'
 
 (defmacro mvlet* ((&rest bindings) &body body)
@@ -97,38 +101,70 @@ the motivation:
              days hours minutes seconds)))
 
 Note that declarations work just like `let*'."
-  (if (null bindings)
-      `(locally ,@body)
-      (multiple-value-bind (body decls)
-          (parse-body body)
-        (let* ((vars (butlast (car bindings)))
-               (expr (lastcar (car bindings))))
-          (multiple-value-bind (local other)
-              (partition-declarations vars decls)
-            `(multiple-value-bind ,vars
-                 ,expr
-               ,@local
-               (mvlet* ,(cdr bindings)
-                 ,@other
-                 ,@body)))))))
+  (cond ((null bindings)
+         `(locally ,@body))
+        ((every #'simple-binding-p bindings)
+         `(let* ,bindings ,@body))
+        (t (multiple-value-bind (body decls)
+               (parse-body body)
+             (let* ((mvbinds (member-if-not #'simple-binding-p bindings))
+                    (simple-binds (ldiff bindings mvbinds)))
+               (if simple-binds
+                   (multiple-value-bind (local other)
+                       (partition-declarations (mapcar #'car simple-binds) decls)
+                     `(let* ,simple-binds
+                        ,@local
+                        (mvlet* ,mvbinds
+                          ,@other
+                          ,@body)))
+                   (let* ((vars (butlast (car bindings)))
+                          (expr (lastcar (car bindings))))
+                     (multiple-value-bind (local other)
+                         (partition-declarations vars decls)
+                       `(multiple-value-bind ,vars
+                            ,expr
+                          ,@local
+                          (mvlet* ,(cdr bindings)
+                            ,@other
+                            ,@body))))))))))
+
+(assert (= 2 (let ((x 1)) x
+               (mvlet* ((x 2)
+                        (y x))
+                 x y))))
+(assert (= 13 (let ((x 1)) x
+                (mvlet* ((x y (floor 20 6))
+                         (z a (values x 5)))
+                  (+ x y z a)))))
 
 (defmacro firstn-values (n expr)
-  (if (= n 1)
-      `(values ,expr)
-      (let ((temps (loop for i below n collect (string-gensym 'temp))))
-        `(multiple-value-bind ,temps
-             ,expr
-           (values ,@temps)))))
+  (cond ((= n 0)
+         `(values))
+        ((= n 1)
+         `(values ,expr))
+        (t (let ((temps (loop for i below n collect (string-gensym 'temp))))
+             `(multiple-value-bind ,temps
+                  ,expr
+                (values ,@temps))))))
 
 (defmacro mvlet ((&rest bindings) &body body)
   "Parallel (`let'-like) version of `mvlet*'."
-  `(multiple-value-call
-       (lambda ,(mappend #'butlast bindings)
-         ,@body)
-     ,@(loop for binding in bindings
-             for n = (length (butlast binding))
-             for expr = (lastcar binding)
-             collect `(firstn-values ,n ,expr))))
+  (cond ((null bindings)
+         `(locally ,@body))
+        ((null (rest bindings))
+         (let ((b (first bindings)))
+           `(multiple-value-bind ,(butlast b) ,(lastcar b)
+              ,@body)))
+        ((every #'simple-binding-p bindings)
+         `(let ,bindings
+            ,@body))
+        (t `(multiple-value-call
+                (lambda ,(mappend #'butlast bindings)
+                  ,@body)
+              ,@(loop for binding in bindings
+                      for n = (length (butlast binding))
+                      for expr = (lastcar binding)
+                      collect `(firstn-values ,n ,expr))))))
 
 (assert (= 1 (let ((x 1))
                (mvlet ((x 2)

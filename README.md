@@ -135,64 +135,7 @@ Items that do not belong in any partition are returned as a second value.
 Serapeum simply re-exports `split-sequence`, which seems to be firmly
 rooted under its present name.
 
-## Data structures
-
-As a rule, utility libraries are the wrong place to define data
-structures. They are likely to be too general to be useful. I have
-made two exceptions: *boxes* and *queues*.
-
-### Boxes
-
-A box is just a mutable cell.
-
-You create a box using `box` and get and set its value using the
-accessor `unbox`.
-
-    (def a-box (box t))
-    (unbox a-box) => t
-    (setf (unbox a-box) nil)
-    (unbox a-box) => nil
-
-At the moment, Serapeum implements boxes as structures, but that may
-change. In particular, you should not depend on being able to
-recognize boxes using a type or predicate.
-
-### Queue
-
-Serapeum provides basic cons queues. The implementation is based on
-PAIP and the original Norvig & Waters paper; the API is mostly
-borrowed from Arc.
-
-Create a queue with `queue`, like `list`:
-
-    (queue 1 2 3) => #<QUEUE (1 2 3)>
-
-Get the items with `qlist`:
-
-    (qlist (queue 1 2 3)) => '(1 2 3)
-
-Add items with `enq`:
-
-    (enq 3 (queue 1 2)) => #<QUEUE (1 2 3)>
-
-Remove an item with `deq`:
-
-    (deq (queue 1 2 3)) => 3
-
-To (destructively) add a list to the end of the queue, use `qconc`:
-
-    (qconc (queue 1 2 3) '(4 5 6)) => #<QUEUE (1 2 3 4 5 6)>
-
-The rest of the API:
-
-- `qlen` Like `(length (qlist ...))`
-- `clear-queue` Clear the queue
-- `front` Like to `(car (qlist ...))`
-- `queue-empty-p` Test if the queue is empty
-
-The idea is that *collecting* is something we do often enough to
-justifying making *collectors* (queues) first-class.
-
 # Function reference.
 
-The function reference is in a [separate file](reference.md).
+The complete reference (over 200 functions and macros!) is in a
+[separate file](reference.md).

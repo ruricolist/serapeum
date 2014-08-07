@@ -23,11 +23,6 @@
   (declare (array-index size))
   (make-array size :element-type 'octet))
 
-(-> random-octet-vector (array-length) octet-vector)
-(defun random-octet-vector (size)
-  (map-into (make-octet-vector size)
-            (lambda () (random 256))))
-
 ;;; Adapted from Ironclad.
 (-> octets (integer &key (:big-endian t)) octet-vector)
 (defun octets (n &key big-endian)

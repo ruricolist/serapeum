@@ -197,7 +197,7 @@ From Zetalisp."
 ;; Clojure
 (defun merge-tables (table &rest tables)
   "Merge TABLE and TABLES, working from left to right.
-The resulting hash table has the same test as TABLE.
+The resulting hash table has the same parameters as TABLE.
 
 Clojure's `merge'."
   (let ((size (max +hash-table-default-size+

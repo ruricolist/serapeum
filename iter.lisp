@@ -41,7 +41,7 @@ Beware: because of the way it is written (literally, a GOTO with
 arguments), `nlet' is limited: self calls must be tail calls. That is,
 you cannot use `nlet' for true recursion.
 
-The name comes from `Let Over Lambda', but this is a different
+The name comes from `Let Over Lambda', but this is a more careful
 implementation: the function is not bound while the initial arguments
 are being evaluated, and it is safe to close over the arguments."
   (setf bindings (loop for binding in bindings
@@ -117,7 +117,7 @@ with MACROLET."
 
 (defmacro collecting (&body body)
   "Within BODY, bind `collect' to a function of one argument that
-accumulate all the arguments it has been called with in order, like
+accumulates all the arguments it has been called with in order, like
 the collect clause in `loop', finally returning the collection.
 
 To see the collection so far, call `collect' with no arguments.
@@ -136,6 +136,8 @@ other function."
 
 (defmacro summing (&body body)
   "Within BODY, bind `sum' to a function that gathers numbers to sum.
+
+To see the running sum, call `sum' with no arguments.
 
 Return the total."
   (with-gensyms (n x)

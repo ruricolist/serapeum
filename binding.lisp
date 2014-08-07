@@ -182,17 +182,17 @@ Note that declarations work just like `let*'."
 
 Each clause should have one of the following forms:
 
-`identifier'
-    in which case identifier's value is tested.
-`(expression)'
-    in which case the value of expression is tested.
-`(identifier expression)'
-    in which case expression is evaluated, and, if its value is not
-    false, identifier is bound to that value for the remainder of the
-    clauses and the optional body.
+- `identifier', in which case IDENTIFIER's value is tested.
 
-Note of course that the semantics are different in Common Lisp,
-because our AND short-circuits on null, not false."
+- `(expression)', in which case the value of EXPRESSION is tested.
+
+- `(identifier expression)' in which case EXPRESSION is evaluated,
+    and, if its value is not false, IDENTIFIER is bound to that value
+    for the remainder of the clauses and the optional body.
+
+Note that, of course, the semantics are slightly different in Common
+Lisp than in Scheme, because our AND short-circuits on null, not
+false."
   (multiple-value-bind (body decls)
       (parse-body body)
     (labels ((expand (clauses body)

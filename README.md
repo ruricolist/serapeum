@@ -137,5 +137,4 @@ rooted under its present name.
 
 # Function reference.
 
-The complete reference (over 200 functions and macros!) is in a
-[separate file](reference.md).
+The complete reference is in a [separate file](reference.md).

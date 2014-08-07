@@ -36,7 +36,6 @@
                 :depends-on ("package"))
                (:file "op"
                 :depends-on ("package"))
-               ;; Runtime.
                (:file "functions"
                 :depends-on ("macro-tools"))
                (:file "trees"

@@ -16,7 +16,43 @@
 (declaim (inline make-queue queuep))
 
 (defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons)))))
-  "A structure wrapping a cons queue."
+  "Basic cons queues, with an implementation based on PAIP and the
+original Norvig & Waters paper, an an API mostly borrowed from Arc.
+
+About Arc. For the most part, Arc-style identifiers are pessimal,
+neither quite opaque nor quite explicit, like riddles. But by using
+abbreviated names, we avoid the danger of clashing with
+special-purpose queue implementations.
+
+Create a queue with `queue', like `list':
+
+    (queue 1 2 3) => #<QUEUE (1 2 3)>
+
+Get the items with `qlist':
+
+    (qlist (queue 1 2 3)) => '(1 2 3)
+
+Add items with `enq':
+
+    (enq 3 (queue 1 2)) => #<QUEUE (1 2 3)>
+
+Remove an item with `deq':
+
+    (deq (queue 1 2 3)) => 3
+
+To (destructively) add a list to the end of the queue, use `qconc':
+
+    (qconc (queue 1 2 3) '(4 5 6)) => #<QUEUE (1 2 3 4 5 6)>
+
+The rest of the API:
+
+- `qlen' Like `(length (qlist ...))'
+- `clear-queue' Clear the queue
+- `front' Like to `(car (qlist ...))'
+- `queue-empty-p' Test if the queue is empty
+
+The idea is that *collecting* is something we do often enough to
+justifying making *collectors* (queues) first-class."
   (cons nil :type cons :read-only t))
 
 (defun queuep (x)

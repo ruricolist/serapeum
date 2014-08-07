@@ -186,7 +186,7 @@ From Emacs Lisp."
 This differs from STRING-CAPITALIZE in that the other characters in
 each word are not changed.
 
-     (capitalize \"an ACRONYM\") -> \"An Acronym\")
+     (string-capitalize \"an ACRONYM\") -> \"An Acronym\")
      (string-upcase-initials \"an ACRONYM\") -> \"An ACRONYM\")
 
 From Emacs Lisp (where it is simply `upcase-initials')."

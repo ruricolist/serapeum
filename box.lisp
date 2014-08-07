@@ -7,8 +7,19 @@
 (declaim (inline box))                  ;Allow dynamic-extent.
 (defstruct (box (:constructor box (value))
                 (:predicate boxp))
-  "A box: a minimal mutable cell, like a cons without a cdr. Use
-  unbox to access the current value."
+  "A box is just a mutable cell.
+
+You create a box using `box' and get and set its value using the
+accessor `unbox'.
+
+    (def a-box (box t))
+    (unbox a-box) => t
+    (setf (unbox a-box) nil)
+    (unbox a-box) => nil
+
+At the moment, boxes are implemented as structures, but that may
+change. In particular, you should not depend on being able to
+recognize boxes using a type or predicate."
   value)
 
 (setf (documentation 'box 'function)

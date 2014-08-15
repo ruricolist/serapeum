@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 222 functions)
+# Function Listing For Serapeum (27 files, 219 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -312,17 +312,17 @@ Scheme's guarded LET* (SRFI-2).
 
 Each clause should have one of the following forms:
 
-`identifier`
-    in which case identifier's value is tested.
-`(expression)`
-    in which case the value of expression is tested.
-`(identifier expression)'
-    in which case expression is evaluated, and, if its value is not
-    false, identifier is bound to that value for the remainder of the
-    clauses and the optional body.
+- `identifier`, in which case IDENTIFIER's value is tested.
 
-Note of course that the semantics are different in Common Lisp,
-because our AND short-circuits on null, not false.
+- `(expression)`, in which case the value of EXPRESSION is tested.
+
+- `(identifier expression)' in which case EXPRESSION is evaluated,
+    and, if its value is not false, IDENTIFIER is bound to that value
+    for the remainder of the clauses and the optional body.
+
+Note that, of course, the semantics are slightly different in Common
+Lisp than in Scheme, because our AND short-circuits on null, not
+false.
 
 ## Control Flow
 
@@ -549,14 +549,14 @@ Beware: because of the way it is written (literally, a GOTO with
 arguments), `nlet` is limited: self calls must be tail calls. That is,
 you cannot use `nlet` for true recursion.
 
-The name comes from `Let Over Lambda', but this is a different
+The name comes from `Let Over Lambda', but this is a more careful
 implementation: the function is not bound while the initial arguments
 are being evaluated, and it is safe to close over the arguments.
 
 ### `(collecting &body body)`
 
 Within BODY, bind `collect` to a function of one argument that
-accumulate all the arguments it has been called with in order, like
+accumulates all the arguments it has been called with in order, like
 the collect clause in `loop`, finally returning the collection.
 
 To see the collection so far, call `collect` with no arguments.
@@ -568,6 +568,8 @@ other function.
 ### `(summing &body body)`
 
 Within BODY, bind `sum` to a function that gathers numbers to sum.
+
+To see the running sum, call `sum` with no arguments.
 
 Return the total.
 
@@ -843,7 +845,7 @@ From Zetalisp.
 ### `(merge-tables table &rest tables)`
 
 Merge TABLE and TABLES, working from left to right.
-The resulting hash table has the same test as TABLE.
+The resulting hash table has the same parameters as TABLE.
 
 Clojure's `merge`.
 
@@ -1012,6 +1014,10 @@ Succint constructor for adjustable vectors with fill pointers.
 
 The fill pointer is placed after the last element in INITIAL-CONTENTS.
 
+### `(vector= v1 v2 &key test start1 end1 start2 end2)`
+
+Like `string=` for any vector.
+
 ## Numbers
 
 ### `(finc place &optional (delta 1))`
@@ -1056,11 +1062,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g11442 n)`
+### `(shrinkf g12700 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g11464 n)`
+### `(growf g12722 n)`
 
 Grow the value in a place by a factor.
 
@@ -1325,10 +1331,6 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-### `(intersperse new-elt list)`
-
-Insert NEW-ELT between each element of LIST.
-
 ### `(powerset set)`
 
 Return the powerset of SET.
@@ -1428,10 +1430,10 @@ From Emacs Lisp.
 ### `(string-upcase-initials string)`
 
 Return STRING with the first letter of each word capitalized.
-This differs from CAPITALIZE in that the other characters in each word
-are not changed.
+This differs from STRING-CAPITALIZE in that the other characters in
+each word are not changed.
 
-     (capitalize "an ACRONYM") -> "An Acronym")
+     (string-capitalize "an ACRONYM") -> "An Acronym")
      (string-upcase-initials "an ACRONYM") -> "An ACRONYM")
 
 From Emacs Lisp (where it is simply `upcase-initials`).
@@ -1492,18 +1494,6 @@ Like (format nil ...), binding `*pretty-pretty*` to `nil`, which in
 some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
-
-### `(downcase x)`
-
-Downcase a string or character.
-
-### `(upcase x)`
-
-Upcase a string or character.
-
-### `(capitalize x)`
-
-Capitalize a string or character.
 
 ### `(escape string table &key start end stream)`
 
@@ -1600,18 +1590,31 @@ operations on the subsequence returned may mutate the original.
 `nsubseq` also works with `setf`, with the same behavior as
 `replace`.
 
-### `(filter pred seq &rest args &key count from-end start end key &allow-other-keys)`
+### `(filter pred seq &rest args &key count &allow-other-keys)`
 
-Almost the opposite of `remove-if-not`.
-The difference is the handling of COUNT.
+Almost, but not quite, an alias for `remove-if-not`.
 
-### `(keep item seq &rest args &key test from-end count &allow-other-keys)`
+The difference is the handling of COUNT: for `filter`, COUNT is the
+number of items to *keep*, not remove.
 
-Almost the opposite of `remove`.
-Keep only those items in SEQ that are equivalent, under TEST and KEY,
-to ITEM.
+     (remove-if-not #'oddp '(1 2 3 4 5) :count 2)
+     => '(1 3 5)
 
-The difference is the handling of COUNT.
+     (filter #'oddp '(1 2 3 4 5) :count 2)
+     => '(1 3)
+
+### `(keep item seq &rest args &key test from-end key count &allow-other-keys)`
+
+Almost, but not quite, an alias for `remove`.
+
+The difference is the handling of COUNT. For `keep`, COUNT is the
+number of items to *keep*, not remove.
+
+     (remove 'x '(x y x y x y) :count 2)
+     => '(y y x y)
+
+     (keep 'x '(x y x y x y) :count 2)
+     => '(x x)
 
 ### `(single seq)`
 
@@ -1796,10 +1799,6 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-### `(vector= v1 v2 &key test start1 end1 start2 end2)`
-
-Like `string=` for any vector.
-
 ### `(halves seq &optional split)`
 
 Return, as two values, the first and second halves of SEQ.
@@ -1833,7 +1832,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1865,4 +1864,9 @@ If the graph is inconsistent, signals an error of type
 
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
+
+### `(intersperse new-elt seq)`
+
+Return a sequence like SEQ, but with NEW-ELT inserted between each
+element.
 

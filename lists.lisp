@@ -146,7 +146,7 @@ In variadic use, `mapply' acts as if `append' had first been used:
 
 But the actual implementation is more efficient.
 
-`mapply' can convert a list of two-element lists in an alist:
+`mapply' can convert a list of two-element lists into an alist:
 
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))"

@@ -28,7 +28,8 @@
           split-sequence:split-sequence-if
           split-sequence:split-sequence-if-not))
 
-(defun make-sequence-like (seq len &rest args &key initial-element (initial-contents nil ic?))
+(defun make-sequence-like (seq len &rest args &key initial-element
+                                                   (initial-contents nil ic?))
   (seq-dispatch seq
     (if ic?
         (map 'list #'identity initial-contents)
@@ -71,38 +72,45 @@ Uses `replace' internally."
   (replace seq value :start1 start :end1 end)
   value)
 
-(defun counted-filter (pred key seq count reversed?)
+(defun filter/counted (pred seq &key count from-end (start) end
+                                     (key #'identity))
   "Helper for FILTER."
   (fbind (pred key)
     (declare (dynamic-extent #'pred #'key))
-    (let ((ret '()))
+    (let* ((seq (nsubseq seq (or start 0) end))
+           (seq (if from-end (reverse seq) seq))
+           (ret '())
+           (len 0))
       (block nil
         (map nil
              (lambda (item)
                (when (pred (key item))
                  (push item ret)
+                 (incf len)
                  (when (zerop (decf count))
                    (return))))
              seq))
-      (if reversed?
-          ret
-          (nreverse ret)))))
+      (make-sequence-like seq len
+                          :initial-contents (if from-end
+                                                ret
+                                                (nreverse ret))))))
 
-(defun filter (pred seq &rest args &key count from-end (start 0) end
-                                        (key #'identity)
-               &allow-other-keys)
-  "Almost the opposite of `remove-if-not'.
-The difference is the handling of COUNT."
-  (if (null count)
-      (apply #'remove-if-not pred seq args)
-      (let* ((count (max 0 count))      ;COUNT can be negative.
-             (seq (if from-end (reverse seq) seq))
-             (items (counted-filter pred
-                                    key
-                                    (nsubseq seq start end)
-                                    count
-                                    from-end)))
-        (make-sequence-like seq (length items) :initial-contents items))))
+(defun filter (pred seq &rest args &key count &allow-other-keys)
+  "Almost, but not quite, an alias for `remove-if-not'.
+
+The difference is the handling of COUNT: for `filter', COUNT is the
+number of items to *keep*, not remove.
+
+     (remove-if-not #'oddp '(1 2 3 4 5) :count 2)
+     => '(1 3 5)
+
+     (filter #'oddp '(1 2 3 4 5) :count 2)
+     => '(1 3)"
+  (cond ((null count)
+         (apply #'remove-if-not pred seq args))
+        ((< count 1)
+         (make-sequence-like seq 0))
+        (t (apply #'filter/counted pred seq args))))
 
 (assert (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
 (assert (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))
@@ -114,25 +122,32 @@ The difference is the handling of COUNT."
                                       &rest args
                                       &key count
                                       &allow-other-keys)
-  "Expand to `remove-if-not' if there is no COUNT."
+  "In the absence of COUNT, expand directly to `remove-if-not'."
   (if (null count)
       `(remove-if-not ,pred ,seq ,@args)
       decline))
 
-(defun keep (item seq &rest args &key (test #'eql) from-end count
-                      &allow-other-keys)
-  "Almost the opposite of `remove'.
-Keep only those items in SEQ that are equivalent, under TEST and KEY,
-to ITEM.
+(defun keep (item seq &rest args &key (test #'eql) from-end key count
+             &allow-other-keys)
+  "Almost, but not quite, an alias for `remove'.
 
-The difference is the handling of COUNT."
-  (let* ((args (remove-from-plist args :test :count))
-         (seq (apply #'remove item seq :test-not test args)))
-    (if (null count)
-        seq
-        (apply #'filter (curry test item) seq
-               :count count :from-end from-end
-               args))))
+The difference is the handling of COUNT. For `keep', COUNT is the
+number of items to *keep*, not remove.
+
+     (remove 'x '(x y x y x y) :count 2)
+     => '(y y x y)
+
+     (keep 'x '(x y x y x y) :count 2)
+     => '(x x)"
+  (declare (ignore from-end key))
+  (let ((args (remove-from-plist args :test :count)))
+    (cond ((null count)
+           (apply #'remove item seq :test-not test args))
+          ((< count 1)
+           (make-sequence-like seq 0))
+          (t (fbind ((test (curry test item)))
+               (declare (dynamic-extent #'test))
+               (apply #'filter #'test seq :count count args))))))
 
 (assert (equal '((a 1) (a 2))
                (keep 'a '((a 1) (b) (c) (a 2) (a 3) (b) (c) (a 4) (a 5))
@@ -146,7 +161,7 @@ The difference is the handling of COUNT."
                                     &rest args
                                     &key (test '#'eql) count
                                     &allow-other-keys)
-  "Expand to `remove' if there is no COUNT."
+  "In the absence of COUNT, expand directly to `remove'."
   (if (null count)
       `(remove ,item ,seq :test-not ,test ,@(remove-from-plist args :test))
       decline))
@@ -617,11 +632,9 @@ If X and Y are of equal length, return X."
 
 (defun shortest (seqs)
   "Return the shortest seq in SEQS."
-  (flet ((shorter (x y)
-           (select (longer x y)
-             (x y)
-             (y x))))
-    (reduce #'shorter seqs)))
+  (reduce (lambda (x y)
+            (if (eql (longer x y) x) y x))
+          seqs))
 
 (defun slice-bounds (seq start end)
   "Normalize START and END, which may be negative, to offsets
@@ -1065,7 +1078,7 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
 (assert (equal (intersperse/list 'y '(x z)) '(x y z)))
 
 (defun intersperse/seq (new-elt seq)
-  (if (emptyp seq)
+  (if (< (length seq) 2)
       (copy-seq seq)
       (let* ((len1 (length seq))
              (len2 (1- (* 2 len1)))

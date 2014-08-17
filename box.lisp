@@ -34,10 +34,12 @@ recognize boxes using a type or predicate."
   (values `(box)
           `(setf (unbox ',self) ,(unbox self))))
 
-(defsubst unbox (x)
+(declaim (inline unbox (setf unbox)))
+
+(defun unbox (x)
   "The value in the box X."
   (box-value x))
 
-(defsubst (setf unbox) (value x)
+(defun (setf unbox) (value x)
   "Put VALUE in box X."
   (setf (box-value x) value))

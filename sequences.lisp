@@ -138,7 +138,12 @@ number of items to *keep*, not remove.
      => '(y y x y)
 
      (keep 'x '(x y x y x y) :count 2)
-     => '(x x)"
+     => '(x x)
+
+`keep' becomes useful with the KEY argument:
+
+     (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
+     => '((x 1) (x 3))"
   (declare (ignore from-end key))
   (let ((args (remove-from-plist args :test :count)))
     (cond ((null count)

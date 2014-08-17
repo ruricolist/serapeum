@@ -6,12 +6,6 @@
           hash-fold maphash-return
           set-hash-table hash-table-set))
 
-(-> dict (&rest t) hash-table)
-(-> pophash (t hash-table) (values t boolean))
-(-> swaphash (t t hash-table) (values t boolean))
-(-> merge-tables (hash-table &rest hash-table)
-    hash-table)
-
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 

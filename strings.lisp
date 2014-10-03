@@ -408,11 +408,10 @@ From Arc."
                                (and (>= (length s2) (length s1))
                                     (progn ,@body)))))))
                  `(progn
-                    (symbol-macrolet ((test #'char=))
-                      ,(mkdef name1 :docstring docstring))
-                    (symbol-macrolet ((test #'char-equal))
-                      ,(let ((docstring (format nil "Like `~(~a~)', but case-insensitive." name1)))
-                         (mkdef name2 :docstring docstring))))))))
+                    ,(subst '#'char= 'test (mkdef name1 :docstring docstring))
+                    ,(subst '#'char-equal 'test
+                            (let ((docstring (format nil "Like `~(~a~)', but case-insensitive." name1)))
+                              (mkdef name2 :docstring docstring))))))))
 
   (defcmp (string^= string-prefixp) (s1 s2)
     "Is S1 a prefix of S2?"

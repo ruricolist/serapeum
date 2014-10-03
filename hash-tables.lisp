@@ -216,6 +216,9 @@ Clojure's `merge'."
 (defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
   "Return a table like TABLE, but with keys and values flipped.
 
+     (gethash :y (flip-hash-table (dict :x :y)))
+     => :x
+
 TEST filters which keys to set. KEY defaults to `identity'."
   (let ((table2 (copy-hash-table/empty table)))
     (ensuring-functions (key test)
@@ -231,8 +234,8 @@ TEST filters which keys to set. KEY defaults to `identity'."
                                                       (strict t)
                        &allow-other-keys)
   "Return SET, a list considered as a set, as a hash table.
-This is the equivalent of `alist-hash-table' and `plist-hash-table'
-for a list that denotes a set.
+This is the equivalent of Alexandria's `alist-hash-table' and
+`plist-hash-table' for a list that denotes a set.
 
 STRICT determines whether to check that the list actually is a set.
 

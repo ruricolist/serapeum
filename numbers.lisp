@@ -32,70 +32,130 @@ can prevent optimization."
        (setf ,place (- ,old ,delta))
        ,old)))
 
-(defun parse-float (string &key (start 0) (end (length string)) junk-allowed)
-  "Based on the venerable `parse-float' from the CMU Lisp repository.
+;;; Loose adaption of the parser in SBCL's reader.lisp.
+
+(defun make-float (number divisor &optional (format *read-default-float-format*))
+  (assert (subtypep format 'float))
+  (coerce (/ number divisor) format))
+
+(defun exponent-char? (char)
+  (case char
+    ((#\e #\s #\f #\l #\d) t)
+    ((#\E #\S #\F #\L #\D) t)
+    (t nil)))
+
+(defun exponent-char-format (exponent-char)
+  (ecase (char-downcase exponent-char)
+    (#\e *read-default-float-format*)
+    (#\s 'short-float)
+    (#\f 'single-float)
+    (#\d 'double-float)
+    (#\l 'long-float)))
+
+(defun read-float-aux (stream junk-allowed type)
+  (declare (optimize (speed 3) (debug 0)))
+  (labels ((junk ()
+             (error "Junk in string"))
+           (next ()
+             (let ((char (read-char stream nil nil)))
+               (values char (and char (digit-char-p char)))))
+           (before-decimal (number)
+             (multiple-value-bind (char digit) (next)
+               (cond ((null char)
+                      (coerce number type))
+                     ((eql char #\.)
+                      (after-decimal number 1))
+                     (digit
+                      (before-decimal (+ (* number 10) digit)))
+                     (t (if junk-allowed
+                            number
+                            (junk))))))
+           (after-decimal (number divisor)
+             (multiple-value-bind (char digit) (next)
+               (cond ((null char)
+                      (make-float number divisor type))
+                     ((exponent-char? char)
+                      (exponent number divisor 0
+                                (exponent-char-format char)))
+                     (digit
+                      (after-decimal (+ (* number 10) digit)
+                                     (* divisor 10)))
+                     (t (if junk-allowed
+                            (make-float number divisor)
+                            (junk))))))
+           (exponent (n d e f &optional neg)
+             (multiple-value-bind (char digit) (next)
+               (cond ((null char)
+                      (let ((e (if neg (- e) e)))
+                        (make-float (* (expt 10 e) n) d f)))
+                     ((eql char #\+)
+                      (exponent n d e f nil))
+                     ((eql char #\-)
+                      (exponent n d e f t))
+                     (digit
+                      (exponent n d (+ (* e 10) digit) f neg))
+                     (t (if junk-allowed
+                            (let ((e (if neg (- e) e)))
+                              (make-float (* (expt 10 e) n) d f))
+                            (junk)))))))
+    (before-decimal 0)))
+
+(defun read-float (stream junk-allowed type)
+  (let ((char (read-char stream nil nil)))
+    (cond ((null char)
+           (if junk-allowed
+               (coerce 0 type)
+               (error "Empty string cannot be parsed as float")))
+          ((eql char #\+) (read-float-aux stream junk-allowed type))
+          ((eql char #\-) (- (read-float-aux stream junk-allowed type)))
+          ((digit-char-p char)
+           (unread-char char stream)
+           (read-float-aux stream junk-allowed type))
+          (t (if junk-allowed
+                 (coerce 0 type)
+                 (error "Junk in string"))))))
+
+(defun parse-float (string &key (start 0) (end (length string)) junk-allowed
+                                (type *read-default-float-format* type-supplied-p))
+  "Parse STRING as a float of TYPE.
+
+The type of the float is determined by, in order:
+- TYPE, if it is supplied;
+- The type specified in the exponent of the string;
+- `*read-default-float-format*'
+
+     (parse-float \"1.0\") => 1.0s0
+     (parse-float \"1.0d0\") => 1.0d0
+     (parse-float \"1.0s0\" :type 'double-float) => 1.0d0
+
 Of course you could just use `parse-number', but sometimes only a
 float will do."
-  (declare (string string) (array-length start end))
-  (let ((index (or (position-if-not #'whitespacep string
-                                    :start start :end end)
-                   (return-from parse-float (values 0.0 end))))
-        (minusp nil) (decimalp nil) (found-digit nil)
-        (before-decimal 0) (after-decimal 0) (decimal-counter 0)
-        (exponent 0)
-        (result 0)
-        (radix 10))
-    (declare (array-length index))
-    (let ((char (char string index)))
-      (cond ((char= char #\-)
-             (setq minusp t)
-             (incf index))
-            ((char= char #\+)
-             (incf index))))
-    (loop
-      until (= index end)
-      for char = (char string index)
-      as weight = (digit-char-p char radix)
-      do (cond ((and weight (not decimalp))
-                (setq before-decimal (+ weight (* before-decimal radix))
-                      found-digit t))
-               ((and weight decimalp)
-                (setq after-decimal (+ weight (* after-decimal radix))
-                      found-digit t)
-                (incf decimal-counter))
-               ((and (char= char #\.) (not decimalp))
-                (setq decimalp t))
-               ((and (case char ((#\e #\d #\f #\s #\l) t))
-                     (= radix 10))
-                (multiple-value-bind (num idx)
-                    (parse-integer string :start (1+ index) :end end
-                                          :radix radix :junk-allowed junk-allowed)
-                  (setq exponent (or num 0)
-                        index idx)
-                  (when (= index end) (return nil))))
-               ((whitespacep char)
-                (when (position-if-not #'whitespacep string
-                                       :start (1+ index) :end end)
-                  (if junk-allowed
-                      (loop-finish)
-                      (error "There's junk in this string: ~s." string)))
-                (return nil))
-               (t (if junk-allowed
-                      (loop-finish)
-                      (error "There's junk in this string: ~s." string))))
-         (incf index))
-    (setq result (coerce (* (+ before-decimal
-                               (* after-decimal
-                                  (coerce (expt radix (- decimal-counter))
-                                          'float)))
-                            (coerce (expt radix exponent)
-                                    'float))
-                         'float))
-    (values
-     (if found-digit
-         (if minusp (- result) result)
-         0.0)
-     index)))
+  (assert (subtypep type 'float))
+  (let* ((stream (make-string-input-stream string start end))
+         (float (read-float stream junk-allowed type)))
+    (if type-supplied-p
+        (coerce float type)
+        float)))
+
+;;; When parse-float is called with a constant `:type' argument, wrap
+;;; it in a `the' form.
+
+;; Prevent recursive macro-expansion.
+(defun parse-float-wrapper (&rest args)
+  (apply #'parse-float args))
+
+(define-compiler-macro parse-float (&whole decline string &rest args
+                                           &key type
+                                           &allow-other-keys)
+  (if (and type (constantp type))
+      (let ((type (eval type)))
+        (assert (subtypep type 'float))
+        `(the ,type (parse-float-wrapper ,string ,@args)))
+      decline))
+
+;;; Clinger 1990.
+(assert (= (parse-float "1.448997445238699" :type 'double-float)
+           1.4489974452386990d0))
 
 (declaim (inline round-to))
 (defun round-to (number &optional (divisor 1))
@@ -108,8 +168,8 @@ float will do."
 (defun bits (int &key big-endian)
   "Return a bit vector of the bits in INT.
 Defaults to little-endian."
-  (lret ((bits (make-array (integer-length int)
-                           :element-type 'bit)))
+  (let ((bits (make-array (integer-length int)
+                          :element-type 'bit)))
     (if big-endian
         (loop for i below (integer-length int)
               for j downfrom (1- (integer-length int)) to 0
@@ -121,7 +181,8 @@ Defaults to little-endian."
               do (setf (sbit bits i)
                        (if (logbitp i int)
                            1
-                           0))))))
+                           0))))
+    bits))
 
 (defun unbits (bits &key big-endian)
   "Turn a sequence of BITS into an integer.
@@ -153,7 +214,9 @@ Defaults to little-endian."
 
 (define-modify-macro growf (n) grow
   "Grow the value in a place by a factor.")
-(defsubst random-in-range (low high)
+
+(declaim (inline random-in-range))
+(defun random-in-range (low high)
   "Random number in the range [low,high).
 
 From Zetalisp."

@@ -162,11 +162,13 @@ Declaim the ftype of a function from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-### `(check-the type-spec &body (form))`
+### `(assure type-spec &body (form))`
 
 Cross between CHECK-TYPE and THE for inline type checking.
 The syntax is the same as THE; the semantics are the same as
 CHECK-TYPE.
+
+From ISLISP.
 
 ## Definitions
 
@@ -853,13 +855,16 @@ Clojure's `merge`.
 
 Return a table like TABLE, but with keys and values flipped.
 
+     (gethash :y (flip-hash-table (dict :x :y)))
+     => :x
+
 TEST filters which keys to set. KEY defaults to `identity`.
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
 Return SET, a list considered as a set, as a hash table.
-This is the equivalent of `alist-hash-table` and `plist-hash-table`
-for a list that denotes a set.
+This is the equivalent of Alexandria's `alist-hash-table` and
+`plist-hash-table` for a list that denotes a set.
 
 STRICT determines whether to check that the list actually is a set.
 
@@ -1031,9 +1036,19 @@ can prevent optimization.
 
 Like `decf`, but returns the old value instead of the new.
 
-### `(parse-float string &key start end junk-allowed)`
+### `(parse-float string &key start end junk-allowed type)`
 
-Based on the venerable `parse-float` from the CMU Lisp repository.
+Parse STRING as a float of TYPE.
+
+The type of the float is determined by, in order:
+- TYPE, if it is supplied;
+- The type specified in the exponent of the string;
+- `*read-default-float-format*`
+
+     (parse-float "1.0") => 1.0s0
+     (parse-float "1.0d0") => 1.0d0
+     (parse-float "1.0s0" :type 'double-float) => 1.0d0
+
 Of course you could just use `parse-number`, but sometimes only a
 float will do.
 
@@ -1062,11 +1077,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g12700 n)`
+### `(shrinkf g91453 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g12722 n)`
+### `(growf g91475 n)`
 
 Grow the value in a place by a factor.
 
@@ -1300,7 +1315,7 @@ In variadic use, `mapply` acts as if `append` had first been used:
 
 But the actual implementation is more efficient.
 
-`mapply` can convert a list of two-element lists in an alist:
+`mapply` can convert a list of two-element lists into an alist:
 
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
@@ -1519,13 +1534,13 @@ ELLIPSIS, so the string may come out longer than it started.
 
 From Arc.
 
-### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string^=`, but case-insensitive.
-
 ### `(string^= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a prefix of S2?
+
+### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
+
+Like `string^=`, but case-insensitive.
 
 ### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1534,10 +1549,6 @@ Is S1 a suffix of S2?
 ### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
-
-### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string*=`, but case-insensitive.
 
 ### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1549,6 +1560,10 @@ This is similar, but not identical, to SEARCH.
      (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
+
+### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
+
+Like `string*=`, but case-insensitive.
 
 ### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1615,6 +1630,11 @@ number of items to *keep*, not remove.
 
      (keep 'x '(x y x y x y) :count 2)
      => '(x x)
+
+`keep` becomes useful with the KEY argument:
+
+     (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
+     => '((x 1) (x 3))
 
 ### `(single seq)`
 
@@ -1832,7 +1852,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints x)`
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

@@ -23,8 +23,14 @@
   "abcdefghijklmnopqrstuvwxyz"
   "The 26 lowercase letters of the English alphabet.")
 
+(defconst no-break-space
+  #-abcl #\No-break_space
+  #+abcl (code-char 160))
+
 (defconst whitespace
-  #.(remove-duplicates (coerce '(#\Space #\Tab #\Linefeed #\Return #\Newline #\Page #\No-break_space) 'string))
+  #.(remove-duplicates
+     (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page no-break-space)
+             'string))
   "Whitespace characters.")
 
 (defsubst whitespacep (char)

@@ -2,7 +2,7 @@
 
 (export '(synchronized monitor))
 
-(eval-and-compile
+(eval-when (:compile-toplevel :load-toplevel)
   (defconstant +lock-class+ (class-of (bt:make-lock))))
 
 (defmacro synchronized ((&optional (object nil objectp)) &body body &environment env)

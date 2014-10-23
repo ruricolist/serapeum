@@ -76,4 +76,5 @@
                              "control-flow"
                              "queue"))
                (:file "strings" :depends-on ("lists"))
-               (:file "sequences" :depends-on ("lists"))))
+               (:file "sequences" :depends-on ("lists"))
+               (:file "fbind-tests" :depends-on ("fbind" "sequences"))))

@@ -13,6 +13,13 @@
 
 (defconstant +seconds-in-day+ (* +seconds-in-hour+ 24))
 
+(declaim (inline universal-to-unix
+                 unix-to-universal
+                 get-unix-time
+                 date-leap-year-p
+                 time-since
+                 time-until))
+
 ;; Names chosen for conformity with local-time.
 (defun universal-to-unix (time)
   "Convert a universal time to a Unix time."

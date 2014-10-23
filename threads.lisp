@@ -5,16 +5,22 @@
 (eval-when (:compile-toplevel :load-toplevel)
   (defconstant +lock-class+ (class-of (bt:make-lock))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun lock-form (object objectp env)
+    (cond ((not objectp)
+           `(load-time-value (bt:make-lock "Anonymous critical section")))
+          ((constantp object env)
+           `(load-time-value (monitor ,object)))
+          (t `(monitor ,object)))))
+
 (defmacro synchronized ((&optional (object nil objectp)) &body body &environment env)
   "Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section."
-  (let ((lock (cond ((not objectp)
-                     `(load-time-value (bt:make-lock "Anonymous critical section")))
-                    ((constantp object env)
-                     `(load-time-value (monitor ,object)))
-                    (t `(monitor ,object)))))
-    `(bt:with-lock-held (,lock)
-       ,@body)))
+  (let ((form (lock-form object objectp env)))
+    (with-gensyms (lock)
+      `(let ((,lock ,form))
+         (bt:with-lock-held (,lock)
+           ,@body)))))
 
 (defvar *monitors*
   (tg:make-weak-hash-table :weakness :key))

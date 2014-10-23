@@ -65,7 +65,8 @@
                (:file "hooks"
                 :depends-on ("package"))
                (:file "fbind"
-                :depends-on ("binding"))
+                :depends-on ("binding"
+                             "control-flow"))
                (:file "lists"
                 :depends-on ("definitions"
                              "types"

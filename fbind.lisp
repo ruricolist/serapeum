@@ -323,9 +323,10 @@ generates another are undefined."
        ,@(when env-decls (unsplice `(declare ,@env-decls)))
        ;; Simple expressions reference functions already defined
        ;; outside of the letrec, so we can handle them with fbind.
+       (comment "Simple")
        (fbind ,simple
          ,@simple-decls
-         ;; Temps.
+         (comment "Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
@@ -334,13 +335,13 @@ generates another are undefined."
                                         (declare (dynamic-extent args))
                                         (apply ,temp args)))
              ,@complex-decls
-             ;; Lambdas.
+             (comment "Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               ;; Unreferenced.
+               (comment "Unreferenced")
                (progn ,@(mapcar #'second unref))
-               ;; Complex.
+               (comment "Complex")
                (psetf ,@(loop for temp in temps
                               for (nil expr) in complex
                               append `(,temp (ensure-function ,expr))))
@@ -348,19 +349,19 @@ generates another are undefined."
                  ,@body))))))))
 
 (defmacro fbindrec* (bindings &body body)
-  "Like `fbindrec`, but the function defined in each binding can be
+  ")Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings."
   (setf bindings (expand-fbindings bindings))
   (unless bindings
     (return-from fbindrec* `(locally ,@body)))
   (mvlet* ((env env-decls binds lambdas (analyze-fbinds bindings))
            (simple complex lambda unref
-                   (partition-fbinds (append binds lambdas)
-                                     body))
+            (partition-fbinds (append binds lambdas)
+                              body))
            (temps (mapcar (compose #'gensym #'string #'first) complex))
            (body decls (parse-body body))
            (simple-decls complex-decls lambda-decls others
-                         (partition-declarations-by-kind simple complex lambda decls)))
+            (partition-declarations-by-kind simple complex lambda decls)))
     env-decls ;; TODO Use env-decls.
     `(let
          ;; Use dummies when we can (with ensure-function).
@@ -369,10 +370,10 @@ used in successive bindings."
                                  (eql (car init) 'ensure-function))
                             `(,var #'invalid)
                             var))
-       ;; Simple bindings.
+       (comment "Simple bindings")
        (fbind ,simple
          ,@simple-decls
-         ;; Temps for complex bindings.
+         (comment "Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
@@ -381,22 +382,21 @@ used in successive bindings."
                                         (declare (dynamic-extent args))
                                         (apply ,temp args)))
              ,@complex-decls
-             ;; Lambdas.
+             (comment "Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               ;; Interleave unreferenced and complex in order.
+               (comment "Interleave unreferenced and complex bindings in order.")
                ,@(remove nil
                          (loop for (name nil) in bindings
-                               collect (nth-value-or 1
-                                         (loop for (uname init) in unref
-                                               if (eql uname name)
-                                                 return (values init t))
-                                         (loop for (cname init) in complex
-                                               for temp in temps
-                                               if (eql cname name)
-                                                 return `(setf ,temp (ensure-function ,init))))))
-               ;; Set the `env` variables for the lambdas.
+                               append (or (loop for (uname init) in unref
+                                                if (eql uname name)
+                                                  return (list init))
+                                          (loop for (cname init) in complex
+                                                for temp in temps
+                                                if (eql cname name)
+                                                  return `((setf ,temp (ensure-function ,init)))))))
+               (comment "Set the `env` variables for the lambdas")
                (setf ,@(apply #'append env))
                (locally ,@others
                  ,@body))))))))
@@ -405,8 +405,6 @@ used in successive bindings."
   (assert (eql 1 (let ((fn (lambda (x) (1+ x))))
                    (fbind fn
                      (fn 0)))))
-  (assert (eql 1 (fbind (fn (lambda (x) (1+ x)))
-                   (fn 0))))
   (assert (eql 1 (fbind ((fn (lambda (x) (1+ x))))
                    (fn 0))))
   (assert
@@ -422,7 +420,21 @@ used in successive bindings."
     (assert (not (string-or-null t))))
   (fbind ((singleton-string (conjoin #'stringp #'single)))
     (assert (singleton-string "f"))
-    (assert (not (singleton-string '(#\f))))))
+    (assert (not (singleton-string '(#\f)))))
+  (let ((fold-case t))
+    (fbindrec ((char-test
+                (if fold-case
+                    #'char-equal
+                    #'char=)))
+      (assert (every #'char-test "foo" "FOO"))))
+  (let ((fold-case t))
+    (fbindrec* ((fold-case?
+                 (lambda () fold-case))
+                (char-test
+                 (if (fold-case?)
+                     #'char-equal
+                     #'char=)))
+      (assert (every #'char-test "foo" "FOO")))))
 
 ;; TODO These should be errors.
 #+ () (progn (fbindrec ((make-adder (lambda (x)

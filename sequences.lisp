@@ -1,6 +1,7 @@
 (in-package :serapeum)
 
 (export '(keep filter
+          filterf
           partition partitions
           runs batches assort
           single
@@ -126,6 +127,16 @@ number of items to *keep*, not remove.
   (if (null count)
       `(remove-if-not ,pred ,seq ,@args)
       decline))
+
+(declaim (inline filter/swapped-arguments))
+(defun filter/swapped-arguments (seq pred &rest args)
+  (apply #'filter pred seq args))
+
+(define-modify-macro filterf (pred &rest args)
+  filter/swapped-arguments
+  "Modify-macro for FILTER.
+The place designed by the first argument is set to th result of
+calling FILTER with PRED, the place, and ARGS.")
 
 (defun keep (item seq &rest args &key (test #'eql) from-end key count
              &allow-other-keys)

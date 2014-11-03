@@ -184,7 +184,7 @@ and false.
 Return two values, one with each sequence.
 
 Exactly equivalent to:
-     (values (remove-if predicate seq) (remove-if-not predicate seq))
+     (values (remove-if-not predicate seq) (remove-if predicate seq))
 except it visits each element only once.
 
 Note that `partition` is not just `assort` with an up-or-down

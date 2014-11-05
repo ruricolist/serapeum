@@ -5,7 +5,8 @@
           expand-macro expand-macro-recursively
           parse-declarations
           expand-declaration
-          partition-declarations))
+          partition-declarations
+          define-do-macro))
 
 ;;;# Basics
 
@@ -324,3 +325,57 @@ directly into Lisp code:
   `(let ,(loop for var in vars
                collect `(,var (ensure-function ,var)))
      ,@body))
+
+(defmacro define-do-macro (name binds &body body)
+  "Define an iteration macro like `dolist'.
+
+Writing a macro like `dolist' is more complicated than it looks. For
+consistency with the rest of CL, you have to do all of the following:
+
+- The entire loop must be surrounded with an implicit `nil' block.
+- The body of the loop must be an implicit `tagbody'.
+- There must be an optional `return' form which, if given, supplies
+  the values to return from the loop. While this return form is
+  being evaluated, the iteration variables are bound to `nil'.
+
+Say you wanted to define a `do-hash' macro that iterates over hash
+tables. A full implementation would look like this:
+
+     (defmacro do-hash ((key value hash-table &optional return) &body body)
+       (multiple-value-bind (body decls) (parse-body body)
+         `(block nil
+            (maphash (lambda (,key ,value)
+                       ,@decls
+                       (tagbody
+                          ,@body))
+                     ,hash-table)
+            ,(when return
+               `(let (,key ,value)
+                  ,return)))))
+
+Using `define-do-macro' takes care of all of this for you.
+
+     (define-do-macro do-hash ((key value hash-table &optional return) &body body)
+       `(maphash (lambda (,key ,value)
+                   ,@body)
+                 ,hash-table))"
+  (let ((ret-var (cadr (member '&optional (car binds))))
+        ;; Handle both (key value table) and ((key value) table
+        (vars (flatten (butlast (car binds) 3)))
+        (body-var (cadr (member '&body (cdr binds)))))
+    (unless ret-var
+      (error "No binding for return form in ~s" (car binds)))
+    (unless body-var
+      (error "No binding for body in ~s" binds))
+    `(defmacro ,name ,binds
+       (multiple-value-bind (,body-var decls)
+           (parse-body ,body-var)
+         (let ((,body-var
+                 `(,@decls
+                   (tagbody ,@,body-var))))
+           `(block nil
+              ,,@body
+              ,(when ,ret-var
+                 `(let (,,@vars)
+                    (declare (ignorable ,,@vars))
+                    ,,ret-var))))))))

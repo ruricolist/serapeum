@@ -3,9 +3,6 @@
 
 (export '(unsplice string-gensym with-thunk
           expand-macro expand-macro-recursively
-          parse-declarations
-          expand-declaration
-          partition-declarations
           define-do-macro))
 
 ;;;# Basics

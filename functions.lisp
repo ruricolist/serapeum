@@ -1,6 +1,7 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
+;;; * Functions
 (export '(flip nth-arg
           distinct
           throttle #+ () debounce
@@ -103,7 +104,7 @@ This has many uses, for example:
                         (funcall key arg))
                   t)))))
 
-(defun throttle (fn wait &key synchronized)
+(defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.
 If FN was called less than WAIT seconds ago, return the values from the
 last call. Otherwise, call FN normally and update the cached values.
@@ -111,22 +112,50 @@ last call. Otherwise, call FN normally and update the cached values.
 WAIT, of course, may be a fractional number of seconds.
 
 The throttled function is not thread-safe by default; use SYNCHRONIZED
-to get a version with a lock."
-  (let* ((fn (ensure-function fn))
-         (thunk
-           (let ((last 0)
-                 (cache '(nil)))
-             (lambda (&rest args)
-               (when (<= (- wait (- (get-universal-time) last)) 0)
-                 (setf last (get-universal-time)
-                       cache (multiple-value-list (apply fn args))))
-               (values-list cache)))))
-    (if (not synchronized)
-        thunk
-        (let ((lock (bt:make-lock)))
-          (lambda (&rest args)
-            (bt:with-lock-held (lock)
-              (apply thunk args)))))))
+to get a version with a lock.
+
+You can pass MEMOIZED if you want the function to remember values
+between calls."
+  (labels ((ready? (last)
+             (<= (- wait (- (get-universal-time) last)) 0))
+           (throttle/simple (fn)
+             (let ((last 0)
+                   (cache '(nil))
+                   (fn (ensure-function fn)))
+               (lambda (&rest args)
+                 (when (ready? last)
+                   (setf last (get-universal-time)
+                         cache (multiple-value-list (apply fn args))))
+                 (values-list cache))))
+           (cleanup-cache (cache)
+             (maphash (lambda (k v)
+                        (when (ready? (car v))
+                          (remhash k cache)))
+                      cache))
+           (throttle/memoized (fn)
+             (let ((cache (make-hash-table :test 'equal)))
+               (lambda (&rest args)
+                 (cleanup-cache cache)
+                 (destructuring-bind (last . values)
+                     (gethash args cache '(0 nil))
+                   (if (not (ready? last))
+                       (values-list values)
+                       (values-list
+                        (cdr
+                         (setf (gethash args cache)
+                               (cons (get-universal-time)
+                                     (multiple-value-list (apply fn args)))))))))))
+           (throttle/synchronized (fn)
+             (let ((thunk (throttle fn wait :synchronized nil :memoized memoized)))
+               (let ((lock (bt:make-lock)))
+                 (lambda (&rest args)
+                   (bt:with-lock-held (lock)
+                     (apply thunk args)))))))
+    (if synchronized
+        (throttle/synchronized fn)
+        (if memoized
+            (throttle/memoized fn)
+            (throttle/simple fn)))))
 
 (defun once (fn)
   "Return a function that runs FN only once, caching the results

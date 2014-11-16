@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 219 functions)
+# Function Listing For Serapeum (27 files, 218 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -102,56 +102,40 @@ From Swank.
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
 
-### `(parse-declarations declarations)`
+### `(define-do-macro name binds &body body)`
 
-Pick apart a list of `declare` forms.
+Define an iteration macro like `dolist`.
 
-Parse DECLARATIONS into an alist of (identifier . declarations).
-Declarations should be a list like ((declare ...) ...), as would be
-returned by `alexandria:parse-body`.
+Writing a macro like `dolist` is more complicated than it looks. For
+consistency with the rest of CL, you have to do all of the following:
 
-Declarations that are specific to functions are normalized to
-use `(function ,identifier).
+- The entire loop must be surrounded with an implicit `nil` block.
+- The body of the loop must be an implicit `tagbody`.
+- There must be an optional `return` form which, if given, supplies
+  the values to return from the loop. While this return form is
+  being evaluated, the iteration variables are bound to `nil`.
 
-Type declarations are normalized to the form `(type ,type).
+Say you wanted to define a `do-hash` macro that iterates over hash
+tables. A full implementation would look like this:
 
-Ftype declarations are also normalized.
+     (defmacro do-hash ((key value hash-table &optional return) &body body)
+       (multiple-value-bind (body decls) (parse-body body)
+         `(block nil
+            (maphash (lambda (,key ,value)
+                       ,@decls
+                       (tagbody
+                          ,@body))
+                     ,hash-table)
+            ,(when return
+               `(let (,key ,value)
+                  ,return)))))
 
-     (parse-declarations
-      '((declare
-         (fixnum x)
-         (type list xs)
-         (ftype (-> list fixnum) frob)
-         (inline frob)
-         (dynamic-extent #'frob))))
-     => '((#'frob dynamic-extent inline (ftype (-> list fixnum)))
-          (xs (type list))
-          (x (type fixnum)))
+Using `define-do-macro` takes care of all of this for you.
 
-Return any optimizations declared as a second value.
-
-### `(expand-declaration decl)`
-
-Opposite of `parse-declarations`.
-
-Take a (identifier . declarations) pair, as returned by
-`parse-declarations`, and turn it into a declaration form that can be
-used in Lisp code.
-
-     (locally ,(expand-declaration decl) ...)
-
-Might be used to transfer declarations made for a variable to another,
-temporary variable.
-
-### `(partition-declarations xs declarations)`
-
-Split DECLARATIONS into those that do and do not apply to XS.
-Return two values, one with each set.
-
-Both sets of declarations are returned in a form that can be spliced
-directly into Lisp code:
-
-     (locally ,@(partition-declarations vars decls) ...)
+     (define-do-macro do-hash ((key value hash-table &optional return) &body body)
+       `(maphash (lambda (,key ,value)
+                   ,@body)
+                 ,hash-table))
 
 ## Types
 
@@ -685,7 +669,7 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
-### `(throttle fn wait &key synchronized)`
+### `(throttle fn wait &key synchronized memoized)`
 
 Wrap FN so it can be called no more than every WAIT seconds.
 If FN was called less than WAIT seconds ago, return the values from the
@@ -695,6 +679,9 @@ WAIT, of course, may be a fractional number of seconds.
 
 The throttled function is not thread-safe by default; use SYNCHRONIZED
 to get a version with a lock.
+
+You can pass MEMOIZED if you want the function to remember values
+between calls.
 
 ### `(juxt &rest fns)`
 
@@ -1077,11 +1064,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g91453 n)`
+### `(shrinkf g12096 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g91475 n)`
+### `(growf g12118 n)`
 
 Grow the value in a place by a factor.
 
@@ -1231,7 +1218,7 @@ generates another are undefined.
 
 ### `(fbindrec* bindings &body body)`
 
-Like `fbindrec`, but the function defined in each binding can be
+)Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
 ## Lists
@@ -1618,6 +1605,12 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
+### `(filterf g14634 pred &rest args)`
+
+Modify-macro for FILTER.
+The place designed by the first argument is set to th result of
+calling FILTER with PRED, the place, and ARGS.
+
 ### `(keep item seq &rest args &key test from-end key count &allow-other-keys)`
 
 Almost, but not quite, an alias for `remove`.
@@ -1648,7 +1641,7 @@ and false.
 Return two values, one with each sequence.
 
 Exactly equivalent to:
-     (values (remove-if predicate seq) (remove-if-not predicate seq))
+     (values (remove-if-not predicate seq) (remove-if predicate seq))
 except it visits each element only once.
 
 Note that `partition` is not just `assort` with an up-or-down

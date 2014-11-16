@@ -349,7 +349,7 @@ generates another are undefined."
                  ,@body))))))))
 
 (defmacro fbindrec* (bindings &body body)
-  ")Like `fbindrec`, but the function defined in each binding can be
+  "Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings."
   (setf bindings (expand-fbindings bindings))
   (unless bindings

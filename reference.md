@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 218 functions)
+# Function Listing For Serapeum (27 files, 219 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -101,6 +101,16 @@ From Swank.
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
+
+### `(partition-declarations xs declarations &optional env)`
+
+Split DECLARATIONS into those that do and do not apply to XS.
+Return two values, one with each set.
+
+Both sets of declarations are returned in a form that can be spliced
+directly into Lisp code:
+
+     (locally ,@(partition-declarations vars decls) ...)
 
 ### `(define-do-macro name binds &body body)`
 
@@ -508,7 +518,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor object)`
+### `(monitor x)`
 
 Return a unique lock associated with OBJECT.
 
@@ -1064,11 +1074,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g12096 n)`
+### `(shrinkf g11985 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g12118 n)`
+### `(growf g12007 n)`
 
 Grow the value in a place by a factor.
 
@@ -1218,7 +1228,7 @@ generates another are undefined.
 
 ### `(fbindrec* bindings &body body)`
 
-)Like `fbindrec`, but the function defined in each binding can be
+Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
 ## Lists
@@ -1605,7 +1615,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g14634 pred &rest args)`
+### `(filterf g75984 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1845,7 +1855,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

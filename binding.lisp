@@ -80,7 +80,7 @@ Cf. `fbindrec*'."
 
 ;;;# `mvlet'
 
-(defmacro mvlet* ((&rest bindings) &body body)
+(defmacro mvlet* ((&rest bindings) &body body &environment env)
   "Expand a series of nested `multiple-value-bind' forms.
 
 `mvlet*' is similar in intent to Scheme’s `let-values', but with a
@@ -111,7 +111,7 @@ Note that declarations work just like `let*'."
                     (simple-binds (ldiff bindings mvbinds)))
                (if simple-binds
                    (multiple-value-bind (local other)
-                       (partition-declarations (mapcar #'car simple-binds) decls)
+                       (partition-declarations (mapcar #'car simple-binds) decls env)
                      `(let* ,simple-binds
                         ,@local
                         (mvlet* ,mvbinds
@@ -120,7 +120,7 @@ Note that declarations work just like `let*'."
                    (let* ((vars (butlast (car bindings)))
                           (expr (lastcar (car bindings))))
                      (multiple-value-bind (local other)
-                         (partition-declarations vars decls)
+                         (partition-declarations vars decls env)
                        `(multiple-value-bind ,vars
                             ,expr
                           ,@local
@@ -177,7 +177,7 @@ Note that declarations work just like `let*'."
 
 ;;;# `and-let*'
 
-(defmacro and-let* ((&rest clauses) &body body)
+(defmacro and-let* ((&rest clauses) &body body &environment env)
   "Scheme's guarded LET* (SRFI-2).
 
 Each clause should have one of the following forms:
@@ -203,7 +203,7 @@ false."
                    `(and ,var ,@(expand clauses body)))
                   ((list* (list var expr) clauses)
                    (multiple-value-bind (local other)
-                       (partition-declarations (list var) decls)
+                       (partition-declarations (list var) decls env)
                      `(let ((,var ,expr))
                         ,@local
                         (and ,var ,@(expand clauses

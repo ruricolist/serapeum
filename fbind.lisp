@@ -24,6 +24,9 @@
 ;;; When rebinding non-gensyms, analyze the lambda lists and elide the
 ;;; inner lambda when possible.
 
+(defvar *env* nil
+  "The environment of the macro being expanded.")
+
 (define-condition letrec-restriction-violation (error)
   ((args :initarg :args :accessor args-of))
   (:documentation "Violation of the letrec restriction.
@@ -62,7 +65,7 @@ it only applies to functions not yet bound.")
   (flet ((partn (defs decls)
            (let ((fns (loop for (name . nil) in defs
                             collect `(function ,name))))
-             (partition-declarations fns decls))))
+             (partition-declarations fns decls *env*))))
     (mvlet* ((simple decls (partn simple decls))
              (complex decls (partn complex decls))
              (lambda decls (partn lambda decls)))
@@ -204,7 +207,7 @@ analyze it into an environment, declarations, and a lambda."
             (nreverse binds)
             (nreverse lambdas))))
 
-(defmacro fbind (bindings &body body)
+(defmacro fbind (bindings &body body &environment *env*)
   "Binds values in the function namespace.
 
 That is,
@@ -241,7 +244,7 @@ symbol)."
            #-sbcl (declare (inline ,@vars))
            ,@body)))))
 
-(defmacro fbind* (bindings &body body)
+(defmacro fbind* (bindings &body body &environment env)
   "Like `fbind', but creates bindings sequentially."
   (setf bindings (expand-fbindings bindings))
   (unless bindings
@@ -249,7 +252,8 @@ symbol)."
   (mvlet* ((fn (caar bindings))
            (body decls (parse-body body))
            (local others (partition-declarations `((function ,fn))
-                                                 decls)))
+                                                 decls
+                                                 env)))
     `(fbind (,(first bindings))
        ,@local
        (fbind* ,(rest bindings)
@@ -303,7 +307,7 @@ BODY is needed because we detect unreferenced bindings by looking for
                 (assocdr 'lambda partitioned)
                 (assocdr 'unreferenced partitioned))))))
 
-(defmacro fbindrec (bindings &body body)
+(defmacro fbindrec (bindings &body body &environment *env*)
   "Like `fbind', but creates recursive bindings.
 
 The consequences of referring to one binding in the expression that
@@ -348,7 +352,7 @@ generates another are undefined."
                (locally ,@others
                  ,@body))))))))
 
-(defmacro fbindrec* (bindings &body body)
+(defmacro fbindrec* (bindings &body body &environment *env*)
   "Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings."
   (setf bindings (expand-fbindings bindings))

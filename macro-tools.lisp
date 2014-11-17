@@ -3,6 +3,7 @@
 
 (export '(unsplice string-gensym with-thunk
           expand-macro expand-macro-recursively
+          partition-declarations
           define-do-macro))
 
 ;;;# Basics
@@ -174,119 +175,7 @@ From Swank."
 
 ;;;# Picking apart declarations
 
-;;; `parse-declarations' needs to be able to tell if a declaration is
-;;; a type. Swank has something along these lines, but I'm not sure
-;;; how useful it is.
-
-;;; Found the implementation-specific functions in
-;;; <https://github.com/m2ym/trivial-types/blob/master/src/typespecs.lisp>
-;;; after Googling `type-specifier-p'.
-
-;;; If I am reading the hyperspec correctly, however, atom and
-;;; sequence form an exhaustive partition of all CL types, so checking
-;;; for a subtype of `(or atom sequence)' should suffice.
-
-(defun type-specifier-p (x)
-  "Is TYPE a type specifier?"
-  (when (or (symbolp x) (listp x))
-    (or (documentation x 'type)
-        #+sbcl (sb-ext:valid-type-specifier-p x)
-        #+openmcl (ccl:type-specifier-p x)
-        #+ecl (c::valid-type-specifier x)
-        #-(or sbcl openmcl ecl)
-        (or (eql x t)
-            (subtypep x '(or sequence atom))))))
-
-(defun parse-declarations (declarations)
-  "Pick apart a list of `declare' forms.
-
-Parse DECLARATIONS into an alist of (identifier . declarations).
-Declarations should be a list like ((declare ...) ...), as would be
-returned by `alexandria:parse-body'.
-
-Declarations that are specific to functions are normalized to
-use `(function ,identifier).
-
-Type declarations are normalized to the form `(type ,type).
-
-Ftype declarations are also normalized.
-
-     (parse-declarations
-      '((declare
-         (fixnum x)
-         (type list xs)
-         (ftype (-> list fixnum) frob)
-         (inline frob)
-         (dynamic-extent #'frob))))
-     => '((#'frob dynamic-extent inline (ftype (-> list fixnum)))
-          (xs (type list))
-          (x (type fixnum)))
-
-Return any optimizations declared as a second value."
-  (let ((decls '())
-        (optimize nil))
-    (labels ((decls-for (x)
-               (or (assoc x decls :test 'equal)
-                   (let ((cons (cons x nil)))
-                     (push cons decls)
-                     cons))))
-      (dolist (decl (mappend #'cdr declarations))
-        (ematch decl
-          ;; Optimization settings.
-          ((list* 'optimize settings)
-           (setf optimize settings))
-          ((list* 'ftype ftype fns)
-           (dolist (fn fns)
-             (pushnew (list 'ftype ftype)
-                      (cdr (decls-for `(function ,fn)))
-                      :test 'equal)))
-          ((list* 'inline fns)
-           (dolist (fn fns)
-             (pushnew 'inline (cdr (decls-for `(function ,fn))))))
-          ((list* 'notinline fns)
-           (dolist (fn fns)
-             (pushnew 'notinline (cdr (decls-for `(function ,fn))))))
-          ((list* 'type type vars)
-           (dolist (var vars)
-             (pushnew `(type ,type)
-                      (cdr (decls-for var))
-                      :test 'equal)))
-          ((list* declaration identifiers)
-           ;; The declaration is a type specifier.
-           (when (type-specifier-p declaration)
-             (setf declaration `(type ,declaration)))
-           (dolist (id identifiers)
-             (pushnew declaration (cdr (decls-for id))))))))
-    (values decls optimize)))
-
-(defun expand-declaration (decl)
-  "Opposite of `parse-declarations'.
-
-Take a (identifier . declarations) pair, as returned by
-`parse-declarations', and turn it into a declaration form that can be
-used in Lisp code.
-
-     (locally ,(expand-declaration decl) ...)
-
-Might be used to transfer declarations made for a variable to another,
-temporary variable."
-  (destructuring-bind (x . decls) decl
-    `(declare ,@(if (atom x)
-                    (loop for decl in decls
-                          if (atom decl)
-                            collect `(,decl ,x)
-                          else collect `(,@decl ,x))
-                    (loop for decl in decls
-                          if (atom decl)
-                            collect (case decl
-                                      (inline `(inline ,(second x)))
-                                      (notinline `(notinline ,(second x)))
-                                      (t `(,decl ,x)))
-                          else collect (if (eql (car decl) 'ftype)
-                                           `(,@decl ,(second x))
-                                           `(,@decl ,x)))))))
-
-(defun partition-declarations (xs declarations)
+(defun partition-declarations (xs declarations &optional env)
   "Split DECLARATIONS into those that do and do not apply to XS.
 Return two values, one with each set.
 
@@ -295,12 +184,14 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)"
   ;; NB `partition' is not yet defined.
-  (loop for decl in (parse-declarations declarations)
-        if (member (car decl) xs :test 'equal)
-          collect decl into kept
-        else collect decl into removed
-        finally (return (values (mapcar #'expand-declaration kept)
-                                (mapcar #'expand-declaration removed)))))
+  (let ((env2 (parse-declarations declarations env)))
+    (flet ((build (env)
+             (build-declarations 'declare env)))
+      (if (null xs)
+          (values nil (build env2))
+          (values
+           (build (filter-declaration-env env2 :affecting xs))
+           (build (filter-declaration-env env2 :not-affecting xs)))))))
 
 (defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
   "Efficiently dispatch on the type of SEQ."

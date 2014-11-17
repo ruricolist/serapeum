@@ -21,7 +21,7 @@
 ;;; I want TCO is totally orthogonal to any other optimization
 ;;; quality.
 
-(defmacro nlet (name (&rest bindings) &body body)
+(defmacro nlet (name (&rest bindings) &body body &environment env)
   "Within BODY, bind NAME as a function, somewhat like LABELS, but
 with the guarantee that recursive calls to NAME will not grow the
 stack.
@@ -55,16 +55,15 @@ are being evaluated, and it is safe to close over the arguments."
            (inits (mapcar #'second bindings))
            (temps (mapcar #'string-gensym vars))
            (alist (pairlis vars temps))
-           (decls (loop for decl in (parse-declarations decls)
-                        for id = (car decl)
-                        for temp = (assoc-value alist id)
-                        if temp
-                          collect (cons temp (cdr decl))
-                        else collect decl)))
+           (decls
+             (map-declaration-env
+              (lambda (id names env)
+                (values id (sublis alist names) env))
+              (parse-declarations decls env))))
       (with-gensyms (tag)
         `(block ,name
            (let ,(mapcar #'list temps inits)
-             ,@(mapcar #'expand-declaration decls)
+             ,@(build-declarations 'declare decls)
              (macrolet ((,name ,vars
                           `(progn
                              (psetq

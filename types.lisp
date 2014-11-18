@@ -1,6 +1,10 @@
 (in-package :serapeum)
 
-(export '(-> assure))
+(export '(-> assure wholenum))
+
+(deftype wholenum ()
+  "A whole number. Equivalent to `(integer 0 *)'."
+  '(integer 0 *))
 
 (deftype -> (args values)
   "The type of a function from ARGS to VALUES."

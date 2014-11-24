@@ -27,10 +27,14 @@
      (filter-map fn ...)
      ≅ (remove nil (mapcar fn ...))"
   (let ((fn (ensure-function fn)))
-    (apply #'mapcan
-           (lambda (&rest args)
-             (unsplice (apply fn args)))
-           list lists)))
+    (if lists
+        (apply #'mapcan
+               (lambda (&rest args)
+                 (unsplice (apply fn args)))
+               list lists)
+        (loop for each in list
+              for x = (funcall fn each)
+              if x collect x))))
 
 (define-compiler-macro filter-map (fn list &rest lists)
   (let* ((lists (cons list lists))
@@ -151,11 +155,14 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))"
   (let ((fn (ensure-function fn)))
-    (multiple-value-call #'mapcar
-      (lambda (&rest args)
-        (apply fn (apply #'append args)))
-      list
-      (values-list lists))))
+    (if lists
+        (apply #'mapcar
+               (lambda (&rest args)
+                 (apply fn (apply #'append args)))
+               list lists)
+        (mapcar (lambda (args)
+                  (apply fn args))
+                list))))
 
 (assert (equal (mapply #'cons '((x 1) (y 2))) '((x . 1) (y . 2))))
 

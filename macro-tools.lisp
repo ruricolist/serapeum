@@ -65,6 +65,7 @@ in every other macro."
 ;;;## `unsplice'
 ;;; Found this gem in the code for Lparallel.
 
+(declaim (inline unsplice))
 (defun unsplice (form)
   "If FORM is non-nil, wrap it in a list.
 

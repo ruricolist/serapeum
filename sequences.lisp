@@ -31,12 +31,108 @@
 
 (defun make-sequence-like (seq len &rest args &key initial-element
                                                    (initial-contents nil ic?))
+  "Helper function: make a sequence of length LEN having the same type as SEQ."
   (seq-dispatch seq
     (if ic?
         (map 'list #'identity initial-contents)
         (make-list len :initial-element initial-element))
     (apply #'make-array len :element-type (array-element-type seq) args)
     #+(or sbcl abcl) (apply #'sequence:make-sequence-like seq len args)))
+
+(defun map-subseq (fn seq &optional start end from-end)
+  "Helper function to map SEQ between START and END."
+  (declare (type (or null array-index) start end))
+  (when (and start end)
+    (assert (<= start end)))
+  (let ((start (or start 0)))
+    (fbind fn
+      (seq-dispatch seq
+        (if (no end)
+            (if from-end
+                (dolist (item (reverse (nthcdr start seq)))
+                  (fn item))
+                (dolist (item (nthcdr start seq))
+                  (fn item)))
+            (if from-end
+                (let ((subseq '()))
+                  (loop for item in (nthcdr start seq)
+                        for i below (- end start)
+                        do (push item subseq))
+                  (mapc #'fn subseq))
+                (loop for item in (nthcdr start seq)
+                      for i below (- end start)
+                      do (fn item))))
+        (let ((end (or end (length seq))))
+          (if from-end
+              (loop for i downfrom (1- end) to start
+                    do (fn (aref seq i)))
+              (loop for i from start below end
+                    do (fn (aref seq i)))))
+        (let ((end (or end (length seq))))
+          (if from-end
+              (loop for i downfrom (1- end) to start
+                    do (fn (elt seq i)))
+              (loop for i from start below end
+                    do (fn (elt seq i)))))))))
+
+;;; Define a protocol for accumulators so we can write functions like
+;;; `assort', `partition', &c. generically. I think this is what is
+;;; called “interface-passing style.”
+
+(defgeneric make-bucket (seq &optional init))
+
+(defgeneric bucket-push (seq item bucket))
+
+(defgeneric bucket-seq (seq bucket))
+
+(defgeneric bucket-front (seq bucket))
+
+(defmethod make-bucket ((seq list) &optional (init nil initp))
+  (if initp (queue init) (queue)))
+
+(defmethod make-bucket ((seq vector) &optional (init nil initp))
+  (if initp
+      (make-array 1
+                  :element-type (array-element-type seq)
+                  :adjustable t
+                  :fill-pointer 1
+                  :initial-contents (list init))
+      (make-array 0
+                  :element-type (array-element-type seq)
+                  :adjustable t
+                  :fill-pointer 0)))
+
+(defmethod make-bucket ((seq sequence) &optional (init nil initp))
+  (if initp (make-bucket () init) (make-bucket ())))
+
+(defmethod bucket-push ((seq list) item bucket)
+  (enq item bucket))
+
+(defmethod bucket-push ((seq vector) item bucket)
+  (vector-push-extend item bucket))
+
+(defmethod bucket-push ((seq sequence) item bucket)
+  (bucket-push () item bucket))
+
+(defmethod bucket-seq ((seq list) bucket)
+  (qlist bucket))
+
+(defmethod bucket-seq ((seq vector) bucket)
+  bucket)
+
+(defmethod bucket-seq ((seq sequence) bucket)
+  (let ((len (qlen bucket)))
+    (make-sequence-like seq len :initial-contents (qlist bucket))))
+
+(defmethod bucket-front ((seq list) bucket)
+  (front bucket))
+
+(defmethod bucket-front ((seq vector) bucket)
+  (when (> (length bucket) 0)
+    (aref bucket 0)))
+
+(defmethod bucket-front ((seq sequence) bucket)
+  (bucket-front () bucket))
 
 (defun nsubseq (seq start &optional end)
   "Return a subsequence that may share structure with SEQ.
@@ -73,28 +169,26 @@ Uses `replace' internally."
   (replace seq value :start1 start :end1 end)
   value)
 
-(defun filter/counted (pred seq &key count from-end (start) end
-                                     (key #'identity))
+(defun filter/counted (pred seq &rest args
+                       &key count from-end (start 0) end
+                            (key #'identity))
   "Helper for FILTER."
   (fbind (pred key)
     (declare (dynamic-extent #'pred #'key))
-    (let* ((seq (nsubseq seq (or start 0) end))
-           (seq (if from-end (reverse seq) seq))
-           (ret '())
-           (len 0))
-      (block nil
-        (map nil
-             (lambda (item)
-               (when (pred (key item))
-                 (push item ret)
-                 (incf len)
-                 (when (zerop (decf count))
-                   (return))))
-             seq))
-      (make-sequence-like seq len
-                          :initial-contents (if from-end
-                                                ret
-                                                (nreverse ret))))))
+    (cond
+      ;; Simple cases.
+      ((= count 0) (make-sequence-like seq 0))
+      ((> count (length seq)) (apply #'filter pred seq :count nil args))
+      (t (let ((ret (make-bucket seq)))
+           (block nil
+             (map-subseq (lambda (item)
+                           (when (pred (key item))
+                             (bucket-push seq item ret)
+                             (when (zerop (decf count))
+                               (return))))
+                         seq start end from-end))
+           (let ((seq2 (bucket-seq seq ret)))
+             (if from-end (nreverse seq2) seq2)))))))
 
 (defun filter (pred seq &rest args &key count &allow-other-keys)
   "Almost, but not quite, an alias for `remove-if-not'.
@@ -107,11 +201,9 @@ number of items to *keep*, not remove.
 
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)"
-  (cond ((null count)
-         (apply #'remove-if-not pred seq args))
-        ((< count 1)
-         (make-sequence-like seq 0))
-        (t (apply #'filter/counted pred seq args))))
+  (if count
+      (apply #'filter/counted pred seq args)
+      (apply #'remove-if-not pred seq args)))
 
 (assert (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
 (assert (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))
@@ -156,14 +248,12 @@ number of items to *keep*, not remove.
      (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
      => '((x 1) (x 3))"
   (declare (ignore from-end key))
-  (let ((args (remove-from-plist args :test :count)))
-    (cond ((null count)
-           (apply #'remove item seq :test-not test args))
-          ((< count 1)
-           (make-sequence-like seq 0))
-          (t (fbind ((test (curry test item)))
-               (declare (dynamic-extent #'test))
-               (apply #'filter #'test seq :count count args))))))
+  (let ((args (remove-from-plist args :test)))
+    (if (null count)
+        (apply #'remove item seq :test-not test args)
+        (fbind ((test (curry test item)))
+          (declare (dynamic-extent #'test))
+          (apply #'filter #'test seq :count count args)))))
 
 (assert (equal '((a 1) (a 2))
                (keep 'a '((a 1) (b) (c) (a 2) (a 3) (b) (c) (a 4) (a 5))
@@ -205,39 +295,14 @@ the sequence; `partition` always returns the “true” elements first.
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
   (fbind ((test (compose pred key)))
-    (seq-dispatch seq
-      (progn
-        (setf seq (nthcdr start seq))
-        (let ((pass (queue))
-              (fail (queue)))
-          (flet ((pass/fail (item)
-                   (if (test item)
-                       (enq item pass)
-                       (enq item fail))))
-            (declare (dynamic-extent #'pass/fail))
-            (if (null end)
-                (dolist (item seq)
-                  (pass/fail item))
-                (loop for i from 0 below (- end start)
-                      for item in seq
-                      do (pass/fail item))))
-          (values (qlist pass) (qlist fail))))
-      ;; Vector.
-      (progn
-        (let* ((pass (make-array 0
-                                 :element-type (array-element-type seq)
-                                 :adjustable t
-                                 :fill-pointer 0))
-               (fail (copy-array pass)))
-          (loop for i from start below (or end (length seq))
-                for item = (aref seq i)
-                do (if (test item)
-                       (vector-push-extend item pass)
-                       (vector-push-extend item fail)))
-          (values pass fail)))
-      ;; Generic sequence.
-      (values (remove-if pred seq :key key)
-              (remove-if-not pred seq :key key)))))
+    (let ((pass (make-bucket seq))
+          (fail (make-bucket seq)))
+      (map-subseq (lambda (item)
+                    (if (test item)
+                        (bucket-push seq item pass)
+                        (bucket-push seq item fail)))
+                  seq start end)
+      (values (bucket-seq seq pass) (bucket-seq seq fail)))))
 
 (defun partitions (preds seq &key (start 0) end (key #'identity))
   "Generalized version of PARTITION.
@@ -247,103 +312,24 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (seq-dispatch seq
-    (fbind key
-      (setf seq (nthcdr start seq))
-      (let ((buckets (loop for nil in preds collect (queue)))
-            (extra (queue)))
-        (flet ((bucket (item)
-                 (loop for pred in preds
-                       for bucket in buckets
-                       if (funcall pred (key item))
-                         return (enq item bucket)
-                       finally (enq item extra))))
-          (declare (dynamic-extent #'bucket))
-          (if (no end)
-              (mapc #'bucket seq)
-              (loop for i from start below end
-                    for item in seq
-                    do (bucket item)))
-          (values (mapcar #'qlist buckets)
-                  (qlist extra)))))
-    ;; Vector
-    (fbind ((key key)
-            (make-buffer
-             (lambda ()
-               (make-array 0
-                           :element-type (array-element-type seq)
-                           :adjustable t
-                           :fill-pointer 0))))
-      (let ((buckets (loop for nil in preds collect (make-buffer)))
-            (extra (make-buffer)))
-        (loop for item across seq do
-          (loop for pred in preds
-                for bucket in buckets
-                if (funcall pred (key item))
-                  return (vector-push-extend item bucket)
-                finally (vector-push-extend item extra)))
-        (values buckets extra)))
-    ;; Generic sequence.
-    (loop for pred in preds
-          collect (remove-if-not pred seq
-                                 :start start
-                                 :end end
-                                 :key key))))
+  (fbind key
+    (let ((buckets (loop for nil in preds collect (make-bucket seq)))
+          (extra (make-bucket seq)))
+      (map-subseq (lambda (item)
+                    (loop for pred in preds
+                          for bucket in buckets
+                          for fn = (ensure-function pred)
+                          if (funcall fn (key item))
+                            return (bucket-push seq item bucket)
+                          finally (bucket-push seq item extra)))
+                  seq start end)
+      (values (mapcar-into (lambda (bucket)
+                             (bucket-seq seq bucket))
+                           buckets)
+              (bucket-seq seq extra)))))
 
 (assert (equal (partitions (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9))
                '((1 3 5 7 9) (0 2 4 6 8))))
-
-(defun list-assort (list &key (key #'identity) (test #'eql) (start 0) end)
-  (declare (list list))
-  (fbind ((key key) (test test))
-    (let ((list (nthcdr start list))
-          (groups (queue)))
-      (flet ((group-item (item)
-               (if-let ((group
-                         (let ((kitem (key item)))
-                           (find-if
-                            (lambda (group)
-                              (test kitem (key (front group))))
-                            (qlist groups)))))
-                 (enq item group)
-                 (enq (queue item) groups))))
-        (if (no end)
-            (dolist (item list)
-              (group-item item))
-            (loop for item in list
-                  for i downfrom end above 0
-                  do (group-item item))))
-      (mapcar #'qlist (qlist groups)))))
-
-(assert (equal (list-assort (iota 10)
-                            :key (lambda (x)
-                                   (mod x 3)))
-               '((0 3 6 9) (1 4 7) (2 5 8))))
-
-(defun vector-assort (vec &key (key #'identity) (test #'eql) (start 0) end)
-  (let* ((end (or end (length vec)))
-         (element-type (array-element-type vec))
-         (groups (queue)))
-    (fbind ((key key) (test test))
-      (loop for i from start below end
-            for item = (aref vec i)
-            do (if-let ((group
-                         (let ((kitem (key item)))
-                           (find-if
-                            (lambda (group)
-                              (test kitem (key (aref group (1- (length group))))))
-                            (qlist groups)))))
-                 (vector-push-extend item group)
-                 (enq (make-array 1
-                                  :element-type element-type
-                                  :adjustable t
-                                  :fill-pointer 1
-                                  :initial-contents (list item))
-                      groups))))
-    (qlist groups)))
-
-(assert (equal (vector-assort "How Now Brown Cow" :key #'upper-case-p)
-               '("HNBC" "ow ow rown ow")))
 
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
@@ -356,15 +342,30 @@ You can think of `assort' as being akin to `remove-duplicates':
 
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
-  (seq-dispatch seq
-    (list-assort seq :key key :test test :start start :end end)
-    (vector-assort seq :key key :test test :start start :end end)
-    ;; Is there a more efficient way to do this while remaining
-    ;; completely generic?
-    (let* ((seq (nsubseq seq start end))
-           (keys (nub (map 'list key seq) :test test)))
-      (loop for k in keys
-            collect (keep k seq :key key :test test)))))
+  (fbind (key test)
+    (let ((groups (queue)))
+      (map-subseq (lambda (item)
+                    (if-let ((group
+                              (let ((kitem (key item)))
+                                (find-if
+                                 (lambda (group)
+                                   (test kitem (key (bucket-front seq group))))
+                                 (qlist groups)))))
+                      (bucket-push seq item group)
+                      (enq (make-bucket seq item) groups)))
+                  seq start end)
+      (mapcar-into (lambda (bucket)
+                     (bucket-seq seq bucket))
+                   (qlist groups)))))
+
+(assert (equal (assort (iota 10)
+                       :key (lambda (x)
+                              (mod x 3)))
+               '((0 3 6 9) (1 4 7) (2 5 8))))
+
+(assert (equal (assort "How Now Brown Cow" :key #'upper-case-p)
+               '("HNBC" "ow ow rown ow")))
+
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))

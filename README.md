@@ -1,7 +1,7 @@
 # Overview
 
 Serapeum is a conservative library of Common Lisp utilities. It is a
-supplement, not a competitor, to Alexandria. That means it is safe to
+supplement, not a competitor, to [Alexandria][]. That means it is safe to
 do:
 
     (defpackage ... (:use #:cl #:alexandria #:serapeum),
@@ -135,6 +135,61 @@ Items that do not belong in any partition are returned as a second value.
 Serapeum simply re-exports `split-sequence`, which seems to be firmly
 rooted under its present name.
 
+# etypecase-of, ecase-of
+
+`etypecase-of` is just like `etypecase`, except that it takes an
+additional argument – the type to be matched against – and warns, at
+compile time, if the clauses in its body are not an exhaustive
+partition of that type.
+
+```
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)))
+=> Warning
+
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)
+    ((integer 0) nil)))
+=> No warning
+```
+
+`ecase-of` is a succint variant of `etypecase` with the same syntax as
+`ecase`.
+
+We may call a type defined using `member` an *enumeration*. Take an
+enumeration like this:
+
+```
+(deftype switch-state ()
+  '(member :on :off :stuck :broken))
+```
+
+Now we can use `ecase-of` to take all the states of the switch into
+account.
+
+```
+(defun flick (switch)
+  (ecase-of switch-state (state switch)
+    (:on (switch-off switch))
+    (:off (switch-on switch))))
+=> Warning
+
+(defun flick (switch)
+  (ecase-of switch-state (state switch)
+    (:on (switch-off switch))
+    (:off (switch-on switch))
+    ((:stuck :broken) (error "Sorry, can't flick ~a" switch))))
+=> No warning
+```
+
 # Function reference.
 
 The complete reference is in a [separate file](reference.md).
+
+[Alexandria]: http://common-lisp.net/project/alexandria/

@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 219 functions)
+# Function Listing For Serapeum (27 files, 221 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -341,6 +341,18 @@ Equivalent to (not (or ...)).
 
 From Arc.
 
+### `(etypecase-of type x &body body)`
+
+Like `etypecase` but, at compile time, warn unless each clause in
+BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
+partition of TYPE.
+
+### `(ecase-of type x &body body)`
+
+Like `ecase` but, given a TYPE (which should be defined as `(member
+...)`), warn, at compile time, unless the keys in BODY are all of TYPE
+and, taken together, they form an exhaustive partition of TYPE.
+
 ### `(case-using pred keyform &body clauses)`
 
 ISLISP's case-using.
@@ -518,7 +530,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor x)`
+### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
 
@@ -865,8 +877,8 @@ This is the equivalent of Alexandria's `alist-hash-table` and
 
 STRICT determines whether to check that the list actually is a set.
 
-The resulting table has the elements of SET for its keys and values.
-That is, each element of SET is stored as if by
+The resulting hash table has the elements of SET for both its keys and
+values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
 ### `(hash-table-set table &key strict test key)`
@@ -1074,11 +1086,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g11985 n)`
+### `(shrinkf g13713 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g12007 n)`
+### `(growf g13735 n)`
 
 Grow the value in a place by a factor.
 
@@ -1615,7 +1627,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g75984 pred &rest args)`
+### `(filterf g13402 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1855,7 +1867,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints x)`
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

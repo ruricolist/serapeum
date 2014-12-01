@@ -933,8 +933,7 @@ values).
                          ((funcall pred kmax kx)
                           (setf kmax kx max x)))))))
       (declare (dynamic-extent #'update-extrema))
-      (map nil #'update-extrema
-           (nsubseq seq start end)))
+      (map-subseq #'update-extrema seq start end))
     (values min max)))
 
 (assert (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5)))

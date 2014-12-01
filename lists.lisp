@@ -112,13 +112,13 @@ Almost always used as (delq nil ...)."
               ((eq (car list) item) (cdr list))
               (t (rplacd list (delq item (cdr list)))))
   (let ((splice '()))
-    (loop for x = list then (cdr x) do
-      (cond ((endp x) (return list))
-            ((eq (car x) item)
+    (loop for l = list then (cdr l) do
+      (cond ((endp l) (return list))
+            ((eq (car l) item)
              (if (null splice)
-                 (setf list (cdr x))
-                 (setf (cdr splice) (cdr x))))
-            (t (setf splice x))))))
+                 (setf list (cdr l))
+                 (setf (cdr splice) (cdr l))))
+            (t (setf splice l))))))
 
 (let* ((list1 (list 'x 'y nil 'z))
        (list2 (delq nil list1)))
@@ -230,16 +230,19 @@ Uses a non-recursive algorithm."
 
 From Lisp 1.5."
   ;; Cf. `delq'.
+  ;; (cond ((null list) nil)
+  ;;       ((eql (car x) item) (cdr list))
+  ;;       (t (rplacd list (efface item (cdr list)))))
   (let ((splice '()))
-    (loop for x = list then (cdr x) do
-      (cond ((endp x) (return list))
-            ((eql (car x) item)
+    (loop for l = list then (cdr l) do
+      (cond ((endp l) (return list))
+            ((eql (car l) item)
              (if (null splice)
-                 (return (cdr x))
+                 (return (cdr l))
                  (progn
-                   (setf (cdr splice) (cdr x))
+                   (setf (cdr splice) (cdr l))
                    (return list))))
-            (t (setf splice x))))))
+            (t (setf splice l))))))
 
 (defmacro pop-assoc (key alist &rest args &environment env)
   "Like `assoc' but, if there was a match, delete it from ALIST.

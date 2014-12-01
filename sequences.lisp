@@ -939,31 +939,35 @@ values).
 
 (assert (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5)))
 
+(defun split-at (list k)
+  (declare (list list))
+  (loop for i below k
+        for (x . right) on list
+        collect x into left
+        finally (return (values left right))))
+
+(defsubst halfway-point (seq)
+  (let ((len (length seq)))
+    (declare (type array-index len) (optimize speed))
+    (ceiling len 2)))
+
 (defun halves (seq &optional split)
   "Return, as two values, the first and second halves of SEQ.
 SPLIT designates where to split SEQ; it defaults to half the length,
 but can be specified.
 
-If SEQ is of an odd length, the split is made using `ceiling' rather
-than `truncate'. This is on the theory that, if SEQ is a
-single-element list, it should be returned unchanged."
-  (if (and split (listp seq))
-      ;; If we know where to split in advance we only have to traverse
-      ;; the list once.
-      (loop for i below split
-            for (x . right) on seq
-            collect x into left
-            finally (return (values left right)))
-      (let ((split (or split
-                       (let ((len (length seq)))
-                         (if (evenp len)
-                             (truncate len 2)
-                             (ceiling len 2))))))
-        (if (listp split)
-            (halves seq split)
-            (values
-             (subseq seq 0 split)
-             (subseq seq split))))))
+The split is made using `ceiling' rather than `truncate'. This is on
+the theory that, if SEQ is a single-element list, it should be
+returned unchanged."
+  (seq-dispatch seq
+    (if split
+        ;; If we know where to split in advance we only have to
+        ;; traverse the list once.
+        (split-at seq split)
+        (split-at seq (halfway-point seq)))
+    (let ((split (or split (halfway-point seq))))
+      (values (subseq seq 0 split)
+              (subseq seq split)))))
 
 (assert (equal (halves '(x)) '(x)))
 (assert (equal (multiple-value-list (halves '(x y))) '((x) (y))))

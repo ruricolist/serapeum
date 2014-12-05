@@ -97,7 +97,7 @@ Return a new tree possibly sharing structure with TREE."
     ;; SBCL wants the walker to be fbound and dynamic-extent.
     (flet ((walker (node)
              (when (funcall test (funcall key node))
-               (return-from occurs-if t))))
+               (return-from occurs-if (values node t)))))
       (declare (dynamic-extent #'walker))
       (walk-tree #'walker tree))))
 
@@ -118,7 +118,8 @@ Return a new tree possibly sharing structure with TREE."
 
 (defun occurs (leaf tree &key (key #'identity) (test #'eql))
   "Is LEAF present in TREE?"
-  (occurs-if (curry test leaf) tree :key key))
+  (nth-value 1
+    (occurs-if (curry test leaf) tree :key key)))
 
 (defun prune (leaf tree &key (key #'identity) (test #'eql))
   "Remove LEAF from TREE wherever it occurs."

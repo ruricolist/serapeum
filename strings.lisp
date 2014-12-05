@@ -411,8 +411,7 @@ From Arc."
                                                  :start1 start1 :start2 start2
                                                  :end1 end1 :end2 end2
                                                  :test test)))
-                               (and (>= (length s2) (length s1))
-                                    (progn ,@body)))))))
+                               ,@body)))))
                  `(progn
                     ,(subst '#'char= 'test (mkdef name1 :docstring docstring))
                     ,(subst '#'char-equal 'test
@@ -468,6 +467,7 @@ but without consing."
 (assert (string^= "foo" "foobar"))
 (assert (string^= "foo" "foo"))
 (assert (not (string^= "foo" "fo")))
+(assert (string^= "a long string" "string" :start1 (length "a long ")))
 
 (assert (string$= "bar" "foobar"))
 (assert (string$= "bar" "bar"))

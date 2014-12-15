@@ -46,7 +46,7 @@ From Arc."
            nil
            (nor ,@(rest forms)))))
 
-(defun check-exhaustiveness (style type body &key allow-fallthrough)
+(defun check-exhaustiveness (style type body)
   ;; Should we do redundancy checking? Is there any Lisp that doesn't
   ;; already warn about that?
   (check-type style (member case typecase))
@@ -60,33 +60,19 @@ From Arc."
              (unless (type= partition type)
                (warn "Non-exhaustive match: ~s is not the same as ~s"
                      partition type)))
-           (fallthrough? (clause)
-             (and allow-fallthrough
-                  (type= (clause-type clause) t)))
            (check-subtypes (body)
              (dolist (clause body)
-               (unless (fallthrough? clause)
-                 (check-subtypep (clause-type clause)))))
-           (simple-clause-type (clause)
+               (check-subtypep (clause-type clause))))
+           (clause-type (clause)
              (ecase style
                ((typecase) (car clause))
                ((case) `(member ,@(ensure-list (car clause))))))
-           (clause-type (clause)
-             (if allow-fallthrough
-                 (if (member (car clause) '(t otherwise))
-                     t
-                     (simple-clause-type clause))
-                 (simple-clause-type clause)))
            (merge-clause-types (body)
              (ecase style
                ((typecase) `(or ,@(mapcar #'car body)))
                ((case) `(member ,@(mappend (compose #'ensure-list #'car) body))))))
-    (if (some #'fallthrough? body)
-        (check-subtypes (remove-if #'fallthrough? body))
-        (progn
-          (check-subtypes body)
-          (let ((body-type (merge-clause-types body)))
-            (check-exhaustive body-type))))))
+    (check-subtypes body)
+    (check-exhaustive (merge-clause-types body))))
 
 (defmacro etypecase-of (type x &body body)
   "Like `etypecase' but, at compile time, warn unless each clause in
@@ -94,10 +80,12 @@ BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE."
   (check-exhaustiveness 'typecase type body)
   (once-only (x)
-    `(progn
-       (check-type ,x ,type)
-       (etypecase ,x
-         ,@body))))
+    `(typecase ,x
+       ,@body
+       (otherwise
+        (error 'type-error
+               :datum ,x
+               :expected-type ',type)))))
 
 (defmacro ecase-of (type x &body body)
   "Like `ecase' but, given a TYPE (which should be defined as `(member
@@ -111,38 +99,47 @@ and, taken together, they form an exhaustive partition of TYPE."
   ;;             `((member ,@(ensure-list cases)) ,@clause-body)))
   (check-exhaustiveness 'case type body)
   (once-only (x)
-    `(progn
-       (check-type ,x ,type)
-       (ecase ,x
-         ,@body))))
+    `(case ,x
+       ,@body
+       (otherwise
+        (error 'type-error
+               :datum ,x
+               :expected-type ',type)))))
 
 ;;; These are easy to define, but do they make sense?
 
-(defmacro typecase-of (type x &body body)
+(defmacro typecase-of (type keyform &body body)
   "Like `etypecase-of', but allow a fallthrough clause starting with
 `t' or `otherwise'.
 
-You may want to consider using an `(or)' clause with `etypecase-of'
-instead."
-  (check-exhaustiveness 'typecase type body :allow-fallthrough t)
-  (once-only (x)
-    `(progn
-       (check-type ,x ,type)
-       (typecase ,x
-         ,@body))))
+Note that it is still an error if KEYFORM does not satisfy TYPE."
+  `(etypecase-of ,type ,keyform
+     ,@(loop for clause in body
+             for (k . b) = clause
+             when (member k '(t otherwise))
+               collect `(,type ,@b)
+             else collect clause)))
 
-(defmacro case-of (type x &body body)
+(defmacro case-of (type keyform &body body)
   "Like `ecase-of', but allow a fallthrough clause beginning with `t'
 or `otherwise'.
 
-You may want to consider using `ecase-of', instead, since you can pack
-multiple keys into a clause."
-  (check-exhaustiveness 'case type body :allow-fallthrough t)
-  (once-only (x)
-    `(progn
-       (check-type ,x ,type)
-       (case ,x
-         ,@body))))
+Note that it is still an error if KEYFORM does not satisfy TYPE."
+  ;; The only portable way.
+  `(etypecase-of ,type ,keyform
+     ,@(loop for clause in body
+             for (k . b) = clause
+             when (member k '(t otherwise))
+               collect `(,type ,@b)
+             else collect `((member ,@(ensure-list k)) ,@b))))
+
+(defmacro ctypecase-of (type keyplace &body body)
+  (check-exhaustiveness 'typecase type body)
+  `(ctypecase ,keyplace ,@body))
+
+(defmacro ccase-of (type keyplace &body body)
+  (check-exhaustiveness 'case type body)
+  `(ccase ,keyplace ,@body))
 
 (defmacro case-using (pred keyform &body clauses)
   "ISLISP's case-using.

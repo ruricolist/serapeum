@@ -20,6 +20,12 @@
           ~> ~>>
           cond-every))
 
+(defmacro prog0 (&body body)
+  "Execute BODY like `progn' but return nothing."
+  `(progn
+     ,@body
+     (values)))
+
 (defmacro eval-and-compile (&body body)
   "Emacs's `eval-and-compile'.
 

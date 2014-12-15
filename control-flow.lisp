@@ -495,6 +495,44 @@ value like `gethash'."
   "Like CALLF, but with the place as the second argument."
   `(callf (curry ,function ,arg1) ,place ,@args))
 
+(defun thread-aux (threader needle holes thread-fn)
+  ;; http://christophe.rhodes.io/notes/blog/posts/2014/code_walking_for_pipe_sequencing/
+  (flet ((str= (x y)
+           (and (symbolp x) (symbolp y) (string= x y))))
+    #+sbcl
+    (labels ((find-_ (form env)
+               (sb-walker:walk-form form env
+                                    (lambda (f c e) (declare (ignore c e))
+                                      (cond
+                                        ((str= f '_) (return-from find-_ f))
+                                        ((eql f form) f)
+                                        (t (values f t)))))
+               nil)
+             (walker (form c env) (declare (ignore c))
+               (cond
+                 ((symbolp form) (list form))
+                 ((atom form) form)
+                 (t (if-let (_ (find-_ form env))
+                      (values `(let ((,_ ,needle))
+                                 ,form)
+                              t)
+                      (values (funcall thread-fn needle form) t))))))
+      (if (not holes)
+          needle
+          `(,threader ,(sb-walker:walk-form (first holes) nil #'walker)
+                      ,@(rest holes))))
+    #-sbcl
+    (if (not holes)
+        needle
+        `(,threader ,(let ((hole (first holes)))
+                       (if (listp hole)
+                           (if-let (_ (find '_ hole :test #'str=))
+                             `(let ((,_ ,needle))
+                                ,hole)
+                             (funcall thread-fn needle hole))
+                           `(,hole ,needle)))
+                    ,@(rest holes)))))
+
 (defmacro ~> (needle &rest holes)
   "Threading macro from Clojure (by way of Racket).
 
@@ -505,32 +543,16 @@ needle args...)`).
 As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first."
-  (flet ((str= (x y)
-           (ignore-errors (string= x y))))
-    (if (not holes)
-        needle
-        `(~> ,(let ((hole (first holes)))
-                (if (listp hole)
-                    (if (find '_ hole :test #'str=)
-                        `(,(car hole) ,@(substitute needle '_ (cdr hole) :test #'str=))
-                        `(,(car hole) ,needle ,@(cdr hole)))
-                    `(,hole ,needle)))
-             ,@(rest holes)))))
+  (thread-aux '~> needle holes
+              (lambda (needle hole)
+                (list* (car hole) needle (cdr hole)))))
 
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
-  `(~> ,needle
-       ,@(loop for hole in holes
-               collect (if (listp hole)
-                           (if (find '_ hole
-                                     :test (lambda (x y)
-                                             (and (typep x 'string-designator)
-                                                  (typep y 'string-designator)
-                                                  (string= x y))))
-                               hole
-                               (append hole '(_)))
-                           (list hole '_)))))
+  (thread-aux '~>> needle holes
+              (lambda (needle hole)
+                (append1 hole needle))))
 
 (defmacro select (keyform &body clauses)
   "Like `case', but with evaluated keys.

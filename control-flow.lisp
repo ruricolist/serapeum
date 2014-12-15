@@ -26,6 +26,25 @@
      ,@body
      (values)))
 
+(defmacro compile-time-value (expr &optional read-only-p)
+  "Evaluate EXPR at compile time and inline the result."
+  ;; 3.2.2.2
+  ;; “The first argument in a ‘load-time-value’ form in source code
+  ;; processed by ‘compile’ is evaluated at compile time; in source
+  ;; code processed by ‘compile-file’ , the compiler arranges for it
+  ;; to be evaluated at load time. In either case, the result of the
+  ;; evaluation is remembered and used later as the value of the
+  ;; ‘load-time-value’ form at execution time.”
+  (if *compile-file-pathname*
+      (let ((result (eval expr)))
+        (when (typep result '(or character number))
+          (setf read-only-p t))
+        ;; Should we do something with read-only-p here? SBCL wraps
+        ;; the value with a cell to suppress warnings about constant
+        ;; modification if read-only-p is nil.
+        `(quote ,result))
+      `(load-time-value ,expr ,read-only-p)))
+
 (defmacro eval-and-compile (&body body)
   "Emacs's `eval-and-compile'.
 

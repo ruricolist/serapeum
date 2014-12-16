@@ -498,7 +498,9 @@ From Haskell."
   (apply #'remove-duplicates seq :from-end t :test test args))
 
 (defun gcp (seqs &key (test #'eql))
-  "The greatest common prefix of SEQS."
+  "The greatest common prefix of SEQS.
+
+If there is no common prefix, return NIL."
   (let ((test (ensure-function test)))
     (labels ((gcp (x y)
                (let ((miss (mismatch x y :test test)))
@@ -515,7 +517,9 @@ From Haskell."
 (assert (equal (gcp '("miss" "molly")) "m"))
 
 (defun gcs (seqs &key (test #'eql))
-  "The greatest common suffix of SEQS."
+  "The greatest common suffix of SEQS.
+
+If there is no common suffix, return NIL."
   (let ((test (ensure-function test)))
     (labels ((gcs (x y)
                (let ((miss (mismatch x y :from-end t :test test)))

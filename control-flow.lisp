@@ -191,8 +191,7 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
   (if (not clauses)
       nil
       (destructuring-bind ((key . body) . clauses) clauses
-        (if (or (eql key t)
-                (eql key 'otherwise))
+        (if (member key '(t otherwise))
             `(progn ,@body)
             `(if (or ,@(mapcar (lambda (key)
                                  `(funcall ,pred ,keyform ',key))
@@ -202,10 +201,33 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
                    ,@clauses))))))
 
 (eval-and-compile
-  (defun expand-string-case (cases)
-    (loop for (keys . body) in cases
-          append (loop for key in keys
-                       collect (cons key body)))))
+  (defun expand-string-case (sf default cases)
+    "Expand a string-case macro with a minimum of duplicated code."
+    (once-only (sf)
+      (let ((keys (mapcar #'car cases)))
+        (flet ((single (l) (null (cdr l))))
+          (if (every #'single keys)
+              ;; Simple.
+              `(string-case:string-case (,sf :default ,default)
+                 ,@(loop for ((k) . body) in cases
+                         collect (cons k body)))
+              (let* ((simple (remove-if-not #'single cases :key #'car))
+                     (complex (set-difference cases simple)))
+                (with-gensyms (block)
+                  `(block ,block
+                     ,(let ((tags (make-gensym-list (length complex) (string 'body))))
+                        `(tagbody
+                            (return-from ,block
+                              (string-case:string-case (,sf :default ,default)
+                                ,@(loop for ((key) . body) in simple
+                                        collect `(,key ,@body))
+                                ,@(loop for keys in (mapcar #'car complex)
+                                        for tag in tags
+                                        append (loop for k in keys
+                                                     collect `(,k (go ,tag))))))
+                            ,@(loop for tag in tags
+                                    for body in (mapcar #'cdr complex)
+                                    append `(,tag (return-from ,block (progn ,@body)))))))))))))))
 
 (defmacro string-case (stringform &body cases)
   "Efficient `case'-like macro with string keys.
@@ -213,9 +235,7 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 This uses Paul Khuong's `string-case' macro internally."
   (multiple-value-bind (cases default)
       (normalize-cases cases)
-    (once-only (stringform)
-      `(string-case:string-case (,stringform :default (progn ,@default))
-         ,@(expand-string-case cases)))))
+    (expand-string-case stringform `(progn ,@default) cases)))
 
 ;; TODO More informative error.
 (defmacro string-ecase (stringform &body cases)
@@ -226,9 +246,7 @@ Cf. `string-case'."
          (keys (mappend (compose #'ensure-list #'car) cases))
          (err-string (format nil "~~a is not one of ~a" keys)))
     (once-only (stringform)
-      `(string-case:string-case (,stringform
-                                 :default (error ,err-string ,stringform))
-         ,@(expand-string-case cases)))))
+      (expand-string-case stringform `(error ,err-string ,stringform) cases))))
 
 (assert (eql 'two
              (case-using #'= (+ 1.0 1.0)

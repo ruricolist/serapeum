@@ -188,6 +188,9 @@ account.
 => No warning
 ```
 
+There are continuable versions of these macros – `ctypecase-of` and
+`ccase-of`.
+
 # Function reference.
 
 The complete reference is in a [separate file](reference.md).

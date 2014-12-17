@@ -4,6 +4,7 @@
 (export '(eval-and-compile
           no nor
           etypecase-of ecase-of
+          ctypecase-of ccase-of
           ;; typecase-of case-of
           string-case string-ecase
           case-using
@@ -134,10 +135,12 @@ Note that it is still an error if KEYFORM does not satisfy TYPE."
              else collect `((member ,@(ensure-list k)) ,@b))))
 
 (defmacro ctypecase-of (type keyplace &body body)
+  "Like `etypecase-of', but providing a `store-value' restart to correct KEYPLACE and try again."
   (check-exhaustiveness 'typecase type body)
   `(ctypecase ,keyplace ,@body))
 
 (defmacro ccase-of (type keyplace &body body)
+  "Like `ecase-of', but providing a `store-value' restart to correct KEYPLACE and try again."
   (check-exhaustiveness 'case type body)
   `(ccase ,keyplace ,@body))
 

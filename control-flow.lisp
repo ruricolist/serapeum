@@ -2,7 +2,7 @@
 (in-readtable :fare-quasiquote)
 
 (export '(eval-and-compile
-          no nor
+          no nor nand
           etypecase-of ecase-of
           ctypecase-of ccase-of
           ;; typecase-of case-of
@@ -66,11 +66,21 @@ From Arc."
   "Equivalent to (not (or ...)).
 
 From Arc."
-  (if (null forms)
-      t
-      `(if ,(first forms)
-           nil
-           (nor ,@(rest forms)))))
+  (if (null forms) t
+      (if (null (rest forms))
+          `(not ,(first forms))
+          `(if ,(first forms)
+               nil
+               (nor ,@(rest forms))))))
+
+(defmacro nand (&rest forms)
+  "Equivalent to (not (and ...))."
+  (if (null forms) nil
+      (if (null (rest forms))
+          `(not ,(first forms))
+          `(if ,(first forms)
+               (nand ,@(rest forms))
+               t))))
 
 (defun check-exhaustiveness (style type body)
   ;; Should we do redundancy checking? Is there any Lisp that doesn't

@@ -81,18 +81,20 @@ From Arc."
                (nand ,@(rest forms))
                t))))
 
-(defun check-exhaustiveness (style type body)
+(defun check-exhaustiveness (style type body env)
   ;; Should we do redundancy checking? Is there any Lisp that doesn't
   ;; already warn about that?
   (check-type style (member case typecase))
-  (labels ((check-subtypep (subtype)
-             (unless (subtypep subtype type)
+  (labels ((subtype? (subtype type) (subtypep subtype type env))
+           (same-type? (type1 type2) (and (subtype? type1 type2) (subtype? type2 type1)))
+           (check-subtypep (subtype)
+             (unless (subtype? subtype type)
                (warn "~s is not a subtype of ~s" subtype type)))
            (check-exhaustive (partition)
              ;; TODO It would be nice if we could list the types that
              ;; are not matched, or (per OCaml) given an example of a
              ;; value.
-             (unless (type= partition type)
+             (unless (same-type? partition type)
                (warn "Non-exhaustive match: ~s is not the same as ~s"
                      partition type)))
            (check-subtypes (body)
@@ -109,11 +111,11 @@ From Arc."
     (check-subtypes body)
     (check-exhaustive (merge-clause-types body))))
 
-(defmacro etypecase-of (type x &body body)
+(defmacro etypecase-of (type x &body body &environment env)
   "Like `etypecase' but, at compile time, warn unless each clause in
 BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE."
-  (check-exhaustiveness 'typecase type body)
+  (check-exhaustiveness 'typecase type body env)
   (once-only (x)
     `(typecase ,x
        ,@body
@@ -122,7 +124,7 @@ partition of TYPE."
                :datum ,x
                :expected-type ',type)))))
 
-(defmacro ecase-of (type x &body body)
+(defmacro ecase-of (type x &body body &environment env)
   "Like `ecase' but, given a TYPE (which should be defined as `(member
 ...)'), warn, at compile time, unless the keys in BODY are all of TYPE
 and, taken together, they form an exhaustive partition of TYPE."
@@ -132,7 +134,7 @@ and, taken together, they form an exhaustive partition of TYPE."
   ;;               collect clause-body
   ;;             else collect
   ;;             `((member ,@(ensure-list cases)) ,@clause-body)))
-  (check-exhaustiveness 'case type body)
+  (check-exhaustiveness 'case type body env)
   (once-only (x)
     `(case ,x
        ,@body
@@ -168,14 +170,14 @@ Note that it is still an error if KEYFORM does not satisfy TYPE."
                collect `(,type ,@b)
              else collect `((member ,@(ensure-list k)) ,@b))))
 
-(defmacro ctypecase-of (type keyplace &body body)
+(defmacro ctypecase-of (type keyplace &body body &environment env)
   "Like `etypecase-of', but providing a `store-value' restart to correct KEYPLACE and try again."
-  (check-exhaustiveness 'typecase type body)
+  (check-exhaustiveness 'typecase type body env)
   `(ctypecase ,keyplace ,@body))
 
-(defmacro ccase-of (type keyplace &body body)
+(defmacro ccase-of (type keyplace &body body &environment env)
   "Like `ecase-of', but providing a `store-value' restart to correct KEYPLACE and try again."
-  (check-exhaustiveness 'case type body)
+  (check-exhaustiveness 'case type body env)
   `(ccase ,keyplace ,@body))
 
 (defmacro case-using (pred keyform &body clauses)

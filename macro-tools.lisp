@@ -4,8 +4,9 @@
 (export '(unsplice string-gensym with-thunk
           expand-macro expand-macro-recursively
           partition-declarations
-          define-do-macro))
           callf callf2
+          define-do-macro
+          define-post-modify-macro))
 
 ;;;# Basics
 
@@ -285,3 +286,33 @@ Using `define-do-macro' takes care of all of this for you.
                  `(let (,,@vars)
                     (declare (ignorable ,,@vars))
                     ,,ret-var))))))))
+
+(defmacro define-post-modify-macro (name lambda-list function &optional documentation)
+  "Like `define-modify-macro', but arranges to return the original value."
+  (labels ((parse (ll) (parse-ordinary-lambda-list ll))
+           (pmm-lambda-list (ll)
+             (multiple-value-bind (req opt rest key aok? aux key?) (parse ll)
+               (declare (ignore key))
+               (when (or key? aok?) (error "&key arguments not allowed."))
+               (when aux (error "&aux arguments not allowed."))
+               (values (append req (mapcar #'car opt))
+                       rest)))
+           (expand-pmm (args rest?)
+             (with-gensyms (ref env)
+               `(defmacro ,name (,ref ,@lambda-list &environment ,env)
+                  ,@(unsplice documentation)
+                  (let ((fn ',function) (rest? ',rest?)
+                        (args (list ,@args)))
+                    (multiple-value-bind (vars vals stores setter getter)
+                        (get-setf-expansion ,ref ,env)
+                      (with-gensyms (temp)
+                        `(let* ,`(,@(mapcar #'list
+                                            (mapcar #'car vars)
+                                            (mapcar #'car vals))
+                                  (,temp ,getter)
+                                  (,(car stores) (,fn ,temp ,@args ,@(unsplice rest?))))
+                           ,setter
+                           ,temp))))))))
+    (multiple-value-bind (args rest?)
+        (pmm-lambda-list lambda-list)
+      (expand-pmm args rest?))))

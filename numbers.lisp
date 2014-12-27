@@ -15,22 +15,14 @@
           shrinkf growf
           random-in-range))
 
-(defmacro finc (place &optional (delta 1))
+(define-post-modify-macro finc (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
-can prevent optimization."
-  (with-gensyms (old)
-    `(let ((,old ,place))
-       (setf ,place (+ ,old ,delta))
-       ,old)))
+can prevent optimization.")
 
-(defmacro fdec (place &optional (delta 1))
-  "Like `decf', but returns the old value instead of the new."
-  (with-gensyms (old)
-    `(let ((,old ,place))
-       (setf ,place (- ,old ,delta))
-       ,old)))
+(define-post-modify-macro fdec (&optional (delta 1)) -
+  "Like `decf', but returns the old value instead of the new.")
 
 ;;; Loose adaption of the parser in SBCL's reader.lisp.
 

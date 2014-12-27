@@ -76,8 +76,7 @@
                     do (fn (elt seq i)))))))))
 
 ;;; Define a protocol for accumulators so we can write functions like
-;;; `assort', `partition', &c. generically. I think this is what is
-;;; called “interface-passing style.”
+;;; `assort', `partition', &c. generically.
 
 (defgeneric make-bucket (seq &optional init))
 

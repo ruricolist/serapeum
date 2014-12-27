@@ -16,7 +16,6 @@
           comment example
           nix
           ensure ensure2
-          callf callf2
           ~> ~>>
           cond-every))
 
@@ -506,22 +505,6 @@ value like `gethash'."
                  (if ,presentp
                      ,old
                      ,newval))))))
-
-;;; `callf' and `callf2' are extracted from the guts of Emacs Lisp's
-;;; `cl' package.
-
-(defmacro callf (function place &rest args &environment env)
-  "Set PLACE to the value of calling FUNCTION on PLACE, with ARGS."
-  (multiple-value-bind (vars vals stores setter getter)
-      (get-setf-expansion place env)
-    `(let* ,(mapcar #'list vars vals)
-       (multiple-value-bind ,stores
-           (funcall ,function ,getter ,@args)
-         ,setter))))
-
-(defmacro callf2 (function arg1 place &rest args)
-  "Like CALLF, but with the place as the second argument."
-  `(callf (curry ,function ,arg1) ,place ,@args))
 
 (defun thread-aux (threader needle holes thread-fn)
   ;; http://christophe.rhodes.io/notes/blog/posts/2014/code_walking_for_pipe_sequencing/

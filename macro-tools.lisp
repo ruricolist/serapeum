@@ -111,12 +111,12 @@ to be given a name (using `flet') so it can be declared
 
     (defmacro with-foo (&body body)
       (with-thunk (body)
-        `(call-with-foo #',body)))
+        `(call-with-foo ,body)))
 
 It is also possible to construct a \"thunk\" with arguments.
 
     (with-thunk (body foo)
-      `(call-with-foo #',body))
+      `(call-with-foo ,body))
     ≡ `(flet ((,thunk (,foo)
           ,@body))
         (declare (dynamic-extent #',thunk))
@@ -130,7 +130,8 @@ Needs a better name."
        `(flet ((,',thunk ,,gargs
                  ,@,b))
           (declare (dynamic-extent (function ,',thunk)))
-          ,,@body))))
+          (symbol-macrolet ((,',thunk (function ,',thunk)))
+            ,,@body)))))
 
 ;;;# Expanding macros
 ;;; Expanding macros, Swank-style. We use `labels' in these

@@ -54,7 +54,7 @@ are considered whitespace."
       ((eql nil)
        (with-output-to-string (s)
          (fn s)))
-      (string
+      ((and string (not simple-vector))
        (with-output-to-string (s stream)
          (fn s)))
       (stream (fn stream)))))

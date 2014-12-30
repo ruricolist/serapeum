@@ -86,17 +86,29 @@ From Arc."
   ;; already warn about that?
   (check-type style (member case typecase))
   (labels ((subtype? (subtype type) (subtypep subtype type env))
-           (same-type? (type1 type2) (and (subtype? type1 type2) (subtype? type2 type1)))
+           (same-type? (type1 type2)
+             (multiple-value-bind (sub sure) (subtype? type1 type2)
+               (if (not sub)
+                   (values nil sure)
+                   (subtype? type2 type1))))
            (check-subtypep (subtype)
-             (unless (subtype? subtype type)
-               (warn "~s is not a subtype of ~s" subtype type)))
+             (multiple-value-bind (subtype sure)
+                 (subtype? subtype type)
+               (cond ((not sure)
+                      (warn "Can't tell if ~s is a subtype of ~s" subtype type))
+                     ((not subtype)
+                      (warn "~s is not a subtype of ~s" subtype type)))))
            (check-exhaustive (partition)
              ;; TODO It would be nice if we could list the types that
              ;; are not matched, or (per OCaml) given an example of a
              ;; value.
-             (unless (same-type? partition type)
-               (warn "Non-exhaustive match: ~s is not the same as ~s"
-                     partition type)))
+             (multiple-value-bind (same sure) (same-type? partition type)
+               (cond ((not sure)
+                      (warn "Can't check exhaustiveness: cannot determine if ~s is the same as ~s"
+                            partition type))
+                     ((not same)
+                      (warn "Non-exhaustive match: ~s is not the same as ~s"
+                            partition type)))))
            (check-subtypes (body)
              (dolist (clause body)
                (check-subtypep (clause-type clause))))

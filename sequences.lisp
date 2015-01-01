@@ -467,11 +467,11 @@ From Clojure."
          seq)
     (values table total)))
 
-(defun scan (fn seq &key (key #'identity))
+(defun scan (fn seq &key (key #'identity) (initial-value nil initial-value?))
   "A version of `reduce' that shows its work.
 
-Instead of returning just the final result, `scan' returns a list of
-the successive results at each step.
+Instead of returning just the final result, `scan' returns a sequence
+of the successive results at each step.
 
     (reduce #'+ '(1 2 3 4))
     => 10
@@ -480,13 +480,16 @@ the successive results at each step.
     => '(1 3 6 10)
 
 From APL and descendants."
-  (fbind (fn key)
-    (nreverse
-     (the list
-          (reduce (lambda (acc x)
-                    (cons (fn x (key (car acc))) acc))
-                  (nsubseq seq 1)
-                  :initial-value (list (elt seq 0)))))))
+  (multiple-value-bind (seq initial-value)
+      (if initial-value?
+          (values seq (list initial-value))
+          (values (nsubseq seq 1) (list (elt seq 0))))
+    (fbind (fn key)
+      (nreverse
+       (reduce (lambda (acc x)
+                 (cons (fn x (key (car acc))) acc))
+               seq
+               :initial-value initial-value)))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.

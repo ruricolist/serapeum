@@ -887,7 +887,7 @@ The name is from Arc."
         ((length<= seq n)
          (sort (copy-seq seq) pred :key key))
         (t (fbind ((key (if memo
-                            (let ((dict (dict))
+                            (let ((dict (make-hash-table :test 'equal))
                                   (key (ensure-function key)))
                               (lambda (&rest args)
                                 (ensure2 (gethash args dict)

@@ -260,16 +260,17 @@ This uses Paul Khuong's `string-case' macro internally."
       (normalize-cases cases)
     (expand-string-case stringform `(progn ,@default) cases)))
 
-;; TODO More informative error.
 (defmacro string-ecase (stringform &body cases)
   "Efficient `ecase'-like macro with string keys.
 
 Cf. `string-case'."
   (let* ((cases (normalize-cases cases :allow-default nil))
-         (keys (mappend (compose #'ensure-list #'car) cases))
-         (err-string (format nil "~~a is not one of ~a" keys)))
+         (keys (mappend (compose #'ensure-list #'car) cases)))
     (once-only (stringform)
-      (expand-string-case stringform `(error ,err-string ,stringform) cases))))
+      (expand-string-case stringform
+                          `(error "~s is not one of ~s"
+                                  ,stringform ',keys)
+                          cases))))
 
 (assert (eql 'two
              (case-using #'= (+ 1.0 1.0)

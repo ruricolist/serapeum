@@ -61,6 +61,8 @@ From Arc."
 (define-compiler-macro no (x)
   `(not ,x))
 
+(define-symbol-macro no nil)
+
 (defmacro nor (&rest forms)
   "Equivalent to (not (or ...)).
 
@@ -98,17 +100,50 @@ From Arc."
                       (warn "Can't tell if ~s is a subtype of ~s" subtype type))
                      ((not subtype)
                       (warn "~s is not a subtype of ~s" subtype type)))))
+           (explode-type (type)
+             (match type
+               ((list* 'or subtypes) subtypes)
+               ((list* 'member subtypes)
+                (loop for subtype in subtypes collect `(eql ,subtype)))))
+           (extra-types (partition)
+             (loop for subtype in (explode-type partition)
+                   unless (subtype? subtype type)
+                     collect subtype))
+           (format-extra-types (stream partition)
+             (when-let (et (extra-types partition))
+               (format stream "~&There are extra types: ~s" et)))
+           (typexpand (type)
+             ;; TODO Other implementations?
+             #+sbcl (sb-ext:typexpand type)
+             #+ccl  (let ((exp (ccl::type-expand type)))
+                      (values exp (not (eq exp type))))
+             #-(or sbcl ccl) (values nil nil))
+           (missing-types (partition)
+             (multiple-value-bind (exp exp?) (typexpand type)
+               (when exp?
+                 (set-difference (explode-type exp)
+                                 (explode-type partition)
+                                 :test #'type=))))
+           (format-missing-types (stream partition)
+             (when-let (mt (missing-types partition))
+               (format stream "~&There are missing types: ~s" mt)))
+           (generate-warning (part)
+             (with-output-to-string (s)
+               (format s "~&Non-exhaustive match: ")
+               (cond ((subtype? part type)
+                      (format s "~s is a proper subtype of ~s." part type))
+                     ((subtype? type part)
+                      (format s "~s contains types not in ~s." part type))
+                     (t (format s "~s is not the same as ~s" part type)))
+               (format-extra-types s part)
+               (format-missing-types s part)))
            (check-exhaustive (partition)
-             ;; TODO It would be nice if we could list the types that
-             ;; are not matched, or (per OCaml) given an example of a
-             ;; value.
              (multiple-value-bind (same sure) (same-type? partition type)
                (cond ((not sure)
                       (warn "Can't check exhaustiveness: cannot determine if ~s is the same as ~s"
                             partition type))
-                     ((not same)
-                      (warn "Non-exhaustive match: ~s is not the same as ~s"
-                            partition type)))))
+                     (same)
+                     (t (warn "~a" (generate-warning partition))))))
            (check-subtypes (body)
              (dolist (clause body)
                (check-subtypep (clause-type clause))))

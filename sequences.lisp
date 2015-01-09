@@ -980,19 +980,20 @@ returned unchanged."
 (assert (equal (multiple-value-list (halves '(x y))) '((x) (y))))
 (assert (equal (multiple-value-list (halves '(x y z))) '((x y) (z))))
 
-(defun dsu-sort (seq fn &key (key #'identity))
+(defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access)."
   (fbind (key)
     (map-into seq
               #'cdr
               ;; Vectors sort faster.
-              (sort (map 'vector
-                         (lambda (item)
-                           (cons (key item) item))
-                         seq)
-                    fn
-                    :key #'car))))
+              (funcall (if stable #'stable-sort #'sort)
+                       (map 'vector
+                            (lambda (item)
+                              (cons (key item) item))
+                            seq)
+                       fn
+                       :key #'car))))
 
 (defun deltas (seq &optional (fn #'-))
   "Return the successive differences in SEQ.

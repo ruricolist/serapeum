@@ -23,7 +23,8 @@
           intersperse
           toposort
           inconsistent-graph
-          inconsistent-graph-constraints))
+          inconsistent-graph-constraints
+          mvfold mvfoldr))
 
 (export '(split-sequence:split-sequence
           split-sequence:split-sequence-if
@@ -1131,3 +1132,111 @@ element."
   (seq-dispatch seq
     (intersperse/list new-elt seq)
     (intersperse/seq new-elt seq)))
+
+(defun mvfold (fn seq &rest seeds)
+  "Like `reduce' extended to multiple values.
+
+Calling `mvfold' with one seed is equivalent to `reduce':
+
+    (mvfold fn xs seed) ≡ (reduce fn xs :initial-value seed)
+
+However, you can also call `mvfold' with multiple seeds:
+
+    (mvfold fn xs seed1 seed2 seed3 ...)
+
+How is this useful? Consider extracting the minimum of a sequence:
+
+    (reduce #'min xs)
+
+Or the maximum:
+
+    (reduce #'max xs)
+
+But both?
+
+    (reduce (lambda (cons item)
+              (cons (min (car cons) item)
+                    (max (cdr cons) item)))
+            xs
+            :initial-value (cons (elt xs 0) (elt xs 0)))
+
+You can do this naturally with `mvfold'.
+
+    (mvfold (lambda (min max item)
+              (values (min item min)
+                      (max item max)))
+            xs (elt xs 0) (elt xs 0))
+
+In general `mvfold' provides a functional idiom for “loops with
+book-keeping” where we might otherwise have to use recursion or
+explicit iteration."
+  (cond ((null seeds)
+         (reduce fn seq))
+        ((null (rest seeds))
+         (reduce fn seq :initial-value (first seeds)))
+        (t (let ((fn (ensure-function fn))
+                 (seeds (copy-list seeds)))
+             (values-list
+              (reduce (lambda (seeds item)
+                        ;; We use `replace' so the function is always
+                        ;; called with the right number of values.
+                        (replace seeds
+                                 (multiple-value-list
+                                  (multiple-value-call fn
+                                    (values-list seeds)
+                                    item))))
+                      seq
+                      :initial-value seeds))))))
+
+(defun mvfoldr (fn seq &rest seeds)
+  "Like `(reduce FN SEQ :from-end t)' extended to multiple
+values. Cf. `mvfold'."
+  (cond ((null seeds)
+         (reduce fn seq :from-end t))
+        ((null (rest seeds))
+         (reduce fn seq :from-end t :initial-value (first seeds)))
+        (t (let ((fn (ensure-function fn))
+                 (seeds (copy-list seeds)))
+             (values-list
+              (reduce (lambda (item seeds)
+                        ;; We use `replace' so the function is always
+                        ;; called with the right number of values.
+                        (replace seeds
+                                 (multiple-value-list
+                                  (apply fn item seeds))))
+                      seq
+                      :from-end t
+                      :initial-value seeds))))))
+
+(define-compiler-macro mvfold (fn seq &rest seeds)
+  "Optimize `mvfold' with a fixed number of seeds."
+  (cond ((null seeds)
+         `(reduce ,fn ,seq))
+        ((null (cdr seeds))
+         `(reduce ,fn ,seq :initial-value ,(car seeds)))
+        (t (let ((tmps (make-gensym-list (length seeds))))
+             (with-gensyms (item)
+               (once-only (fn)
+                 `(let ,(mapcar #'list tmps seeds)
+                    (map nil (lambda (,item)
+                               (setf (values ,@tmps)
+                                     (funcall ,fn ,@tmps ,item)))
+                         ,seq)
+                    (values ,@tmps))))))))
+
+(define-compiler-macro mvfoldr (fn seq &rest seeds)
+  "Optimize `mvfoldr' with a fixed number of seeds."
+  (cond ((null seeds)
+         `(reduce ,fn ,seq :from-end t))
+        ((null (cdr seeds))
+         `(reduce ,fn ,seq :initial-value ,(car seeds) :from-end t))
+        (t (let ((tmps (make-gensym-list (length seeds))))
+             (with-gensyms (item)
+               (once-only (fn)
+                 `(let ,(mapcar #'list tmps seeds)
+                    (map-subseq (lambda (,item)
+                                  (setf (values ,@tmps)
+                                        (funcall ,fn ,item ,@tmps)))
+                                ,seq
+                                :from-end t)
+                    (values ,@tmps))))))))

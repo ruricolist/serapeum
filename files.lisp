@@ -3,8 +3,7 @@
 (export '(build-path
           write-stream-into-file
           file=
-          file-size
-          delete-file-if-exists))
+          file-size))
 
 (defun build-path (path &rest parts)
   "Build a pathname by merging from right to left.
@@ -62,10 +61,3 @@ BUFFER-SIZE."
   (check-type file (or string pathname))
   (with-input-from-file (in file :element-type element-type)
     (file-length in)))
-
-(defun delete-file-if-exists (file)
-  "Delete FILE if it exists."
-  (handler-case
-      (delete-file file)
-    (file-error ()
-      nil)))

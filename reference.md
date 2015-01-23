@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 221 functions)
+# Function Listing For Serapeum (27 files, 229 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -79,12 +79,12 @@ to be given a name (using `flet`) so it can be declared
 
     (defmacro with-foo (&body body)
       (with-thunk (body)
-        `(call-with-foo #',body)))
+        `(call-with-foo ,body)))
 
 It is also possible to construct a "thunk" with arguments.
 
     (with-thunk (body foo)
-      `(call-with-foo #',body))
+      `(call-with-foo ,body))
     ≡ `(flet ((,thunk (,foo)
           ,@body))
         (declare (dynamic-extent #',thunk))
@@ -111,6 +111,14 @@ Both sets of declarations are returned in a form that can be spliced
 directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
+
+### `(callf function place &rest args)`
+
+Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
+
+### `(callf2 function arg1 place &rest args)`
+
+Like CALLF, but with the place as the second argument.
 
 ### `(define-do-macro name binds &body body)`
 
@@ -147,6 +155,10 @@ Using `define-do-macro` takes care of all of this for you.
                    ,@body)
                  ,hash-table))
 
+### `(define-post-modify-macro name lambda-list function &optional documentation)`
+
+Like `define-modify-macro`, but arranges to return the original value.
+
 ## Types
 
 ### `(-> function args values)`
@@ -158,11 +170,27 @@ Declaim the ftype of a function from ARGS to VALUES.
 
 ### `(assure type-spec &body (form))`
 
-Cross between CHECK-TYPE and THE for inline type checking.
-The syntax is the same as THE; the semantics are the same as
-CHECK-TYPE.
+Macro for inline type checking.
+
+`assure` is to `the` as `check-type` is to `declare`.
+
+     (the string 1) => undefined
+     (assure string 1) => error
+
+The value returned from the `assure` form is guaranteed to satisfy
+TYPE-SPEC. If FORM does not return a value of that type, then a
+correctable error is signaled. You can supply a value of the correct
+type with the `use-value` restart.
+
+Note that the supplied value is *not* saved into the place designated
+by FORM. (But see `assuref`.)
 
 From ISLISP.
+
+### `(assuref place type-spec)`
+
+Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
+PLACE only once.
 
 ## Definitions
 
@@ -341,6 +369,10 @@ Equivalent to (not (or ...)).
 
 From Arc.
 
+### `(nand &rest forms)`
+
+Equivalent to (not (and ...)).
+
 ### `(etypecase-of type x &body body)`
 
 Like `etypecase` but, at compile time, warn unless each clause in
@@ -352,6 +384,14 @@ partition of TYPE.
 Like `ecase` but, given a TYPE (which should be defined as `(member
 ...)`), warn, at compile time, unless the keys in BODY are all of TYPE
 and, taken together, they form an exhaustive partition of TYPE.
+
+### `(ctypecase-of type keyplace &body body)`
+
+Like `etypecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
+
+### `(ccase-of type keyplace &body body)`
+
+Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
 
 ### `(case-using pred keyform &body clauses)`
 
@@ -472,14 +512,6 @@ Cf. `ensure2`.
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-### `(callf function place &rest args)`
-
-Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
-
-### `(callf2 function arg1 place &rest args)`
-
-Like CALLF, but with the place as the second argument.
-
 ### `(~> needle &rest holes)`
 
 Threading macro from Clojure (by way of Racket).
@@ -530,7 +562,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor object)`
+### `(monitor x)`
 
 Return a unique lock associated with OBJECT.
 
@@ -1034,14 +1066,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc place &optional (delta 1))`
+### `(finc ref13793 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec place &optional (delta 1))`
+### `(fdec ref13839 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1086,11 +1118,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g13713 n)`
+### `(shrinkf g14014 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g13735 n)`
+### `(growf g14036 n)`
 
 Grow the value in a place by a factor.
 
@@ -1451,6 +1483,10 @@ like the first argument to `format`.
 
 From Emacs Lisp.
 
+### `(string-join strings &optional separator)`
+
+Like `(mapconcat #'string STRINGS SEPARATOR)'.
+
 ### `(string-upcase-initials string)`
 
 Return STRING with the first letter of each word capitalized.
@@ -1627,7 +1663,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g13402 pred &rest args)`
+### `(filterf g161878 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1718,12 +1754,12 @@ As a second value, return the length of SEQ.
 
 From Clojure.
 
-### `(scan fn seq &key key)`
+### `(scan fn seq &key key initial-value)`
 
 A version of `reduce` that shows its work.
 
-Instead of returning just the final result, `scan` returns a list of
-the successive results at each step.
+Instead of returning just the final result, `scan` returns a sequence
+of the successive results at each step.
 
     (reduce #'+ '(1 2 3 4))
     => 10
@@ -1744,9 +1780,13 @@ From Haskell.
 
 The greatest common prefix of SEQS.
 
+If there is no common prefix, return NIL.
+
 ### `(gcs seqs &key test)`
 
 The greatest common suffix of SEQS.
+
+If there is no common suffix, return NIL.
 
 ### `(length< &rest seqs)`
 
@@ -1840,11 +1880,11 @@ Return, as two values, the first and second halves of SEQ.
 SPLIT designates where to split SEQ; it defaults to half the length,
 but can be specified.
 
-If SEQ is of an odd length, the split is made using `ceiling` rather
-than `truncate`. This is on the theory that, if SEQ is a
-single-element list, it should be returned unchanged.
+The split is made using `ceiling` rather than `truncate`. This is on
+the theory that, if SEQ is a single-element list, it should be
+returned unchanged.
 
-### `(dsu-sort seq fn &key key)`
+### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
@@ -1867,7 +1907,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1904,4 +1944,48 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
+
+### `(mvfold fn seq &rest seeds)`
+
+Like `reduce` extended to multiple values.
+
+Calling `mvfold` with one seed is equivalent to `reduce`:
+
+    (mvfold fn xs seed) ≡ (reduce fn xs :initial-value seed)
+
+However, you can also call `mvfold` with multiple seeds:
+
+    (mvfold fn xs seed1 seed2 seed3 ...)
+
+How is this useful? Consider extracting the minimum of a sequence:
+
+    (reduce #'min xs)
+
+Or the maximum:
+
+    (reduce #'max xs)
+
+But both?
+
+    (reduce (lambda (cons item)
+              (cons (min (car cons) item)
+                    (max (cdr cons) item)))
+            xs
+            :initial-value (cons (elt xs 0) (elt xs 0)))
+
+You can do this naturally with `mvfold`.
+
+    (mvfold (lambda (min max item)
+              (values (min item min)
+                      (max item max)))
+            xs (elt xs 0) (elt xs 0))
+
+In general `mvfold` provides a functional idiom for “loops with
+book-keeping” where we might otherwise have to use recursion or
+explicit iteration.
+
+### `(mvfoldr fn seq &rest seeds)`
+
+Like `(reduce FN SEQ :from-end t)' extended to multiple
+values. Cf. `mvfold`.
 

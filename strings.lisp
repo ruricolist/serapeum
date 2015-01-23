@@ -2,7 +2,7 @@
 
 (export '(whitespace collapse-whitespace
           whitespacep blankp trim-whitespace
-          concat mapconcat
+          concat mapconcat string-join
           string-upcase-initials
           nstring-upcase-initials
           string-invert-case
@@ -185,6 +185,11 @@ From Emacs Lisp."
 
 (assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
 (assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))
+
+(defun string-join (strings &optional (separator ""))
+  "Like `(mapconcat #'string STRINGS SEPARATOR)'."
+  (check-type separator string)
+  (mapconcat #'string strings separator))
 
 (-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)

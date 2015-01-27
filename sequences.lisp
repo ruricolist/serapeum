@@ -1191,7 +1191,10 @@ You can do this naturally with `mvfold'.
 
 In general `mvfold' provides a functional idiom for “loops with
 book-keeping” where we might otherwise have to use recursion or
-explicit iteration."
+explicit iteration.
+
+Has a compiler macro that generates efficient code when the number of
+SEEDS is fixed at compile time (as it usually is)."
   (mvfold-aux fn seq seeds))
 
 (defun mvfoldr (fn seq &rest seeds)

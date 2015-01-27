@@ -757,20 +757,25 @@ are left in no particular order."
                          (ordering list))))))
 
 (defsubst take (n seq)
-  "Return the first N elements of SEQ, as a *new* sequence of the same
-type as SEQ."
+  "Return, at most, the first N elements of SEQ, as a *new* sequence
+of the same type as SEQ.
+
+If N is longer than SEQ, SEQ is simply copied."
   (check-type n array-index)
   (seq-dispatch seq
     (firstn n seq)
-    (subseq seq 0 n)))
+    (subseq seq 0 (min n (length seq)))))
 
 (defsubst drop (n seq)
   "Return all but the first N elements of SEQ.
-The sequence returned is a new sequence of the same type as SEQ."
+The sequence returned is a new sequence of the same type as SEQ.
+
+If N is greater than the length of SEQ, returns an empty sequence of
+the same type."
   (check-type n array-index)
   (seq-dispatch seq
     (nthcdr n seq)
-    (subseq seq n)))
+    (subseq seq (min (length seq) n))))
 
 (defsubst take-while (pred seq)
   (seq-dispatch seq

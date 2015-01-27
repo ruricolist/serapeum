@@ -1133,6 +1133,28 @@ element."
     (intersperse/list new-elt seq)
     (intersperse/seq new-elt seq)))
 
+(defun mvfold-aux (fn seq seeds &optional from-end)
+  (cond ((null seeds)
+         (reduce fn seq :from-end from-end))
+        ((null (rest seeds))
+         (reduce fn seq :from-end from-end
+                        :initial-value (first seeds)))
+        (t (let ((fn (ensure-function fn)))
+             (values-list
+              (reduce (lambda (l r)
+                        ;; We use `replace' so the function is always
+                        ;; called with the right number of values.
+                        (replace (fill (copy-list seeds) nil)
+                                 (multiple-value-list
+                                  (if from-end
+                                      (apply fn l r)
+                                      (multiple-value-call fn
+                                        (values-list l)
+                                        r)))))
+                      seq
+                      :initial-value seeds
+                      :from-end from-end))))))
+
 (defun mvfold (fn seq &rest seeds)
   "Like `reduce' extended to multiple values.
 
@@ -1170,73 +1192,58 @@ You can do this naturally with `mvfold'.
 In general `mvfold' provides a functional idiom for “loops with
 book-keeping” where we might otherwise have to use recursion or
 explicit iteration."
-  (cond ((null seeds)
-         (reduce fn seq))
-        ((null (rest seeds))
-         (reduce fn seq :initial-value (first seeds)))
-        (t (let ((fn (ensure-function fn))
-                 (seeds (copy-list seeds)))
-             (values-list
-              (reduce (lambda (seeds item)
-                        ;; We use `replace' so the function is always
-                        ;; called with the right number of values.
-                        (replace seeds
-                                 (multiple-value-list
-                                  (multiple-value-call fn
-                                    (values-list seeds)
-                                    item))))
-                      seq
-                      :initial-value seeds))))))
+  (mvfold-aux fn seq seeds))
 
 (defun mvfoldr (fn seq &rest seeds)
   "Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold'."
-  (cond ((null seeds)
-         (reduce fn seq :from-end t))
-        ((null (rest seeds))
-         (reduce fn seq :from-end t :initial-value (first seeds)))
-        (t (let ((fn (ensure-function fn))
-                 (seeds (copy-list seeds)))
-             (values-list
-              (reduce (lambda (item seeds)
-                        ;; We use `replace' so the function is always
-                        ;; called with the right number of values.
-                        (replace seeds
-                                 (multiple-value-list
-                                  (apply fn item seeds))))
-                      seq
-                      :from-end t
-                      :initial-value seeds))))))
+  (mvfold-aux fn seq seeds t))
+
+(eval-when (:compile-toplevel :load-toplevel)
+  (defun expand-mvfold (fn seq seeds &optional from-end)
+    (cond ((null seeds)
+           `(reduce ,fn ,seq :from-end ,from-end))
+          ((null (cdr seeds))
+           `(reduce ,fn ,seq
+                    :from-end ,from-end
+                    :initial-value ,(car seeds)))
+          (t (let ((tmps (make-gensym-list (length seeds))))
+               (with-gensyms (item)
+                 (once-only (fn)
+                   `(let ,(mapcar #'list tmps seeds)
+                      ,(if from-end
+                           `(map-subseq (lambda (,item)
+                                          (setf (values ,@tmps)
+                                                (funcall ,fn ,item ,@tmps)))
+                                        ,seq
+                                        :from-end t)
+
+                           `(map nil (lambda (,item)
+                                       (setf (values ,@tmps)
+                                             (funcall ,fn ,@tmps ,item)))
+                                 ,seq))
+                      (values ,@tmps)))))))))
 
 (define-compiler-macro mvfold (fn seq &rest seeds)
   "Optimize `mvfold' with a fixed number of seeds."
-  (cond ((null seeds)
-         `(reduce ,fn ,seq))
-        ((null (cdr seeds))
-         `(reduce ,fn ,seq :initial-value ,(car seeds)))
-        (t (let ((tmps (make-gensym-list (length seeds))))
-             (with-gensyms (item)
-               (once-only (fn)
-                 `(let ,(mapcar #'list tmps seeds)
-                    (map nil (lambda (,item)
-                               (setf (values ,@tmps)
-                                     (funcall ,fn ,@tmps ,item)))
-                         ,seq)
-                    (values ,@tmps))))))))
+  (expand-mvfold fn seq seeds))
 
 (define-compiler-macro mvfoldr (fn seq &rest seeds)
   "Optimize `mvfoldr' with a fixed number of seeds."
-  (cond ((null seeds)
-         `(reduce ,fn ,seq :from-end t))
-        ((null (cdr seeds))
-         `(reduce ,fn ,seq :initial-value ,(car seeds) :from-end t))
-        (t (let ((tmps (make-gensym-list (length seeds))))
-             (with-gensyms (item)
-               (once-only (fn)
-                 `(let ,(mapcar #'list tmps seeds)
-                    (map-subseq (lambda (,item)
-                                  (setf (values ,@tmps)
-                                        (funcall ,fn ,item ,@tmps)))
-                                ,seq
-                                :from-end t)
-                    (values ,@tmps))))))))
+  (expand-mvfold fn seq seeds t))
+
+(assert (equal '(((0 1) 2) 3) (mvfold (op (list _ _)) '(1 2 3) 0)))
+(assert (equal '(1 (2 (3 0))) (mvfoldr (op (list _ _)) '(1 2 3) 0)))
+
+(assert (equal (multiple-value-list
+                (mvfold (lambda (min max item)
+                          (values (min item min)
+                                  (max item max)))
+                        (iota 10) 0 0))
+               '(0 9)))
+(assert (equal (multiple-value-list
+                (mvfold (lambda (item min max)
+                          (values (min item min)
+                                  (max item max)))
+                        (iota 10) 0 0))
+               '(0 9)))

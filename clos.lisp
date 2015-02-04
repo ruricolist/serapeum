@@ -1,7 +1,7 @@
 (in-package :serapeum)
 
 (export '(class-name-safe find-class-safe
-          make standard/context))
+          make standard/context defmethods))
 
 (defsubst make (class &rest initargs)
   "Shorthand for `make-instance'.
@@ -58,3 +58,20 @@ If X is a class, it designates itself."
                         (,@(rest context)
                          (make-method ,around-form)))
           around-form))))
+
+
+
+(defmacro defmethods (class (self . slots) &body body)
+  `(macrolet ((:method (name &body body)
+                (let ((class ',class)
+                      (self ',self)
+                      (slots ',slots)
+                      (qualifier (when (not (listp (car body))) (pop body)))
+                      (args (pop body))
+                      (docstring (when (stringp (car body)) (pop body))))
+                  `(symbol-macrolet ,(loop for slot in slots
+                                           collect `(,slot (slot-value ,self ',slot)))
+                     (defmethod ,name ,@(unsplice qualifier) ,(substitute (list self class) self args)
+                       ,@(unsplice docstring)
+                       ,@body)))))
+     ,@body))

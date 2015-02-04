@@ -712,7 +712,8 @@ holds a new sequence which is not EQ to the old."
 
 (defun ordering (seq &key unordered-to-end
                           from-end
-                          (test 'eql))
+                          (test 'eql)
+                          (key #'identity))
   "Given a sequence, return a function that, when called with `sort',
 restores the original order of the sequence.
 
@@ -724,31 +725,33 @@ FROM-END controls what to do in case of duplicates. If FROM-END is
 true, the last occurrence of each item is preserved; otherwise, only
 the first occurrence counts.
 
-TEST controls identity; it should be a valid test for a hash table.
+TEST controls identity; it should be a valid test for a hash table. If
+the items cannot be compared that way, you can use KEY to transform
+them.
 
 UNORDERED-TO-END controls where to sort items that are not present in
 the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order."
-  ;; NB `finc' is not available yet.
-  (let ((table (make-hash-table :test test))
-        (i -1))
-    (map nil
-         (if from-end
-             (lambda (item)
-               (setf (gethash item table) (incf i)))
-             (lambda (item)
-               (ensure-gethash item table (incf i))))
-         seq)
+  (fbind key
+    (let ((table (make-hash-table :test test))
+          (i -1))
+      (map nil
+           (if from-end
+               (lambda (item)
+                 (setf (gethash (key item) table) (incf i)))
+               (lambda (item)
+                 (ensure-gethash (key item) table (incf i))))
+           seq)
 
-    (let ((default
-            (if unordered-to-end
-                (1+ i)
-                -1)))
-      (declare (fixnum default))
-      (lambda (x y)
-        (< (gethash x table default)
-           (gethash y table default))))))
+      (let ((default
+              (if unordered-to-end
+                  (1+ i)
+                  -1)))
+        (declare (fixnum default))
+        (lambda (x y)
+          (< (gethash (key x) table default)
+             (gethash (key y) table default)))))))
 
 (dotimes (i 100)
   (assert (let ((list (shuffle (loop for i to 1000 collect i))))

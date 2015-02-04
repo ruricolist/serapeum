@@ -188,6 +188,10 @@ account.
 => No warning
 ```
 
+`typecase-of` and `case-of` are `etypecase-of` and `ecase-of`,
+respectively, except that they expect, and enforce, the presence of an
+`otherwise` clause.
+
 There are continuable versions of these macros – `ctypecase-of` and
 `ccase-of`.
 

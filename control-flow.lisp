@@ -1,8 +1,11 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
+(import 'uiop:nest)
+
 (export '(eval-and-compile
           no nor nand
+          typecase-of case-of
           etypecase-of ecase-of
           ctypecase-of ccase-of
           ;; typecase-of case-of
@@ -17,7 +20,8 @@
           nix
           ensure ensure2
           ~> ~>>
-          cond-every))
+          cond-every
+          uiop:nest))
 
 (defmacro prog0 (&body body)
   "Execute BODY like `progn' but return nothing."
@@ -158,64 +162,50 @@ From Arc."
     (check-subtypes body)
     (check-exhaustive (merge-clause-types body))))
 
-(defmacro etypecase-of (type x &body body &environment env)
+(defmacro typecase-of (type x &body clauses &environment env)
+  "Like `etypecase-of', but may, and must, have an `otherwise' clause
+in case X is not of TYPE."
+  (let* ((otherwise (find 'otherwise clauses :key #'car))
+         (clauses (remove otherwise clauses)))
+    (unless otherwise
+      (warn "No otherwise clause in typecase-of for type ~s" type))
+
+    (check-exhaustiveness 'typecase type clauses env)
+    `(typecase ,x ,@clauses)))
+
+(defmacro etypecase-of (type x &body body)
   "Like `etypecase' but, at compile time, warn unless each clause in
 BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE."
-  (check-exhaustiveness 'typecase type body env)
   (once-only (x)
-    `(typecase ,x
+    `(typecase-of ,type ,x
        ,@body
        (otherwise
         (error 'type-error
                :datum ,x
                :expected-type ',type)))))
 
-(defmacro ecase-of (type x &body body &environment env)
+(defmacro case-of (type x &body clauses &environment env)
+  "Like `case-of' but may, and must, have an `otherwise' clause "
+  (let* ((otherwise (find 'otherwise clauses :key #'car))
+         (clauses (remove otherwise clauses)))
+    (unless otherwise
+      (warn "No otherwise clause in case-of for type ~s" type))
+
+    (check-exhaustiveness 'case type clauses env)
+    `(case ,x ,@clauses)))
+
+(defmacro ecase-of (type x &body body)
   "Like `ecase' but, given a TYPE (which should be defined as `(member
 ...)'), warn, at compile time, unless the keys in BODY are all of TYPE
 and, taken together, they form an exhaustive partition of TYPE."
-  ;; `(etypecase-of ,type ,x
-  ;;    ,@ (loop for (cases . clause-body) in body
-  ;;             if (eql cases t)
-  ;;               collect clause-body
-  ;;             else collect
-  ;;             `((member ,@(ensure-list cases)) ,@clause-body)))
-  (check-exhaustiveness 'case type body env)
   (once-only (x)
-    `(case ,x
+    `(case-of ,type ,x
        ,@body
        (otherwise
         (error 'type-error
                :datum ,x
                :expected-type ',type)))))
-
-;;; These are easy to define, but do they make sense?
-
-(defmacro typecase-of (type keyform &body body)
-  "Like `etypecase-of', but allow a fallthrough clause starting with
-`t' or `otherwise'.
-
-Note that it is still an error if KEYFORM does not satisfy TYPE."
-  `(etypecase-of ,type ,keyform
-     ,@(loop for clause in body
-             for (k . b) = clause
-             when (member k '(t otherwise))
-               collect `(,type ,@b)
-             else collect clause)))
-
-(defmacro case-of (type keyform &body body)
-  "Like `ecase-of', but allow a fallthrough clause beginning with `t'
-or `otherwise'.
-
-Note that it is still an error if KEYFORM does not satisfy TYPE."
-  ;; The only portable way.
-  `(etypecase-of ,type ,keyform
-     ,@(loop for clause in body
-             for (k . b) = clause
-             when (member k '(t otherwise))
-               collect `(,type ,@b)
-             else collect `((member ,@(ensure-list k)) ,@b))))
 
 (defmacro ctypecase-of (type keyplace &body body &environment env)
   "Like `etypecase-of', but providing a `store-value' restart to correct KEYPLACE and try again."

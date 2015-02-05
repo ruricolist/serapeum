@@ -138,24 +138,3 @@ placeholder. It is not necessary to use APPLY.
         `(lambda (,@(reverse vars) ,@rest)
            (declare (ignorable ,@vars))
            ,body)))))
-
-;; Constantly.
-(assert (= (funcall (op 1)) 1))
-;; Identity.
-(assert (= (funcall (op _) 1) 1))
-;; Positional.
-(assert (= (funcall (op (+ 1 _)) 1) 2))
-;; Backward reference.
-(assert (= (funcall (op (+ _ _1)) 2) 4))
-;; Rest.
-(assert (equal (apply (op (list 1 _*)) '(2 3)) '(1 2 3)))
-;; Positional and rest.
-(assert (equal (apply (op (list _ _*)) 1 '(2 3)) '(1 2 3)))
-;; Flip
-(assert (eql 4 (find '(4) (iota 10) :test (op (member _2 _1)))))
-;; nth-arg
-(assert (equal '(4 5 6) (mapcar (op _2) '(1 2 3) '(4 5 6))))
-;; Sparse argument lists.
-(assert (= 9 (apply (op (+ _1 _3 _5)) '(1 2 3 4 5))))
-;; Backquotes.
-(assert (equal '((:x 1) (:x 2) (:x 3)) (mapcar (op `(:x ,_)) '(1 2 3))))

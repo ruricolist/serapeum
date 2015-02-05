@@ -55,7 +55,3 @@ Defaults to little-endian order."
               :initial-value 0)
       (loop for i from (1- (length bytes)) downto 0
             sum (ash (aref bytes i) (* i 8)))))
-
-(assert
- (= (unoctets (octets (random-in-range most-negative-fixnum
-                                       most-positive-fixnum)))))

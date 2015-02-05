@@ -36,10 +36,6 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                          :fill-pointer ,len
                          :initial-contents ,tmp))))))
 
-(assert (adjustable-array-p (vect)))
-(assert (fill-pointer (vect)))
-(assert (equalp (vect 1 2 3) #(1 2 3)))
-
 (defun vector= (v1 v2 &key (test #'eql)
                            (start1 0)
                            (end1 nil)

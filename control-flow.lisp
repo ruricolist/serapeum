@@ -297,21 +297,6 @@ Cf. `string-case'."
                                   ,stringform ',keys)
                           cases))))
 
-(assert (eql 'two
-             (case-using #'= (+ 1.0 1.0)
-               ((1) 'one)
-               ((2) 'two)
-               (t 'more))))
-
-(assert (eql 2
-             (case-using #'string= "bar"
-               (("foo") 1)
-               (("bar") 2))))
-
-(assert (case-using #'eql 'x
-          (x t)
-          (t nil)))
-
 (define-condition econd-failure (error)
   ()
   (:report (lambda (c s)
@@ -395,12 +380,6 @@ From Zetalisp."
                (,ret nil))
            ,@(unsplice any-decl)
            ,(expand clauses))))))
-
-(assert (null (cond-every)))
-(assert (eql (cond-every (t 1) (otherwise 2)) 1))
-(assert (eql (cond-every (otherwise 1)) 1))
-(assert (eql (cond-every (t 1) (nil 2)) 1))
-(assert (eql (let ((x 1)) (cond-every (x) (nil 2))) 1))
 
 (defmacro bcond (&rest clauses)
   "Scheme's extended COND.
@@ -640,15 +619,3 @@ From Zetalisp."
                            `((,fn ,keyform ,test) ,@body)
                            `((or ,@(mapcar (lambda (x) `(,fn ,keyform ,x)) test))
                              ,@body))))))
-
-(assert
- (select Pi
-   (pi t)
-   (t nil)))
-(assert
- (select 1
-   (((- 2 1)) t)))
-(assert
- (let ((x 1))
-   (select 1
-     (x t))))

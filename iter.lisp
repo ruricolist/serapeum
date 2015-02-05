@@ -76,15 +76,6 @@ are being evaluated, and it is safe to close over the arguments."
                          (let ,(mapcar #'list vars temps)
                            ,@body))))))))))
 
-;;; Make sure the variables can be closed over.
-(assert (equal '(3 2 1)
-               (mapcar 'funcall
-                       (nlet rec ((i 3)
-                                  (acc nil))
-                         (if (= i 0)
-                             (nreverse acc)
-                             (rec (1- i) (cons (lambda () i) acc)))))))
-
 (defmacro with-syms (syms &body body)
   "Like `with-gensyms', but binds SYMS in the current package."
   `(let ,(loop for sym in syms
@@ -108,11 +99,6 @@ with MACROLET."
                           `(cdr ,',head))))
            ,@body)
          (the list (cdr ,head))))))
-
-(assert (equal '(0 1 2 3 4)
-               (collecting*
-                 (dotimes (i 5)
-                   (collect i)))))
 
 (defmacro collecting (&body body)
   "Within BODY, bind `collect' to a function of one argument that

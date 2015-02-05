@@ -120,11 +120,6 @@ Almost always used as (delq nil ...)."
                  (setf (cdr splice) (cdr l))))
             (t (setf splice l))))))
 
-(let* ((list1 (list 'x 'y nil 'z))
-       (list2 (delq nil list1)))
-  (assert (not (memq nil list2)))
-  (assert (eq list1 list2)))
-
 (defun mapply (fn list &rest lists)
   "`mapply' is a cousin of `mapcar'.
 
@@ -164,8 +159,6 @@ But the actual implementation is more efficient.
                   (apply fn args))
                 list))))
 
-(assert (equal (mapply #'cons '((x 1) (y 2))) '((x . 1) (y . 2))))
-
 (define-compiler-macro mapply (fn list &rest lists)
   (let* ((lists (cons list lists))
          (vars (loop for nil in lists collect (string-gensym 'arg))))
@@ -180,9 +173,6 @@ But the actual implementation is more efficient.
                     ,@(loop for var in vars
                             collect `(values-list ,var)))))
           ,@lists)))))
-
-(assert (equal (mapply #'list '((a 1) (b 2)) '((c 3) (d 4)))
-               '((a 1 c 3) (b 2 d 4))))
 
 (defsubst assocdr (item alist &rest args)
   "Like (cdr (assoc ...))"

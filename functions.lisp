@@ -198,14 +198,6 @@ The general idea is that `juxt` takes things apart."
            (declare (dynamic-extent ,args))
            (list ,@(loop for g in gs collect `(apply ,g ,args))))))))
 
-(assert (equal (funcall (juxt #'remove-if-not #'remove-if)
-                        #'evenp
-                        '(1 2 4 3 5 6))
-               '((2 4 6) (1 3 5))))
-
-(assert (equal (funcall (juxt #'+ #'max #'min) 2 3 5 1 6 4)
-               '(21 6 1)))
-
 (defun key-test (key test)
   "Return a function of two arguments which uses KEY to extract the
 part of the arguments to compare, and compares them using TEST.
@@ -266,14 +258,3 @@ propagate the current value of `*standard-output*':
                      (apply ,fn args)
                    (setf ,@(mappend #'list temps symbols)))))))))
     (otherwise decline)))
-
-(let ((fn (lambda ()
-           (write-string "Hello")
-           (get-output-stream-string *standard-output*))))
-  (assert (equal "Hello"
-                 (funcall (let ((*standard-output* (make-string-output-stream)))
-                            (dynamic-closure '(*standard-output*) fn)))))
-  (assert (equal "Hello"
-                 (funcall (let ((*standard-output* (make-string-output-stream))
-                                (symbols '(*standard-output*)))
-                            (dynamic-closure symbols fn))))))

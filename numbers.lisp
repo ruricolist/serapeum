@@ -145,10 +145,6 @@ float will do."
         `(the ,type (parse-float-wrapper ,string ,@args)))
       decline))
 
-;;; Clinger 1990.
-(assert (= (parse-float "1.448997445238699" :type 'double-float)
-           1.4489974452386990d0))
-
 (declaim (inline round-to))
 (defun round-to (number &optional (divisor 1))
   "Like `round', but return the resulting number.
@@ -189,9 +185,6 @@ Defaults to little-endian."
             for i from 0
             do (setf int (logior int (ash bit i)))
             finally (return int))))
-
-(assert (let ((n (random most-positive-fixnum)))
-          (= n (unbits (bits n)))))
 
 (defun shrink (n by)
   "Decrease N by a factor."

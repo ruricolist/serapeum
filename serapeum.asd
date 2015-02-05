@@ -4,6 +4,7 @@
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
+  :in-order-to ((asdf:test-op (asdf:test-op #:serapeum-tests)))
   :depends-on (#:alexandria
                #:optima
                #:uiop
@@ -77,5 +78,13 @@
                              "control-flow"
                              "queue"))
                (:file "strings" :depends-on ("lists"))
-               (:file "sequences" :depends-on ("lists"))
-               (:file "fbind-tests" :depends-on ("fbind" "sequences"))))
+               (:file "sequences" :depends-on ("lists"))))
+
+(asdf:defsystem #:serapeum-tests
+  :description "Test suite for Serapeum."
+  :depends-on (#:serapeum #:fiveam)
+  :perform (asdf:test-op (o c) (uiop:symbol-call :serapeum.tests :run-tests))
+  :pathname "tests/"
+  :serial t
+  :components ((:file "package")
+               (:file "tests")))

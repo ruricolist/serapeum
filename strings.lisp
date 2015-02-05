@@ -5,6 +5,7 @@
           concat mapconcat string-join
           string-upcase-initials
           nstring-upcase-initials
+          same-case-p
           string-invert-case
           nstring-invert-case
           words tokens lines
@@ -77,26 +78,6 @@ functions.
   (with-thunk (body var)
     `(call/string #',body ,stream)))
 
-(flet ((test (designator)
-         (with-string (s designator)
-           (write-string "string" s))))
-  (assert (equal "string" (test nil)))
-  (assert (equal "string"
-                 (with-output-to-string (*standard-output*)
-                   (test t))))
-  (assert (equal "string"
-                 (with-output-to-string (str)
-                   (test str))))
-  (assert (equal "the string"
-                 (let ((out (make-array 4
-                                        :adjustable t
-                                        :fill-pointer 4
-                                        :element-type 'character
-                                        :initial-contents "the ")))
-                   (with-output-to-string (str out)
-                     (test str))
-                   out))))
-
 (defun collapse-whitespace (string)
   "Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
@@ -115,12 +96,6 @@ replaced by a single space character."
                      (unless (whitespacep c1)
                        (write-char #\Space s))
                      (write-char c2 s))))))
-
-(assert (equal (collapse-whitespace "") ""))
-(assert (equal (collapse-whitespace " ") " "))
-(assert (equal (collapse-whitespace "x") "x"))
-(assert (equal (collapse-whitespace "  ") " "))
-(assert (equal (collapse-whitespace "  one   two    three  ") " one two three "))
 
 (defsubst blankp (seq)
   "SEQ is either empty, or consists entirely of characters that
@@ -183,9 +158,6 @@ From Emacs Lisp."
              (mapconcat/list fun seq separator stream)
              (mapconcat/seq fun seq separator stream)))))))
 
-(assert (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
-(assert (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " ")))
-
 (defun string-join (strings &optional (separator ""))
   "Like `(mapconcat #'string STRINGS SEPARATOR)'."
   (check-type separator string)
@@ -221,11 +193,6 @@ From Emacs Lisp (where it is simply `upcase-initials')."
             do (setf (aref string j)
                      (char-upcase y)))))
 
-(assert (equal (string-upcase-initials "") ""))
-(assert (equal (string-upcase-initials "a") "A"))
-(assert (equal (string-upcase-initials "an ACRONYM")
-               "An ACRONYM"))
-
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/EO1mZBtiXX0/JuuhKJ6eMHIJ
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/0CSkbAd8NTg/UnHQf9YIf8kJ
 (defun same-case-p (string)
@@ -250,14 +217,6 @@ Return `:upper' or `:lower' as appropriate."
                      (invert (1+ i) ucp t))
                     (t (invert (1+ i) ucp lcp)))))))))
 
-(assert (not (same-case-p "")))
-(assert (same-case-p "f"))
-(assert (not (same-case-p ".")))
-(assert (same-case-p "foo"))
-(assert (same-case-p "foo-bar"))
-(assert (not (same-case-p "Foo")))
-(assert (not (same-case-p "-Foo")))
-
 (-> nstring-invert-case (string-designator) string)
 (defun nstring-invert-case (string)
   "Destructive version of `string-invert-case'."
@@ -272,9 +231,6 @@ Return `:upper' or `:lower' as appropriate."
   "Invert the case of STRING.
 This does the same thing as a case-inverting readtable."
   (nstring-invert-case (copy-string string)))
-
-(assert (equal "ZEBRA" (string-invert-case "zebra")))
-(assert (equal "zebra" (string-invert-case "ZEBRA")))
 
 (-> words (string &key (:start array-index) (:end (or array-index null)))
     list)
@@ -381,13 +337,6 @@ is to return a string."
                       (write-string escape stream))
                     (escape (1+ next)))))))))))
 
-(let ((in (concatenate 'string "foo" '(#\Tab) "bar" '(#\Tab) "baz"))
-      (out "foo\\tbar\\tbaz")
-      (table (lambda (c)
-               (case c
-                 (#\Tab "\\t")))))
-  (assert (equal out (escape in table))))
-
 (-> ellipsize (string array-length &key (:ellipsis string)) string)
 (defun ellipsize (string n &key (ellipsis "..."))
   "If STRING is longer than N, truncate it and append ELLIPSIS.
@@ -469,24 +418,6 @@ but without consing."
                                (compare-segment left right))
               until (>= right end))))))
 
-(assert (string^= "foo" "foobar"))
-(assert (string^= "foo" "foo"))
-(assert (not (string^= "foo" "fo")))
-(assert (string^= "a long string" "string" :start1 (length "a long ")))
-
-(assert (string$= "bar" "foobar"))
-(assert (string$= "bar" "bar"))
-(assert (not (string$= "bar" "ar")))
-(assert (not (string$= "1x" "2x")))
-(assert (string$= "/" "foo/"))
-
-(assert (string~= "foo" "foo bar"))
-(assert (string~= "foo" "bar foo"))
-(assert (string~= "foo" "bar foo baz"))
-(assert (not (string~= "foo" "barfoo baz")))
-(assert (not (string~= "foo" "foobar baz")))
-(assert (string~= "foo-bar" "foo-bar"))
-
 (defun string-replace-all (old string new &key (start 0) end stream)
   "Do regex-style search-and-replace for constant strings.
 
@@ -525,11 +456,3 @@ like the first argument to `format'."
                 (write-string string s :start start :end match)
                 (write-string new s)
                 (rep (+ match len)))))))))
-
-(assert (equal (string-replace-all "foo" "foobar" "baz") "bazbar"))
-(assert (let ((s "foo, bar"))
-          (eq s (string-replace-all ":" s ""))))
-(assert (equal "The new way"
-               (string-replace-all "old" "The old way" "new")))
-(assert (equal "The new old way"
-               (string-replace-all "old" "The old old way" "new" :start 3 :end 7)))

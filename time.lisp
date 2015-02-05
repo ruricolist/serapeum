@@ -77,8 +77,6 @@ Has a compiler macro."
       `(load-time-value (interval-aux ,@args))
       decline))
 
-(assert (= 31626000 (interval :years 1 :days 1 :hours 1)))
-
 (defmacro with-timing ((&key quiet gc repeat)
                        &body body)
   "A convenience wrapper around TIME.

@@ -88,9 +88,6 @@ Return a new tree possibly sharing structure with TREE."
                     (funcall fn x)))
               tree)))
 
-(assert (equal (leaf-map (compose #'round #'sqrt) '(((4 1) 25) (9 100) 64))
-               '(((2 1) 5) (3 10) 8)))
-
 (defun occurs-if (test tree &key (key #'identity))
   "Is there a node (leaf or cons) in TREE that satisfies TEST?"
   (ensuring-functions (key test)

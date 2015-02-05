@@ -205,11 +205,6 @@ number of items to *keep*, not remove.
       (apply #'filter/counted pred seq args)
       (apply #'remove-if-not pred seq args)))
 
-(assert (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
-(assert (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))
-(assert (equal '(90 92 94 96 98)
-               (filter #'evenp (iota 100) :count 5 :from-end t)))
-
 (define-compiler-macro filter (&whole decline
                                       pred seq
                                       &rest args
@@ -254,13 +249,6 @@ number of items to *keep*, not remove.
         (fbind ((test (curry test item)))
           (declare (dynamic-extent #'test))
           (apply #'filter #'test seq :count count args)))))
-
-(assert (equal '((a 1) (a 2))
-               (keep 'a '((a 1) (b) (c) (a 2) (a 3) (b) (c) (a 4) (a 5))
-                     :count 2 :key #'car)))
-(assert (equal '((a 4) (a 5))
-               (keep 'a '((a 1) (b) (c) (a 2) (a 3) (b) (c) (a 4) (a 5))
-                     :count 2 :key #'car :from-end t)))
 
 (define-compiler-macro keep (&whole decline
                                     item seq
@@ -328,9 +316,6 @@ Items are assigned to the first predicate they match."
                            buckets)
               (bucket-seq seq extra)))))
 
-(assert (equal (partitions (list #'oddp #'evenp) '(0 1 2 3 4 5 6 7 8 9))
-               '((1 3 5 7 9) (0 2 4 6 8))))
-
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
 
@@ -357,15 +342,6 @@ You can think of `assort' as being akin to `remove-duplicates':
       (mapcar-into (lambda (bucket)
                      (bucket-seq seq bucket))
                    (qlist groups)))))
-
-(assert (equal (assort (iota 10)
-                       :key (lambda (x)
-                              (mod x 3)))
-               '((0 3 6 9) (1 4 7) (2 5 8))))
-
-(assert (equal (assort "How Now Brown Cow" :key #'upper-case-p)
-               '("HNBC" "ow ow rown ow")))
-
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
@@ -413,9 +389,6 @@ The arguments START, END, and KEY are as for `reduce'.
                       (collect (subseq seq start pos))
                       (runs pos))))))))))
 
-(assert (equal '((1 2) (3 4 5 6 11 12 13))
-               (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
-
 (defun batches (seq n &key (start 0) end)
   "Return SEQ in batches of N elements.
 
@@ -444,11 +417,6 @@ The arguments START, END, and KEY are as for `reduce'.
             (batches (+ i n)
                      (cons (subseq seq i (min (+ i n) end))
                            acc)))))))
-
-(assert (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
-(assert (equal '("ab" "cd" "e") (batches "abcde" 2)))
-(assert (equal '("a") (batches "abc" 2 :end 1)))
-(assert (equal '((a)) (batches '(a b c) 2 :end 1)))
 
 (defun frequencies (seq &rest hash-table-args)
   "Return a hash table with the count of each unique item in SEQ.
@@ -517,8 +485,6 @@ If there is no common prefix, return NIL."
                (return)))
          seqs)))))
 
-(assert (equal (gcp '("miss" "molly")) "m"))
-
 (defun gcs (seqs &key (test #'eql))
   "The greatest common suffix of SEQS.
 
@@ -536,8 +502,6 @@ If there is no common suffix, return NIL."
            (or (gcs x y)
                (return)))
          seqs)))))
-
-(assert (equal (gcs '("how" "now")) "ow"))
 
 (defun as-len ()
   "Return a closure that returns the length of the length
@@ -582,10 +546,6 @@ A length designator may be a sequence or an integer."
                (when (< last len)
                  (rec len seqs)))))))))
 
-(assert (length< '(1) 2))
-(assert (not (length< '(1 2) 2)))
-(assert (not (length< '(1 2 3) 2)))
-
 (defun length> (&rest seqs)
   "Is each length-designator in SEQS longer than the next?
 A length designator may be a sequence or an integer."
@@ -611,10 +571,6 @@ A length designator may be a sequence or an integer."
                (let ((len (length seq)))
                  (when (> last len)
                    (rec len seqs)))))))))
-
-(assert (not (length> '(1) 2)))
-(assert (not (length> '(1 2) 2)))
-(assert (length> '(1 2 3) 2))
 
 (defun length>= (&rest seqs)
   "Is each length-designator in SEQS longer or as long as the next?
@@ -706,10 +662,6 @@ holds a new sequence which is not EQ to the old."
                    ,store)
                 `(slice ,getter ,s ,e))))))
 
-(assert (equal "in" (slice "string" -3 -1)))
-(assert (equal "foo" (slice "foo" -0)))
-(assert (equal "r" (slice "bar" -1)))
-
 (defun ordering (seq &key unordered-to-end
                           from-end
                           (test 'eql)
@@ -752,12 +704,6 @@ are left in no particular order."
         (lambda (x y)
           (< (gethash (key x) table default)
              (gethash (key y) table default)))))))
-
-(dotimes (i 100)
-  (assert (let ((list (shuffle (loop for i to 1000 collect i))))
-            (equal list
-                   (sort (shuffle (copy-list list))
-                         (ordering list))))))
 
 (defsubst take (n seq)
   "Return, at most, the first N elements of SEQ, as a *new* sequence
@@ -920,17 +866,6 @@ The name is from Arc."
                (let ((bestn (take n (nreverse (heap-extract-all heap :key key :test #'test)))))
                  (make-sequence-like seq n :initial-contents bestn)))))))
 
-(dotimes (i 100)
-  (let ((list (map-into (make-list 1000) (lambda () (random 1000)))))
-    (assert
-     (equal (firstn 20 (sort (copy-list list) #'>))
-            (bestn 20 list #'>)))))
-(dotimes (i 100)
-  (let ((list (map-into (make-list 1000) (lambda () (random 1000)))))
-    (assert
-     (equal (firstn 20 (sort (copy-list list) #'string> :key #'princ-to-string))
-            (bestn 20 list #'string> :key #'princ-to-string)))))
-
 (defun extrema (seq pred &key (key #'identity) (start 0) end)
   "Like EXTREMUM, but returns both the minimum and the maximum (as two
 values).
@@ -952,8 +887,6 @@ values).
       (declare (dynamic-extent #'update-extrema))
       (map-subseq #'update-extrema seq start end))
     (values min max)))
-
-(assert (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5)))
 
 (defun split-at (list k)
   (declare (list list))
@@ -984,10 +917,6 @@ returned unchanged."
     (let ((split (or split (halfway-point seq))))
       (values (subseq seq 0 split)
               (subseq seq split)))))
-
-(assert (equal (halves '(x)) '(x)))
-(assert (equal (multiple-value-list (halves '(x y))) '((x) (y))))
-(assert (equal (multiple-value-list (halves '(x y z))) '((x y) (z))))
 
 (defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.
@@ -1027,9 +956,6 @@ From Q."
       (when (> (length seq) 0)
         (cons (elt seq 0)
               (map 'list fn (nsubseq seq 1) seq))))))
-
-(assert (equal '(4 5 -14 6 1) (deltas '(4 9 -5 1 2))))
-(assert (equal '(4 5 -14 6 1) (deltas #(4 9 -5 1 2))))
 
 (defcondition inconsistent-graph (error)
   ((constraints :initarg :constraints
@@ -1111,10 +1037,6 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
         else collect item
              and collect new-elt))
 
-(assert (null (intersperse/list 'x '())))
-(assert (equal (intersperse/list 'x '(z)) '(z)))
-(assert (equal (intersperse/list 'y '(x z)) '(x y z)))
-
 (defun intersperse/seq (new-elt seq)
   (if (< (length seq) 2)
       (copy-seq seq)
@@ -1129,10 +1051,6 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
                 (setf (elt ret i) (elt seq j))
                 (incf j))))
         ret)))
-
-(assert (emptyp (intersperse/seq #\x "")))
-(assert (equal (intersperse/seq #\x "z") "z"))
-(assert (equal (intersperse/seq #\y "xz") "xyz"))
 
 (defsubst intersperse (new-elt seq)
   "Return a sequence like SEQ, but with NEW-ELT inserted between each
@@ -1242,19 +1160,3 @@ values. Cf. `mvfold'."
 (define-compiler-macro mvfoldr (fn seq &rest seeds)
   "Optimize `mvfoldr' with a fixed number of seeds."
   (expand-mvfold fn seq seeds t))
-
-(assert (equal '(((0 1) 2) 3) (mvfold (op (list _ _)) '(1 2 3) 0)))
-(assert (equal '(1 (2 (3 0))) (mvfoldr (op (list _ _)) '(1 2 3) 0)))
-
-(assert (equal (multiple-value-list
-                (mvfold (lambda (min max item)
-                          (values (min item min)
-                                  (max item max)))
-                        (iota 10) 0 0))
-               '(0 9)))
-(assert (equal (multiple-value-list
-                (mvfold (lambda (item min max)
-                          (values (min item min)
-                                  (max item max)))
-                        (iota 10) 0 0))
-               '(0 9)))

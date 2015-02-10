@@ -171,7 +171,9 @@ in case X is not of TYPE."
       (warn "No otherwise clause in typecase-of for type ~s" type))
 
     (check-exhaustiveness 'typecase type clauses env)
-    `(typecase ,x ,@clauses)))
+    `(typecase ,x
+       ,@clauses
+       ,otherwise)))
 
 (defmacro etypecase-of (type x &body body)
   "Like `etypecase' but, at compile time, warn unless each clause in
@@ -193,7 +195,9 @@ partition of TYPE."
       (warn "No otherwise clause in case-of for type ~s" type))
 
     (check-exhaustiveness 'case type clauses env)
-    `(case ,x ,@clauses)))
+    `(case ,x
+       ,@clauses
+       ,otherwise)))
 
 (defmacro ecase-of (type x &body body)
   "Like `ecase' but, given a TYPE (which should be defined as `(member

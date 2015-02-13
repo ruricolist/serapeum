@@ -396,6 +396,14 @@ In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
 function, is called with that result, and the result of RECIPIENT is
 return as the value of the `cond`.
 
+As an extension, a clause like this:
+
+     (test :=> var ...)
+
+Can be used as a shorthand for
+
+     (test :=> (lambda (var) ...))
+
 The name `bcond' for a “binding cond” goes back at least to the days
 of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
@@ -405,11 +413,14 @@ Burson."
              (and (symbolp second)
                   (string= second :=>))))
          (parse-send-clause (clause)
-           (destructuring-bind (test => fn . excessive)
-               clause
+           (destructuring-bind (test => . body) clause
              (declare (ignore =>))
-             (when excessive (error "Too many terms in => clause"))
-             (values test fn))))
+             (cond ((null body) (error "Missing clause"))
+                   ((single body)
+                    (values test (car body)))
+                   (t (destructuring-bind (var . body) body
+                        (let ((fn `(lambda (,var) ,@body)))
+                          (values test fn))))))))
     ;; Note that we expand into `cond' rather than `if' so we don't
     ;; have to handle tests without bodies.
     (cond ((null clauses) nil)

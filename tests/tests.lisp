@@ -144,6 +144,15 @@
     (is (eql (cond-every (t 1) (nil 2)) 1))
     (is (eql (let ((x 1)) (cond-every (x) (nil 2))) 1)))
 
+  (test bcond
+    (is (= 2
+           (bcond ((assoc 'b '((a 1) (b 2))) => #'cadr)
+                 (t nil))))
+    (is (= 2
+           (bcond ((assoc 'b '((a 1) (b 2))) => cons
+                  (cadr cons))
+                 (t nil)))))
+
   (test select
     (is-true
      (select Pi

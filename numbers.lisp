@@ -200,9 +200,16 @@ Defaults to little-endian."
 (define-modify-macro growf (n) grow
   "Grow the value in a place by a factor.")
 
-(declaim (inline random-in-range))
 (defun random-in-range (low high)
   "Random number in the range [low,high).
 
+LOW and HIGH are automatically swapped if HIGH is less than LOW.
+
 From Zetalisp."
-  (+ low (random (- high low))))
+  (when (> low high)
+    (rotatef low high))
+  (if (and (minusp low) (plusp high))
+      (+ (- (random (abs low)))
+         (random high))
+      (let ((range (- high low)))
+        (+ low (random range)))))

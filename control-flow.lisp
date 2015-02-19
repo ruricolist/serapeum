@@ -227,7 +227,7 @@ and, taken together, they form an exhaustive partition of TYPE."
      (case-using #'eql x ...)
      ≡ (case x ...).
 
-Note that, no matter the predicate, the keys are not evaluated.
+Note that, no matter the predicate, the keys are not evaluated. (But see `selector'.)
 
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise

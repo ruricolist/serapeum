@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 229 functions)
+# Function Listing For Serapeum (27 files, 232 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -373,11 +373,20 @@ From Arc.
 
 Equivalent to (not (and ...)).
 
+### `(typecase-of type x &body clauses)`
+
+Like `etypecase-of`, but may, and must, have an `otherwise` clause
+in case X is not of TYPE.
+
 ### `(etypecase-of type x &body body)`
 
 Like `etypecase` but, at compile time, warn unless each clause in
 BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE.
+
+### `(case-of type x &body clauses)`
+
+Like `case-of` but may, and must, have an `otherwise` clause 
 
 ### `(ecase-of type x &body body)`
 
@@ -400,7 +409,7 @@ ISLISP's case-using.
      (case-using #'eql x ...)
      ≡ (case x ...).
 
-Note that, no matter the predicate, the keys are not evaluated.
+Note that, no matter the predicate, the keys are not evaluated. (But see `selector`.)
 
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
@@ -460,6 +469,14 @@ This is exactly like COND, except for clauses having the form
 In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
 function, is called with that result, and the result of RECIPIENT is
 return as the value of the `cond`.
+
+As an extension, a clause like this:
+
+     (test :=> var ...)
+
+Can be used as a shorthand for
+
+     (test :=> (lambda (var) ...))
 
 The name `bcond` for a “binding cond” goes back at least to the days
 of the Lisp Machines. I do not know who was first to use it, but the
@@ -562,7 +579,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor x)`
+### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
 
@@ -953,10 +970,6 @@ BUFFER-SIZE.
 
 The size of FILE, in bytes.
 
-### `(delete-file-if-exists file)`
-
-Delete FILE if it exists.
-
 ## Symbols
 
 ### `(find-keyword string)`
@@ -1066,14 +1079,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc ref13793 &optional (delta 1))`
+### `(finc ref20782 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref13839 &optional (delta 1))`
+### `(fdec ref20828 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1118,17 +1131,19 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g14014 n)`
+### `(shrinkf g20989 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g14036 n)`
+### `(growf g21011 n)`
 
 Grow the value in a place by a factor.
 
 ### `(random-in-range low high)`
 
 Random number in the range [low,high).
+
+LOW and HIGH are automatically swapped if HIGH is less than LOW.
 
 From Zetalisp.
 
@@ -1217,6 +1232,72 @@ If X is a class, the name of the class itself.
 
 The class designated by X.
 If X is a class, it designates itself.
+
+### `(defmethods class (self . slots) &body body)`
+
+Concisely define methods that specialize on the same class.
+
+You can use `defgeneric` to define methods on a single generic
+function without having to repeat the name of the function:
+
+    (defgeneric fn (x)
+      (:method ((x string)) ...)
+      (:method ((x number)) ...))
+
+Which is equivalent to:
+
+    (defgeneric fn (x))
+
+    (defmethod fn ((x string))
+      ...)
+
+    (defmethod fn ((x number))
+      ...)
+
+Similarly, you can use `defmethods` to define methods that specialize
+on the same class, and access the same slots, without having to
+repeat the names of the class or the slots:
+
+    (defmethods my-class (self x y)
+      (:method initialize-instance :after (self &key)
+        ...)
+      (:method print-object (self stream)
+        ...)
+      (:method some-method ((x string) self)
+        ...))
+
+Which is equivalent to:
+
+    (defmethod initialize-instance :after ((self my-class) &key)
+      (with-slots (x y) self
+        ...))
+
+    (defmethod print-object ((self my-class) stream)
+      (with-slots (x y) self
+        ...))
+
+    (defmethod some-method ((x string) (self my-class))
+      (with-slots (y) self              ;!
+        ...))
+
+Note in particular that `self` can appear in any position, and that
+you can freely specialize the other arguments.
+
+(The difference from using `with-slots` is the scope of the slot
+bindings: they are established *outside* of the method definition,
+which means argument bindings shadow slot bindings:
+
+    (some-method "foo" (make 'my-class :x "bar"))
+    => "foo"
+
+Since slot bindings are lexically outside the argument bindings, this
+is surely correct, even if it makes `defmethods` slightly harder to
+explain in terms of simpler constructs.)
+
+Is `defmethods` trivial? Yes, in terms of its implementation. This
+docstring is far longer than the code it documents. But I find it does
+a lot to keep heavily object-oriented code readable and organized,
+without any loss of power.
 
 ## Hooks
 
@@ -1502,6 +1583,11 @@ From Emacs Lisp (where it is simply `upcase-initials`).
 
 Destructive version of `string-upcase-initials`.
 
+### `(same-case-p string)`
+
+Every character with case in STRING has the same case.
+Return `:upper` or `:lower` as appropriate.
+
 ### `(nstring-invert-case string)`
 
 Destructive version of `string-invert-case`.
@@ -1663,7 +1749,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g161878 pred &rest args)`
+### `(filterf g11488 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1828,7 +1914,7 @@ Both START and END accept negative bounds.
 Setf of `slice` is like setf of `ldb`: afterwards, the place being set
 holds a new sequence which is not EQ to the old.
 
-### `(ordering seq &key unordered-to-end from-end test)`
+### `(ordering seq &key unordered-to-end from-end test key)`
 
 Given a sequence, return a function that, when called with `sort`,
 restores the original order of the sequence.
@@ -1841,7 +1927,9 @@ FROM-END controls what to do in case of duplicates. If FROM-END is
 true, the last occurrence of each item is preserved; otherwise, only
 the first occurrence counts.
 
-TEST controls identity; it should be a valid test for a hash table.
+TEST controls identity; it should be a valid test for a hash table. If
+the items cannot be compared that way, you can use KEY to transform
+them.
 
 UNORDERED-TO-END controls where to sort items that are not present in
 the original ordering. By default they are sorted first but, if
@@ -1850,13 +1938,18 @@ are left in no particular order.
 
 ### `(take n seq)`
 
-Return the first N elements of SEQ, as a *new* sequence of the same
-type as SEQ.
+Return, at most, the first N elements of SEQ, as a *new* sequence
+of the same type as SEQ.
+
+If N is longer than SEQ, SEQ is simply copied.
 
 ### `(drop n seq)`
 
 Return all but the first N elements of SEQ.
 The sequence returned is a new sequence of the same type as SEQ.
+
+If N is greater than the length of SEQ, returns an empty sequence of
+the same type.
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -1907,7 +2000,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints x)`
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -1983,6 +2076,9 @@ You can do this naturally with `mvfold`.
 In general `mvfold` provides a functional idiom for “loops with
 book-keeping” where we might otherwise have to use recursion or
 explicit iteration.
+
+Has a compiler macro that generates efficient code when the number of
+SEEDS is fixed at compile time (as it usually is).
 
 ### `(mvfoldr fn seq &rest seeds)`
 

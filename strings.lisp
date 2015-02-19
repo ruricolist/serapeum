@@ -159,9 +159,8 @@ From Emacs Lisp."
              (mapconcat/seq fun seq separator stream)))))))
 
 (defun string-join (strings &optional (separator ""))
-  "Like `(mapconcat #'string STRINGS SEPARATOR)'."
-  (check-type separator string)
-  (mapconcat #'string strings separator))
+  "Like `(mapconcat #'string STRINGS (string SEPARATOR))'."
+  (mapconcat #'string strings (string separator)))
 
 (-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)

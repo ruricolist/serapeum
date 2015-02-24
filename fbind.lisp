@@ -270,7 +270,7 @@ BODY is needed because we detect unreferenced bindings by looking for
   (let ((ignored
           (filter #'listp
                   (mappend (lambda (decl)
-                             (assocdr 'ignore (cdr decl)))
+                             (cdr (assoc 'ignore (cdr decl))))
                            (nth-value 1 (parse-body body))))))
     (labels ((unreferenced? (expr)
                (find expr ignored :key #'second))
@@ -302,10 +302,10 @@ BODY is needed because we detect unreferenced bindings by looking for
              (partitioned (mapcar (lambda (kind)
                                     (cons (caar kind) (mapcar #'cdr kind)))
                                   (assort tagged :key #'car))))
-        (values (assocdr 'simple partitioned)
-                (assocdr 'complex partitioned)
-                (assocdr 'lambda partitioned)
-                (assocdr 'unreferenced partitioned))))))
+        (values (cdr (assoc 'simple partitioned))
+                (cdr (assoc 'complex partitioned))
+                (cdr (assoc 'lambda partitioned))
+                (cdr (assoc 'unreferenced partitioned)))))))
 
 (defmacro fbindrec (bindings &body body &environment *env*)
   "Like `fbind', but creates recursive bindings.

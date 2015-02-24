@@ -138,13 +138,26 @@ Note that declarations work just like `let*'."
         ((every #'simple-binding-p bindings)
          `(let ,bindings
             ,@body))
-        (t `(multiple-value-call
-                (lambda ,(mappend #'butlast bindings)
-                  ,@body)
-              ,@(loop for binding in bindings
-                      for n = (length (butlast binding))
-                      for expr = (lastcar binding)
-                      collect `(firstn-values ,n ,expr))))))
+        (t (let* ((binds
+                    (mapcar #'butlast bindings))
+                  (exprs
+                    (mapcar #'lastcar bindings))
+                  (temp-binds
+                    (loop for vars in binds
+                          collect (mapcar #'string-gensym vars)))
+                  (temp-bindings
+                    (loop for temp-bind in temp-binds
+                          for expr in exprs
+                          collect (append temp-bind (list expr))))
+                  (rebindings
+                    (loop for vars in binds
+                          for temp-vars in temp-binds
+                          append (loop for var in vars
+                                       for temp-var in temp-vars
+                                       collect (list var temp-var)))))
+             `(mvlet* ,temp-bindings
+                (let ,rebindings
+                  ,@body))))))
 
 ;;;# `and-let*'
 

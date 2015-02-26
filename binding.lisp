@@ -69,6 +69,9 @@ Cf. `fbindrec*'."
 
 ;;;# `mvlet'
 
+;; TODO Should mvlet* allow bindings to be repeated in a single
+;; binding form? It would be more consistent with let*.
+
 (defmacro mvlet* ((&rest bindings) &body body &environment env)
   "Expand a series of nested `multiple-value-bind' forms.
 

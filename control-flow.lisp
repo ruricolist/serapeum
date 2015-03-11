@@ -65,8 +65,6 @@ From Arc."
 (define-compiler-macro no (x)
   `(not ,x))
 
-(define-symbol-macro no nil)
-
 (defmacro nor (&rest forms)
   "Equivalent to (not (or ...)).
 

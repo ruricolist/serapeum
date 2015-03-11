@@ -99,7 +99,8 @@ From Arc."
              (multiple-value-bind (subtype sure)
                  (subtype? subtype type)
                (cond ((not sure)
-                      (warn "Can't tell if ~s is a subtype of ~s" subtype type))
+                      (warn "Can't tell if ~s is a subtype of ~s. Is ~s defined?"
+                            subtype type type))
                      ((not subtype)
                       (warn "~s is not a subtype of ~s" subtype type)))))
            (explode-type (type)

@@ -65,7 +65,7 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 From ISLISP."
-  `(the ,type-spec (require-type ,form ',type-spec)))
+  `(the ,type-spec (values (require-type ,form ',type-spec))))
 
 (defmacro assuref (place type-spec)
   "Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
@@ -73,7 +73,8 @@ PLACE only once."
   (with-gensyms (temp)
     (let ((ts type-spec))
       `(the ,ts
-            (let ((,temp ,place))
-              (if (typep ,temp ',ts)
-                  ,temp
-                  (setf ,place (require-type-for ,temp ',ts ',place))))))))
+            (values
+             (let ((,temp ,place))
+               (if (typep ,temp ',ts)
+                   ,temp
+                   (setf ,place (require-type-for ,temp ',ts ',place)))))))))

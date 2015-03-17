@@ -357,8 +357,13 @@ From Arc."
                (flet ((mkdef (name &key docstring)
                         `(defsubst ,name (,s1 ,s2 &key (start1 0) end1 (start2 0) end2 ,@keys)
                            ,@(unsplice docstring)
-                           (let ((,s1 (string ,s1))
-                                 (,s2 (string ,s2)))
+                           (declare (array-length start1 start2))
+                           (let* ((,s1 (string ,s1))
+                                  (,s2 (string ,s2))
+                                  (end1 (or end1 (length ,s1)))
+                                  (end2 (or end2 (length ,s2))))
+                             (declare (array-length end1 end2))
+                             (declare (string ,s1 ,s2))
                              (macrolet ((call (fun &rest args)
                                           `(,fun ,@args
                                                  :start1 start1 :start2 start2
@@ -374,13 +379,12 @@ From Arc."
   (defcmp (string^= string-prefixp) (s1 s2)
     "Is S1 a prefix of S2?"
     (let ((ms (call mismatch s1 s2)))
-      (or (not ms) (= ms (or end1 (length s1))))))
+      (or (not ms) (= ms end1))))
 
   (defcmp (string$= string-suffixp) (s1 s2)
     "Is S1 a suffix of S2?"
-    (and (<= (length s1) (length s2))
-         (let ((ms (call mismatch s1 s2 :from-end t)))
-           (or (not ms) (= ms start1)))))
+    (let ((ms (call mismatch s1 s2 :from-end t)))
+      (or (not ms) (= ms start1))))
 
   (defcmp (string*= string-containsp) (s1 s2)
     "Is S1 a substring of S2?
@@ -400,9 +404,9 @@ Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing."
     ;; Adapted from split-sequence.
-    (let ((length (length s2))
-          (end (or end2 (length s2))))
-      (declare (array-length length end))
+    (let ((len (length s2))
+          (end end2))
+      (declare (array-length len end))
       (macrolet ((compare-segment (left right)
                    `(not (mismatch s1 s2 :start1 start1 :end1 end1
                                          :start2 ,left :end2 ,right
@@ -411,7 +415,7 @@ but without consing."
                 = start2
                   then (+ right 1)
               for right of-type array-length
-                = (min (or (position-if #'whitespacep s2 :start left) length)
+                = (min (or (position-if #'whitespacep s2 :start left) len)
                        end)
                   thereis (and (not (= right left))
                                (compare-segment left right))

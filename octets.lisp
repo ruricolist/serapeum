@@ -45,7 +45,7 @@ Defaults to little-endian order."
 
 (-> unoctets (octet-vector &key (:big-endian t)) integer)
 (defun unoctets (bytes &key big-endian)
-  "Concatenate BYTES, an octet vecotor, into an integer.
+  "Concatenate BYTES, an octet vector, into an integer.
 Defaults to little-endian order."
   (declare (octet-vector bytes) (inline reduce))
   (if big-endian

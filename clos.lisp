@@ -136,7 +136,12 @@ organized, without any loss of power."
                   (when (equal args-with-self args)
                     (warn "No binding for ~s in ~s" self args))
                   `(symbol-macrolet ,(loop for slot in slots
-                                           collect `(,slot (slot-value ,self ',slot)))
+                                           ;; Same as with-slots, use
+                                           ;; (x y) alias slot Y to
+                                           ;; var X.
+                                           for alias = (if (listp slot) (first slot) slot)
+                                           for slot-name = (if (listp slot) (second slot) slot)
+                                           collect `(,alias (slot-value ,self ',slot-name)))
                      (defmethod ,name ,@(unsplice qualifier) ,args-with-self
                        ,@(unsplice docstring)
                        ,@body)))))

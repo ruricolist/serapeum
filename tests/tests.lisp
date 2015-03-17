@@ -463,6 +463,11 @@
     (is (not (string$= "1x" "2x")))
     (is (string$= "/" "foo/")))
 
+  (test string*=
+    (is (search nil "any string"))
+    (is (not (string*= nil "any string")))
+    (is (string*= nil "NIL")))
+
   (test string~=
     (is (string~= "foo" "foo bar"))
     (is (string~= "foo" "bar foo"))

@@ -832,22 +832,30 @@ the same type."
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
+With MEMO, use a decorate-sort-undecorate transform to ensure KEY is
+only ever called once per element.
+
 The name is from Arc."
   (declare (array-length n))
-  (cond ((= n 0)
+  (cond (memo
+         (fbind (key)
+           ;; Can't just copy SEQ, because it may not allow conses as
+           ;; elements (e.g. octet vectors).
+           (let* ((temp (map 'vector (op (cons (key _1) _1)) seq))
+                  (bestn (bestn n temp pred :key #'car :memo nil))
+                  (bestn (map-into bestn #'cdr bestn))
+                  ;; The original sequence might have been shorter
+                  ;; than N.
+                  (out (make-sequence-like seq (length bestn))))
+             (replace out bestn))))
+        ((= n 0)
          (make-sequence-like seq 0))
         ((= n 1)
          (make-sequence-like seq 1
                              :initial-contents (list (extremum seq pred :key key))))
         ((length<= seq n)
          (sort (copy-seq seq) pred :key key))
-        (t (fbind ((key (if memo
-                            (let ((dict (make-hash-table :test 'equal))
-                                  (key (ensure-function key)))
-                              (lambda (&rest args)
-                                (ensure2 (gethash args dict)
-                                  (apply key args))))
-                            key))
+        (t (fbind ((key key)
                    (test (complement pred)))
              (let ((heap (make-heap n))
                    (i 0))

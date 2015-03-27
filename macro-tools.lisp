@@ -317,3 +317,10 @@ Using `define-do-macro' takes care of all of this for you.
     (multiple-value-bind (args rest?)
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
+
+(defun variable-information (symbol env)
+  #+sbcl (sb-cltl2:variable-information symbol env)
+  #+cmu (ext:variable-information symbol env)
+  #+ccl (ccl:variable-information symbol env)
+  #+allegro (sys:variable-information symbol env)
+  #-(or sbcl cmu ccl allegro) (values nil nil nil))

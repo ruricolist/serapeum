@@ -167,7 +167,7 @@ in case X is not of TYPE."
   (let* ((otherwise (find 'otherwise clauses :key #'car))
          (clauses (remove otherwise clauses)))
     (unless otherwise
-      (warn "No otherwise clause in typecase-of for type ~s" type))
+      (error "No otherwise clause in typecase-of for type ~s" type))
 
     (check-exhaustiveness 'typecase type clauses env)
     `(typecase ,x
@@ -191,7 +191,7 @@ partition of TYPE."
   (let* ((otherwise (find 'otherwise clauses :key #'car))
          (clauses (remove otherwise clauses)))
     (unless otherwise
-      (warn "No otherwise clause in case-of for type ~s" type))
+      (error "No otherwise clause in case-of for type ~s" type))
 
     (check-exhaustiveness 'case type clauses env)
     `(case ,x

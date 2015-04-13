@@ -40,7 +40,46 @@
 
 (suite types)
 
-(suite definitions)
+(suite definitions
+  
+  (test* local
+    (local
+      (def x 1)
+      (def y (1+ x))
+      y)
+    => 2
+
+    (local
+      (defun adder (y)
+        (+ x y))
+      (def x 2)
+      (adder 1))
+    => 3
+
+    (funcall
+     (local
+       (defun adder (y)
+         (+ x y))
+       (def x 2)
+       #'adder)
+     1)
+    => 3
+
+    (local
+      (plus 2 2)
+      (defun plus (x y)
+        (+ x y)))
+    => 'plus
+
+    (local
+      (declaim (ignorable x))
+      (def x 1)
+      
+      (defmacro q (x)
+        `(quote ,x))
+
+      (q x))
+    => 'x))
 
 (suite binding
 

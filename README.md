@@ -1,5 +1,7 @@
 # Overview
 
+[![Build Status](https://travis-ci.org/TBRSS/serapeum.svg?branch=master)](https://travis-ci.org/TBRSS/serapeum)
+
 Serapeum is a conservative library of Common Lisp utilities. It is a
 supplement, not a competitor, to [Alexandria][]. That means it is safe to
 do:

@@ -1,8 +1,6 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
-(import 'uiop:nest)
-
 (export '(eval-and-compile
           no nor nand
           typecase-of case-of
@@ -21,7 +19,7 @@
           ensure ensure2
           ~> ~>>
           cond-every
-          uiop:nest))
+          nest))
 
 (defmacro prog0 (&body body)
   "Execute BODY like `progn' but return nothing."
@@ -597,6 +595,34 @@ instead of the first."
   (thread-aux '~>> needle holes
               (lambda (needle hole)
                 (append1 hole needle))))
+
+(defmacro nest (&rest things)
+  "Like ~>>, but backward.
+
+This is useful when layering `with-x' macros where the order is not
+important, and extra indentation would be misleading.
+
+For example:
+
+    (nest
+     (with-open-file (in file1 :direction input))
+     (with-open-file (in file2 :direction output))
+     ...)
+
+Is equivalent to:
+
+    (with-open-file (in file1 :direction input)
+      (with-open-file (in file2 :direction output)
+        ...))
+
+This is useful when you would otherwise have to explicitly nest layers
+of `with-x' forms:
+
+From UIOP, based on a suggestion by Marco Baringer."
+  (reduce (lambda (outer inner)
+            `(,@outer ,inner))
+          things
+          :from-end t))
 
 (defmacro select (keyform &body clauses)
   "Like `case', but with evaluated keys.

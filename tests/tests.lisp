@@ -29,6 +29,13 @@
      (in-suite ,name)
      ,@tests))
 
+(defmacro test* (name &body tests)
+  (let ((tests (batches tests 3)))
+    (assert (every (op (eql (second _) '=>)) tests))
+    `(test ,name
+       ,@(loop for (form nil result) in tests
+               collect `(is (equal ,result ,form))))))
+
 (suite macro-tools)
 
 (suite types)

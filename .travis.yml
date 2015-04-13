@@ -5,7 +5,6 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ccl
-    - LISP=allegro
 
 install:
   # Install cl-travis

@@ -615,9 +615,6 @@ Is equivalent to:
       (with-open-file (in file2 :direction output)
         ...))
 
-This is useful when you would otherwise have to explicitly nest layers
-of `with-x' forms:
-
 From UIOP, based on a suggestion by Marco Baringer."
   (reduce (lambda (outer inner)
             `(,@outer ,inner))

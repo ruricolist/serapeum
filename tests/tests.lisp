@@ -79,7 +79,17 @@
         `(quote ,x))
 
       (q x))
-    => 'x))
+    => 'x
+
+    (let ((y 2))
+      (local
+        ;; Check that we don't hoist the constant binding of X.
+        (def ret nil)
+        (setq ret x)
+        (def x y)
+        (def x 1)
+        ret))
+    => nil))
 
 (suite binding
 

@@ -258,13 +258,19 @@ something different)."
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (if (and (not (null expr)) ;Don't hoist if null.
-                                 (constantp expr env))
+                        (if (and
+                             (constantp expr env)
+                             ;;Don't hoist if null.
+                             (not (null expr))
+                             ;; Don't hoist unless this is the first binding.
+                             (not (member var vars)))
                             (progn
                               (push (list var expr) hoisted-vars)
                               `',var)
                             (progn
-                              (pushnew var vars)
+                              ;; Don't duplicate the binding.
+                              (unless (member var hoisted-vars :key #'first)
+                                (pushnew var vars))
                               `(progn (setf ,var ,expr) ',var))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))

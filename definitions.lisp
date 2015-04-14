@@ -258,12 +258,14 @@ something different)."
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (if (constantp expr env)
+                        (if (and (not (null expr)) ;Don't hoist if null.
+                                 (constantp expr env))
                             (progn
                               (push (list var expr) hoisted-vars)
                               `',var)
-                            (progn (pushnew var vars)
-                                   `(progn (setf ,var ,expr) ',var))))
+                            (progn
+                              (pushnew var vars)
+                              `(progn (setf ,var ,expr) ',var))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
                         (push (list name expr) symbol-macros)

@@ -311,7 +311,7 @@ something different)."
                               form))))
                      form)))
         (let ((body (mapcar #'expand-partially body)))
-          (cond ((not (or vars labels macros symbol-macros))
+          (cond ((not (or vars hoisted-vars labels macros symbol-macros))
                  `(locally ,@decls ,@body))
                 ((no body)
                  (error "Internal definitions are present, but there are ~

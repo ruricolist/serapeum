@@ -50,16 +50,11 @@
       (seq-dispatch seq
         (if (no end)
             (if from-end
-                (dolist (item (reverse (nthcdr start seq)))
-                  (fn item))
+                (list-map-from-end/bordeaux fn seq :start start)
                 (dolist (item (nthcdr start seq))
                   (fn item)))
             (if from-end
-                (let ((subseq '()))
-                  (loop for item in (nthcdr start seq)
-                        for i below (- end start)
-                        do (push item subseq))
-                  (mapc #'fn subseq))
+                (list-map-from-end/bordeaux fn seq :start start :end end)
                 (loop for item in (nthcdr start seq)
                       for i below (- end start)
                       do (fn item))))

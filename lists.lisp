@@ -274,3 +274,53 @@ From PAIP."
   (collecting*
     (doplist (k v plist)
       (collect v))))
+
+(defun list+length (list start end)
+  (when (and start end)
+    (assert (<= start end)))
+  (let* ((list
+           (if start
+               (nthcdr start list)
+               list))
+         (length
+           (if end
+               (- (length list) end)
+               (length list))))
+    (values list length)))
+
+(defun list-map-from-end/bordeaux (fun list &key start end)
+  "Traverse LIST from the end, calling FUN on each item.
+
+This uses the technique described by Durand and Strandh in their paper
+presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
+  (declare (optimize (speed 3)
+                     (safety 0)
+                     (debug 0)
+                     (compilation-speed 0)))
+  (symbol-macrolet ((small 10000)
+                    (big 100000000))
+    (labels ((aux1 (fun list length)
+               (declare (fixnum length) (function fun))
+               (unless (zerop length)
+                 (aux1 fun (cdr list) (1- length))
+                 (funcall fun (car list))))
+             (aux2 (fun list length)
+               (declare (fixnum length))
+               (if (<= length small)
+                   (aux1 fun list length)
+                   (progn
+                     (aux2 fun (nthcdr small list) (- length small))
+                     (aux1 fun list small))))
+             (aux3 (fun list length)
+               (declare (fixnum length))
+               (if (< length big)
+                   (aux2 fun list length)
+                   (let* ((n (ash length -1))
+                          (middle (nthcdr n list)))
+                     (progn
+                       (aux3 fun middle (- length n))
+                       (aux2 fun list n))))))
+      (multiple-value-bind (list length)
+          (list+length list start end)
+        (declare (fixnum length) (list list))
+        (aux3 fun list length)))))

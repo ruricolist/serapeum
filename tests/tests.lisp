@@ -89,7 +89,16 @@
         (def x y)
         (def x 1)
         ret))
-    => nil))
+    => nil
+
+    ;; Closures in vars.
+    (funcall
+     (local
+       (def adder (lambda (x) (+ x y)))
+       (def y 2)
+       adder)
+     2)
+    => 4))
 
 (suite binding
 

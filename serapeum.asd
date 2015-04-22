@@ -67,6 +67,8 @@
                 :depends-on ("package"))
                (:file "hooks"
                 :depends-on ("package"))
+               (:file "env"
+                :depends-on ("package"))
                (:file "fbind"
                 :depends-on ("binding"
                              "control-flow"))

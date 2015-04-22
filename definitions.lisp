@@ -247,7 +247,6 @@ Returns `plus', not 4.
 The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
-  ;; TODO Think about how to (whether to) handle dynamic vars?
   (multiple-value-bind (body decls) (parse-body body)
     (let (vars hoisted-vars labels macros symbol-macros)
       (labels ((expand-partially (form)
@@ -263,7 +262,8 @@ something different)."
                              (constantp expr env)
                              ;;Don't hoist if null.
                              (not (null expr))
-                             ;; Don't hoist unless this is the first binding.
+                             ;; Don't hoist unless this is the first
+                             ;; binding for this var.
                              (not (member var vars)))
                             (progn
                               (push (list var expr) hoisted-vars)
@@ -331,9 +331,12 @@ something different)."
                           (symbol-macrolet ,symbol-macros
                             (macrolet ,macros
                               ;; As an optimization, hoist constant
-                              ;; bindings, e.g. (def x 1), so the compiler
-                              ;; can infer their types or make use of
-                              ;; declaration.
+                              ;; bindings, e.g. (def x 1), so the
+                              ;; compiler can infer their types or
+                              ;; make use of declarations. (Ideally we
+                              ;; would hoist anything we know for sure
+                              ;; is not a closure, but that's
+                              ;; complicated.)
                               (let (,@hoisted-vars
                                     ,@vars)
                                 ,@var-decls

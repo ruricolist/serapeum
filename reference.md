@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 232 functions)
+# Function Listing For Serapeum (28 files, 237 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -23,6 +23,7 @@
 - [Time](#time)
 - [Clos](#clos)
 - [Hooks](#hooks)
+- [Env](#env)
 - [Fbind](#fbind)
 - [Lists](#lists)
 - [Strings](#strings)
@@ -264,6 +265,88 @@ Alias for `define-condition`.
 Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
+
+### `(local &body body)`
+
+Make internal definitions using top-level definition forms.
+
+Within `local` you can use top-level definition forms and have them
+create purely local definitions, like `let`, `labels`, and `macrolet`:
+
+     (fboundp 'plus) ; => nil
+
+     (local
+       (defun plus (x y)
+         (+ x y))
+       (plus 2 2))
+     ;; => 4
+
+     (fboundp 'plus) ; => nil
+
+Each form in BODY is subjected to partial expansion (with
+`macroexpand-1`) until either it expands into a recognized definition
+form (like `defun`) or it can be expanded no further.
+
+(This means that you can use macros that expand into top-level
+definition forms to create local definitions.)
+
+Just as at the real top level, a form that expands into `progn` (or an
+equivalent `eval-when`) is descended into, and definitions that occur
+within it are treated as top-level definitions.
+
+(Support for `eval-when` is incomplete: `eval-when` is supported only
+when it is equivalent to `progn`).
+
+The recognized definition forms are:
+
+- `def`, for lexical variables (as with `letrec`)
+- `defun`, for local functions (as with `labels`)
+- `defmacro`, for local macros (as with `defmacro`)
+- `defalias`, to bind values in the function namespace (like `fbindrec*`)
+- `declaim`, to make declarations (as with `declare`)
+- `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
+- `defconstant` and `defconst`, which behave exactly like symbol macros
+
+(Note that the top-level definition forms defined by Common Lisp
+are (necessarily) supplemented by two from Serapeum: `def` and
+`defalias`.)
+
+The exact order in which the bindings are made depends on how `local`
+is implemented at the time you read this. The only guarantees are that
+variables are bound sequentially; functions can always close over the
+bindings of variables, and over other functions; and macros can be
+used once they are defined.
+
+     (local
+       (def x 1)
+       (def y (1+ x))
+       y)
+     => 2
+
+     (local
+       (defun adder (y)
+         (+ x y))
+       (def x 2)
+       (adder 1))
+     => 3
+
+Note that `let` forms are *not* descended into, so you cannot use the
+top-level idiom of wrapping `let` around `defun`.
+
+The value returned by the `local` form is that of the last form in
+BODY. Note that definitions have return values in `local` just like
+they do at the top level. For example:
+
+     (local
+       (plus 2 2)
+       (defun plus (x y)
+         (+ x y)))
+
+Returns `plus`, not 4.
+
+The `local` macro is based on Racket's support for internal
+definitions (although not Racket's `local` macro, which does
+something different).
 
 ## Binding
 
@@ -545,6 +628,28 @@ first.
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
+
+### `(nest &rest things)`
+
+Like ~>>, but backward.
+
+This is useful when layering `with-x` macros where the order is not
+important, and extra indentation would be misleading.
+
+For example:
+
+    (nest
+     (with-open-file (in file1 :direction input))
+     (with-open-file (in file2 :direction output))
+     ...)
+
+Is equivalent to:
+
+    (with-open-file (in file1 :direction input)
+      (with-open-file (in file2 :direction output)
+        ...))
+
+From UIOP, based on a suggestion by Marco Baringer.
 
 ### `(select keyform &body clauses)`
 
@@ -1079,14 +1184,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc ref20782 &optional (delta 1))`
+### `(finc ref79129 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref20828 &optional (delta 1))`
+### `(fdec ref79175 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1131,11 +1236,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g20989 n)`
+### `(shrinkf g79336 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g21011 n)`
+### `(growf g79358 n)`
 
 Grow the value in a place by a factor.
 
@@ -1164,7 +1269,7 @@ Defaults to little-endian order.
 
 ### `(unoctets bytes &key big-endian)`
 
-Concatenate BYTES, an octet vecotor, into an integer.
+Concatenate BYTES, an octet vector, into an integer.
 Defaults to little-endian order.
 
 ## Time
@@ -1201,20 +1306,6 @@ Intended as a more readable alternative to idioms
 like (let ((day-in-seconds #.(* 24 60 60))) ...)
 
 Has a compiler macro.
-
-### `(with-timing (&key quiet gc repeat) &body body)`
-
-A convenience wrapper around TIME.
-
-QUIET suppresses both the return value and any output to
-`*standard-output*`.
-
-REPEAT specifies a number of repetitions.
-
-If GC is non-nil, perform a garbage collection before running BODY.
-This can be useful with repeated trials, when you want to make sure
-the running time of the *nth* run is not distorted by cleaning up
-after the runs before it.
 
 ## Clos
 
@@ -1295,9 +1386,9 @@ is surely correct, even if it makes `defmethods` slightly harder to
 explain in terms of simpler constructs.)
 
 Is `defmethods` trivial? Yes, in terms of its implementation. This
-docstring is far longer than the code it documents. But I find it does
-a lot to keep heavily object-oriented code readable and organized,
-without any loss of power.
+docstring is far longer than the code it documents. But you may find
+it does a lot to keep heavily object-oriented code readable and
+organized, without any loss of power.
 
 ## Hooks
 
@@ -1326,6 +1417,22 @@ Like `run-hook-with-args`, but quit once a function returns nil.
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
+
+## Env
+
+### `(with-timing (&key quiet gc repeat) &body body)`
+
+A convenience wrapper around TIME.
+
+QUIET suppresses both the return value and any output to
+`*standard-output*`.
+
+REPEAT specifies a number of repetitions.
+
+If GC is non-nil, perform a garbage collection before running BODY.
+This can be useful with repeated trials, when you want to make sure
+the running time of the *nth* run is not distorted by cleaning up
+after the runs before it.
 
 ## Fbind
 
@@ -1566,7 +1673,7 @@ From Emacs Lisp.
 
 ### `(string-join strings &optional separator)`
 
-Like `(mapconcat #'string STRINGS SEPARATOR)'.
+Like `(mapconcat #'string STRINGS (string SEPARATOR))'.
 
 ### `(string-upcase-initials string)`
 
@@ -1749,7 +1856,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g11488 pred &rest args)`
+### `(filterf g81652 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1957,6 +2064,9 @@ Partial sorting.
 Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
+With MEMO, use a decorate-sort-undecorate transform to ensure KEY is
+only ever called once per element.
+
 The name is from Arc.
 
 ### `(extrema seq pred &key key start end)`
@@ -2000,7 +2110,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

@@ -197,6 +197,75 @@ respectively, except that they expect, and enforce, the presence of an
 There are continuable versions of these macros – `ctypecase-of` and
 `ccase-of`.
 
+## Internal definitions
+
+The `local` lets you use top-level definition forms to create local
+bindings. You can use `defun` instead of labels, `defmacro` instead of
+`macrolet`, `def` (which is Serapeum’s macro for top-level lexical
+bindings) instead of `let`, and so forth.
+
+This has two advantages:
+
+1. Given a set of variable, function, and macro bindings, you can
+   leave it to the compiler to figure out how to nest them. (This
+   could be because you are porting a function from a language that
+   uses flat bindings, or just because you are writing a very
+   complicated function.)
+
+2. You can use macro-defining macros (macros that expand into
+   `defmacro`), as well as macros that expand into `defun` forms, to
+   create local bindings.
+
+For example, memoizing local functions is usually clumsy; given `local`
+you can define a single `defmemo` form that supports both `defun`
+and `labels`.
+
+    (defmacro defmemo (name params &body body)
+      (with-gensyms (memo-table args result result?)
+        `(progn
+           (def ,memo-table (make-hash-table :test 'equal))
+           (defun ,name (&rest ,args)
+             (multiple-value-bind (,result ,result?)
+                 (gethash ,args ,memo-table)
+               (if ,result?
+                   ,result
+                   (setf (gethash ,args ,memo-table)
+                         (apply (lambda ,params
+                                  ,@body)
+                                ,args))))))))
+    
+    (local
+      (defmemo fibonacci (n)
+        (if (<= n 1)
+            1
+            (+ (fibonacci (- n 1))
+               (fibonacci (- n 2)))))
+    
+      (fibonacci 100))
+    => 573147844013817084101
+
+This expands into `let` and `labels` as you might expect.
+
+    (let (#:memo-table86151)
+      (labels ((fibonacci (&rest #:args86152)
+                 (multiple-value-bind (#:result86153 #:result?86154)
+                     (gethash #:args86152 #:memo-table86151)
+                   (if #:result?86154
+                       #:result86153
+                       (setf (gethash #:args86152 #:memo-table86151)
+                             (apply (lambda
+                                        (n)
+                                      (if
+                                       (<= n 1)
+                                       1
+                                       (+
+                                        (fibonacci (- n 1))
+                                        (fibonacci (- n 2)))))
+                                    #:args86152))))))
+        (setf #:memo-table86151
+              (make-hash-table :test 'equal))
+        (fibonacci 100)))
+
 # Function reference.
 
 The complete reference is in a [separate file](reference.md).

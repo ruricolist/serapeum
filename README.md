@@ -52,7 +52,7 @@ print the README as a preamble to their own function reference).
 Most utilities in Serapeum stand alone, but there are some families
 that deserve separate introduction.
 
-## fbind
+## Binding values in the function namespace
 
 `fbind`, `fbind*`, `fbindrec`, and `fbindrec*` bind values in the
 function namespace.
@@ -137,7 +137,7 @@ Items that do not belong in any partition are returned as a second value.
 Serapeum simply re-exports `split-sequence`, which seems to be firmly
 rooted under its present name.
 
-# etypecase-of, ecase-of
+## Compile-time exhaustiveness checking
 
 `etypecase-of` is just like `etypecase`, except that it takes an
 additional argument – the type to be matched against – and warns, at

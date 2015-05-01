@@ -325,12 +325,16 @@ something different)."
                             nil))
                        (((let let*) bindings &body body)
                         (let ((in-let? t)) (declare (special in-let?))
-                          `(let ,bindings
-                             ,(expand-body body))))
+                          (multiple-value-bind (body decls) (parse-body body)
+                            `(let ,bindings
+                               ,@decls
+                               ,(expand-body body)))))
                        ((multiple-value-bind vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
-                          `(multiple-value-bind ,vars ,expr
-                             ,(expand-body body))))
+                          (multiple-value-bind (body decls) (parse-body body)
+                            `(multiple-value-bind ,vars ,expr
+                               ,@decls
+                               ,(expand-body body)))))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)

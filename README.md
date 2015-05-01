@@ -222,8 +222,7 @@ and `labels`.
 
     (defmacro defmemo (name params &body body)
       (with-gensyms (memo-table args result result?)
-        `(progn
-           (def ,memo-table (make-hash-table :test 'equal))
+        `(let ((,memo-table (make-hash-table :test 'equal)))
            (defun ,name (&rest ,args)
              (multiple-value-bind (,result ,result?)
                  (gethash ,args ,memo-table)
@@ -232,8 +231,10 @@ and `labels`.
                    (setf (gethash ,args ,memo-table)
                          (apply (lambda ,params
                                   ,@body)
-                                ,args))))))))
-    
+                                  ,args))))))))
+
+This expands into `let` and `labels` as you might expect.
+
     (local
       (defmemo fibonacci (n)
         (if (<= n 1)
@@ -243,28 +244,6 @@ and `labels`.
     
       (fibonacci 100))
     => 573147844013817084101
-
-This expands into `let` and `labels` as you might expect.
-
-    (let (#:memo-table86151)
-      (labels ((fibonacci (&rest #:args86152)
-                 (multiple-value-bind (#:result86153 #:result?86154)
-                     (gethash #:args86152 #:memo-table86151)
-                   (if #:result?86154
-                       #:result86153
-                       (setf (gethash #:args86152 #:memo-table86151)
-                             (apply (lambda
-                                        (n)
-                                      (if
-                                       (<= n 1)
-                                       1
-                                       (+
-                                        (fibonacci (- n 1))
-                                        (fibonacci (- n 2)))))
-                                    #:args86152))))))
-        (setf #:memo-table86151
-              (make-hash-table :test 'equal))
-        (fibonacci 100)))
 
 # Function reference.
 

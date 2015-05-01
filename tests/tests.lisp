@@ -98,7 +98,28 @@
        (def y 2)
        adder)
      2)
-    => 4))
+    => 4
+
+    (local
+      (let ((x 1))
+        (defun fn ()
+          x))
+      (fn))
+    => 1
+
+    (local
+      (let* ((x 1))
+        (defun fn ()
+          (values x)))
+      (fn))
+    => 1
+
+    (local
+      (multiple-value-bind (x) (values 1)
+        (defun fn ()
+          x))
+      (fn))
+    => 1))
 
 (suite binding
 

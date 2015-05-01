@@ -230,8 +230,17 @@ used once they are defined.
        (adder 1))
      => 3
 
-Note that `let' forms are *not* descended into, so you cannot use the
-top-level idiom of wrapping `let' around `defun'.
+Perhaps surprisingly, `let' forms (as well as `let*' and
+`multiple-value-bind') *are* descended into; the only difference is
+that `defun' is implicitly translated into `defalias'. This means you
+use the top-level idiom of wrapping `let' around `defun'.
+
+    (local
+      (let ((x 2))
+        (defun adder (y)
+          (+ x y)))
+      (adder 2))
+    => 4
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
@@ -248,7 +257,8 @@ The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
   (multiple-value-bind (body decls) (parse-body body)
-    (let (vars hoisted-vars labels macros symbol-macros)
+    (let (vars hoisted-vars labels macros symbol-macros in-let?)
+      (declare (special in-let?))
       (labels ((expand-partially (form)
                  (if (consp form)
                      (destructuring-case form
@@ -277,7 +287,7 @@ something different)."
                         (declare (ignore docstring))
                         (if (constantp expr)
                             (push (list name expr) symbol-macros)
-                            (push (list name `(load-time-value ,expr)) hoisted-vars))
+                            (push (list name `(load-time-value ,expr t)) hoisted-vars))
                         `',name)
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
@@ -285,9 +295,15 @@ something different)."
                         (push (list sym exp) symbol-macros)
                         `',sym)
                        ((defun name args &body body)
-                        (push (list* name args body) labels)
-                        ;; `defun' returns a symbol.
-                        `',name)
+                        (if in-let?
+                            (expand-partially
+                             `(defalias ,name
+                                (named-lambda ,name ,args
+                                  ,@body)))
+                            (progn
+                              (push `(,name ,args ,@body) labels)
+                              ;; `defun' returns a symbol.
+                              `',name)))
                        ((defalias name expr &optional docstring)
                         (declare (ignore docstring))
                         (let ((temp (gensym)))
@@ -301,9 +317,17 @@ something different)."
                        ((progn &body body)
                         `(progn ,@(mapcar #'expand-partially body)))
                        ((eval-when situations &body body)
-                        (if (set-equal situations '(:load-toplevel :execute))
+                        (if (member :execute situations)
                             (expand-partially `(progn ,@body))
-                            (error "Unsupported eval-when: ~a" situations)))
+                            nil))
+                       (((let let*) bindings &body body)
+                        (let ((in-let? t)) (declare (special in-let?))
+                          `(let ,bindings
+                             ,(expand-partially `(progn ,@body)))))
+                       ((multiple-value-bind vars expr &body body)
+                        (let ((in-let? t)) (declare (special in-let?))
+                          `(multiple-value-bind ,vars ,expr
+                             ,(expand-partially `(progn ,@body)))))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)

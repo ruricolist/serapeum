@@ -127,7 +127,7 @@ documentation and some niceties to placate the compiler.
 Name from Emacs Lisp."
   `(progn
      ;; Give the function a temporary definition at compile time so
-     ;; the compiler doesn't complain about it's being undefined.
+     ;; the compiler doesn't complain about its being undefined.
      (eval-when (:compile-toplevel)
        (unless (fboundp ',alias)
          (defun ,alias (&rest args)

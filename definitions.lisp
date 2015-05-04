@@ -167,7 +167,7 @@ Lisp."
 
 ;; Internal definitions.
 
-(defmacro local (&body body &environment env)
+(defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
 Within `local' you can use top-level definition forms and have them
@@ -256,7 +256,7 @@ Returns `plus', not 4.
 The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
-  (multiple-value-bind (body decls) (parse-body body)
+  (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels macros symbol-macros in-let?)
       (declare (special in-let?))
       (labels ((expand-body (body)
@@ -270,26 +270,28 @@ something different)."
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (if (and
-                             (constantp expr env)
-                             ;;Don't hoist if null.
-                             (not (null expr))
-                             ;; Don't hoist unless this is the first
-                             ;; binding for this var.
-                             (not (member var vars)))
-                            (progn
-                              (push (list var expr) hoisted-vars)
-                              `',var)
-                            (progn
-                              ;; Don't duplicate the binding.
-                              (unless (member var hoisted-vars :key #'first)
-                                (pushnew var vars))
-                              `(progn (setf ,var ,expr) ',var))))
+                        (let ((expr (macroexpand expr env)))
+                          (if (and
+                               (constantp expr env)
+                               ;;Don't hoist if null.
+                               (not (null expr))
+                               ;; Don't hoist unless this is the first
+                               ;; binding for this var.
+                               (not (member var vars)))
+                              (progn
+                                (push (list var expr) hoisted-vars)
+                                `',var)
+                              (progn
+                                ;; Don't duplicate the binding.
+                                (unless (member var hoisted-vars :key #'first)
+                                  (pushnew var vars))
+                                `(progn (setf ,var ,expr) ',var)))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (if (constantp expr)
-                            (push (list name expr) symbol-macros)
-                            (push (list name `(load-time-value ,expr t)) hoisted-vars))
+                        (let ((expr (macroexpand expr env)))
+                          (if (constantp expr)
+                              (push (list name expr) symbol-macros)
+                              (push (list name `(load-time-value ,expr t)) hoisted-vars)))
                         `',name)
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))

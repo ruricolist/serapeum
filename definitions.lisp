@@ -328,7 +328,7 @@ something different)."
                        (((let let*) bindings &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
-                            `(let ,bindings
+                            `(,(car form) ,bindings
                                ,@decls
                                ,(expand-body body)))))
                        ((multiple-value-bind vars expr &body body)

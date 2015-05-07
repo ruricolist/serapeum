@@ -29,97 +29,90 @@
      (in-suite ,name)
      ,@tests))
 
-(defmacro test* (name &body tests)
-  (let ((tests (batches tests 3)))
-    (assert (every (op (eql (second _) '=>)) tests))
-    `(test ,name
-       ,@(loop for (form nil result) in tests
-               collect `(is (equal ,result ,form))))))
-
 (suite macro-tools)
 
 (suite types)
 
 (suite definitions
   
-  (test* local
-    (local
-      (def x 1)
-      (def y (1+ x))
-      y)
-    => 2
+  (test local
+    (is (eql 2
+             (local
+               (def x 1)
+               (def y (1+ x))
+               y)))
 
-    (local
-      (defun adder (y)
-        (+ x y))
-      (def x 2)
-      (adder 1))
-    => 3
+    (is (eql 3
+             (local
+               (defun adder (y)
+                 (+ x y))
+               (def x 2)
+               (adder 1))))
 
-    (funcall
-     (local
-       (defun adder (y)
-         (+ x y))
-       (def x 2)
-       #'adder)
-     1)
-    => 3
+    (is (eql 3
+             (funcall
+              (local
+                (defun adder (y)
+                  (+ x y))
+                (def x 2)
+                #'adder)
+              1)))
 
-    (local
-      (plus 2 2)
-      (defun plus (x y)
-        (+ x y)))
-    => 'plus
+    (is (eql 'plus
+             (local
+               (plus 2 2)
+               (defun plus (x y)
+                 (+ x y)))))
 
-    (local
-      (declaim (ignorable x))
-      (def x 1)
-      
-      (defmacro q (x)
-        `(quote ,x))
+    (is (eql 'x
+             (local
+               (declaim (ignorable x))
+               (def x 1)
+               
+               (defmacro q (x)
+                 `(quote ,x))
 
-      (q x))
-    => 'x
+               (q x))))
 
-    (let ((y 2))
-      (local
-        ;; Check that we don't hoist the constant binding of X.
-        (def ret nil)
-        (setq ret x)
-        (def x y)
-        (def x 1)
-        ret))
-    => nil
+    (is (null
+         (let ((y 2))
+           (local
+             ;; Check that we don't hoist the constant binding of X.
+             (def ret nil)
+             (setq ret x)
+             (def x y)
+             (def x 1)
+             ret))))
 
     ;; Closures in vars.
-    (funcall
-     (local
-       (def adder (lambda (x) (+ x y)))
-       (def y 2)
-       adder)
-     2)
-    => 4
+    (is (eql 4
+             (funcall
+              (local
+                (def adder (lambda (x) (+ x y)))
+                (def y 2)
+                adder)
+              2)))
 
-    (local
-      (let ((x 1))
-        (defun fn ()
-          x))
-      (fn))
-    => 1
+    (is (eql 1
+             (local
+               (let ((x 1))
+                 (defun fn ()
+                   x))
+               (fn))))
 
-    (local
-      (let* ((x 1))
-        (defun fn ()
-          (values x)))
-      (fn))
-    => 1
+    (is (eql 1
+             (local
+               (let* ((x 1))
+                 (defun fn ()
+                   (values x)))
+               (fn))))
 
-    (local
-      (multiple-value-bind (x) (values 1)
-        (defun fn ()
-          x))
-      (fn))
-    => 1))
+    (is (eql 1
+             (local
+               (multiple-value-bind (x) (values 1)
+                 (defun fn ()
+                   x))
+               (fn))))))
 
 (suite binding
 

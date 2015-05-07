@@ -112,7 +112,69 @@
                (multiple-value-bind (x) (values 1)
                  (defun fn ()
                    x))
-               (fn))))))
+               (fn))))
+
+    (is (eql 4
+             (local
+               (defconst x (+ 2 2))
+               x)))
+
+    ;; Expect evaluation of constants.
+    (is (not (member '+
+                     (flatten
+                      (macroexpand
+                       '(local
+                         (defconst x (+ 2 2))
+                         x))))))
+
+    ;; Ensure that forms are partially expanded in the right env.
+    (is (eql 'defined
+             (local
+               (defmacro define-function (name args &body body)
+                 `(defun ,name ,args
+                    ,@body))
+               (define-function fn () 'defined)
+               (fn))))
+
+    ;; Make sure macros in nested parsing are handled properly.
+    (is (eql 'still-defined
+             (local
+               (let ((x 2))
+                 (defmacro define-function (name args &body body)
+                   `(defun ,name ,args
+                      ,@body
+                      'still-defined))
+                 
+                 (define-function fn () x))
+               (fn))))
+
+    ;; Make sure existing macros are not overriden.
+    (is (equal '(1 2)
+               (macrolet ((foo () 1))
+                 (local
+                   (def x (foo))
+                   (defmacro foo () 2)
+                   (def y (foo))
+
+                   (list x y)))))
+
+    (signals error
+      (eval
+       '(flet ((foo () 1))
+         (local
+           (def x (foo))
+           (defmacro foo () 2)
+           (def y (foo))
+
+           (list x y)))))
+
+    (signals error
+      (eval
+       '(let ((x 1))
+         (local
+           (def old-x x)
+           (define-symbol-macro x 2)
+           (list old-x x)))))))
 
 (suite binding
 

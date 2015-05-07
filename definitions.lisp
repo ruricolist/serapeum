@@ -257,13 +257,20 @@ The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels macros symbol-macros in-let?)
+    (let (vars hoisted-vars labels macros symbol-macros in-let? exprs)
       (declare (special in-let?))
       (labels ((expand-body (body)
                  (expand-partially `(progn ,@body)))
                (expand-partially (form)
                  (if (consp form)
                      (destructuring-case form
+                       ((defmacro name args &body body)
+                        (push (list* name args body) macros)
+                        ;; `defmacro' returns a symbol.
+                        `',name)
+                       ((define-symbol-macro sym exp)
+                        (push (list sym exp) symbol-macros)
+                        `',sym)
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
@@ -295,9 +302,6 @@ something different)."
                         `',name)
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
-                       ((define-symbol-macro sym exp)
-                        (push (list sym exp) symbol-macros)
-                        `',sym)
                        ((defun name args &body body)
                         (if in-let?
                             (expand-partially
@@ -315,10 +319,6 @@ something different)."
                           (push `(declare (type function ,temp)) decls)
                           (push `(,name (&rest args) (apply ,temp args)) labels)
                           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
-                       ((defmacro name args &body body)
-                        (push (list* name args body) macros)
-                        ;; `defmacro' returns a symbol.
-                        `',name)
                        ((progn &body body)
                         `(progn ,@(mapcar #'expand-partially body)))
                        ((eval-when situations &body body)
@@ -329,8 +329,8 @@ something different)."
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,bindings
-                               ,@decls
-                               ,(expand-body body)))))
+                              ,@decls
+                              ,(expand-body body)))))
                        ((multiple-value-bind vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
@@ -341,15 +341,19 @@ something different)."
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,binds
-                               ,@decls
-                               ,(expand-body body)))))
+                              ,@decls
+                              ,(expand-body body)))))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)
                           (if exp?
                               (expand-partially exp)
-                              form))))
-                     form)))
+                              (progn
+                                (push form exprs)
+                                form)))))
+                     (progn
+                       (push form exprs)
+                       form))))
         (let ((body (mapcar #'expand-partially body)))
           (cond ((not (or vars hoisted-vars labels macros symbol-macros))
                  `(locally ,@decls ,@body))

@@ -327,7 +327,8 @@ something different)."
                         (if (member :execute situations)
                             (expand-body body)
                             nil))
-                       (((let let*) bindings &body body)
+                       (((let let* symbol-macrolet flet labels)
+                         bindings &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,bindings
@@ -339,12 +340,6 @@ something different)."
                             `(multiple-value-bind ,vars ,expr
                                ,@decls
                                ,(expand-body body)))))
-                       (((flet labels) binds &body body)
-                        (let ((in-let? t)) (declare (special in-let?))
-                          (multiple-value-bind (body decls) (parse-body body)
-                            `(,(car form) ,binds
-                              ,@decls
-                              ,(expand-body body)))))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)

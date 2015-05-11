@@ -259,7 +259,19 @@ something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels macros symbol-macros in-let? exprs)
       (declare (special in-let?))
-      (labels ((expand-body (body)
+      (labels ((expand-top (forms)
+                 (if (null forms)
+                     nil
+                     (let ((form (first forms)))
+                       (multiple-value-bind (exp macro?)
+                           (expand-partially form)
+                         (if macro?
+                             (return-from local
+                               `(symbol-macrolet ,symbol-macros
+                                  (macrolet ,macros
+                                    (local ,@(remove form orig-body)))))
+                             (cons exp (expand-top (rest forms))))))))
+               (expand-body (body)
                  (expand-partially `(progn ,@body)))
                (expand-partially (form)
                  (if (consp form)
@@ -271,7 +283,7 @@ something different)."
                           (error "Macros in `local' cannot be defined as closures."))
                         (push (list* name args body) macros)
                         ;; `defmacro' returns a symbol.
-                        `',name)
+                        (values `',name :macro))
                        ((define-symbol-macro sym exp)
                         (when (or (member sym vars)
                                   (member sym hoisted-vars :key #'car))
@@ -280,7 +292,7 @@ something different)."
                         (when in-let?
                           (error "Symbol macros in `local' must not be defined in binding forms."))
                         (push (list sym exp) symbol-macros)
-                        `',sym)
+                        (values `',sym :macro))
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
@@ -307,7 +319,7 @@ something different)."
                         (declare (ignore docstring))
                         (let ((expr (macroexpand expr env)))
                           (if (constantp expr)
-                              (push (list name expr) symbol-macros)
+                              (push (list name (eval expr)) symbol-macros)
                               (push (list name `(load-time-value ,expr t)) hoisted-vars)))
                         `',name)
                        ((defconst name expr &optional docstring)
@@ -373,7 +385,7 @@ something different)."
                      (progn
                        (push form exprs)
                        form))))
-        (let ((body (mapcar #'expand-partially body)))
+        (let ((body (expand-top body)))
           (cond ((not (or vars hoisted-vars labels macros symbol-macros))
                  `(locally ,@decls ,@body))
                 ((no body)

@@ -323,6 +323,13 @@ something different)."
                           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
                        ((progn &body body)
                         `(progn ,@(mapcar #'expand-partially body)))
+                       (((prog1 multiple-value-prog1) f &body body)
+                        `(,(car form) ,(expand-partially f)
+                          ,(expand-body body)))
+                       ((prog2 f1 f2 &body body)
+                        `(prog2 ,(expand-partially f1)
+                             ,(expand-partially f2)
+                           ,(expand-body body)))
                        ((eval-when situations &body body)
                         (if (member :execute situations)
                             (expand-body body)
@@ -334,12 +341,19 @@ something different)."
                             `(,(car form) ,bindings
                               ,@decls
                               ,(expand-body body)))))
-                       ((multiple-value-bind vars expr &body body)
+                       (((multiple-value-bind destructuring-bind progv)
+                         vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(multiple-value-bind ,vars ,expr
                                ,@decls
                                ,(expand-body body)))))
+                       ((locally &body body)
+                        (multiple-value-bind (body decls) (parse-body body)
+                          `(locally ,@decls
+                             ,(expand-body body))))
+                       ((block name &body body)
+                        `(block ,name ,(expand-body body)))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)

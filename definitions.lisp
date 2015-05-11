@@ -385,62 +385,53 @@ something different)."
                      (progn
                        (push form exprs)
                        form))))
-        (let ((body (expand-top body)))
-          (cond ((not (or vars hoisted-vars labels macros symbol-macros))
-                 `(locally ,@decls ,@body))
-                ((no body)
-                 (error "Internal definitions are present, but there are ~
-              no expressions.~%Definitions: ~s"
-                        (append (mapcar #'second vars)
-                                (mapcar #'second labels)
-                                (mapcar #'second macros))))
-                (t
-                 (let* ((fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
-                        (var-names (append (mapcar #'car hoisted-vars) vars)))
-                   (multiple-value-bind (var-decls decls)
-                       (partition-declarations var-names decls)
-                     (multiple-value-bind (fn-decls decls)
-                         (partition-declarations fn-names decls)
-                       ;; These functions aren't necessary, but they
-                       ;; make the expansion cleaner.
-                       (labels ((wrap-decls (body)
-                                  (if decls
-                                      `(locally ,@decls
-                                         ,@body)
-                                      `(progn ,@body)))
-                                (wrap-symbol-macros (body)
-                                  (if symbol-macros
-                                      `((symbol-macrolet ,symbol-macros
-                                          ,@body))
-                                      body))
-                                (wrap-macros (body)
-                                  (if macros
-                                      `((macrolet ,macros
-                                          ,@body))
-                                      body))
-                                (wrap-vars (body)
-                                  (if (or hoisted-vars vars)
-                                      ;; As an optimization, hoist constant
-                                      ;; bindings, e.g. (def x 1), so the
-                                      ;; compiler can infer their types or
-                                      ;; make use of declarations. (Ideally we
-                                      ;; would hoist anything we know for sure
-                                      ;; is not a closure, but that's
-                                      ;; complicated.)
-                                      `((let (,@hoisted-vars
-                                              ,@vars)
-                                          ,@var-decls
-                                          ,@body))
-                                      body))
-                                (wrap-labels (body)
-                                  (if labels
-                                      `((labels ,labels
-                                          ,@fn-decls
-                                          ,@body))
-                                      body)))
-                         (wrap-decls
-                          (wrap-symbol-macros
-                           (wrap-macros
-                            (wrap-vars
-                             (wrap-labels
-                              body))))))))))))))))
+        (let* ((body (expand-top body))
+               (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
+               (var-names (append (mapcar #'car hoisted-vars) vars)))
+          (multiple-value-bind (var-decls decls)
+              (partition-declarations var-names decls)
+            (multiple-value-bind (fn-decls decls)
+                (partition-declarations fn-names decls)
+              ;; These functions aren't necessary, but they
+              ;; make the expansion cleaner.
+              (labels ((wrap-decls (body)
+                         (if decls
+                             `(locally ,@decls
+                                ,@body)
+                             `(progn ,@body)))
+                       (wrap-symbol-macros (body)
+                         (if symbol-macros
+                             `((symbol-macrolet ,symbol-macros
+                                 ,@body))
+                             body))
+                       (wrap-macros (body)
+                         (if macros
+                             `((macrolet ,macros
+                                 ,@body))
+                             body))
+                       (wrap-vars (body)
+                         (if (or hoisted-vars vars)
+                             ;; As an optimization, hoist constant
+                             ;; bindings, e.g. (def x 1), so the
+                             ;; compiler can infer their types or
+                             ;; make use of declarations. (Ideally we
+                             ;; would hoist anything we know for sure
+                             ;; is not a closure, but that's
+                             ;; complicated.)
+                             `((let (,@hoisted-vars
+                                     ,@vars)
+                                 ,@var-decls
+                                 ,@body))
+                             body))
+                       (wrap-labels (body)
+                         (if labels
+                             `((labels ,labels
+                                 ,@fn-decls
+                                 ,@body))
+                             body)))
+                (wrap-decls
+                 (wrap-symbol-macros
+                  (wrap-macros
+                   (wrap-vars
+                    (wrap-labels
+                     body)))))))))))))

@@ -265,12 +265,20 @@ something different)."
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)
+                        (when (member name labels)
+                          (error "Cannot redefine label as macro: ~a" name))
                         (when in-let?
                           (error "Macros in `local' cannot be defined as closures."))
                         (push (list* name args body) macros)
                         ;; `defmacro' returns a symbol.
                         `',name)
                        ((define-symbol-macro sym exp)
+                        (when (or (member sym vars)
+                                  (member sym hoisted-vars :key #'car))
+                          (error "Cannot redefine variable as a symbol macro: ~a" sym))
+                        ;; TODO Why not?
+                        (when in-let?
+                          (error "Symbol macros in `local' must not be defined in binding forms."))
                         (push (list sym exp) symbol-macros)
                         `',sym)
                        ((declaim &rest specs)

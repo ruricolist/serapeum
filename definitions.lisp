@@ -265,6 +265,8 @@ something different)."
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)
+                        (when in-let?
+                          (error "Macros in `local' cannot be defined as closures."))
                         (push (list* name args body) macros)
                         ;; `defmacro' returns a symbol.
                         `',name)

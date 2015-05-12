@@ -165,7 +165,13 @@
                  (local
                    (def old-x x)
                    (define-symbol-macro x 2)
-                   (list old-x x)))))))
+                   (list old-x x)))))
+
+    (is (equal 1
+               (local
+                 (defmacro always-1 () 1)
+                 (defun fn () (always-1))
+                 (fn))))))
 
 (suite binding
 

@@ -306,6 +306,12 @@ something different)."
                       (macroexpand-1 form env)))
                    (otherwise
                     (macroexpand-1 form env))))
+               (expand (form env)
+                 (multiple-value-bind (exp exp?)
+                     (expand-1 form env)
+                   (if exp?
+                       (expand exp env)
+                       exp)))
                (expand-body (body)
                  (expand-partially `(progn ,@body)))
                (expand-partially (form)
@@ -338,7 +344,7 @@ something different)."
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (let ((expr (macroexpand expr env)))
+                        (let ((expr (expand expr env)))
                           (if (and
                                (constantp expr env)
                                ;;Don't hoist if null.
@@ -356,7 +362,7 @@ something different)."
                                 `(progn (setf ,var ,expr) ',var)))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (let ((expr (macroexpand expr env)))
+                        (let ((expr (expand expr env)))
                           (if (constantp expr)
                               (push (list name expr) symbol-macros)
                               (push (list name `(load-time-value ,expr t)) hoisted-vars)))

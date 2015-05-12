@@ -257,8 +257,8 @@ The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels macros macro-fns symbol-macros in-let? exprs)
-      (declare (special in-let?))
+    (let (vars hoisted-vars labels macros macro-fns symbol-macros in-let? orig-form exprs)
+      (declare (special in-let? orig-form))
       ;; The complexity here comes from three sources:
 
       ;; 1. Hoisting variable definitions with constant initforms. We
@@ -276,7 +276,9 @@ something different)."
                      nil
                      (let ((form (first forms)))
                        (multiple-value-bind (exp macro? def)
-                           (expand-partially form)
+                           (let ((orig-form form))
+                             (declare (special orig-form))
+                             (expand-partially form))
                          (ecase macro?
                            ((symbol-macrolet macrolet)
                             `((,macro? (,def) ,@(expand-top (rest forms)))))
@@ -314,30 +316,47 @@ something different)."
                        exp)))
                (expand-body (body)
                  (expand-partially `(progn ,@body)))
+               (at-beginning? ()
+                 (nor vars hoisted-vars labels macros symbol-macros exprs))
                (expand-partially (form)
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)
-                        (when (member name labels)
-                          (error "Cannot redefine label as macro: ~a" name))
-                        (when in-let?
-                          (error "Macros in `local' cannot be defined as closures."))
-                        (push (list* name args body) macros)
-                        ;; XXX This is nasty.
-                        (let ((def (list name (compile-macro-function args body))))
-                          (push def macro-fns))
-                        ;; `defmacro' returns a symbol.
-                        (values `',name 'macrolet (list* name args body)))
+                        (cond
+                          ((member name labels)
+                           (error "Cannot redefine label as macro: ~a" name))
+                          (in-let?
+                           (error "Macros in `local' cannot be defined as closures."))
+                          ;; The simple case -- the macro precedes all
+                          ;; other definitions and expressions.
+                          ((at-beginning?)
+                           (return-from local
+                             `(macrolet ((,name ,args ,@body))
+                                (local ,@(substitute `',name orig-form orig-body)))))
+                          (t
+                           (push (list* name args body) macros)
+                           ;; XXX This is nasty.
+                           (let ((def (list name (compile-macro-function args body))))
+                             (push def macro-fns))
+                           ;; `defmacro' returns a symbol.
+                           (values `',name 'macrolet (list* name args body)))))
                        ((define-symbol-macro sym exp)
-                        (when (or (member sym vars)
-                                  (member sym hoisted-vars :key #'car))
-                          (error "Cannot redefine variable as a symbol macro: ~a" sym))
-                        ;; TODO Why not?
-                        (when in-let?
-                          (error "Symbol macros in `local' must not be defined in binding forms."))
-                        (let ((def (list sym exp)))
-                          (push def symbol-macros)
-                          (values `',sym 'symbol-macrolet def)))
+                        (cond
+                          ((or (member sym vars)
+                               (member sym hoisted-vars :key #'car))
+                           (error "Cannot redefine variable as a symbol macro: ~a" sym))
+                          ;; TODO Why not?
+                          (in-let?
+                           (error "Symbol macros in `local' must not be defined in binding forms."))
+                          ;; Simple case.
+                          ((at-beginning?)
+                           (return-from local
+                             `(symbol-macrolet ((,sym ,exp))
+                                (local ,@(substitute `',sym orig-form orig-body)))))
+                          (t
+                           (let ((def (list sym exp)))
+                             (push def symbol-macros)
+                             (values `',sym 'symbol-macrolet def)))))
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))

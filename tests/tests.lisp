@@ -139,6 +139,7 @@
 
                    (list x y)))))
 
+    ;; When the value of `def' is contant in the environment.
     (is (equal '(1 2)
                (macrolet ((foo () 1))
                  (local
@@ -147,6 +148,17 @@
                    (def y (foo))
 
                    (list x y)))))
+
+    ;; When the value of `def' is not constant.
+    (let ((d (random 3)))
+      (is (equal (list (+ 1 d) (+ 2 d))
+                 (macrolet ((foo () 1))
+                   (local
+                     (def x (+ (foo) d))
+                     (defmacro foo () 2)
+                     (def y (+ (foo) d))
+
+                     (list x y))))))
 
     (is (equal '(1 2)
                (let ((x 1))

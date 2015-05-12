@@ -272,6 +272,7 @@ something different)."
       ;; they are declared, they must be available to
       ;; `expand-partially'.
       (labels ((expand-top (forms)
+                 "Expand FORMS recursively, wrapping with macros as they are defined."
                  (if (null forms)
                      nil
                      (let ((form (first forms)))
@@ -285,6 +286,7 @@ something different)."
                            ((nil)
                             (cons exp (expand-top (rest forms)))))))))
                (compile-macro-function (args body)
+                 "Compile a macro function into a form acceptable to `augment-environment.'"
                  (multiple-value-bind (env-var args)
                      (if-let (tail (member '&environment args))
                        (values (cadr tail)
@@ -297,6 +299,7 @@ something different)."
                                            (destructuring-bind ,args (rest ,f)
                                              ,@body)))))))
                (expand-1 (form env)
+                 "Like macroexpand-1 with local macro and symbol macro definitions."
                  (match form
                    ((and form (type symbol))
                     (if-let (match (assoc form symbol-macros))
@@ -309,22 +312,35 @@ something different)."
                    (otherwise
                     (macroexpand-1 form env))))
                (expand (form env)
+                 "Like macroexpand, but using expand-1."
                  (multiple-value-bind (exp exp?)
                      (expand-1 form env)
                    (if exp?
                        (expand exp env)
                        exp)))
                (expand-body (body)
+                 "Shorthand for recursing on implicit progns."
                  (expand-partially `(progn ,@body)))
+               (wrap-symbol-macros (body)
+                 (if symbol-macros
+                     `((symbol-macrolet ,symbol-macros
+                         ,@body))
+                     body))
+               (wrap-macros (body)
+                 (if macros
+                     `((macrolet ,macros
+                         ,@body))
+                     body))
                (wrap-env (body)
-                 (when macros
-                   (setf body `((macrolet ,macros ,@body))))
-                 (when symbol-macros
-                   (setf body `((symbol-macrolet ,symbol-macros ,@body))))
-                 body)
+                 "Wrap BODY with the currently defined macros and symbol macros."
+                 (wrap-macros
+                  (wrap-symbol-macros
+                   body)))
                (at-beginning? ()
+                 "Return non-nil if no definitions or expressions have been expanded yet."
                  (nor vars hoisted-vars labels macros symbol-macros exprs))
                (expand-partially (form)
+                 "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)

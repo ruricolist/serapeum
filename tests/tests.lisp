@@ -171,7 +171,14 @@
                (local
                  (defmacro always-1 () 1)
                  (defun fn () (always-1))
-                 (fn))))))
+                 (fn))))
+
+    (is (equal 1
+               (local
+                 (defun fn1 () 2)
+                 (defmacro always-1 () 1)
+                 (defun fn2 () (always-1))
+                 (fn2))))))
 
 (suite binding
 

@@ -110,60 +110,50 @@
                x))))
 
   (test local+macros
-    (flet ((macro-tests ()
-             
-             (is (eql 'x
-                      (local
-                        (declaim (ignorable x))
-                        (def x 1)
-                        
-                        (defmacro q (x)
-                          `(quote ,x))
+    (is (eql 'x
+             (local
+               (declaim (ignorable x))
+               (def x 1)
+               
+               (defmacro q (x)
+                 `(quote ,x))
 
-                        (q x))))
-             
-             ;; Ensure that forms are partially expanded in the right env.
+               (q x))))
+    
+    ;; Ensure that forms are partially expanded in the right env.
 
-             (is (eql 'defined
-                      (local
-                        (defmacro define-function (name args &body body)
-                          `(defun ,name ,args
-                             ,@body))
-                        (define-function fn () 'defined)
-                        (fn))))
-             
-             (is (equal '(1 2)
-                        (flet ((foo () 1))
-                          (local
-                            (def x (foo))
-                            (defmacro foo () 2)
-                            (def y (foo))
+    (is (eql 'defined
+             (local
+               (defmacro define-function (name args &body body)
+                 `(defun ,name ,args
+                    ,@body))
+               (define-function fn () 'defined)
+               (fn))))
+    
+    (is (equal '(1 2)
+               (flet ((foo () 1))
+                 (local
+                   (def x (foo))
+                   (defmacro foo () 2)
+                   (def y (foo))
 
-                            (list x y)))))
+                   (list x y)))))
 
-             (is (equal '(1 2)
-                        (macrolet ((foo () 1))
-                          (local
-                            (def x (foo))
-                            (defmacro foo () 2)
-                            (def y (foo))
+    (is (equal '(1 2)
+               (macrolet ((foo () 1))
+                 (local
+                   (def x (foo))
+                   (defmacro foo () 2)
+                   (def y (foo))
 
-                            (list x y)))))
+                   (list x y)))))
 
-             (is (equal '(1 2)
-                        (let ((x 1))
-                          (local
-                            (def old-x x)
-                            (define-symbol-macro x 2)
-                            (list old-x x)))))))
-      (if serapeum::*can-augment-environment*
-          (progn
-            ;; Test it both ways to prevent bitrot.
-            (let ((serapeum::*use-augment-environment* nil))
-              (macro-tests))
-            (let ((serapeum::*use-augment-environment* t))
-              (macro-tests)))
-          (macro-tests)))))
+    (is (equal '(1 2)
+               (let ((x 1))
+                 (local
+                   (def old-x x)
+                   (define-symbol-macro x 2)
+                   (list old-x x)))))))
 
 (suite binding
 

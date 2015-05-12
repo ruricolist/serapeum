@@ -167,32 +167,6 @@ Lisp."
 
 ;; Internal definitions.
 
-(defvar *can-augment-environment*
-  ;; Allego is not included because it doesn't allow augment the
-  ;; global env.
-  (or #+(or sbcl ccl cmu ecl abcl) t))
-
-;;; This is a dynamic variable so we can test it both ways even on
-;;; Lisps that actually support augment-environment.
-
-(defparameter *use-augment-environment*
-  *can-augment-environment*
-  "Should we use `augment-environment'?
-
-This is a flag so we can test it both ways, even on Lisps that support
-`augment-environment' (in order to avoid bit-rot).")
-
-(defun augment-environment (env &rest args)
-  "Wrap the implementations `augment-environment', if there is one."
-  (declare (ignorable args))
-  #+sbcl (apply #'sb-cltl2:augment-environment env args)
-  #+ccl (apply #'ccl:augment-environment env args)
-  #+cmu (apply #'ext:augment-environment env args)
-  #+allegro (apply #'sys:augment-environment env args)
-  #+ecl (apply #'si:augment-environment env args)
-  #+abcl (apply #'lisp:augment-environment env args)
-  #-(or sbcl ccl cmu allegro ecl abcl) env)
-
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
@@ -314,19 +288,17 @@ something different)."
                                            (destructuring-bind ,args (rest ,f)
                                              ,@body)))))))
                (expand-1 (form env)
-                 (if *use-augment-environment*
-                     (macroexpand-1 form env)
-                     (match form
-                       ((and form (type symbol))
-                        (if-let (match (assoc form symbol-macros))
-                          (values (second match) t)
-                          (macroexpand-1 form env)))
-                       ((list* (and name (type symbol)) _)
-                        (if-let (match (assoc name macro-fns))
-                          (values (funcall (second match) form env) t)
-                          (macroexpand-1 form env)))
-                       (otherwise
-                        (macroexpand-1 form env)))))
+                 (match form
+                   ((and form (type symbol))
+                    (if-let (match (assoc form symbol-macros))
+                      (values (second match) t)
+                      (macroexpand-1 form env)))
+                   ((list* (and name (type symbol)) _)
+                    (if-let (match (assoc name macro-fns))
+                      (values (funcall (second match) form env) t)
+                      (macroexpand-1 form env)))
+                   (otherwise
+                    (macroexpand-1 form env))))
                (expand-body (body)
                  (expand-partially `(progn ,@body)))
                (expand-partially (form)
@@ -340,9 +312,7 @@ something different)."
                         (push (list* name args body) macros)
                         ;; XXX This is nasty.
                         (let ((def (list name (compile-macro-function args body))))
-                          (if *use-augment-environment*
-                              (setf env (augment-environment env :macro (list def)))
-                              (push def macro-fns)))
+                          (push def macro-fns))
                         ;; `defmacro' returns a symbol.
                         (values `',name 'macrolet (list* name args body)))
                        ((define-symbol-macro sym exp)
@@ -353,9 +323,7 @@ something different)."
                         (when in-let?
                           (error "Symbol macros in `local' must not be defined in binding forms."))
                         (let ((def (list sym exp)))
-                          (if *use-augment-environment*
-                              (setf env (augment-environment env :symbol-macro (list def)))
-                              (push def symbol-macros))
+                          (push def symbol-macros)
                           (values `',sym 'symbol-macrolet def)))
                        ((declaim &rest specs)
                         (dolist (spec specs)

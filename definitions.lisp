@@ -316,6 +316,12 @@ something different)."
                        exp)))
                (expand-body (body)
                  (expand-partially `(progn ,@body)))
+               (wrap-env (body)
+                 (when macros
+                   (setf body `((macrolet ,macros ,@body))))
+                 (when symbol-macros
+                   (setf body `((symbol-macrolet ,symbol-macros ,@body))))
+                 body)
                (at-beginning? ()
                  (nor vars hoisted-vars labels macros symbol-macros exprs))
                (expand-partially (form)
@@ -394,7 +400,7 @@ something different)."
                              `(defalias ,name
                                 (named-lambda ,name ,args
                                   ,@body)))
-                            (progn
+                            (let ((body (wrap-env body)))
                               (push `(,name ,args ,@body) labels)
                               ;; `defun' returns a symbol.
                               `',name)))

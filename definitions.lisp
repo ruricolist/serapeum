@@ -259,11 +259,18 @@ something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels macros macro-fns symbol-macros in-let? exprs)
       (declare (special in-let?))
-      ;; This is pretty complicated; almost all of the complexity is
-      ;; in order to support macro definitions. In particular, local
-      ;; macro definitions should only take effect *after* they are
-      ;; declared, and, after they are declared, they must be
-      ;; available to `expand-partially'.
+      ;; The complexity here comes from three sources:
+
+      ;; 1. Hoisting variable definitions with constant initforms. We
+      ;; do this so SBCL (and CMUCL) can infer types better.
+
+      ;; 2. Descending into binding forms. This is so we can support
+      ;; macros that expand into the let-over-defun style.
+
+      ;; 3. Supporting macros. In particular, local macro definitions
+      ;; should only take effect *after* they are declared, and, after
+      ;; they are declared, they must be available to
+      ;; `expand-partially'.
       (labels ((expand-top (forms)
                  (if (null forms)
                      nil
@@ -417,62 +424,41 @@ something different)."
                      (progn
                        (push form exprs)
                        form))))
-        (let ((body (expand-top body)))
-          `(local-inner
-            :decls ,decls
-            :body ,body
-            :labels ,labels
-            :vars ,vars
-            :hoisted-vars ,hoisted-vars))))))
-
-(defmacro local-inner (&key decls symbol-macros macros vars hoisted-vars labels body)
-  "Turn the environment in the arguments into binding forms."
-  (let* ((fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
-         (var-names (append (mapcar #'car hoisted-vars) vars)))
-    (multiple-value-bind (var-decls decls)
-        (partition-declarations var-names decls)
-      (multiple-value-bind (fn-decls decls)
-          (partition-declarations fn-names decls)
-        ;; These functions aren't necessary, but they
-        ;; make the expansion cleaner.
-        (labels ((wrap-decls (body)
-                   (if decls
-                       `(locally ,@decls
-                          ,@body)
-                       `(progn ,@body)))
-                 (wrap-symbol-macros (body)
-                   (if symbol-macros
-                       `((symbol-macrolet ,symbol-macros
-                           ,@body))
-                       body))
-                 (wrap-macros (body)
-                   (if macros
-                       `((macrolet ,macros
-                           ,@body))
-                       body))
-                 (wrap-vars (body)
-                   (if (or hoisted-vars vars)
-                       ;; As an optimization, hoist constant
-                       ;; bindings, e.g. (def x 1), so the
-                       ;; compiler can infer their types or
-                       ;; make use of declarations. (Ideally we
-                       ;; would hoist anything we know for sure
-                       ;; is not a closure, but that's
-                       ;; complicated.)
-                       `((let (,@hoisted-vars
-                               ,@vars)
-                           ,@var-decls
-                           ,@body))
-                       body))
-                 (wrap-labels (body)
-                   (if labels
-                       `((labels ,labels
-                           ,@fn-decls
-                           ,@body))
-                       body)))
-          (wrap-decls
-           (wrap-symbol-macros
-            (wrap-macros
-             (wrap-vars
-              (wrap-labels
-               body))))))))))
+        (let* ((body (expand-top body))
+               (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
+               (var-names (append (mapcar #'car hoisted-vars) vars)))
+          (multiple-value-bind (var-decls decls)
+              (partition-declarations var-names decls)
+            (multiple-value-bind (fn-decls decls)
+                (partition-declarations fn-names decls)
+              ;; These functions aren't necessary, but they
+              ;; make the expansion cleaner.
+              (labels ((wrap-decls (body)
+                         (if decls
+                             `(locally ,@decls
+                                ,@body)
+                             `(progn ,@body)))
+                       (wrap-vars (body)
+                         (if (or hoisted-vars vars)
+                             ;; As an optimization, hoist constant
+                             ;; bindings, e.g. (def x 1), so the
+                             ;; compiler can infer their types or
+                             ;; make use of declarations. (Ideally we
+                             ;; would hoist anything we know for sure
+                             ;; is not a closure, but that's
+                             ;; complicated.)
+                             `((let (,@hoisted-vars
+                                     ,@vars)
+                                 ,@var-decls
+                                 ,@body))
+                             body))
+                       (wrap-labels (body)
+                         (if labels
+                             `((labels ,labels
+                                 ,@fn-decls
+                                 ,@body))
+                             body)))
+                (wrap-decls
+                 (wrap-vars
+                  (wrap-labels
+                   body)))))))))))

@@ -131,22 +131,18 @@
                              ,@body))
                         (define-function fn () 'defined)
                         (fn))))
-
-             ;; Make sure macros in nested parsing are handled properly.
-
-             #+ () (is (eql 'still-defined
-                            (local
-                              (let ((x 2))
-                                (defmacro define-function (name args &body body)
-                                  `(defun ,name ,args
-                                     ,@body
-                                     'still-defined))
-                                
-                                (define-function fn () x))
-                              (fn))))
              
              (is (equal '(1 2)
                         (flet ((foo () 1))
+                          (local
+                            (def x (foo))
+                            (defmacro foo () 2)
+                            (def y (foo))
+
+                            (list x y)))))
+
+             (is (equal '(1 2)
+                        (macrolet ((foo () 1))
                           (local
                             (def x (foo))
                             (defmacro foo () 2)

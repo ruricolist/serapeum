@@ -168,15 +168,30 @@ Lisp."
 ;; Internal definitions.
 
 (defvar *can-augment-environment*
-  #+(or sbcl ccl) t #-(or sbcl ccl) nil)
+  ;; Allego is not included because it doesn't allow augment the
+  ;; global env.
+  (or #+(or sbcl ccl cmu ecl abcl) t))
+
+;;; This is a dynamic variable so we can test it both ways even on
+;;; Lisps that actually support augment-environment.
 
 (defparameter *use-augment-environment*
-  *can-augment-environment*)
+  *can-augment-environment*
+  "Should we use `augment-environment'?
+
+This is a flag so we can test it both ways, even on Lisps that support
+`augment-environment' (in order to avoid bit-rot).")
 
 (defun augment-environment (env &rest args)
-  #-(or sbcl ccl) (declare (ignorable env args))
+  "Wrap the implementations `augment-environment', if there is one."
+  (declare (ignorable args))
   #+sbcl (apply #'sb-cltl2:augment-environment env args)
-  #+ccl (apply #'ccl:augment-environment env args))
+  #+ccl (apply #'ccl:augment-environment env args)
+  #+cmu (apply #'ext:augment-environment env args)
+  #+allegro (apply #'sys:augment-environment env args)
+  #+ecl (apply #'si:augment-environment env args)
+  #+abcl (apply #'lisp:augment-environment env args)
+  #-(or sbcl ccl cmu allegro ecl abcl) env)
 
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
@@ -304,7 +319,7 @@ something different)."
                      (match form
                        ((and form (type symbol))
                         (if-let (match (assoc form symbol-macros))
-                          (values (cadr match) t)
+                          (values (second match) t)
                           (macroexpand-1 form env)))
                        ((list* (and name (type symbol)) _)
                         (if-let (match (assoc name macro-fns))
@@ -443,6 +458,7 @@ something different)."
             :hoisted-vars ,hoisted-vars))))))
 
 (defmacro local-inner (&key decls symbol-macros macros vars hoisted-vars labels body)
+  "Turn the environment in the arguments into binding forms."
   (let* ((fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
          (var-names (append (mapcar #'car hoisted-vars) vars)))
     (multiple-value-bind (var-decls decls)

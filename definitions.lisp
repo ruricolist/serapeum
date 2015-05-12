@@ -167,6 +167,17 @@ Lisp."
 
 ;; Internal definitions.
 
+(defvar *can-augment-environment*
+  #+(or sbcl ccl) t #-(or sbcl ccl) nil)
+
+(defparameter *use-augment-environment*
+  *can-augment-environment*)
+
+(defun augment-environment (env &rest args)
+  #-(or sbcl ccl) (declare (ignorable env args))
+  #+sbcl (apply #'sb-cltl2:augment-environment env args)
+  #+ccl (apply #'ccl:augment-environment env args))
+
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
@@ -257,20 +268,50 @@ The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels macros symbol-macros in-let? exprs)
+    (let (vars hoisted-vars labels macros macro-fns symbol-macros in-let? exprs)
       (declare (special in-let?))
+      ;; This is pretty complicated; almost all of the complexity is
+      ;; in order to support macro definitions. In particular, local
+      ;; macro definitions should only take effect *after* they are
+      ;; declared, and, after they are declared, they must be
+      ;; available to `expand-partially'.
       (labels ((expand-top (forms)
                  (if (null forms)
                      nil
                      (let ((form (first forms)))
-                       (multiple-value-bind (exp macro?)
+                       (multiple-value-bind (exp macro? def)
                            (expand-partially form)
-                         (if macro?
-                             (return-from local
-                               `(symbol-macrolet ,symbol-macros
-                                  (macrolet ,macros
-                                    (local ,@(remove form orig-body)))))
-                             (cons exp (expand-top (rest forms))))))))
+                         (ecase macro?
+                           ((symbol-macrolet macrolet)
+                            `((,macro? (,def) ,@(expand-top (rest forms)))))
+                           ((nil)
+                            (cons exp (expand-top (rest forms)))))))))
+               (compile-macro-function (args body)
+                 (multiple-value-bind (env-var args)
+                     (if-let (tail (member '&environment args))
+                       (values (cadr tail)
+                               (append (ldiff args tail) (cdr tail)))
+                       (values (gensym (string 'env))
+                               args))
+                   (with-gensyms (f)
+                     (compile nil (eval `(lambda (,f ,env-var)
+                                           (declare (ignorable ,env-var))
+                                           (destructuring-bind ,args (rest ,f)
+                                             ,@body)))))))
+               (expand-1 (form env)
+                 (if *use-augment-environment*
+                     (macroexpand-1 form env)
+                     (match form
+                       ((and form (type symbol))
+                        (if-let (match (assoc form symbol-macros))
+                          (values (cadr match) t)
+                          (macroexpand-1 form env)))
+                       ((list* (and name (type symbol)) _)
+                        (if-let (match (assoc name macro-fns))
+                          (values (funcall (second match) form env) t)
+                          (macroexpand-1 form env)))
+                       (otherwise
+                        (macroexpand-1 form env)))))
                (expand-body (body)
                  (expand-partially `(progn ,@body)))
                (expand-partially (form)
@@ -282,8 +323,13 @@ something different)."
                         (when in-let?
                           (error "Macros in `local' cannot be defined as closures."))
                         (push (list* name args body) macros)
+                        ;; XXX This is nasty.
+                        (let ((def (list name (compile-macro-function args body))))
+                          (if *use-augment-environment*
+                              (setf env (augment-environment env :macro (list def)))
+                              (push def macro-fns)))
                         ;; `defmacro' returns a symbol.
-                        (values `',name :macro))
+                        (values `',name 'macrolet (list* name args body)))
                        ((define-symbol-macro sym exp)
                         (when (or (member sym vars)
                                   (member sym hoisted-vars :key #'car))
@@ -291,8 +337,11 @@ something different)."
                         ;; TODO Why not?
                         (when in-let?
                           (error "Symbol macros in `local' must not be defined in binding forms."))
-                        (push (list sym exp) symbol-macros)
-                        (values `',sym :macro))
+                        (let ((def (list sym exp)))
+                          (if *use-augment-environment*
+                              (setf env (augment-environment env :symbol-macro (list def)))
+                              (push def symbol-macros))
+                          (values `',sym 'symbol-macrolet def)))
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
@@ -319,7 +368,7 @@ something different)."
                         (declare (ignore docstring))
                         (let ((expr (macroexpand expr env)))
                           (if (constantp expr)
-                              (push (list name (eval expr)) symbol-macros)
+                              (push (list name expr) symbol-macros)
                               (push (list name `(load-time-value ,expr t)) hoisted-vars)))
                         `',name)
                        ((defconst name expr &optional docstring)
@@ -376,7 +425,7 @@ something different)."
                         `(block ,name ,(expand-body body)))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
-                            (macroexpand-1 form env)
+                            (expand-1 form env)
                           (if exp?
                               (expand-partially exp)
                               (progn
@@ -389,8 +438,6 @@ something different)."
           `(local-inner
             :decls ,decls
             :body ,body
-            :symbol-macros ,symbol-macros
-            :macros ,macros
             :labels ,labels
             :vars ,vars
             :hoisted-vars ,hoisted-vars))))))

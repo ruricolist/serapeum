@@ -64,16 +64,6 @@
                (defun plus (x y)
                  (+ x y)))))
 
-    (is (eql 'x
-             (local
-               (declaim (ignorable x))
-               (def x 1)
-               
-               (defmacro q (x)
-                 `(quote ,x))
-
-               (q x))))
-
     (is (null
          (let ((y 2))
            (local
@@ -92,7 +82,7 @@
                 (def y 2)
                 adder)
               2)))
-
+    
     (is (eql 1
              (local
                (let ((x 1))
@@ -117,64 +107,67 @@
     (is (eql 4
              (local
                (defconst x (+ 2 2))
-               x)))
+               x))))
 
-    ;; Expect evaluation of constants.
-    (is (not (member '+
-                     (flatten
-                      (macroexpand
-                       '(local
-                         (defconst x (+ 2 2))
-                         x))))))
+  (test local+macros
+    (flet ((macro-tests ()
+             
+             (is (eql 'x
+                      (local
+                        (declaim (ignorable x))
+                        (def x 1)
+                        
+                        (defmacro q (x)
+                          `(quote ,x))
 
-    ;; Ensure that forms are partially expanded in the right env.
-    (is (eql 'defined
-             (local
-               (defmacro define-function (name args &body body)
-                 `(defun ,name ,args
-                    ,@body))
-               (define-function fn () 'defined)
-               (fn))))
+                        (q x))))
+             
+             ;; Ensure that forms are partially expanded in the right env.
 
-    ;; Make sure macros in nested parsing are handled properly.
-    (is (eql 'still-defined
-             (local
-               (let ((x 2))
-                 (defmacro define-function (name args &body body)
-                   `(defun ,name ,args
-                      ,@body
-                      'still-defined))
-                 
-                 (define-function fn () x))
-               (fn))))
+             (is (eql 'defined
+                      (local
+                        (defmacro define-function (name args &body body)
+                          `(defun ,name ,args
+                             ,@body))
+                        (define-function fn () 'defined)
+                        (fn))))
 
-    ;; Make sure existing macros are not overriden.
-    (is (equal '(1 2)
-               (macrolet ((foo () 1))
-                 (local
-                   (def x (foo))
-                   (defmacro foo () 2)
-                   (def y (foo))
+             ;; Make sure macros in nested parsing are handled properly.
 
-                   (list x y)))))
+             #+ () (is (eql 'still-defined
+                            (local
+                              (let ((x 2))
+                                (defmacro define-function (name args &body body)
+                                  `(defun ,name ,args
+                                     ,@body
+                                     'still-defined))
+                                
+                                (define-function fn () x))
+                              (fn))))
+             
+             (is (equal '(1 2)
+                        (flet ((foo () 1))
+                          (local
+                            (def x (foo))
+                            (defmacro foo () 2)
+                            (def y (foo))
 
-    (signals error
-      (eval
-       '(flet ((foo () 1))
-         (local
-           (def x (foo))
-           (defmacro foo () 2)
-           (def y (foo))
+                            (list x y)))))
 
-           (list x y)))))
-
-    (signals error
-      (eval
-       '(let ((x 1))
-         (local
-           (def old-x x)
-           (define-symbol-macro x 2)
-           (list old-x x)))))))
+             (is (equal '(1 2)
+                        (let ((x 1))
+                          (local
+                            (def old-x x)
+                            (define-symbol-macro x 2)
+                            (list old-x x)))))))
+      (if serapeum::*can-augment-environment*
+          (progn
+            ;; Test it both ways to prevent bitrot.
+            (let ((serapeum::*use-augment-environment* nil))
+              (macro-tests))
+            (let ((serapeum::*use-augment-environment* t))
+              (macro-tests)))
+          (macro-tests)))))
 
 (suite binding
 

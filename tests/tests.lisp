@@ -110,15 +110,15 @@
                x))))
 
   (test local+macros
-    (is (eql 'x
-             (local
-               (declaim (ignorable x))
-               (def x 1)
+    (is (equal '(x)
+               (local
+                 (declaim (ignorable x))
+                 (def x 1)
                
-               (defmacro q (x)
-                 `(quote ,x))
+                 (defmacro q (x)
+                   `(quote ,x))
 
-               (q x))))
+                 (list (q x)))))
     
     ;; Ensure that forms are partially expanded in the right env.
 

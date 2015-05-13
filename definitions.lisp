@@ -283,8 +283,25 @@ something different)."
       ;; macro definitions should only take effect *after* they are
       ;; declared, and, after they are declared, they must be
       ;; available to `expand-partially'.
+
+      ;; TODO Would it better to use augment-environment in Lisps that
+      ;; support it?
       (labels ((in-env? ()
                  (or in-let? symbol-macros macros))
+               (wrap-symbol-macros (body)
+                 (if symbol-macros
+                     `((symbol-macrolet ,symbol-macros
+                         ,@body))
+                     body))
+               (wrap-macros (body)
+                 (if macros
+                     `((macrolet ,macros
+                         ,@body))
+                     body))
+               (wrap-macro-env (body)
+                 (wrap-symbol-macros
+                  (wrap-macros
+                   body)))
                (expand-top (forms)
                  "Expand FORMS recursively, wrapping with macros as they are defined."
                  (if (null forms)
@@ -404,12 +421,14 @@ something different)."
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
                        ((defun name args &body body)
-                        (if (in-env?)
+                        (if in-let?
                             (expand-partially
                              `(defalias ,name
                                 (named-lambda ,name ,args
                                   ,@body)))
-                            (progn
+                            ;; Make sure the body is wrapped in the
+                            ;; appropriate macros.
+                            (let ((body (wrap-macro-env body)))
                               (push `(,name ,args ,@body) labels)
                               ;; `defun' returns a symbol.
                               `',name)))

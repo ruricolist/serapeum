@@ -269,7 +269,7 @@ The `local' macro is based on Racket's support for internal
 definitions (although not Racket's `local' macro, which does
 something different)."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels macros macro-fns symbol-macros in-let? orig-form exprs)
+    (let (vars hoisted-vars labels macros symbol-macros in-let? orig-form exprs)
       (declare (special in-let? orig-form))
       ;; The complexity here comes from three sources:
 
@@ -283,7 +283,9 @@ something different)."
       ;; macro definitions should only take effect *after* they are
       ;; declared, and, after they are declared, they must be
       ;; available to `expand-partially'.
-      (labels ((expand-top (forms)
+      (labels ((in-env? ()
+                 (or in-let? symbol-macros macros))
+               (expand-top (forms)
                  "Expand FORMS recursively, wrapping with macros as they are defined."
                  (if (null forms)
                      nil
@@ -297,25 +299,6 @@ something different)."
                             `((,macro? (,def) ,@(expand-top (rest forms)))))
                            ((nil)
                             (cons exp (expand-top (rest forms)))))))))
-               (extract-special-macro-arg (sym args)
-                 "Extract an argument (like `&environment' or `&whole') from a macro lambda list.
-If the argument is not present, return a gensym."
-                 (assert (char= (aref (string sym) 0) #\&))
-                 (if-let (tail (member sym args))
-                   (values (cadr tail)
-                           (append (ldiff args tail) (cddr tail)))
-                   (values (gensym)
-                           args)))
-               (compile-macro-function (args body)
-                 "Compile a macro function into a form acceptable to `augment-environment.'"
-                 (multiple-value-bind (env-var args)
-                     (extract-special-macro-arg '&environment args)
-                   (multiple-value-bind (whole-var args)
-                       (extract-special-macro-arg '&whole args)
-                     (compile nil (eval `(lambda (,whole-var ,env-var)
-                                           (declare (ignorable ,env-var ,whole-var))
-                                           (destructuring-bind ,args (rest ,whole-var)
-                                             ,@body)))))))
                (expand-1 (form env)
                  "Like macroexpand-1 with local macro and symbol macro definitions."
                  (match form
@@ -324,9 +307,12 @@ If the argument is not present, return a gensym."
                       (values (second match) t)
                       (macroexpand-1 form env)))
                    ((list* (and name (type symbol)) _)
-                    (if-let (match (assoc name macro-fns))
-                      (values (funcall (second match) form env) t)
-                      (macroexpand-1 form env)))
+                    (if (assoc name macros)
+                        (progn
+                          (warn "Cannot use a non-initial local macro
+                        definition in a partial expansion.")
+                          (macroexpand-1 form env))
+                        (macroexpand-1 form env)))
                    (otherwise
                     (macroexpand-1 form env))))
                (expand (form env)
@@ -360,9 +346,6 @@ If the argument is not present, return a gensym."
                                 (local ,@(substitute `',name orig-form orig-body)))))
                           (t
                            (push (list* name args body) macros)
-                           ;; XXX This is nasty.
-                           (let ((def (list name (compile-macro-function args body))))
-                             (push def macro-fns))
                            ;; `defmacro' returns a symbol.
                            (values `',name 'macrolet (list* name args body)))))
                        ((define-symbol-macro sym exp)
@@ -390,7 +373,13 @@ If the argument is not present, return a gensym."
                         ;; Remember `def' returns a symbol.
                         (let ((expr (expand expr env)))
                           (if (and
-                               (constantp expr env)
+                               (or (constantp expr)
+                                   ;; Don't hoist if it could be
+                                   ;; altered by a macro or
+                                   ;; symbol-macro, or if it's in a
+                                   ;; lexical env.
+                                   (and (not (in-env?))
+                                        (constantp expr env)))
                                ;;Don't hoist if null.
                                (not (null expr))
                                ;; Don't hoist unless this is the first
@@ -406,15 +395,16 @@ If the argument is not present, return a gensym."
                                 `(progn (setf ,var ,expr) ',var)))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (let ((expr (expand expr env)))
-                          (if (constantp expr)
-                              (push (list name expr) symbol-macros)
+                        (let ((expanded (expand expr env)))
+                          (if (and (not (in-env?)) (constantp expanded))
+                              (expand-partially
+                               `(define-symbol-macro ,name ,expr))
                               (push (list name `(load-time-value ,expr t)) hoisted-vars)))
                         `',name)
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
                        ((defun name args &body body)
-                        (if (or in-let? symbol-macros macros)
+                        (if (in-env?)
                             (expand-partially
                              `(defalias ,name
                                 (named-lambda ,name ,args

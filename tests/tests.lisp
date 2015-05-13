@@ -178,7 +178,17 @@
                  (defun fn1 () 2)
                  (defmacro always-1 () 1)
                  (defun fn2 () (always-1))
-                 (fn2))))))
+                 (fn2))))
+
+    (is (equal '(foo x y z)
+               (local
+                 (def x 1)
+                 (declaim (ignorable x))
+                 (defmacro bar (&whole whole y z)
+                   (cons 'x whole))
+                 (bar y z))))
+
+    ))
 
 (suite binding
 

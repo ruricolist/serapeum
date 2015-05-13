@@ -329,21 +329,6 @@ If the argument is not present, return a gensym."
                (expand-body (body)
                  "Shorthand for recursing on implicit progns."
                  (expand-partially `(progn ,@body)))
-               (wrap-symbol-macros (body)
-                 (if symbol-macros
-                     `((symbol-macrolet ,symbol-macros
-                         ,@body))
-                     body))
-               (wrap-macros (body)
-                 (if macros
-                     `((macrolet ,macros
-                         ,@body))
-                     body))
-               (wrap-env (body)
-                 "Wrap BODY with the currently defined macros and symbol macros."
-                 (wrap-macros
-                  (wrap-symbol-macros
-                   body)))
                (at-beginning? ()
                  "Return non-nil if no definitions or expressions have been expanded yet."
                  (nor vars hoisted-vars labels macros symbol-macros exprs))
@@ -419,12 +404,12 @@ If the argument is not present, return a gensym."
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
                        ((defun name args &body body)
-                        (if in-let?
+                        (if (or in-let? symbol-macros macros)
                             (expand-partially
                              `(defalias ,name
                                 (named-lambda ,name ,args
                                   ,@body)))
-                            (let ((body (wrap-env body)))
+                            (progn
                               (push `(,name ,args ,@body) labels)
                               ;; `defun' returns a symbol.
                               `',name)))

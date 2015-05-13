@@ -242,6 +242,8 @@ use the top-level idiom of wrapping `let' around `defun'.
       (adder 2))
     => 4
 
+\(At the moment this does *not* work for macros.\)
+
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
 they do at the top level. For example:
@@ -267,10 +269,10 @@ something different)."
       ;; 2. Descending into binding forms. This is so we can support
       ;; macros that expand into the let-over-defun style.
 
-      ;; 3. Supporting macros. In particular, local macro definitions
-      ;; should only take effect *after* they are declared, and, after
-      ;; they are declared, they must be available to
-      ;; `expand-partially'.
+      ;; 3. Supporting for non-initial macros. In particular, local
+      ;; macro definitions should only take effect *after* they are
+      ;; declared, and, after they are declared, they must be
+      ;; available to `expand-partially'.
       (labels ((expand-top (forms)
                  "Expand FORMS recursively, wrapping with macros as they are defined."
                  (if (null forms)
@@ -285,18 +287,24 @@ something different)."
                             `((,macro? (,def) ,@(expand-top (rest forms)))))
                            ((nil)
                             (cons exp (expand-top (rest forms)))))))))
+               (extract-special-macro-arg (sym args)
+                 "Extract an argument (like `&environment' or `&whole') from a macro lambda list.
+If the argument is not present, return a gensym."
+                 (assert (char= (aref (string sym) 0) #\&))
+                 (if-let (tail (member sym args))
+                   (values (cadr tail)
+                           (append (ldiff args tail) (cddr tail)))
+                   (values (gensym)
+                           args)))
                (compile-macro-function (args body)
                  "Compile a macro function into a form acceptable to `augment-environment.'"
                  (multiple-value-bind (env-var args)
-                     (if-let (tail (member '&environment args))
-                       (values (cadr tail)
-                               (append (ldiff args tail) (cdr tail)))
-                       (values (gensym (string 'env))
-                               args))
-                   (with-gensyms (f)
-                     (compile nil (eval `(lambda (,f ,env-var)
-                                           (declare (ignorable ,env-var))
-                                           (destructuring-bind ,args (rest ,f)
+                     (extract-special-macro-arg '&environment args)
+                   (multiple-value-bind (whole-var args)
+                       (extract-special-macro-arg '&whole args)
+                     (compile nil (eval `(lambda (,whole-var ,env-var)
+                                           (declare (ignorable ,env-var ,whole-var))
+                                           (destructuring-bind ,args (rest ,whole-var)
                                              ,@body)))))))
                (expand-1 (form env)
                  "Like macroexpand-1 with local macro and symbol macro definitions."

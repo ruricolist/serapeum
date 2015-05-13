@@ -324,7 +324,7 @@ macros or macros in effect?"
                             `((,macro? (,def) ,@(expand-top (rest forms)))))
                            ((nil)
                             (cons exp (expand-top (rest forms)))))))))
-               (expand-1 (form env)
+               (expand-1 (form env &key top)
                  "Like macroexpand-1 with local macro and symbol macro definitions."
                  (match form
                    ((and form (type symbol))
@@ -333,23 +333,27 @@ macros or macros in effect?"
                       (macroexpand-1 form env)))
                    ((list* (and name (type symbol)) _)
                     (if (assoc name macros)
-                        (progn
-                          (warn "Within a `local' form, a macro that ~
+                        (if top
+                            (progn
+                              (warn "Within a `local' form, a macro that ~
                           follows other expressions cannot be used in ~
                           partial expansions.
 
 You can fix this by moving the definition of ~a to the top of the ~
                                 `local' form." name)
-                          (macroexpand-1 form env))
+                              (macroexpand-1 form env))
+                            (values form nil))
                         (macroexpand-1 form env)))
                    (otherwise
                     (macroexpand-1 form env))))
-               (expand (form env)
-                 "Like `macroexpand', but using `expand-1'."
+               (expand (form env &key (top t))
+                 "Like `macroexpand', but using `expand-1'.
+If TOP is null, we are not doing partial expansion, and should not
+warn about local macros."
                  (multiple-value-bind (exp exp?)
-                     (expand-1 form env)
+                     (expand-1 form env :top top)
                    (if exp?
-                       (expand exp env)
+                       (expand exp env :top top)
                        exp)))
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
@@ -397,7 +401,7 @@ You can fix this by moving the definition of ~a to the top of the ~
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (let ((expr (expand expr env)))
+                        (let ((expr (expand expr env :top nil)))
                           (if (and
                                (or (constantp expr)
                                    ;; Don't hoist if it could be
@@ -421,7 +425,7 @@ You can fix this by moving the definition of ~a to the top of the ~
                                 `(progn (setf ,var ,expr) ',var)))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (let ((expanded (expand expr env)))
+                        (let ((expanded (expand expr env :top nil)))
                           (if (and (not (in-env?)) (constantp expanded))
                               (expand-partially
                                `(define-symbol-macro ,name ,expr))

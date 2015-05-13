@@ -139,16 +139,6 @@
 
                    (list x y)))))
 
-    ;; When the value of `def' is contant in the environment.
-    (is (equal '(1 2)
-               (macrolet ((foo () 1))
-                 (local
-                   (def x (foo))
-                   (defmacro foo () 2)
-                   (def y (foo))
-
-                   (list x y)))))
-
     ;; When the value of `def' is not constant.
     (let ((d (random 3)))
       (is (equal (list (+ 1 d) (+ 2 d))
@@ -178,17 +168,7 @@
                  (defun fn1 () 2)
                  (defmacro always-1 () 1)
                  (defun fn2 () (always-1))
-                 (fn2))))
-
-    (is (equal '(foo x y z)
-               (local
-                 (def x 1)
-                 (declaim (ignorable x))
-                 (defmacro bar (&whole whole y z)
-                   (cons 'x whole))
-                 (bar y z))))
-
-    ))
+                 (fn2))))))
 
 (suite binding
 

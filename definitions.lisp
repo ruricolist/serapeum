@@ -201,11 +201,14 @@ The recognized definition forms are:
 
 - `def', for lexical variables (as with `letrec')
 - `defun', for local functions (as with `labels')
-- `defmacro', for local macros (as with `defmacro')
 - `defalias', to bind values in the function namespace (like `fbindrec*')
 - `declaim', to make declarations (as with `declare')
-- `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
 - `defconstant' and `defconst', which behave exactly like symbol macros
+
+Also, with some restrictions, you can use:
+
+- `defmacro', for local macros (as with `defmacro')
+- `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
 
 \(Note that the top-level definition forms defined by Common Lisp
 are (necessarily) supplemented by two from Serapeum: `def' and
@@ -242,7 +245,14 @@ use the top-level idiom of wrapping `let' around `defun'.
       (adder 2))
     => 4
 
-\(At the moment this does *not* work for macros.\)
+There are two limitations to macro definitions:
+
+1. Macros and symbol macros cannot be defined inside of binding forms
+like `let': they must appear at the top level.
+
+2. Macro definitions that are preceded by other expressions cannot be
+used in the partial expansions of subsequent forms. (This limitation
+does not apply to symbol macros.)
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
@@ -467,6 +477,8 @@ If the argument is not present, return a gensym."
         (let* ((body (expand-top body))
                (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
                (var-names (append (mapcar #'car hoisted-vars) vars)))
+          (when (null exprs)
+            (warn "No expressions in `local' form"))
           (multiple-value-bind (var-decls decls)
               (partition-declarations var-names decls)
             (multiple-value-bind (fn-decls decls)

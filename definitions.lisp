@@ -250,9 +250,9 @@ There are two limitations to macro definitions:
 1. Macros and symbol macros cannot be defined inside of binding forms
 like `let': they must appear at the top level.
 
-2. Macro definitions that are preceded by other expressions cannot be
-used in the partial expansions of subsequent forms. (This limitation
-does not apply to symbol macros.)
+2. Macro (but not symbol macros!) that are preceded by other
+expressions cannot be used in the partial expansions of subsequent
+forms. \(This simply cannot be done portably.\)
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
@@ -265,9 +265,8 @@ they do at the top level. For example:
 
 Returns `plus', not 4.
 
-The `local' macro is based on Racket's support for internal
-definitions (although not Racket's `local' macro, which does
-something different)."
+The `local' macro is loosely based on Racket's support for internal
+definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels macros symbol-macros in-let? orig-form exprs)
       (declare (special in-let? orig-form))
@@ -276,18 +275,26 @@ something different)."
       ;; 1. Hoisting variable definitions with constant initforms. We
       ;; do this so SBCL (and CMUCL) can infer types better.
 
-      ;; 2. Descending into binding forms. This is so we can support
-      ;; macros that expand into the let-over-defun style.
+      ;; 2. Descending into binding forms. One of the reasons for
+      ;; `local' to exist in the first place is so macros that expand
+      ;; into top-level definitions can be used to create local
+      ;; definitions. That means we need to support, at least, the
+      ;; let-over-defun style.
 
-      ;; 3. Supporting for non-initial macros. In particular, local
-      ;; macro definitions should only take effect *after* they are
-      ;; declared, and, after they are declared, they must be
-      ;; available to `expand-partially'.
-
-      ;; TODO Would it better to use augment-environment in Lisps that
-      ;; support it?
+      ;; 3. Supporting macros. Support for macros that precede other
+      ;; defintions is trivial: we just move them out of the `local'
+      ;; form. Support for macros in other positions is hard. We need
+      ;; to make sure they only take effect *after* they are declared,
+      ;; and that, after they are declared, they are available to
+      ;; `expand-partially' -- all without resorting to
+      ;; augment-environment.
       (labels ((in-env? ()
+                 "Are we within a binding form, or are there symbol
+macros or macros in effect?"
                  (or in-let? symbol-macros macros))
+               (at-beginning? ()
+                 "Return non-nil if this is the first form in the `local'."
+                 (nor vars hoisted-vars labels macros symbol-macros exprs in-let?))
                (wrap-symbol-macros (body)
                  (if symbol-macros
                      `((symbol-macrolet ,symbol-macros
@@ -299,6 +306,7 @@ something different)."
                          ,@body))
                      body))
                (wrap-macro-env (body)
+                 "Wrap BODY with copies of any macros definitions currently in effect."
                  (wrap-symbol-macros
                   (wrap-macros
                    body)))
@@ -326,25 +334,26 @@ something different)."
                    ((list* (and name (type symbol)) _)
                     (if (assoc name macros)
                         (progn
-                          (warn "Cannot use a non-initial local macro
-                        definition in a partial expansion.")
+                          (warn "Within a `local' form, a macro that ~
+                          follows other expressions cannot be used in ~
+                          partial expansions.
+
+You can fix this by moving the definition of ~a to the top of the ~
+                                `local' form." name)
                           (macroexpand-1 form env))
                         (macroexpand-1 form env)))
                    (otherwise
                     (macroexpand-1 form env))))
                (expand (form env)
-                 "Like macroexpand, but using expand-1."
+                 "Like `macroexpand', but using `expand-1'."
                  (multiple-value-bind (exp exp?)
                      (expand-1 form env)
                    (if exp?
                        (expand exp env)
                        exp)))
                (expand-body (body)
-                 "Shorthand for recursing on implicit progns."
+                 "Shorthand for recursing on an implicit `progn'."
                  (expand-partially `(progn ,@body)))
-               (at-beginning? ()
-                 "Return non-nil if no definitions or expressions have been expanded yet."
-                 (nor vars hoisted-vars labels macros symbol-macros exprs))
                (expand-partially (form)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)

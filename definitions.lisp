@@ -294,7 +294,7 @@ macros or macros in effect?"
                  (or in-let? symbol-macros macros))
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
-                 (nor vars hoisted-vars labels macros symbol-macros exprs in-let?))
+                 (not (or vars hoisted-vars labels macros symbol-macros exprs in-let?)))
                (wrap-symbol-macros (body)
                  (if symbol-macros
                      `((symbol-macrolet ,symbol-macros

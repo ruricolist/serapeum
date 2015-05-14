@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (28 files, 237 functions)
+# Function Listing For Serapeum (28 files, 234 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -266,7 +266,7 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-### `(local &body body)`
+### `(local &body orig-body)`
 
 Make internal definitions using top-level definition forms.
 
@@ -301,11 +301,14 @@ The recognized definition forms are:
 
 - `def`, for lexical variables (as with `letrec`)
 - `defun`, for local functions (as with `labels`)
-- `defmacro`, for local macros (as with `defmacro`)
 - `defalias`, to bind values in the function namespace (like `fbindrec*`)
 - `declaim`, to make declarations (as with `declare`)
-- `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
 - `defconstant` and `defconst`, which behave exactly like symbol macros
+
+Also, with serious restrictions, you can use:
+
+- `defmacro`, for local macros (as with `defmacro`)
+- `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
 
 (Note that the top-level definition forms defined by Common Lisp
 are (necessarily) supplemented by two from Serapeum: `def` and
@@ -330,8 +333,32 @@ used once they are defined.
        (adder 1))
      => 3
 
-Note that `let` forms are *not* descended into, so you cannot use the
-top-level idiom of wrapping `let` around `defun`.
+Perhaps surprisingly, `let` forms (as well as `let*` and
+`multiple-value-bind`) *are* descended into; the only difference is
+that `defun` is implicitly translated into `defalias`. This means you
+use the top-level idiom of wrapping `let` around `defun`.
+
+    (local
+      (let ((x 2))
+        (defun adder (y)
+          (+ x y)))
+      (adder 2))
+    => 4
+
+Support for macros is sharply limited.
+
+1. Macros and symbol macros must precede all other expressions.
+
+2. Macros and symbol macros cannot be defined inside of binding forms
+like `let`.
+
+3. `symbol-macrolet` and `macrolet` are not allowed at the top level
+of a `local` form.
+
+These restrictions are undesirable, but well justified: it is
+impossible to handle the general case both correctly and portably, and
+while some special cases could be provided for, the cost in complexity
+of implementation and maintenance would be prohibitive.
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local` just like
@@ -344,9 +371,8 @@ they do at the top level. For example:
 
 Returns `plus`, not 4.
 
-The `local` macro is based on Racket's support for internal
-definitions (although not Racket's `local` macro, which does
-something different).
+The `local` macro is loosely based on Racket's support for internal
+definitions.
 
 ## Binding
 
@@ -684,7 +710,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor object)`
+### `(monitor x)`
 
 Return a unique lock associated with OBJECT.
 
@@ -1184,14 +1210,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc ref79129 &optional (delta 1))`
+### `(finc ref102355 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref79175 &optional (delta 1))`
+### `(fdec ref102401 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1236,11 +1262,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g79336 n)`
+### `(shrinkf g102562 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g79358 n)`
+### `(growf g102584 n)`
 
 Grow the value in a place by a factor.
 
@@ -1856,7 +1882,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g81652 pred &rest args)`
+### `(filterf g111501 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of

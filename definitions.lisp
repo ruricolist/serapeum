@@ -205,7 +205,7 @@ The recognized definition forms are:
 - `declaim', to make declarations (as with `declare')
 - `defconstant' and `defconst', which behave exactly like symbol macros
 
-Also, with some restrictions, you can use:
+Also, with serious restrictions, you can use:
 
 - `defmacro', for local macros (as with `defmacro')
 - `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
@@ -245,15 +245,20 @@ use the top-level idiom of wrapping `let' around `defun'.
       (adder 2))
     => 4
 
-There are two limitations to macro definitions:
+Support for macros is sharply limited.
 
-1. Macros and symbol macros cannot be defined inside of binding forms
-like `let': they must appear at the top level.
+1. Macros and symbol macros must precede all other expressions.
 
-2. Macro (but not symbol macros!) that are preceded by other
-expressions cannot be used in the partial expansions of subsequent
-forms. It simply cannot be done portably. (This limitation also
-applies to direct use of `macrolet'.)
+2. Macros and symbol macros cannot be defined inside of binding forms
+like `let'.
+
+3. `symbol-macrolet' and `macrolet' are not allowed at the top level
+of a `local' form.
+
+These restrictions are undesirable, but well justified: it is
+impossible to handle the general case both correctly and portably, and
+while some special cases could be provided for, the cost in complexity
+of implementation and maintenance would be prohibitive.
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
@@ -269,141 +274,49 @@ Returns `plus', not 4.
 The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels macros symbol-macros in-let? orig-form exprs)
-      (declare (special in-let? orig-form macros symbol-macros))
-      ;; The complexity here comes from three sources:
-
-      ;; 1. Hoisting variable definitions with constant initforms. We
-      ;; do this so SBCL (and CMUCL) can infer types better.
-
-      ;; 2. Descending into binding forms. One of the reasons for
-      ;; `local' to exist in the first place is so macros that expand
-      ;; into top-level definitions can be used to create local
-      ;; definitions. That means we need to support, at least, the
-      ;; let-over-defun style.
-
-      ;; 3. Supporting macros. Support for macros that precede other
-      ;; defintions is trivial: we just move them out of the `local'
-      ;; form. Support for macros in other positions is hard. We need
-      ;; to make sure they only take effect *after* they are declared,
-      ;; and that, after they are declared, they are available to
-      ;; `expand-partially' -- all without resorting to
-      ;; augment-environment. (This also applies to handling
-      ;; `macrolet'.)
+    (let (vars hoisted-vars labels in-let? orig-form exprs)
+      (declare (special in-let? orig-form))
       (labels ((in-env? ()
-                 "Are we within a binding form, or are there symbol
-macros or macros in effect?"
-                 (or in-let? symbol-macros macros))
+                 "Are we within a binding form?"
+                 in-let?)
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
-                 (not (or vars hoisted-vars labels macros symbol-macros exprs in-let?)))
-               (wrap-symbol-macros (body)
-                 (if symbol-macros
-                     `((symbol-macrolet ,symbol-macros
-                         ,@body))
-                     body))
-               (wrap-macros (body)
-                 (if macros
-                     `((macrolet ,macros
-                         ,@body))
-                     body))
-               (wrap-macro-env (body)
-                 "Wrap BODY with copies of any macros definitions currently in effect."
-                 (wrap-symbol-macros
-                  (wrap-macros
-                   body)))
+                 (not (or vars hoisted-vars labels in-let?)))
+               (check-beginning (offender)
+                 (unless (at-beginning?)
+                   (error "Macro definitions in `local' must precede other expressions.~%Offender: ~s" offender)))
                (expand-top (forms)
-                 "Expand FORMS recursively, wrapping with macros as they are defined."
-                 (if (null forms)
-                     nil
-                     (let ((form (first forms)))
-                       (multiple-value-bind (exp macro? def)
+                 (mapcar (lambda (form)
                            (let ((orig-form form))
                              (declare (special orig-form))
-                             (expand-partially form))
-                         (ecase macro?
-                           ((symbol-macrolet macrolet)
-                            `((,macro? (,def) ,@(expand-top (rest forms)))))
-                           ((nil)
-                            (cons exp (expand-top (rest forms)))))))))
-               (expand-1 (form env &key top)
-                 "Like macroexpand-1 with local macro and symbol macro definitions."
-                 (match form
-                   ((and form (type symbol))
-                    (if-let (match (assoc form symbol-macros))
-                      (values (second match) t)
-                      (macroexpand-1 form env)))
-                   ((list* (and name (type symbol)) _)
-                    (if (assoc name macros)
-                        (if top
-                            (progn
-                              (warn "Within a `local' form, a macro that ~
-                          follows other expressions cannot be used in ~
-                          partial expansions.
-
-You can fix this by moving the definition of ~a to the top of the ~
-                                `local' form." name)
-                              (macroexpand-1 form env))
-                            (values form nil))
-                        (macroexpand-1 form env)))
-                   (otherwise
-                    (macroexpand-1 form env))))
-               (expand (form env &key (top t))
-                 "Like `macroexpand', but using `expand-1'.
-If TOP is null, we are not doing partial expansion, and should not
-warn about local macros."
-                 (multiple-value-bind (exp exp?)
-                     (expand-1 form env :top top)
-                   (if exp?
-                       (expand exp env :top top)
-                       exp)))
+                             (expand-partially form)))
+                         forms))
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
                  (expand-partially `(progn ,@body)))
-               (expand-partially (form &key top)
+               (expand-partially (form)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)
-                        (cond
-                          ((member name labels)
-                           (error "Cannot redefine label as macro: ~a" name))
-                          (in-let?
-                           (error "Macros in `local' cannot be defined as closures."))
-                          ;; The simple case -- the macro precedes all
-                          ;; other definitions and expressions.
-                          ((at-beginning?)
-                           (return-from local
-                             `(macrolet ((,name ,args ,@body))
-                                (local ,@(substitute `',name orig-form orig-body)))))
-                          (t
-                           (push (list* name args body) macros)
-                           ;; `defmacro' returns a symbol.
-                           (values `',name 'macrolet (list* name args body)))))
+                        (check-beginning name)
+                        (return-from local
+                          `(macrolet ((,name ,args ,@body))
+                             ;; NB Remove, not substitute.
+                             (local ,@(remove orig-form orig-body)))))
                        ((define-symbol-macro sym exp)
-                        (cond
-                          ((or (member sym vars)
-                               (member sym hoisted-vars :key #'car))
-                           (error "Cannot redefine variable as a symbol macro: ~a" sym))
-                          ;; TODO Why not?
-                          (in-let?
-                           (error "Symbol macros in `local' must not be defined in binding forms."))
-                          ;; Simple case.
-                          ((at-beginning?)
-                           (return-from local
-                             `(symbol-macrolet ((,sym ,exp))
-                                (local ,@(substitute `',sym orig-form orig-body)))))
-                          (t
-                           (let ((def (list sym exp)))
-                             (push def symbol-macros)
-                             (values `',sym 'symbol-macrolet def)))))
+                        (check-beginning sym)
+                        (return-from local
+                          `(symbol-macrolet ((,sym ,exp))
+                             ;; NB Remove, not substitute.
+                             (local ,@(remove orig-form orig-body)))))
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
                        ((def var expr &optional docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
-                        (let ((expr (expand expr env :top nil)))
+                        (let ((expr (macroexpand expr env)))
                           (if (and
                                (or (constantp expr)
                                    ;; Don't hoist if it could be
@@ -427,7 +340,7 @@ warn about local macros."
                                 `(progn (setf ,var ,expr) ',var)))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (let ((expanded (expand expr env :top nil)))
+                        (let ((expanded (macroexpand expr env)))
                           (if (and (not (in-env?)) (constantp expanded))
                               (expand-partially
                                `(define-symbol-macro ,name ,expr))
@@ -441,9 +354,7 @@ warn about local macros."
                              `(defalias ,name
                                 (named-lambda ,name ,args
                                   ,@body)))
-                            ;; Make sure the body is wrapped in the
-                            ;; appropriate macros.
-                            (let ((body (wrap-macro-env body)))
+                            (progn
                               (push `(,name ,args ,@body) labels)
                               ;; `defun' returns a symbol.
                               `',name)))
@@ -455,9 +366,7 @@ warn about local macros."
                           (push `(,name (&rest args) (apply ,temp args)) labels)
                           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
                        ((progn &body body)
-                        `(progn ,@(mapcar (lambda (form)
-                                            (expand-partially form :top t))
-                                          body)))
+                        `(progn ,@(mapcar #'expand-partially body)))
                        (((prog1 multiple-value-prog1) f &body body)
                         `(,(car form) ,(expand-partially f)
                           ,(expand-body body)))
@@ -476,22 +385,6 @@ warn about local macros."
                             `(,(car form) ,bindings
                               ,@decls
                               ,(expand-body body)))))
-                       ((symbol-macrolet bindings &body body)
-                        (let ((in-let? t)
-                              (symbol-macros (append bindings symbol-macros)))
-                          (declare (special in-let? symbol-macros))
-                          (multiple-value-bind (body decls) (parse-body body)
-                            `(symbol-macrolet ,bindings
-                               ,@decls
-                               ,(expand-body body)))))
-                       ((macrolet bindings &body body)
-                        (let ((in-let? t)
-                              (macros (append bindings macros)))
-                          (declare (special in-let? macros))
-                          (multiple-value-bind (body decls) (parse-body body)
-                            `(macrolet ,bindings
-                               ,@decls
-                               ,(expand-body body)))))
                        (((multiple-value-bind destructuring-bind progv)
                          vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
@@ -507,7 +400,7 @@ warn about local macros."
                         `(block ,name ,(expand-body body)))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
-                            (expand-1 form env :top top)
+                            (macroexpand-1 form env)
                           (if exp?
                               (expand-partially exp)
                               (progn

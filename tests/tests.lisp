@@ -113,10 +113,10 @@
     (is (equal '(x)
                (local
                  (declaim (ignorable x))
-                 (def x 1)
-               
                  (defmacro q (x)
                    `(quote ,x))
+               
+                 (def x 1)
 
                  (list (q x)))))
     
@@ -129,46 +129,12 @@
                     ,@body))
                (define-function fn () 'defined)
                (fn))))
-    
-    (is (equal '(1 2)
-               (flet ((foo () 1))
-                 (local
-                   (def x (foo))
-                   (defmacro foo () 2)
-                   (def y (foo))
-
-                   (list x y)))))
-
-    ;; When the value of `def' is not constant.
-    (let ((d (random 3)))
-      (is (equal (list (+ 1 d) (+ 2 d))
-                 (macrolet ((foo () 1))
-                   (local
-                     (def x (+ (foo) d))
-                     (defmacro foo () 2)
-                     (def y (+ (foo) d))
-
-                     (list x y))))))
-
-    (is (equal '(1 2)
-               (let ((x 1))
-                 (local
-                   (def old-x x)
-                   (define-symbol-macro x 2)
-                   (list old-x x)))))
 
     (is (equal 1
                (local
                  (defmacro always-1 () 1)
                  (defun fn () (always-1))
-                 (fn))))
-
-    (is (equal 1
-               (local
-                 (defun fn1 () 2)
-                 (defmacro always-1 () 1)
-                 (defun fn2 () (always-1))
-                 (fn2))))))
+                 (fn))))))
 
 (suite binding
 

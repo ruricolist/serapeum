@@ -252,7 +252,8 @@ like `let': they must appear at the top level.
 
 2. Macro (but not symbol macros!) that are preceded by other
 expressions cannot be used in the partial expansions of subsequent
-forms. \(This simply cannot be done portably.\)
+forms. It simply cannot be done portably. (This limitation also
+applies to direct use of `macrolet'.)
 
 The value returned by the `local` form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
@@ -269,7 +270,7 @@ The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels macros symbol-macros in-let? orig-form exprs)
-      (declare (special in-let? orig-form))
+      (declare (special in-let? orig-form macros symbol-macros))
       ;; The complexity here comes from three sources:
 
       ;; 1. Hoisting variable definitions with constant initforms. We
@@ -287,7 +288,8 @@ definitions."
       ;; to make sure they only take effect *after* they are declared,
       ;; and that, after they are declared, they are available to
       ;; `expand-partially' -- all without resorting to
-      ;; augment-environment.
+      ;; augment-environment. (This also applies to handling
+      ;; `macrolet'.)
       (labels ((in-env? ()
                  "Are we within a binding form, or are there symbol
 macros or macros in effect?"
@@ -358,7 +360,7 @@ warn about local macros."
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
                  (expand-partially `(progn ,@body)))
-               (expand-partially (form)
+               (expand-partially (form &key top)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)
                      (destructuring-case form
@@ -453,7 +455,9 @@ warn about local macros."
                           (push `(,name (&rest args) (apply ,temp args)) labels)
                           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
                        ((progn &body body)
-                        `(progn ,@(mapcar #'expand-partially body)))
+                        `(progn ,@(mapcar (lambda (form)
+                                            (expand-partially form :top t))
+                                          body)))
                        (((prog1 multiple-value-prog1) f &body body)
                         `(,(car form) ,(expand-partially f)
                           ,(expand-body body)))
@@ -465,13 +469,29 @@ warn about local macros."
                         (if (member :execute situations)
                             (expand-body body)
                             nil))
-                       (((let let* symbol-macrolet flet labels)
+                       (((let let* flet labels)
                          bindings &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,bindings
                               ,@decls
                               ,(expand-body body)))))
+                       ((symbol-macrolet bindings &body body)
+                        (let ((in-let? t)
+                              (symbol-macros (append bindings symbol-macros)))
+                          (declare (special in-let? symbol-macros))
+                          (multiple-value-bind (body decls) (parse-body body)
+                            `(symbol-macrolet ,bindings
+                               ,@decls
+                               ,(expand-body body)))))
+                       ((macrolet bindings &body body)
+                        (let ((in-let? t)
+                              (macros (append bindings macros)))
+                          (declare (special in-let? macros))
+                          (multiple-value-bind (body decls) (parse-body body)
+                            `(macrolet ,bindings
+                               ,@decls
+                               ,(expand-body body)))))
                        (((multiple-value-bind destructuring-bind progv)
                          vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
@@ -487,7 +507,7 @@ warn about local macros."
                         `(block ,name ,(expand-body body)))
                        ((otherwise &rest rest) (declare (ignore rest))
                         (multiple-value-bind (exp exp?)
-                            (expand-1 form env)
+                            (expand-1 form env :top top)
                           (if exp?
                               (expand-partially exp)
                               (progn

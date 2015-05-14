@@ -199,7 +199,7 @@ There are continuable versions of these macros – `ctypecase-of` and
 
 ## Internal definitions
 
-The `local` lets you use top-level definition forms to create local
+The `local` form lets you use top-level definition forms to create local
 bindings. You can use `defun` instead of labels, `defmacro` instead of
 `macrolet`, `def` (which is Serapeum’s macro for top-level lexical
 bindings) instead of `let`, and so forth.

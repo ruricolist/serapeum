@@ -282,6 +282,12 @@ definitions."
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
                  (not (or vars hoisted-vars labels in-let?)))
+               (splice (new old list)
+                 "Like `substitute', but replaces OLD by inlining NEW, a list."
+                 (cond ((null list) nil)
+                       ((eql (first list) old)
+                        (append new (rest list)))
+                       (t (cons (first list) (splice new old (rest list))))))
                (check-beginning (offender)
                  (unless (at-beginning?)
                    (error "Macro definitions in `local' must precede other expressions.~%Offender: ~s" offender)))
@@ -366,7 +372,10 @@ definitions."
                           (push `(,name (&rest args) (apply ,temp args)) labels)
                           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
                        ((progn &body body)
-                        `(progn ,@(mapcar #'expand-partially body)))
+                        (if (single body)
+                            (expand-partially (first body))
+                            (return-from local
+                              `(local ,@(splice body orig-form orig-body)))))
                        (((prog1 multiple-value-prog1) f &body body)
                         `(,(car form) ,(expand-partially f)
                           ,(expand-body body)))

@@ -107,7 +107,13 @@
     (is (eql 4
              (local
                (defconst x (+ 2 2))
-               x))))
+               x)))
+
+    (is (eql 2
+             (local
+               (let* ((x 1)
+                      (y 1))
+                 (+ x y))))))
 
   (test local+macros
     (is (equal '(x)

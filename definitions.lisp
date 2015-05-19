@@ -299,7 +299,7 @@ definitions."
                          forms))
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
-                 (expand-partially `(progn ,@body)))
+                 `(progn ,@(mapcar #'expand-partially body)))
                (expand-partially (form)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)

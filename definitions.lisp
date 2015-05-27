@@ -14,7 +14,7 @@
 ;;; symbol macros to get lexical behavior from global variables (via
 ;;; `defparameter' and `defconstant', respectively).
 
-(defmacro def (var &body (val &optional (doc nil docp)))
+(defmacro def (var &body (&optional val (doc nil docp)))
   "The famous \"deflex\".
 
 Define a top level (global) lexical VAR with initial value VAL,
@@ -319,7 +319,7 @@ definitions."
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
-                       ((def var expr &optional docstring)
+                       ((def var &optional expr docstring)
                         (declare (ignore docstring))
                         ;; Remember `def' returns a symbol.
                         (let ((expr (macroexpand expr env)))

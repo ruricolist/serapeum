@@ -151,7 +151,15 @@
                 (defmacro m () 2)
                 (m)))))
       (is (eql x 1))
-      (is (eql y 2)))))
+      (is (eql y 2)))
+
+    (local
+     (define-do-macro do-seq ((var seq &optional return) &body body)
+       `(map nil (lambda (,var) ,@body) ,seq))
+      (is (equal '(1 2 3)
+                 (collecting
+                   (do-seq (x #(1 2 3))
+                     (collect x))))))))
 
 (suite binding
 

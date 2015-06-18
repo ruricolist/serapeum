@@ -1,20 +1,5 @@
 (in-package :serapeum)
 
-(export '(in
-          filter-map
-          memq delq
-          append1
-          assocdr assocadr rassocar
-          firstn
-          powerset
-          efface
-          pop-assoc
-          mapply
-          car-safe cdr-safe
-          mapcar-into
-          nthrest
-          plist-keys plist-values))
-
 (-> firstn ((integer 0 *) list) list)
 (-> powerset (list) list)
 (-> efface (t list) list)

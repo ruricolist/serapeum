@@ -3,12 +3,6 @@
 ;;; Norvig-style queues, but wrapped in objects so they don't overflow
 ;;; the printer, and with a more concise, Arc-inspired API.
 
-(export '(queue queuep
-          enq deq front
-          qlen qlist qconc
-          queue-empty-p
-          clear-queue))
-
 (defun make-queue-cons ()
   (let ((q (cons nil nil)))
     (setf (car q) q)))

@@ -1,11 +1,5 @@
 (in-package #:serapeum)
 
-(export '(*hook*
-          add-hook remove-hook
-          run-hooks run-hook-with-args
-          run-hook-with-args-until-failure
-          run-hook-with-args-until-success))
-
 (defvar *hook* nil
   "The hook currently being run.")
 (declaim (type symbol *hook*))

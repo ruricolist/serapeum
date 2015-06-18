@@ -1,22 +1,5 @@
 (in-package :serapeum)
 
-(export '(whitespace collapse-whitespace
-          whitespacep blankp trim-whitespace
-          concat mapconcat string-join
-          string-upcase-initials
-          nstring-upcase-initials
-          same-case-p
-          string-invert-case
-          nstring-invert-case
-          words tokens lines
-          fmt
-          with-string
-          escape
-          ellipsize
-          string^= string$= string~= string*=
-          string-prefixp string-suffixp string-containsp string-tokenp
-          string-replace-all))
-
 (deftype string-offset ()
   '(integer #.(- array-dimension-limit) #.array-dimension-limit))
 

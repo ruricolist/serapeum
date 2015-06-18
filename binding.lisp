@@ -1,10 +1,5 @@
 (in-package :serapeum)
 
-(export '(letrec letrec*
-          mvlet mvlet*
-          lret lret*
-          and-let*))
-
 ;;;# `lret'
 
 (defmacro lret ((&rest bindings) &body body)

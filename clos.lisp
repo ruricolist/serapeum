@@ -1,8 +1,5 @@
 (in-package :serapeum)
 
-(export '(class-name-safe find-class-safe
-          make standard/context defmethods))
-
 (defsubst make (class &rest initargs)
   "Shorthand for `make-instance'.
 After Eulisp."

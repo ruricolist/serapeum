@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(box unbox))
-
 ;;; TODO Weak boxes.
 
 (declaim (inline box))                  ;Allow dynamic-extent.

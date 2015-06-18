@@ -1,9 +1,6 @@
 (in-package #:serapeum)
 (in-readtable :fare-quasiquote)
 
-(export '(fbind fbind* fbindrec fbindrec*
-          letrec-restriction-violation))
-
 ;;; References:
 ;;; Waddell, Sarkar, and Dybvig, "Fixing Letrec".
 ;;; Ghuloum and Dybvig, "Fixing Letrec (reloaded)".

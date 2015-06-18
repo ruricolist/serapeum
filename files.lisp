@@ -1,10 +1,5 @@
 (in-package :serapeum)
 
-(export '(build-path
-          write-stream-into-file
-          file=
-          file-size))
-
 (defun build-path (path &rest parts)
   "Build a pathname by merging from right to left.
 With `build-path' you can pass the elements of the pathname being

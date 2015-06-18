@@ -1,7 +1,5 @@
 (in-package :serapeum)
 
-(export '(find-keyword bound-value special-variable-p))
-
 ;;;# `find-keyword'
 
 (defun find-keyword (string)

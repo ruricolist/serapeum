@@ -1,13 +1,5 @@
 (in-package :serapeum)
 
-(export '(defconst
-          defsubst
-          defalias
-          def
-          defplace
-          defcondition
-          local))
-
 ;;;# Lexical globals
 
 ;;; `def' and `defconst' are both applications of the same idea: using

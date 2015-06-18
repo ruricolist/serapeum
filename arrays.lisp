@@ -1,7 +1,5 @@
 (in-package :serapeum)
 
-(export '(array-index-row-major undisplace-array))
-
 ;; https://groups.google.com/forum/#!msg/comp.lang.lisp/CM3MQkyOTHk/Pl4KPUqfobwJ
 (defun array-index-row-major (array row-major-index)
   "The inverse of ARRAY-ROW-MAJOR-INDEX.

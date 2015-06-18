@@ -1,20 +1,5 @@
 (in-package :serapeum)
 
-(export '(parse-number
-          parse-real-number
-          parse-positive-real-number
-          invalid-number
-          invalid-number-reason
-          invalid-number-value))
-
-(export '(parse-float
-          bits unbits
-          round-to
-          finc fdec
-          shrink grow
-          shrinkf growf
-          random-in-range))
-
 (define-post-modify-macro finc (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
 

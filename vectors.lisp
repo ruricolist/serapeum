@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(vect vector=))
-
 (defun vect (&rest initial-contents)
   "Succint constructor for adjustable vectors with fill pointers.
 

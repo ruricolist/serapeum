@@ -1,7 +1,5 @@
 (in-package :serapeum)
 
-(export '(-> assure assuref wholenum))
-
 (deftype wholenum ()
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))

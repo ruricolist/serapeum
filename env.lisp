@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(with-timing))
-
 (defmacro with-timing ((&key quiet gc repeat)
                        &body body)
   "A convenience wrapper around TIME.

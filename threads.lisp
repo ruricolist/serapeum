@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(synchronized monitor))
-
 (eval-when (:compile-toplevel :load-toplevel)
   (defconstant +lock-class+ (class-of (bt:make-lock))))
 

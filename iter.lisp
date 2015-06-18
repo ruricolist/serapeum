@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(nlet collecting summing))
-
 ;;;# nlet
 
 ;;; Some references:

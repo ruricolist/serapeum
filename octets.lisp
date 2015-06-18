@@ -1,8 +1,5 @@
 (in-package :serapeum)
 
-(export '(octet octet-vector octet-vector-p
-          make-octet-vector octets unoctets))
-
 (declaim (optimize speed))
 
 (deftype octet ()

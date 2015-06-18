@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-(export '(ignoring maybe-invoke-restart))
-
 (defmacro ignoring (type &body body)
   "An improved version of `ignore-errors`.
 

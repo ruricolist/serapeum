@@ -1,8 +1,6 @@
 (in-package :serapeum)
 (in-readtable :standard)
 
-(export '(op))
-
 ;;;# op
 
 ;;; This differs from the original in expecting an extra layer of

@@ -2,11 +2,6 @@
 (in-readtable :fare-quasiquote)
 
 ;;; * Functions
-(export '(flip nth-arg
-          distinct
-          throttle #+ () debounce
-          juxt
-          dynamic-closure))
 
 (defun eqs (x)
   "A predicate for equality (under EQ) with X."

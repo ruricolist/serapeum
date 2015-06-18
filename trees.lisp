@@ -1,10 +1,5 @@
 (in-package :serapeum)
 
-(export '(occurs occurs-if
-          prune prune-if
-          walk-tree map-tree
-          leaf-walk leaf-map))
-
 ;; Ensure TCO when possible.
 (declaim (optimize (speed 3) (debug 1)))
 

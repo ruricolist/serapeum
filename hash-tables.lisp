@@ -1,11 +1,5 @@
 (in-package :serapeum)
 
-(export '(pophash swaphash
-          dict dict* @ href href-default
-          merge-tables flip-hash-table
-          hash-fold maphash-return
-          set-hash-table hash-table-set))
-
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 

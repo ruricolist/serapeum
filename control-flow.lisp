@@ -1,26 +1,6 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
-(export '(eval-and-compile
-          no nor nand
-          typecase-of case-of
-          etypecase-of ecase-of
-          ctypecase-of ccase-of
-          ;; typecase-of case-of
-          string-case string-ecase
-          case-using
-          select selector
-          econd econd-failure
-          econd-let ecase-let
-          cond-let case-let
-          bcond
-          comment example
-          nix
-          ensure ensure2
-          ~> ~>>
-          cond-every
-          nest))
-
 (defmacro prog0 (&body body)
   "Execute BODY like `progn' but return nothing."
   `(progn

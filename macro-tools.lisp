@@ -1,13 +1,6 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
-(export '(unsplice string-gensym with-thunk
-          expand-macro expand-macro-recursively
-          partition-declarations
-          callf callf2
-          define-do-macro
-          define-post-modify-macro))
-
 ;;;# Basics
 
 ;;; Borrowed from the internals of Alexandria.

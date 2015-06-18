@@ -1,10 +1,5 @@
 (in-package :serapeum)
 
-(export '(universal-to-unix
-          unix-to-universal
-          get-unix-time
-          date-leap-year-p time-since time-until interval))
-
 (defconstant +unix-epoch+ (encode-universal-time 0 0 0 1 1 1970 0)
   "The Unix epoch as a universal time.")
 

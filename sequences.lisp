@@ -1,35 +1,5 @@
 (in-package :serapeum)
 
-(export '(keep filter
-          filterf
-          partition partitions
-          runs batches assort
-          single
-          frequencies
-          scan
-          nub
-          gcp gcs
-          length< length<= length> length>=
-          longer longest
-          ordering
-          bestn
-          extrema
-          nsubseq
-          slice
-          take drop
-          halves
-          dsu-sort
-          deltas
-          intersperse
-          toposort
-          inconsistent-graph
-          inconsistent-graph-constraints
-          mvfold mvfoldr))
-
-(export '(split-sequence:split-sequence
-          split-sequence:split-sequence-if
-          split-sequence:split-sequence-if-not))
-
 (defun make-sequence-like (seq len &rest args &key initial-element
                                                    (initial-contents nil ic?))
   "Helper function: make a sequence of length LEN having the same type as SEQ."

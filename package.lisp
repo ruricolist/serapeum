@@ -76,6 +76,7 @@
    #:nlet
    #:collecting
    #:summing
+   ;; Conditions.
    #:ignoring
    #:maybe-invoke-restart
    ;; Op.

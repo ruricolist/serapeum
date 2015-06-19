@@ -1,7 +1,5 @@
 (in-package #:serapeum)
 
-;;; TODO Weak boxes.
-
 (declaim (inline box))                  ;Allow dynamic-extent.
 (defstruct (box (:constructor box (value))
                 (:predicate boxp))

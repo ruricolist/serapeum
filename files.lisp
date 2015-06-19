@@ -1,23 +1,23 @@
 (in-package :serapeum)
 
-(defun build-path (path &rest parts)
+(defun path-join (&rest pathnames)
   "Build a pathname by merging from right to left.
-With `build-path' you can pass the elements of the pathname being
-built in the order they appear in it:
+With `path-join' you can pass the elements of the pathname being built
+in the order they appear in it:
 
-    (build-path (user-homedir-pathname) config-dir config-file)
+    (path-join (user-homedir-pathname) config-dir config-file)
     ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
 
-Note that `build-path' does not coerce the parts of the pathname into
+Note that `path-join' does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
-    (build-path \"dir1\" \"dir2\" \"file\") -> \"file\"
-    (build-path \"dir1/\" \"dir2/\" \"file\") -> \"dir1/dir2/file\""
+    (path-join \"dir1\" \"dir2\" \"file\") -> \"file\"
+    (path-join \"dir1/\" \"dir2/\" \"file\") -> \"dir1/dir2/file\""
   (the pathname
        (reduce (lambda (x y)
                  (merge-pathnames y x))
-               parts
-               :initial-value path)))
+               pathnames
+               :initial-value (make-pathname))))
 
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.

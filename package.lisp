@@ -110,7 +110,7 @@
    #:set-hash-table
    #:hash-table-set
    ;; Pathnames.
-   #:build-path
+   #:path-join
    #:write-stream-into-file
    #:file=
    #:file-size

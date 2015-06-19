@@ -102,7 +102,7 @@
    #:swaphash
    #:dict
    #:dict*
-   #:href
+   #:href #:@
    #:href-default
    #:merge-tables
    #:flip-hash-table

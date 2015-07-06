@@ -16,30 +16,31 @@
   "Remove fn from the symbol value of NAME."
   (removef (symbol-value name) fn))
 
+(defmacro with-hook-restart (&body body)
+  `(with-simple-restart (continue "Call next function in hook ~s" *hook*)
+     ,@body))
+
 (defun run-hooks (&rest hookvars)
   "Run all the hooks in all the HOOKVARS.
 The variable `*hook*' is bound to each hook as it is being run."
-  (dolist (hook hookvars)
-    (let ((*hook* hook))
-      (dolist (fn (symbol-value hook))
+  (dolist (*hook* hookvars)
+    (dolist (fn (symbol-value *hook*))
+      (with-hook-restart
         (funcall fn)))))
 
-(defun run-hook-with-args (hook &rest args)
+(defun run-hook-with-args (*hook* &rest args)
   "Apply each function in the symbol value of HOOK to ARGS."
-  (check-type hook symbol)
-  (let ((*hook* hook))
-    (dolist (fn (symbol-value hook))
+  (dolist (fn (symbol-value *hook*))
+    (with-hook-restart
       (apply fn args))))
 
-(defun run-hook-with-args-until-failure (hook &rest args)
+(defun run-hook-with-args-until-failure (*hook* &rest args)
   "Like `run-hook-with-args', but quit once a function returns nil."
-  (let ((*hook* hook))
-    (loop for fn in (symbol-value hook)
-          always (apply fn args))))
+  (loop for fn in (symbol-value *hook*)
+        always (apply fn args)))
 
-(defun run-hook-with-args-until-success (hook &rest args)
+(defun run-hook-with-args-until-success (*hook* &rest args)
   "Like `run-hook-with-args', but quit once a function returns
 non-nil."
-  (let ((*hook* hook))
-    (loop for fn in (symbol-value hook)
-          thereis (apply fn args))))
+  (loop for fn in (symbol-value *hook*)
+          thereis (apply fn args)))

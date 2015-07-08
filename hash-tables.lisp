@@ -66,6 +66,11 @@ Roughly equivalent to `(merge-tables DICT (dict args...))'."
     (setf (gethash k dict) v))
   dict)
 
+(defmacro dictq (&rest keys-and-values)
+  "A literal hash table.
+Like `dict', but the keys and values are implicitly quoted."
+  (apply #'dict keys-and-values))
+
 (defun href (table &rest keys)
   "A concise way of doings lookups in (potentially nested) hash tables.
 

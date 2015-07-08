@@ -102,6 +102,7 @@
    #:swaphash
    #:dict
    #:dict*
+   #:dictq
    #:href #:@
    #:href-default
    #:merge-tables

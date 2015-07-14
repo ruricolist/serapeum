@@ -160,7 +160,6 @@ Both sets of declarations are returned in a form that can be spliced
 directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)"
-  ;; NB `partition' is not yet defined.
   (let ((env2 (parse-declarations declarations env)))
     (flet ((build (env)
              (build-declarations 'declare env)))

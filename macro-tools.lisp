@@ -130,26 +130,6 @@ Needs a better name."
 ;;; Expanding macros, Swank-style. We use `labels' in these
 ;;; definitions because `nlet' hasn't been defined yet.
 
-(defun compiler-macroexpand-1 (form &optional env)
-  "Expand a compiler macro."
-  (let ((fun (and (consp form)
-                  (ignore-errors (fboundp (car form)))
-                  (compiler-macro-function (car form)))))
-    (if fun
-        (let ((result (funcall *macroexpand-hook* fun form env)))
-          (values result (not (eq result form))))
-        (values form nil))))
-
-(defun compiler-macroexpand (form &optional env)
-  "Recursively call `compiler-macroexpand-1'."
-  (labels ((expand (form expanded?)
-             (multiple-value-bind (form new?)
-                 (compiler-macroexpand-1 form)
-               (if (not new?)
-                   (values form expanded?)
-                   (expand form t)))))
-    (expand form env)))
-
 (defun expand-macro (form &optional env)
   "Like `macroexpand-1', but also expand compiler macros.
 From Swank."
@@ -310,10 +290,3 @@ Using `define-do-macro' takes care of all of this for you.
     (multiple-value-bind (args rest?)
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
-
-(defun variable-information (symbol env)
-  #+sbcl (sb-cltl2:variable-information symbol env)
-  #+cmu (ext:variable-information symbol env)
-  #+ccl (ccl:variable-information symbol env)
-  #+allegro (sys:variable-information symbol env)
-  #-(or sbcl cmu ccl allegro) (values nil nil nil))

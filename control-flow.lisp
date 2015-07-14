@@ -93,12 +93,6 @@ From Arc."
            (format-extra-types (stream partition)
              (when-let (et (extra-types partition))
                (format stream "~&There are extra types: ~s" et)))
-           (typexpand (type)
-             ;; TODO Other implementations?
-             #+sbcl (sb-ext:typexpand type)
-             #+ccl  (let ((exp (ccl::type-expand type)))
-                      (values exp (not (eq exp type))))
-             #-(or sbcl ccl) (values nil nil))
            (missing-types (partition)
              (multiple-value-bind (exp exp?) (typexpand type)
                (when exp?

@@ -2,7 +2,8 @@
 
 (defpackage #:serapeum
   (:use :cl :alexandria :optima :split-sequence :parse-number
-        :named-readtables :tcr.parse-declarations-1.0)
+   :named-readtables :tcr.parse-declarations-1.0
+   :introspect-environment)
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)
   (:export
@@ -119,7 +120,6 @@
    ;; Symbols.
    #:find-keyword
    #:bound-value
-   #:special-variable-p
    ;; Arrays.
    #:array-index-row-major
    #:undisplace-array

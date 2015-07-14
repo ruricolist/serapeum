@@ -16,7 +16,7 @@
                #:named-readtables
                #:fare-quasiquote-extras
                #:parse-declarations-1.0
-               #+sbcl :sb-cltl2)
+               #:introspect-environment)
   ;; Having had to untangle the dependencies once it seems worthwhile
   ;; to be explicit about them, if only to keep them under control.
   :components ((:file "package")

@@ -223,34 +223,33 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
                  (case-using-aux ,pred ,keyform
                    ,@clauses))))))
 
-(eval-and-compile
-  (defun expand-string-case (sf default cases)
-    "Expand a string-case macro with a minimum of duplicated code."
-    (once-only (sf)
-      (let ((keys (mapcar #'car cases)))
-        (flet ((single (l) (null (cdr l))))
-          (if (every #'single keys)
-              ;; Simple.
-              `(string-case:string-case (,sf :default ,default)
-                 ,@(loop for ((k) . body) in cases
-                         collect (cons k body)))
-              (let* ((simple (remove-if-not #'single cases :key #'car))
-                     (complex (set-difference cases simple)))
-                (with-gensyms (block)
-                  `(block ,block
-                     ,(let ((tags (make-gensym-list (length complex) (string 'body))))
-                        `(tagbody
-                            (return-from ,block
-                              (string-case:string-case (,sf :default ,default)
-                                ,@(loop for ((key) . body) in simple
-                                        collect `(,key ,@body))
-                                ,@(loop for keys in (mapcar #'car complex)
-                                        for tag in tags
-                                        append (loop for k in keys
-                                                     collect `(,k (go ,tag))))))
-                            ,@(loop for tag in tags
-                                    for body in (mapcar #'cdr complex)
-                                    append `(,tag (return-from ,block (progn ,@body)))))))))))))))
+(defun expand-string-case (sf default cases)
+  "Expand a string-case macro with a minimum of duplicated code."
+  (once-only (sf)
+    (let ((keys (mapcar #'car cases)))
+      (flet ((single (l) (null (cdr l))))
+        (if (every #'single keys)
+            ;; Simple.
+            `(string-case:string-case (,sf :default ,default)
+               ,@(loop for ((k) . body) in cases
+                       collect (cons k body)))
+            (let* ((simple (remove-if-not #'single cases :key #'car))
+                   (complex (set-difference cases simple)))
+              (with-gensyms (block)
+                `(block ,block
+                   ,(let ((tags (make-gensym-list (length complex) (string 'body))))
+                      `(tagbody
+                          (return-from ,block
+                            (string-case:string-case (,sf :default ,default)
+                              ,@(loop for ((key) . body) in simple
+                                      collect `(,key ,@body))
+                              ,@(loop for keys in (mapcar #'car complex)
+                                      for tag in tags
+                                      append (loop for k in keys
+                                                   collect `(,k (go ,tag))))))
+                          ,@(loop for tag in tags
+                                  for body in (mapcar #'cdr complex)
+                                  append `(,tag (return-from ,block (progn ,@body))))))))))))))
 
 (defmacro string-case (stringform &body cases)
   "Efficient `case'-like macro with string keys.

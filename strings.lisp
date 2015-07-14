@@ -58,6 +58,17 @@ functions.
     (defun format-x (x &key stream)
       (with-string (s stream)
         ...))"
+  (when (constantp stream)
+    (let ((stream (eval stream)))
+      (cond ((eql stream t)
+             (return-from with-string
+               `(let ((,var *standard-output*))
+                  ,@body)))
+            ((null stream)
+             (return-from with-string
+               `(with-output-to-string (,var)
+                  ,@body))))))
+  
   (with-thunk (body var)
     `(call/string #',body ,stream)))
 

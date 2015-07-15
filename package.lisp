@@ -187,8 +187,6 @@
    #:run-hook-with-args
    #:run-hook-with-args-until-failure
    #:run-hook-with-args-until-success
-   ;; Environment.
-   #:with-timing
    ;; Fbind.
    #:fbind
    #:fbind*

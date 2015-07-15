@@ -263,18 +263,21 @@ Using `define-do-macro' takes care of all of this for you.
       (error "No binding for return form in ~s" (car binds)))
     (unless body-var
       (error "No binding for body in ~s" binds))
-    `(defmacro ,name ,binds
-       (multiple-value-bind (,body-var decls)
-           (parse-body ,body-var)
-         (let ((,body-var
-                 `(,@decls
-                   (tagbody ,@,body-var))))
-           `(block nil
-              ,,@body
-              ,(when ,ret-var
-                 `(let (,,@vars)
-                    (declare (ignorable ,,@vars))
-                    ,,ret-var))))))))
+    (multiple-value-bind (body decls doc) (parse-body body :documentation t)
+      `(defmacro ,name ,binds
+         ,@(unsplice doc)
+         ,@decls
+         (multiple-value-bind (,body-var decls)
+             (parse-body ,body-var)
+           (let ((,body-var
+                   `(,@decls
+                     (tagbody ,@,body-var))))
+             `(block nil
+                ,,@body
+                ,(when ,ret-var
+                   `(let (,,@vars)
+                      (declare (ignorable ,,@vars))
+                      ,,ret-var)))))))))
 
 (defmacro define-post-modify-macro (name lambda-list function &optional documentation)
   "Like `define-modify-macro', but arranges to return the original value."

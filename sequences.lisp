@@ -383,21 +383,24 @@ The arguments START, END, and KEY are as for `reduce'.
                      (cons (subseq seq i (min (+ i n) end))
                            acc)))))))
 
-(defun frequencies (seq &rest hash-table-args)
+(defun frequencies (seq &rest hash-table-args &key (key #'identity))
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
 From Clojure."
+  (check-type key function)
   (let ((total 0)
+        ;; Using multiple-value-call lets us specify defaults while
+        ;; still ensuring the caller can override them.
         (table (multiple-value-call #'make-hash-table
-                 (values-list hash-table-args)
+                 (values-list (remove-from-plist hash-table-args :key))
                  :size (values (floor (length seq) 2))
                  :test 'equal)))
     (declare (fixnum total))
     (map nil
          (lambda (elt)
            (incf total)
-           (incf (gethash elt table 0)))
+           (incf (gethash (funcall key elt) table 0)))
          seq)
     (values table total)))
 

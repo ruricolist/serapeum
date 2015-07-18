@@ -120,16 +120,20 @@ other function."
 (defmacro summing (&body body)
   "Within BODY, bind `sum' to a function that gathers numbers to sum.
 
+If the first form in BODY is a literal number, it is used instead of 0
+as the initial sum.
+
 To see the running sum, call `sum' with no arguments.
 
 Return the total."
-  (with-gensyms (n x)
-    (with-syms (sum)
-      `(the number
-            (let ((,n 0))
-              (declare (number ,n))
-              (flet ((,sum (,x)
-                       (incf ,n ,x)))
-                (declare (ignorable (function ,sum)))
-                ,@body)
-              ,n)))))
+  (let ((zero (if (numberp (first body)) (pop body) 0)))
+    (with-gensyms (n x)
+      (with-syms (sum)
+        `(the number
+              (let ((,n ,zero))
+                (declare (number ,n))
+                (flet ((,sum (,x)
+                         (incf ,n ,x)))
+                  (declare (ignorable (function ,sum)))
+                  ,@body)
+                ,n))))))

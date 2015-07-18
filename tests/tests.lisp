@@ -309,7 +309,13 @@
     (is (equal '(0 1 2 3 4)
                (collecting
                  (dotimes (i 5)
-                   (collect i)))))))
+                   (collect i))))))
+
+  (test with-collectors
+    (is (equal '((1) (2) (3))
+               (multiple-value-list
+                (with-collectors (x y z)
+                  (x 1) (y 2) (z 3)))))))
 
 (suite conditions)
 

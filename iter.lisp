@@ -98,24 +98,53 @@ with MACROLET."
            ,@body)
          (the list (cdr ,head))))))
 
-(defmacro collecting (&body body)
-  "Within BODY, bind `collect' to a function of one argument that
+(defmacro with-collector ((collector) &body body)
+  "Within BODY, bind COLLECTOR to a function of one argument that
 accumulates all the arguments it has been called with in order, like
 the collect clause in `loop', finally returning the collection.
 
-To see the collection so far, call `collect' with no arguments.
+To see the collection so far, call COLLECTOR with no arguments.
 
-Note that this version of `collecting' binds `collect' to a closure,
-not a macro: you can pass the collector around or return it like any
-other function."
+Note that this version COLLECTOR to a closure, not a macro: you can
+pass the collector around or return it like any other function."
+  (with-gensyms (head tail)
+    `(let* ((,head (list nil))
+            (,tail ,head))
+       (flet ((,collector (&rest xs)
+                (if xs
+                    (dolist (x xs)
+                      (setf (cdr ,tail) (setf ,tail (list x))))
+                    (cdr ,head))))
+         ,@body
+         (the list (,collector))))))
+
+(defmacro collecting (&body body)
+  "Like `with-collector', with the collector bound to the result of
+interning `collect' in the current package."
   (with-syms (collect)
-    `(collecting*
-       (flet ((,collect (&optional (x nil x?))
-                (if x?
-                    (,collect x)
-                    (,collect))))
-         (declare (inline ,collect))
-         ,@body))))
+    `(with-collector (,collect)
+       ,@body)))
+
+(defmacro with-collectors ((&rest collectors) &body body)
+  "Like `with-collector', with multiple collectors.
+Returns the final value of each collector as multiple values.
+
+     (with-collectors (x y z)
+       (x 1)
+       (y 2)
+       (z 3))
+     => '(1) '(2) '(3)"
+  (with-gensyms (outer)
+    `(block ,outer
+       ,(reduce (lambda (form collector)
+                  `(with-collector (,collector)
+                     ,form))
+                collectors
+                :initial-value
+                `(progn
+                   ,@body
+                   (return-from ,outer
+                     (values ,@(mapcar #'list collectors))))))))
 
 (defmacro summing (&body body)
   "Within BODY, bind `sum' to a function that gathers numbers to sum.

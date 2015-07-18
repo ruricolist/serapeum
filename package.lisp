@@ -76,6 +76,8 @@
    ;; Iteration.
    #:nlet
    #:collecting
+   #:with-collector
+   #:with-collectors
    #:summing
    ;; Conditions.
    #:ignoring

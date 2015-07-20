@@ -230,26 +230,13 @@ propagate the current value of `*standard-output*':
           (lambda ...
             (let ((*standard-output* temp))
               ...))))"
-  (let ((fn (ensure-function fn))
-        (values (mapcar #'symbol-value symbols)))
-    (lambda (&rest args)
-      (declare (dynamic-extent args))
-      (progv symbols values
-        (multiple-value-prog1
-            (apply fn args)
-          (map-into values #'symbol-value symbols))))))
-
-(define-compiler-macro dynamic-closure (&whole decline
-                                               symbols fn)
-  (match symbols
-    (`(quote ,symbols)
-      (let ((temps (make-gensym-list (length symbols))))
-        (rebinding-functions (fn)
-          `(let ,(mapcar #'list temps symbols)
-             (lambda (&rest args)
-               (declare (dynamic-extent args))
-               (let ,(mapcar #'list symbols temps)
-                 (multiple-value-prog1
-                     (apply ,fn args)
-                   (setf ,@(mappend #'list temps symbols)))))))))
-    (otherwise decline)))
+  (check-type fn function)
+  (if (null symbols)
+      fn
+      (let ((values (mapcar #'symbol-value symbols)))
+        (lambda (&rest args)
+          (declare (dynamic-extent args))
+          (progv symbols values
+            (multiple-value-prog1
+                (apply fn args)
+              (map-into values #'symbol-value symbols)))))))

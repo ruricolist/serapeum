@@ -364,7 +364,13 @@
       (is (equal "Hello"
                  (funcall (let ((*standard-output* (make-string-output-stream))
                                 (symbols '(*standard-output*)))
-                            (dynamic-closure symbols fn))))))))
+                            (dynamic-closure symbols fn)))))))
+
+  (test dynamic-closure/local-specials
+    (funcall
+     (let ((x 1))
+       (declare (special x))
+       (dynamic-closure '(x) (lambda () (symbol-value 'x)))))))
 
 (suite trees
 

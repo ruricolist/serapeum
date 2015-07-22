@@ -378,7 +378,26 @@
     (is (equal (leaf-map (compose #'round #'sqrt) '(((4 1) 25) (9 100) 64))
                '(((2 1) 5) (3 10) 8)))))
 
-(suite hash-tables)
+(suite hash-tables
+  (test frequencies
+    (let ((ns (loop repeat 100 collect (random 10))))
+
+      (let ((freqs (frequencies ns)))
+        (loop for i from 0 below 10 do
+          (is (= (gethash i freqs) (count i ns)))))
+      
+      ;; With :test argument.
+      (let* ((xs (mapcar #'princ-to-string ns))
+             (freqs (frequencies xs :test 'equal)))
+        (loop for i from 0 below 10
+              for string = (princ-to-string i)
+              do (is (= (gethash string freqs)
+                        (count string xs :test 'equal)))))
+      
+      ;; With :key argument.
+      (let ((freqs (frequencies ns :key (lambda (x) (* x 2)))))
+        (loop for i from 0 below 10 do
+          (is (= (gethash (* i 2) freqs) (count i ns))))))))
 
 (suite files)
 

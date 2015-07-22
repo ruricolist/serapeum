@@ -383,7 +383,8 @@ The arguments START, END, and KEY are as for `reduce'.
                      (cons (subseq seq i (min (+ i n) end))
                            acc)))))))
 
-(defun frequencies (seq &rest hash-table-args &key (key #'identity))
+(defun frequencies (seq &rest hash-table-args &key (key #'identity)
+                    &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 

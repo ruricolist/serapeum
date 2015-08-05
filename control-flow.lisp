@@ -134,7 +134,7 @@ partition of TYPE."
                :expected-type ',type)))))
 
 (defmacro case-of (type x &body clauses &environment env)
-  "Like `case-of' but may, and must, have an `otherwise' clause "
+  "Like `case' but may, and must, have an `otherwise' clause "
   (let* ((otherwise (find 'otherwise clauses :key #'car))
          (clauses (remove otherwise clauses)))
     (unless otherwise

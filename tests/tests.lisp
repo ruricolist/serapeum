@@ -113,7 +113,12 @@
              (local
                (let* ((x 1)
                       (y 1))
-                 (+ x y))))))
+                 (+ x y)))))
+
+    (is (equal '(1 2 3)
+               (local
+                 (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
+                   (list x y z))))))
 
   (test local+macros
     (is (equal '(x)

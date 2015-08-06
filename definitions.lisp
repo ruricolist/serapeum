@@ -390,7 +390,7 @@ definitions."
                          vars expr &body body)
                         (let ((in-let? t)) (declare (special in-let?))
                           (multiple-value-bind (body decls) (parse-body body)
-                            `(multiple-value-bind ,vars ,expr
+                            `(,(car form) ,vars ,expr
                                ,@decls
                                ,(expand-body body)))))
                        ((locally &body body)

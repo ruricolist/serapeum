@@ -1890,9 +1890,12 @@ calling FILTER with PRED, the place, and ARGS.
 
 ### `(keep item seq &rest args &key test from-end key count &allow-other-keys)`
 
-Almost, but not quite, an alias for `remove`.
+Almost, but not quite, the inverse of `remove`.
 
-The difference is the handling of COUNT. For `keep`, COUNT is the
+Whereas `remove` removes any values for which the test is true, `keep`
+only keeps values for whic the test is true.
+
+Another difference is the handling of COUNT. For `keep`, COUNT is the
 number of items to *keep*, not remove.
 
      (remove 'x '(x y x y x y) :count 2)

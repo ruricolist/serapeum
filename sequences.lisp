@@ -472,48 +472,11 @@ If there is no common suffix, return NIL."
                (return)))
          seqs)))))
 
-(defun as-len ()
-  "Return a closure that returns the length of the length
-designators (sequences or integers) it is called with.
-
-The idea is to minimize needless traversal of lists in length< and
-length> by tracking the least length seen so far."
-  (let ((min array-dimension-limit))
-    (lambda (x)
-      (etypecase x
-        (array-length
-         (minf min x)
-         x)
-        (list
-         (loop for nil in x
-               for i from 1
-               repeat (1+ min)
-               finally (minf min i)
-                       (return i)))
-        (sequence
-         (let ((x (length x)))
-           (minf min x)
-           x))))))
-
 (defun length< (&rest seqs)
   "Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer."
-  (nlet rec ((last 0)
-             (seqs seqs))
-    (if (endp seqs)
-        t
-        (destructuring-bind (seq . seqs) seqs
-          (etypecase seq
-            (array-length
-             (when (< last seq)
-               (rec seq seqs)))
-            (list
-             (when-let (tail (nthcdr last seq))
-               (rec (+ last (length tail)) seqs)))
-            (sequence
-             (let ((len (length seq)))
-               (when (< last len)
-                 (rec len seqs)))))))))
+  (declare (dynamic-extent seqs))
+  (apply #'length> (reverse seqs)))
 
 (defun length> (&rest seqs)
   "Is each length-designator in SEQS longer than the next?
@@ -523,23 +486,23 @@ A length designator may be a sequence or an integer."
     (if (endp seqs)
         t
         (destructuring-bind (seq . seqs) seqs
-            (etypecase seq
-              (array-length
-               (when (> last seq)
-                 (rec seq seqs)))
-              (list
-               (let ((len
-                       ;; Get the length of SEQ, but only up to LAST.
-                       (loop for nil in seq
-                             for i from 1
-                             repeat last
-                             finally (return i))))
-                 (when (> last len)
-                   (rec len seqs))))
-              (sequence
-               (let ((len (length seq)))
-                 (when (> last len)
-                   (rec len seqs)))))))))
+          (etypecase seq
+            (array-length
+             (when (> last seq)
+               (rec seq seqs)))
+            (list
+             (let ((len
+                     ;; Get the length of SEQ, but only up to LAST.
+                     (loop for nil in seq
+                           for i from 1
+                           repeat last
+                           finally (return i))))
+               (when (> last len)
+                 (rec len seqs))))
+            (sequence
+             (let ((len (length seq)))
+               (when (> last len)
+                 (rec len seqs)))))))))
 
 (defun length>= (&rest seqs)
   "Is each length-designator in SEQS longer or as long as the next?

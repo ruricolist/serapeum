@@ -694,6 +694,7 @@
     (is (equal (gcs '("how" "now")) "ow")))
 
   (test length<
+    (is (length< #() 1))
     (is (length< '(1) 2))
     (is (not (length< '(1 2) 2)))
     (is (not (length< '(1 2 3) 2))))

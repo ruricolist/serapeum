@@ -14,7 +14,7 @@
    #:expand-macro
    #:expand-macro-recursively
    #:partition-declarations
-   #:callf
+   #:callf #:callf2
    #:define-do-macro
    #:define-post-modify-macro
    ;; Types.

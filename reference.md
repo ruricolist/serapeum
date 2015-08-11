@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (28 files, 234 functions)
+# Function Listing For Serapeum (27 files, 234 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -23,7 +23,6 @@
 - [Time](#time)
 - [Clos](#clos)
 - [Hooks](#hooks)
-- [Env](#env)
 - [Fbind](#fbind)
 - [Lists](#lists)
 - [Strings](#strings)
@@ -117,10 +116,6 @@ directly into Lisp code:
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
-### `(callf2 function arg1 place &rest args)`
-
-Like CALLF, but with the place as the second argument.
-
 ### `(define-do-macro name binds &body body)`
 
 Define an iteration macro like `dolist`.
@@ -195,7 +190,7 @@ PLACE only once.
 
 ## Definitions
 
-### `(def var &body (val &optional (doc nil docp)))`
+### `(def var &body (&optional val (doc nil docp)))`
 
 The famous "deflex".
 
@@ -495,7 +490,7 @@ partition of TYPE.
 
 ### `(case-of type x &body clauses)`
 
-Like `case-of` but may, and must, have an `otherwise` clause 
+Like `case` but may, and must, have an `otherwise` clause 
 
 ### `(ecase-of type x &body body)`
 
@@ -710,7 +705,7 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
-### `(monitor x)`
+### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
 
@@ -741,21 +736,39 @@ The name comes from `Let Over Lambda', but this is a more careful
 implementation: the function is not bound while the initial arguments
 are being evaluated, and it is safe to close over the arguments.
 
-### `(collecting &body body)`
+### `(with-collector (collector) &body body)`
 
-Within BODY, bind `collect` to a function of one argument that
+Within BODY, bind COLLECTOR to a function of one argument that
 accumulates all the arguments it has been called with in order, like
 the collect clause in `loop`, finally returning the collection.
 
-To see the collection so far, call `collect` with no arguments.
+To see the collection so far, call COLLECTOR with no arguments.
 
-Note that this version of `collecting` binds `collect` to a closure,
-not a macro: you can pass the collector around or return it like any
-other function.
+Note that this version COLLECTOR to a closure, not a macro: you can
+pass the collector around or return it like any other function.
+
+### `(collecting &body body)`
+
+Like `with-collector`, with the collector bound to the result of
+interning `collect` in the current package.
+
+### `(with-collectors (&rest collectors) &body body)`
+
+Like `with-collector`, with multiple collectors.
+Returns the final value of each collector as multiple values.
+
+     (with-collectors (x y z)
+       (x 1)
+       (y 2)
+       (z 3))
+     => '(1) '(2) '(3)
 
 ### `(summing &body body)`
 
 Within BODY, bind `sum` to a function that gathers numbers to sum.
+
+If the first form in BODY is a literal number, it is used instead of 0
+as the initial sum.
 
 To see the running sum, call `sum` with no arguments.
 
@@ -991,6 +1004,11 @@ understood as the test.
 Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'.
 
+### `(dictq &rest keys-and-values)`
+
+A literal hash table.
+Like `dict`, but the keys and values are implicitly quoted.
+
 ### `(href table &rest keys)`
 
 A concise way of doings lookups in (potentially nested) hash tables.
@@ -1070,20 +1088,20 @@ Without STRICT, equivalent to `hash-table-values`.
 
 ## Files
 
-### `(build-path path &rest parts)`
+### `(path-join &rest pathnames)`
 
 Build a pathname by merging from right to left.
-With `build-path` you can pass the elements of the pathname being
-built in the order they appear in it:
+With `path-join` you can pass the elements of the pathname being built
+in the order they appear in it:
 
-    (build-path (user-homedir-pathname) config-dir config-file)
+    (path-join (user-homedir-pathname) config-dir config-file)
     ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
 
-Note that `build-path` does not coerce the parts of the pathname into
+Note that `path-join` does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
-    (build-path "dir1" "dir2" "file") -> "file"
-    (build-path "dir1/" "dir2/" "file") -> "dir1/dir2/file"
+    (path-join "dir1" "dir2" "file") -> "file"
+    (path-join "dir1/" "dir2/" "file") -> "dir1/dir2/file"
 
 ### `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
@@ -1113,10 +1131,6 @@ intern a keyword -- which is usually both unnecessary and unwise.
 ### `(bound-value s &optional default)`
 
 If S is bound, return (values s t). Otherwise, return DEFAULT.
-
-### `(special-variable-p symbol)`
-
-Is SYMBOL a special variable?
 
 ## Arrays
 
@@ -1210,14 +1224,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc ref102355 &optional (delta 1))`
+### `(finc ref70833 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref102401 &optional (delta 1))`
+### `(fdec ref70876 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1262,11 +1276,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g102562 n)`
+### `(shrinkf g71037 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g102584 n)`
+### `(growf g71059 n)`
 
 Grow the value in a place by a factor.
 
@@ -1431,34 +1445,18 @@ Remove fn from the symbol value of NAME.
 Run all the hooks in all the HOOKVARS.
 The variable `*hook*` is bound to each hook as it is being run.
 
-### `(run-hook-with-args hook &rest args)`
+### `(run-hook-with-args *hook* &rest args)`
 
 Apply each function in the symbol value of HOOK to ARGS.
 
-### `(run-hook-with-args-until-failure hook &rest args)`
+### `(run-hook-with-args-until-failure *hook* &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns nil.
 
-### `(run-hook-with-args-until-success hook &rest args)`
+### `(run-hook-with-args-until-success *hook* &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
-
-## Env
-
-### `(with-timing (&key quiet gc repeat) &body body)`
-
-A convenience wrapper around TIME.
-
-QUIET suppresses both the return value and any output to
-`*standard-output*`.
-
-REPEAT specifies a number of repetitions.
-
-If GC is non-nil, perform a garbage collection before running BODY.
-This can be useful with repeated trials, when you want to make sure
-the running time of the *nth* run is not distorted by cleaning up
-after the runs before it.
 
 ## Fbind
 
@@ -1798,21 +1796,25 @@ ELLIPSIS, so the string may come out longer than it started.
 
 From Arc.
 
+### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
+
+Like `string^=`, but case-insensitive.
+
 ### `(string^= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a prefix of S2?
 
-### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
+### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
 
-Like `string^=`, but case-insensitive.
+Like `string$=`, but case-insensitive.
 
 ### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
 
-### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
+### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
-Like `string$=`, but case-insensitive.
+Like `string*=`, but case-insensitive.
 
 ### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1824,10 +1826,6 @@ This is similar, but not identical, to SEARCH.
      (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
-
-### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string*=`, but case-insensitive.
 
 ### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1882,7 +1880,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g111501 pred &rest args)`
+### `(filterf g8178 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -1890,10 +1888,9 @@ calling FILTER with PRED, the place, and ARGS.
 
 ### `(keep item seq &rest args &key test from-end key count &allow-other-keys)`
 
-Almost, but not quite, an alias for `remove`.
+Almost, but not quite, an alias for `remove` with `:test-not` instead of `:test`.
 
-The difference is the handling of COUNT. For `keep`, COUNT is the
-number of items to *keep*, not remove.
+The difference is the handling of COUNT. For keep, COUNT is the number of items to keep, not remove.
 
      (remove 'x '(x y x y x y) :count 2)
      => '(y y x y)
@@ -1966,7 +1963,7 @@ Return SEQ in batches of N elements.
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
 
-### `(frequencies seq &rest hash-table-args)`
+### `(frequencies seq &rest hash-table-args &key key &allow-other-keys)`
 
 Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
@@ -2136,7 +2133,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints x)`
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

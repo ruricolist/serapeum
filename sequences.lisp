@@ -192,10 +192,9 @@ calling FILTER with PRED, the place, and ARGS.")
 
 (defun keep (item seq &rest args &key (test #'eql) from-end key count
              &allow-other-keys)
-  "Almost, but not quite, an alias for `remove'.
+  "Almost, but not quite, an alias for `remove` with `:test-not` instead of `:test`.
 
-The difference is the handling of COUNT. For `keep', COUNT is the
-number of items to *keep*, not remove.
+The difference is the handling of COUNT. For keep, COUNT is the number of items to keep, not remove.
 
      (remove 'x '(x y x y x y) :count 2)
      => '(y y x y)

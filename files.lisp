@@ -33,15 +33,15 @@ STREAM will be closed afterwards, so wrap it with
       (copy-stream in out)))
   pathname)
 
-(defun file= (file1 file2 &key (buffer-size 4096))
+(defun file= (file1 file2 &key (buffer-size 4096) (element-type '(unsigned-byte 8)))
   "Compare FILE1 and FILE2 octet by octet, using buffers of
 BUFFER-SIZE."
-  (with-input-from-file (file1 file1 :element-type 'octet)
-    (with-input-from-file (file2 file2 :element-type 'octet)
+  (with-input-from-file (file1 file1 :element-type element-type)
+    (with-input-from-file (file2 file2 :element-type element-type)
       (and (= (file-length file1)
               (file-length file2))
-           (let ((buffer1 (make-array buffer-size :element-type '(unsigned-byte 8)))
-                 (buffer2 (make-array buffer-size :element-type '(unsigned-byte 8))))
+           (let ((buffer1 (make-array buffer-size :element-type element-type))
+                 (buffer2 (make-array buffer-size :element-type element-type)))
              (loop for end1 = (read-sequence buffer1 file1)
                    for end2 = (read-sequence buffer2 file2)
                    until (or (= end1 0) (= end2 0))

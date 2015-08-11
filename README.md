@@ -249,4 +249,7 @@ This expands into `let` and `labels` as you might expect.
 
 The complete reference is in a [separate file](reference.md).
 
+(Note that the reference is generated from docstrings, and should not
+be edited by hand.)
+
 [Alexandria]: http://common-lisp.net/project/alexandria/

@@ -574,6 +574,14 @@
                      (test* str))
                    out)))))
 
+  (test word-wrap
+    (is (equal
+         (word-wrap "There is no way on god’s green earth I can perform that function, Will Robinson."
+                    :column 40)
+         "There is no way on god’s green earth I 
+can perform that function, Will 
+Robinson.")))
+
   (test collapse-whitespace
     (is (equal (collapse-whitespace "") ""))
     (is (equal (collapse-whitespace " ") " "))
@@ -646,7 +654,12 @@
     (is (equal "The new way"
                (string-replace-all "old" "The old way" "new")))
     (is (equal "The new old way"
-               (string-replace-all "old" "The old old way" "new" :start 3 :end 7)))))
+               (string-replace-all "old" "The old old way" "new" :start 3 :end 7))))
+
+  (test chomp
+    ;; Remove the longest sequence first.
+    (is (equal "abc"
+               (chomp "abcxyz" (list "z" "yz" "xyz"))))))
 
 (suite sequences
 

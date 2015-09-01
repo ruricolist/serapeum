@@ -29,6 +29,11 @@ are considered whitespace."
   "STRING without whitespace at ends."
   (string-trim whitespace string))
 
+(defsubst ascii-char-p (char)
+  "Is CHAR an ASCII char?"
+  (and (< (char-code char) 128)
+       char))
+
 (defun call/string (fn stream)
   "Resolve STREAM like `format' and call FN with the result."
   (fbind (fn)
@@ -272,6 +277,31 @@ Cf. `words'."
                              :start start
                              :end end)))
 
+(defun word-wrap (string &key (column 80) stream)
+  "Return a word-wrapped version of STRING that breaks at COLUMN.
+
+Note that this is not a general-purpose word-wrapping routine like you
+would find in a text editor: in particular, any existing whitespace is
+removed."
+  (let ((col 0))
+    (with-string (s stream)
+      (loop for (token . more) on (tokens string) do
+        (flet ((reset ()
+                 (setq col 0)
+                 (terpri s))
+               (output-word (word)
+                 (write-string word s)
+                 (incf col (length word))
+                 (when more
+                   (write-char #\Space s)
+                   (incf col))))
+          (let ((projected-length (+ col (length token))))
+            (if (<= projected-length column)
+                (output-word token)
+                (progn
+                  (reset)
+                  (output-word token)))))))))
+
 (defun newline? (c)
   (declare (character c))
   (case c
@@ -415,8 +445,24 @@ but without consing."
                                (compare-segment left right))
               until (>= right end))))))
 
+(defun string-replace (old string new &key (start 0) end stream)
+  "Like `string-replace-all', but only replace the first match."
+  (declare (array-length start)
+           ((or array-length null) end))
+  (check-type old string)
+  (check-type new string)
+  (check-type string string)
+  (let ((start (search old string :start2 start :end2 end)))
+    (with-string (s stream)
+      (if (null start) (write-string string s)
+          (progn
+            (unless (zerop start)
+              (write-string string s :start 0 :end start))
+            (write-string new s)
+            (write-string string s :start (+ start (1- (length new)))))))))
+
 (defun string-replace-all (old string new &key (start 0) end stream)
-  "Do regex-style search-and-replace for constant strings.
+  "Do search-and-replace for constant strings.
 
 Note that START and END only affect where the replacements are made:
 the part of the string before START, and the part after END, are
@@ -453,3 +499,32 @@ like the first argument to `format'."
                 (write-string string s :start start :end match)
                 (write-string new s)
                 (rep (+ match len)))))))))
+
+(defun chomp (string
+              &optional
+                (suffixes '#.(sort
+                              (remove-duplicates
+                               (list (string #\Newline)
+                                     (string #\Linefeed)
+                                     (string #\Return)
+                                     (coerce (list #\Return #\Linefeed) 'string))
+                               :test 'equal)
+                              #'> :key #'length)
+                          suffixes-supplied-p))
+  "If STRING ends in one of SUFFIXES, remove that suffix.
+
+SUFFIXES defaults to a Lisp newline, a literal line feed, a literal
+carriage return, or a literal carriage return followed by a literal
+line feed.
+
+Takes care that the longest suffix is always removed first."
+  (check-type string string)
+  (check-type suffixes list)
+  (reduce (lambda (string sep)
+            (if (string$= sep string)
+                (subseq string 0 (- (length string) (length sep)))
+                string))
+          (if suffixes-supplied-p
+              (sort (copy-seq suffixes) #'> :key #'length)
+              suffixes)
+          :initial-value string))

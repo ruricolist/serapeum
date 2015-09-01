@@ -216,6 +216,7 @@
    #:plist-keys
    #:plist-values
    ;; Strings.
+   #:ascii-char-p
    #:whitespace
    #:collapse-whitespace
    #:whitespacep
@@ -231,6 +232,7 @@
    #:nstring-invert-case
    #:words
    #:tokens
+   #:word-wrap
    #:lines
    #:fmt
    #:with-string
@@ -244,7 +246,9 @@
    #:string-suffixp
    #:string-containsp
    #:string-tokenp
+   #:string-replace
    #:string-replace-all
+   #:chomp
    ;; Sequences.
    #:keep
    #:filter

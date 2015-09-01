@@ -185,7 +185,7 @@ directly into Lisp code:
                             ,array-form
                             ,other-form)
                        array-form)))
-           #-(or sbcl ccl)
+           #-(or sbcl abcl ccl)
            `(if (listp ,seq) ,list-form ,array-form)))
     (if (not (symbolp seq)) dispatch-form
         (let ((type (variable-type seq env)))

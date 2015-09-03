@@ -273,7 +273,14 @@
     (is (eql (cond-every (t 1) (otherwise 2)) 1))
     (is (eql (cond-every (otherwise 1)) 1))
     (is (eql (cond-every (t 1) (nil 2)) 1))
-    (is (eql (let ((x 1)) (cond-every (x) (nil 2))) 1)))
+    (is (eql (let ((x 1)) (cond-every (x) (nil 2))) 1))
+    ;; Tests are evaluated first.
+    (is (eql 3
+             (let ((x 1))
+               (cond-every
+                 ((< x 2) (incf x))
+                 ((= x 1) (incf x)))
+               x))))
 
   (test bcond
     (is (= 2

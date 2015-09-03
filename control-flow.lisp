@@ -302,33 +302,29 @@ Return the value of the last successful clause.
 If a clause begins with `cl:otherwise', it runs only if no preceding
 form has succeeded.
 
+Note that this does *not* do the same thing as a series of `when'
+forms: `cond-every' evaluates *all* the tests *before* it evaluates
+any of the forms.
+
 From Zetalisp."
-  (with-gensyms (sat ret any)
-    (let* ((otherwise-clause (find 'otherwise clauses :key #'car))
-           (any-decl (if otherwise-clause `(declare (ignorable ,any)))))
-      (labels ((expand (clauses)
-                 (if (null clauses)
-                     ret
-                     (multiple-value-bind (test body)
-                         (match (first clauses)
-                           ;; Test without body (return the value of the test).
-                           (`(,test)
-                             (values t (list test)))
-                           ;; Otherwise; only run if nothing else has.
-                           (`(otherwise ,@body)
-                             (values `(not ,any) body))
-                           ;; An ordinary clause.
-                           (`(,test ,@body)
-                             (values test body)))
-                       `(let* ((,sat ,test)
-                               (,ret (if ,sat (progn ,@body) ,ret))
-                               ,@(unsplice (if otherwise-clause `(,any (or ,any ,sat)))))
-                          ,@(unsplice any-decl)
-                          ,(expand (rest clauses)))))))
-        `(let (,@(unsplice (if otherwise-clause `(,any nil)))
-               (,ret nil))
-           ,@(unsplice any-decl)
-           ,(expand clauses))))))
+  (let* ((otherwise-clause (find 'otherwise clauses :key #'car))
+         (test-clauses (remove otherwise-clause clauses))
+         (temps (make-gensym-list (length test-clauses))))
+    `(let* ,(loop for temp in temps
+                  for (test . nil) in test-clauses
+                  collect `(,temp ,test))
+       (if (not (or ,@temps))
+           (progn ,@(rest otherwise-clause))
+           ,(with-gensyms (ret)
+              `(let (,ret)
+                 ,@(loop for temp in temps
+                         for (nil . body) in test-clauses
+                         collect `(when ,temp
+                                    (setf ,ret
+                                          ,(if (null body)
+                                               temp
+                                               `(progn ,@body)))))
+                 ,ret))))))
 
 (defmacro bcond (&rest clauses)
   "Scheme's extended COND.

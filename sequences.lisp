@@ -492,10 +492,11 @@ A length designator may be a sequence or an integer."
             (list
              (let ((len
                      ;; Get the length of SEQ, but only up to LAST.
-                     (loop for nil in seq
-                           for i from 1
-                           repeat last
-                           finally (return i))))
+                     (loop with len = 0
+                           until (endp seq) do
+                             (incf len)
+                             (pop seq)
+                           finally (return len))))
                (when (> last len)
                  (rec len seqs))))
             (sequence

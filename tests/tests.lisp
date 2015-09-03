@@ -722,7 +722,8 @@ Robinson.")))
   (test length>
     (is (not (length> '(1) 2)))
     (is (not (length> '(1 2) 2)))
-    (is (length> '(1 2 3) 2)))
+    (is (length> '(1 2 3) 2))
+    (is (not (length> nil 0))))
 
   (test slice
     (is (equal "in" (slice "string" -3 -1)))

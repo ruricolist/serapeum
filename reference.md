@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 234 functions)
+# Function Listing For Serapeum (27 files, 239 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -115,6 +115,10 @@ directly into Lisp code:
 ### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
+
+### `(callf2 function arg1 place &rest args)`
+
+Like CALLF, but with the place as the second argument.
 
 ### `(define-do-macro name binds &body body)`
 
@@ -559,6 +563,10 @@ Return the value of the last successful clause.
 
 If a clause begins with `cl:otherwise`, it runs only if no preceding
 form has succeeded.
+
+Note that this does *not* do the same thing as a series of `when`
+forms: `cond-every` evaluates *all* the tests *before* it evaluates
+any of the forms.
 
 From Zetalisp.
 
@@ -1110,7 +1118,7 @@ Read STREAM and write the contents into PATHNAME.
 STREAM will be closed afterwards, so wrap it with
 `make-concatenated-stream` if you want it left open.
 
-### `(file= file1 file2 &key buffer-size)`
+### `(file= file1 file2 &key buffer-size element-type)`
 
 Compare FILE1 and FILE2 octet by octet, using buffers of
 BUFFER-SIZE.
@@ -1224,14 +1232,14 @@ Like `string=` for any vector.
 
 ## Numbers
 
-### `(finc ref70833 &optional (delta 1))`
+### `(finc ref12379 &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref70876 &optional (delta 1))`
+### `(fdec ref12422 &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
@@ -1276,11 +1284,11 @@ Decrease N by a factor.
 
 Increase N by a factor.
 
-### `(shrinkf g71037 n)`
+### `(shrinkf g12583 n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g71059 n)`
+### `(growf g12605 n)`
 
 Grow the value in a place by a factor.
 
@@ -1647,6 +1655,10 @@ are considered whitespace.
 
 STRING without whitespace at ends.
 
+### `(ascii-char-p char)`
+
+Is CHAR an ASCII char?
+
 ### `(with-string (var &optional stream) &body body)`
 
 Bind VAR to the character stream designated by STREAM.
@@ -1759,6 +1771,14 @@ Tokens are runs of non-whitespace characters.
 
 Cf. `words`.
 
+### `(word-wrap string &key column stream)`
+
+Return a word-wrapped version of STRING that breaks at COLUMN.
+
+Note that this is not a general-purpose word-wrapping routine like you
+would find in a text editor: in particular, any existing whitespace is
+removed.
+
 ### `(lines string)`
 
 A list of lines in STRING.
@@ -1839,9 +1859,13 @@ but without consing.
 
 Like `string~=`, but case-insensitive.
 
+### `(string-replace old string new &key start end stream)`
+
+Like `string-replace-all`, but only replace the first match.
+
 ### `(string-replace-all old string new &key start end stream)`
 
-Do regex-style search-and-replace for constant strings.
+Do search-and-replace for constant strings.
 
 Note that START and END only affect where the replacements are made:
 the part of the string before START, and the part after END, are
@@ -1853,6 +1877,16 @@ always included verbatim.
 
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
+
+### `(chomp string &optional suffixes)`
+
+If STRING ends in one of SUFFIXES, remove that suffix.
+
+SUFFIXES defaults to a Lisp newline, a literal line feed, a literal
+carriage return, or a literal carriage return followed by a literal
+line feed.
+
+Takes care that the longest suffix is always removed first.
 
 ## Sequences
 
@@ -1880,7 +1914,7 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g8178 pred &rest args)`
+### `(filterf g189536 pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
@@ -2133,7 +2167,7 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

@@ -193,22 +193,6 @@ The general idea is that `juxt` takes things apart."
            (declare (dynamic-extent ,args))
            (list ,@(loop for g in gs collect `(apply ,g ,args))))))))
 
-(defun key-test (key test)
-  "Return a function of two arguments which uses KEY to extract the
-part of the arguments to compare, and compares them using TEST.
-
-If MEMO is non-nil, memoize KEY function."
-  (ensuring-functions (key test)
-    (lambda (x y)
-      (funcall test (funcall key x) (funcall key y)))))
-
-(define-compiler-macro key-test (key test)
-  (rebinding-functions (key test)
-    `(lambda (x y)
-       (funcall ,test
-                (funcall ,key x)
-                (funcall ,key y)))))
-
 (defun dynamic-closure (symbols fn)
   "Create a dynamic closure.
 

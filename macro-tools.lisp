@@ -255,10 +255,11 @@ Using `define-do-macro' takes care of all of this for you.
        `(maphash (lambda (,key ,value)
                    ,@body)
                  ,hash-table))"
-  (let ((ret-var (cadr (member '&optional (car binds))))
-        ;; Handle both (key value table) and ((key value) table
-        (vars (flatten (butlast (car binds) 3)))
-        (body-var (cadr (member '&body (cdr binds)))))
+  (let* ((opts (member '&optional (car binds)))
+         (ret-var (cadr opts))
+         ;; Handle both (key value table) and ((key value) table
+         (vars (flatten (ldiff (car binds) opts)))
+         (body-var (cadr (member '&body (cdr binds)))))
     (unless ret-var
       (error "No binding for return form in ~s" (car binds)))
     (unless body-var

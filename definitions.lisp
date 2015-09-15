@@ -292,6 +292,9 @@ definitions."
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
                  `(progn ,@(mapcar #'expand-partially body)))
+               (expansion-done (form)
+                 (push form exprs)
+                 form)
                (expand-partially (form)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)
@@ -403,13 +406,18 @@ definitions."
                         (multiple-value-bind (exp exp?)
                             (macroexpand-1 form env)
                           (if exp?
-                              (expand-partially exp)
-                              (progn
-                                (push form exprs)
-                                form)))))
-                     (progn
-                       (push form exprs)
-                       form))))
+                              ;; Try to make sure that, if the
+                              ;; expansion bottoms out, we return the
+                              ;; original form instead of the expanded
+                              ;; one. It makes no semantic difference,
+                              ;; but it does make the expansion easier
+                              ;; to read.
+                              (let ((next-exp (expand-partially exp)))
+                                (if (eq exp next-exp)
+                                    (expansion-done form)
+                                    exp))
+                              (expansion-done form)))))
+                     (expansion-done form))))
         (let* ((body (expand-top body))
                (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
                (var-names (append (mapcar #'car hoisted-vars) vars)))

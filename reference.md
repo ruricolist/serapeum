@@ -40,6 +40,8 @@ respects the current read table.
 The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
 in every other macro.
 
+[View source](macro-tools.lisp#L50)
+
 ### `(unsplice form)`
 
 If FORM is non-nil, wrap it in a list.
@@ -47,6 +49,8 @@ If FORM is non-nil, wrap it in a list.
 This is useful with ,@ in macros, and with `mapcan`.
 
 From Lparallel.
+
+[View source](macro-tools.lisp#L64)
 
 ### `(with-thunk (var &rest args) &body body)`
 
@@ -92,15 +96,21 @@ It is also possible to construct a "thunk" with arguments.
 
 Needs a better name.
 
+[View source](macro-tools.lisp#L77)
+
 ### `(expand-macro form &optional env)`
 
 Like `macroexpand-1`, but also expand compiler macros.
 From Swank.
 
+[View source](macro-tools.lisp#L133)
+
 ### `(expand-macro-recursively form &optional env)`
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
+
+[View source](macro-tools.lisp#L142)
 
 ### `(partition-declarations xs declarations &optional env)`
 
@@ -112,13 +122,19 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
 
+[View source](macro-tools.lisp#L155)
+
 ### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
+[View source](macro-tools.lisp#L207)
+
 ### `(callf2 function arg1 place &rest args)`
 
 Like CALLF, but with the place as the second argument.
+
+[View source](macro-tools.lisp#L216)
 
 ### `(define-do-macro name binds &body body)`
 
@@ -155,9 +171,13 @@ Using `define-do-macro` takes care of all of this for you.
                    ,@body)
                  ,hash-table))
 
+[View source](macro-tools.lisp#L225)
+
 ### `(define-post-modify-macro name lambda-list function &optional documentation)`
 
 Like `define-modify-macro`, but arranges to return the original value.
+
+[View source](macro-tools.lisp#L283)
 
 ## Types
 
@@ -167,6 +187,8 @@ Declaim the ftype of a function from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
+
+[View source](types.lisp#L11)
 
 ### `(assure type-spec &body (form))`
 
@@ -187,10 +209,14 @@ by FORM. (But see `assuref`.)
 
 From ISLISP.
 
+[View source](types.lisp#L49)
+
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
+
+[View source](types.lisp#L68)
 
 ## Definitions
 
@@ -214,6 +240,8 @@ efficiency.
 
 The original `deflex` is due to Rob Warnock.
 
+[View source](definitions.lisp#L9)
+
 ### `(defconst symbol init &optional docstring)`
 
 Define a constant, lexically.
@@ -225,6 +253,8 @@ The constant is only redefined on re-evaluation if INIT has a
 different literal representation than the old value.
 
 The name is from Emacs Lisp.
+
+[View source](definitions.lisp#L65)
 
 ### `(defsubst name params &body body)`
 
@@ -240,6 +270,8 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
+[View source](definitions.lisp#L89)
+
 ### `(defalias alias &body (def &optional docstring))`
 
 Define a value as a top-level function.
@@ -251,11 +283,15 @@ documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp.
 
+[View source](definitions.lisp#L111)
+
 ### `(defplace name args &body (form &optional docstring))`
 
 Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
+
+[View source](definitions.lisp#L137)
 
 ### `(defcondition name supers &body (slots &rest options))`
 
@@ -264,6 +300,8 @@ Alias for `define-condition`.
 Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
+
+[View source](definitions.lisp#L149)
 
 ### `(local &body orig-body)`
 
@@ -373,6 +411,8 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
+[View source](definitions.lisp#L162)
+
 ## Binding
 
 ### `(lret (&rest bindings) &body body)`
@@ -391,9 +431,13 @@ forgetting to return it).
 
 Cf. `aprog1` in Anaphora.
 
+[View source](binding.lisp#L5)
+
 ### `(lret* (&rest bindings) &body body)`
 
 Cf. `lret`.
+
+[View source](binding.lisp#L26)
 
 ### `(letrec (&rest bindings) &body body)`
 
@@ -404,12 +448,16 @@ another, and themselves.
 Note that `letrec` only binds variables: it can define recursive
 functions, but can't bind them as functions. (But see `fbindrec`.)
 
+[View source](binding.lisp#L42)
+
 ### `(letrec* (&rest bindings) &body body)`
 
 Like LETREC, but the bindings are evaluated in order.
 See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*`.
+
+[View source](binding.lisp#L53)
 
 ### `(mvlet* (&rest bindings) &body body)`
 
@@ -434,9 +482,13 @@ the motivation:
 
 Note that declarations work just like `let*`.
 
+[View source](binding.lisp#L70)
+
 ### `(mvlet (&rest bindings) &body body)`
 
 Parallel (`let`-like) version of `mvlet*`.
+
+[View source](binding.lisp#L128)
 
 ### `(and-let* (&rest clauses) &body body)`
 
@@ -456,6 +508,8 @@ Note that, of course, the semantics are slightly different in Common
 Lisp than in Scheme, because our AND short-circuits on null, not
 false.
 
+[View source](binding.lisp#L162)
+
 ## Control Flow
 
 ### `(eval-and-compile &body body)`
@@ -465,11 +519,15 @@ Emacs's `eval-and-compile`.
 Shorthand for
         (eval-when (:compile-toplevel :load-toplevel :execute) ...)
 
+[View source](control-flow.lisp#L4)
+
 ### `(no x)`
 
 Another alias for `not` and `null`.
 
 From Arc.
+
+[View source](control-flow.lisp#L12)
 
 ### `(nor &rest forms)`
 
@@ -477,14 +535,20 @@ Equivalent to (not (or ...)).
 
 From Arc.
 
+[View source](control-flow.lisp#L21)
+
 ### `(nand &rest forms)`
 
 Equivalent to (not (and ...)).
+
+[View source](control-flow.lisp#L32)
 
 ### `(typecase-of type x &body clauses)`
 
 Like `etypecase-of`, but may, and must, have an `otherwise` clause
 in case X is not of TYPE.
+
+[View source](control-flow.lisp#L111)
 
 ### `(etypecase-of type x &body body)`
 
@@ -492,9 +556,13 @@ Like `etypecase` but, at compile time, warn unless each clause in
 BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE.
 
+[View source](control-flow.lisp#L124)
+
 ### `(case-of type x &body clauses)`
 
 Like `case` but may, and must, have an `otherwise` clause 
+
+[View source](control-flow.lisp#L136)
 
 ### `(ecase-of type x &body body)`
 
@@ -502,13 +570,19 @@ Like `ecase` but, given a TYPE (which should be defined as `(member
 ...)`), warn, at compile time, unless the keys in BODY are all of TYPE
 and, taken together, they form an exhaustive partition of TYPE.
 
+[View source](control-flow.lisp#L148)
+
 ### `(ctypecase-of type keyplace &body body)`
 
 Like `etypecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
 
+[View source](control-flow.lisp#L160)
+
 ### `(ccase-of type keyplace &body body)`
 
 Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
+
+[View source](control-flow.lisp#L165)
 
 ### `(case-using pred keyform &body clauses)`
 
@@ -523,11 +597,15 @@ This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause.
 
+[View source](control-flow.lisp#L170)
+
 ### `(string-case stringform &body cases)`
 
 Efficient `case`-like macro with string keys.
 
 This uses Paul Khuong's `string-case` macro internally.
+
+[View source](control-flow.lisp#L229)
 
 ### `(string-ecase stringform &body cases)`
 
@@ -535,10 +613,14 @@ Efficient `ecase`-like macro with string keys.
 
 Cf. `string-case`.
 
+[View source](control-flow.lisp#L237)
+
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
+
+[View source](control-flow.lisp#L256)
 
 ### `(cond-let var &body clauses)`
 
@@ -550,9 +632,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
+[View source](control-flow.lisp#L262)
+
 ### `(econd-let symbol &rest clauses)`
 
 Like `cond-let` for `econd`.
+
+[View source](control-flow.lisp#L283)
 
 ### `(cond-every &body clauses)`
 
@@ -569,6 +655,8 @@ forms: `cond-every` evaluates *all* the tests *before* it evaluates
 any of the forms.
 
 From Zetalisp.
+
+[View source](control-flow.lisp#L296)
 
 ### `(bcond &rest clauses)`
 
@@ -595,13 +683,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
+[View source](control-flow.lisp#L329)
+
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...))
 
+[View source](control-flow.lisp#L382)
+
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...))
+
+[View source](control-flow.lisp#L388)
 
 ### `(comment &body body)`
 
@@ -613,9 +707,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
+[View source](control-flow.lisp#L394)
+
 ### `(example &body body)`
 
 Like `comment`.
+
+[View source](control-flow.lisp#L404)
 
 ### `(nix place)`
 
@@ -623,6 +721,8 @@ Set PLACE to nil and return the old value of PLACE.
 
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
+
+[View source](control-flow.lisp#L408)
 
 ### `(ensure place &body newval)`
 
@@ -636,10 +736,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
+[View source](control-flow.lisp#L423)
+
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
+
+[View source](control-flow.lisp#L455)
 
 ### `(~> needle &rest holes)`
 
@@ -653,10 +757,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
+[View source](control-flow.lisp#L522)
+
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
+
+[View source](control-flow.lisp#L536)
 
 ### `(nest &rest things)`
 
@@ -680,6 +788,8 @@ Is equivalent to:
 
 From UIOP, based on a suggestion by Marco Baringer.
 
+[View source](control-flow.lisp#L543)
+
 ### `(select keyform &body clauses)`
 
 Like `case`, but with evaluated keys.
@@ -698,6 +808,8 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
+[View source](control-flow.lisp#L568)
+
 ### `(selector keyform fn &body clauses)`
 
 Like `select`, but compare using FN.
@@ -706,6 +818,8 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
+[View source](control-flow.lisp#L587)
+
 ## Threads
 
 ### `(synchronized (&optional (object nil objectp)) &body body)`
@@ -713,9 +827,13 @@ From Zetalisp.
 Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.
 
+[View source](threads.lisp#L14)
+
 ### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
+
+[View source](threads.lisp#L28)
 
 ## Iter
 
@@ -744,6 +862,8 @@ The name comes from `Let Over Lambda', but this is a more careful
 implementation: the function is not bound while the initial arguments
 are being evaluated, and it is safe to close over the arguments.
 
+[View source](iter.lisp#L22)
+
 ### `(with-collector (collector) &body body)`
 
 Within BODY, bind COLLECTOR to a function of one argument that
@@ -755,10 +875,14 @@ To see the collection so far, call COLLECTOR with no arguments.
 Note that this version COLLECTOR to a closure, not a macro: you can
 pass the collector around or return it like any other function.
 
+[View source](iter.lisp#L101)
+
 ### `(collecting &body body)`
 
 Like `with-collector`, with the collector bound to the result of
 interning `collect` in the current package.
+
+[View source](iter.lisp#L121)
 
 ### `(with-collectors (&rest collectors) &body body)`
 
@@ -771,6 +895,8 @@ Returns the final value of each collector as multiple values.
        (z 3))
      => '(1) '(2) '(3)
 
+[View source](iter.lisp#L128)
+
 ### `(summing &body body)`
 
 Within BODY, bind `sum` to a function that gathers numbers to sum.
@@ -781,6 +907,8 @@ as the initial sum.
 To see the running sum, call `sum` with no arguments.
 
 Return the total.
+
+[View source](iter.lisp#L149)
 
 ## Conditions
 
@@ -807,9 +935,13 @@ character:
 
 NB `(ignoring t)` is a bad idea.
 
+[View source](conditions.lisp#L3)
+
 ### `(maybe-invoke-restart restart &rest values)`
 
 When RESTART is active, invoke it with VALUES.
+
+[View source](conditions.lisp#L29)
 
 ## Op
 
@@ -848,6 +980,8 @@ placeholder. It is not necessary to use APPLY.
 
      (apply (op (+ _*)) '(1 2 3 4)) => 10
 
+[View source](op.lisp#L17)
+
 ## Functions
 
 ### `(flip f)`
@@ -858,6 +992,8 @@ That is, given a binary function, return another, equivalent function
 that takes its two arguments in the opposite order.
 
 From Haskell.
+
+[View source](functions.lisp#L35)
 
 ### `(nth-arg n)`
 
@@ -874,6 +1010,8 @@ define it thus:
 
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))
+
+[View source](functions.lisp#L51)
 
 ### `(distinct &key key test)`
 
@@ -892,6 +1030,8 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
+[View source](functions.lisp#L76)
+
 ### `(throttle fn wait &key synchronized memoized)`
 
 Wrap FN so it can be called no more than every WAIT seconds.
@@ -905,6 +1045,8 @@ to get a version with a lock.
 
 You can pass MEMOIZED if you want the function to remember values
 between calls.
+
+[View source](functions.lisp#L102)
 
 ### `(juxt &rest fns)`
 
@@ -922,6 +1064,8 @@ The classic example is to use `juxt` to implement `partition`:
     => '((2 4 6 8 10) (1 3 5 7 9))
 
 The general idea is that `juxt` takes things apart.
+
+[View source](functions.lisp#L166)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -946,6 +1090,8 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
+[View source](functions.lisp#L196)
+
 ## Trees
 
 ### `(walk-tree fun tree &optional tag)`
@@ -953,6 +1099,8 @@ propagate the current value of `*standard-output*`:
 Call FUN in turn over each atom and cons of TREE.
 
 FUN can skip the current subtree with (throw TAG nil).
+
+[View source](trees.lisp#L15)
 
 ### `(map-tree fun tree &optional tag)`
 
@@ -965,30 +1113,44 @@ The new tree may share structure with the old tree.
 FUN can skip the current subtree with (throw TAG SUBTREE), in which
 case SUBTREE will be used as the value of the subtree.
 
+[View source](trees.lisp#L36)
+
 ### `(leaf-walk fun tree)`
 
 Call FUN on each leaf of TREE.
+
+[View source](trees.lisp#L65)
 
 ### `(leaf-map fn tree)`
 
 Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE.
 
+[View source](trees.lisp#L76)
+
 ### `(occurs-if test tree &key key)`
 
 Is there a node (leaf or cons) in TREE that satisfies TEST?
+
+[View source](trees.lisp#L86)
 
 ### `(prune-if test tree &key key)`
 
 Remove any atoms satisfying TEST from TREE.
 
+[View source](trees.lisp#L96)
+
 ### `(occurs leaf tree &key key test)`
 
 Is LEAF present in TREE?
 
+[View source](trees.lisp#L111)
+
 ### `(prune leaf tree &key key test)`
 
 Remove LEAF from TREE wherever it occurs.
+
+[View source](trees.lisp#L116)
 
 ## Hash Tables
 
@@ -1007,15 +1169,21 @@ understood as the test.
      (gethash "string" (dict "string" t)) => t
      (gethash "string" (dict 'eq "string" t)) => nil
 
+[View source](hash-tables.lisp#L28)
+
 ### `(dict* dict &rest args)`
 
 Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'.
 
+[View source](hash-tables.lisp#L62)
+
 ### `(dictq &rest keys-and-values)`
 
 A literal hash table.
 Like `dict`, but the keys and values are implicitly quoted.
+
+[View source](hash-tables.lisp#L69)
 
 ### `(href table &rest keys)`
 
@@ -1024,10 +1192,14 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y
 
+[View source](hash-tables.lisp#L74)
+
 ### `(href-default default table &rest keys)`
 
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
+
+[View source](hash-tables.lisp#L85)
 
 ### `(@ table key &rest keys)`
 
@@ -1036,15 +1208,21 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y 
 
+[View source](hash-tables.lisp#L123)
+
 ### `(pophash key hash-table)`
 
 Lookup KEY in HASH-TABLE, return its value, and remove it.
 From Zetalisp.
 
+[View source](hash-tables.lisp#L152)
+
 ### `(swaphash key value hash-table)`
 
 Set KEY and VALUE in HASH-TABLE, returning the old values of KEY.
 From Zetalisp.
+
+[View source](hash-tables.lisp#L160)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -1054,10 +1232,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
+[View source](hash-tables.lisp#L167)
+
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
+
+[View source](hash-tables.lisp#L180)
 
 ### `(merge-tables table &rest tables)`
 
@@ -1065,6 +1247,8 @@ Merge TABLE and TABLES, working from left to right.
 The resulting hash table has the same parameters as TABLE.
 
 Clojure's `merge`.
+
+[View source](hash-tables.lisp#L191)
 
 ### `(flip-hash-table table &key test key)`
 
@@ -1074,6 +1258,8 @@ Return a table like TABLE, but with keys and values flipped.
      => :x
 
 TEST filters which keys to set. KEY defaults to `identity`.
+
+[View source](hash-tables.lisp#L215)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -1087,12 +1273,16 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
+[View source](hash-tables.lisp#L231)
+
 ### `(hash-table-set table &key strict test key)`
 
 Return the set denoted by TABLE.
 Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
+
+[View source](hash-tables.lisp#L260)
 
 ## Files
 
@@ -1111,6 +1301,8 @@ directories; you have to do that yourself.
     (path-join "dir1" "dir2" "file") -> "file"
     (path-join "dir1/" "dir2/" "file") -> "dir1/dir2/file"
 
+[View source](files.lisp#L3)
+
 ### `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
 Read STREAM and write the contents into PATHNAME.
@@ -1118,14 +1310,20 @@ Read STREAM and write the contents into PATHNAME.
 STREAM will be closed afterwards, so wrap it with
 `make-concatenated-stream` if you want it left open.
 
+[View source](files.lisp#L22)
+
 ### `(file= file1 file2 &key buffer-size element-type)`
 
 Compare FILE1 and FILE2 octet by octet, using buffers of
 BUFFER-SIZE.
 
+[View source](files.lisp#L36)
+
 ### `(file-size file &key element-type)`
 
 The size of FILE, in bytes.
+
+[View source](files.lisp#L54)
 
 ## Symbols
 
@@ -1136,9 +1334,13 @@ If STRING has been interned as a keyword, return it.
 Like `make-keyword`, but preferable in most cases, because it doesn't
 intern a keyword -- which is usually both unnecessary and unwise.
 
+[View source](symbols.lisp#L5)
+
 ### `(bound-value s &optional default)`
 
 If S is bound, return (values s t). Otherwise, return DEFAULT.
+
+[View source](symbols.lisp#L18)
 
 ## Arrays
 
@@ -1151,6 +1353,8 @@ Given an array and a row-major index, return a list of subscripts.
      (apply #'aref (array-index-row-major i))
      ≡ (array-row-major-aref i)
 
+[View source](arrays.lisp#L4)
+
 ### `(undisplace-array array)`
 
 Recursively get the fundamental array that ARRAY is displaced to.
@@ -1159,48 +1363,70 @@ Return the fundamental array, and the start and end positions into it.
 
 Borrowed from Erik Naggum.
 
+[View source](arrays.lisp#L20)
+
 ## Queue
 
 ### `(queuep x)`
 
 Is X a queue?
 
+[View source](queue.lisp#L52)
+
 ### `(queue &rest initial-contents)`
 
 Build a new queue with INITIAL-CONTENTS.
+
+[View source](queue.lisp#L69)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
+[View source](queue.lisp#L75)
+
 ### `(qlen queue)`
 
 The number of items in QUEUE.
+
+[View source](queue.lisp#L89)
 
 ### `(qlist queue)`
 
 A list of the times in QUEUE.
 
+[View source](queue.lisp#L94)
+
 ### `(enq item queue)`
 
 Insert ITEM at end of QUEUE.
+
+[View source](queue.lisp#L98)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
+[View source](queue.lisp#L107)
+
 ### `(front queue)`
 
 The first element in QUEUE.
+
+[View source](queue.lisp#L119)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
+[View source](queue.lisp#L123)
+
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
+
+[View source](queue.lisp#L127)
 
 ## Box
 
@@ -1208,9 +1434,13 @@ Return the queue.
 
 Box a value.
 
+[View source](box.lisp#L4)
+
 ### `(unbox x)`
 
 The value in the box X.
+
+[View source](box.lisp#L35)
 
 ## Vectors
 
@@ -1226,22 +1456,30 @@ Succint constructor for adjustable vectors with fill pointers.
 
 The fill pointer is placed after the last element in INITIAL-CONTENTS.
 
+[View source](vectors.lisp#L3)
+
 ### `(vector= v1 v2 &key test start1 end1 start2 end2)`
 
 Like `string=` for any vector.
 
+[View source](vectors.lisp#L37)
+
 ## Numbers
 
-### `(finc ref12379 &optional (delta 1))`
+### `(finc ref &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-### `(fdec ref12422 &optional (delta 1))`
+[View source](numbers.lisp#L3)
+
+### `(fdec ref &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
+
+[View source](numbers.lisp#L9)
 
 ### `(parse-float string &key start end junk-allowed type)`
 
@@ -1259,6 +1497,8 @@ The type of the float is determined by, in order:
 Of course you could just use `parse-number`, but sometimes only a
 float will do.
 
+[View source](numbers.lisp#L95)
+
 ### `(round-to number &optional divisor)`
 
 Like `round`, but return the resulting number.
@@ -1266,31 +1506,45 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
+[View source](numbers.lisp#L134)
+
 ### `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
 Defaults to little-endian.
+
+[View source](numbers.lisp#L141)
 
 ### `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
 Defaults to little-endian.
 
+[View source](numbers.lisp#L160)
+
 ### `(shrink n by)`
 
 Decrease N by a factor.
+
+[View source](numbers.lisp#L174)
 
 ### `(grow n by)`
 
 Increase N by a factor.
 
-### `(shrinkf g12583 n)`
+[View source](numbers.lisp#L178)
+
+### `(shrinkf g n)`
 
 Shrink the value in a place by a factor.
 
-### `(growf g12605 n)`
+[View source](numbers.lisp#L182)
+
+### `(growf g n)`
 
 Grow the value in a place by a factor.
+
+[View source](numbers.lisp#L185)
 
 ### `(random-in-range low high)`
 
@@ -1300,25 +1554,35 @@ LOW and HIGH are automatically swapped if HIGH is less than LOW.
 
 From Zetalisp.
 
+[View source](numbers.lisp#L188)
+
 ## Octets
 
 ### `(octet-vector-p x)`
 
 Is X an octet vector?
 
+[View source](octets.lisp#L13)
+
 ### `(make-octet-vector size)`
 
 Make an octet vector of SIZE elements.
+
+[View source](octets.lisp#L18)
 
 ### `(octets n &key big-endian)`
 
 Return N, an integer, as an octet vector.
 Defaults to little-endian order.
 
+[View source](octets.lisp#L25)
+
 ### `(unoctets bytes &key big-endian)`
 
 Concatenate BYTES, an octet vector, into an integer.
 Defaults to little-endian order.
+
+[View source](octets.lisp#L44)
 
 ## Time
 
@@ -1326,25 +1590,37 @@ Defaults to little-endian order.
 
 Convert a universal time to a Unix time.
 
+[View source](time.lisp#L18)
+
 ### `(unix-to-universal time)`
 
 Convert a Unix time to a universal time.
+
+[View source](time.lisp#L22)
 
 ### `(get-unix-time)`
 
 The current time as a count of seconds from the Unix epoch.
 
+[View source](time.lisp#L26)
+
 ### `(date-leap-year-p year)`
 
 Is YEAR a leap year in the Gregorian calendar?
+
+[View source](time.lisp#L30)
 
 ### `(time-since time)`
 
 Return seconds since TIME.
 
+[View source](time.lisp#L37)
+
 ### `(time-until time)`
 
 Return seconds until TIME.
+
+[View source](time.lisp#L41)
 
 ### `(interval &key seconds minutes hours days weeks months years month-days year-days)`
 
@@ -1355,6 +1631,8 @@ like (let ((day-in-seconds #.(* 24 60 60))) ...)
 
 Has a compiler macro.
 
+[View source](time.lisp#L45)
+
 ## Clos
 
 ### `(make class &rest initargs)`
@@ -1362,15 +1640,21 @@ Has a compiler macro.
 Shorthand for `make-instance`.
 After Eulisp.
 
+[View source](clos.lisp#L3)
+
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
+[View source](clos.lisp#L12)
+
 ### `(find-class-safe x)`
 
 The class designated by X.
 If X is a class, it designates itself.
+
+[View source](clos.lisp#L19)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -1438,33 +1722,47 @@ docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power.
 
+[View source](clos.lisp#L61)
+
 ## Hooks
 
 ### `(add-hook name fn &key append)`
 
 Add FN to the value of NAME, a hook.
 
+[View source](hooks.lisp#L7)
+
 ### `(remove-hook name fn)`
 
 Remove fn from the symbol value of NAME.
+
+[View source](hooks.lisp#L15)
 
 ### `(run-hooks &rest hookvars)`
 
 Run all the hooks in all the HOOKVARS.
 The variable `*hook*` is bound to each hook as it is being run.
 
+[View source](hooks.lisp#L23)
+
 ### `(run-hook-with-args *hook* &rest args)`
 
 Apply each function in the symbol value of HOOK to ARGS.
+
+[View source](hooks.lisp#L31)
 
 ### `(run-hook-with-args-until-failure *hook* &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns nil.
 
+[View source](hooks.lisp#L37)
+
 ### `(run-hook-with-args-until-success *hook* &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
+
+[View source](hooks.lisp#L42)
 
 ## Fbind
 
@@ -1479,9 +1777,13 @@ That is,
 except that a bare symbol in BINDINGS is rewritten as (symbol
 symbol).
 
+[View source](fbind.lisp#L207)
+
 ### `(fbind* bindings &body body)`
 
 Like `fbind`, but creates bindings sequentially.
+
+[View source](fbind.lisp#L244)
 
 ### `(fbindrec bindings &body body)`
 
@@ -1490,10 +1792,14 @@ Like `fbind`, but creates recursive bindings.
 The consequences of referring to one binding in the expression that
 generates another are undefined.
 
+[View source](fbind.lisp#L307)
+
 ### `(fbindrec* bindings &body body)`
 
 Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
+
+[View source](fbind.lisp#L352)
 
 ## Lists
 
@@ -1503,6 +1809,8 @@ Map FN over (LIST . LISTS) like `mapcar`, but omit empty results.
 
      (filter-map fn ...)
      ≅ (remove nil (mapcar fn ...))
+
+[View source](lists.lisp#L9)
 
 ### `(car-safe x)`
 
@@ -1517,10 +1825,14 @@ This is different from Alexandria’s `ensure-car`, which returns the atom.
 
 From Emacs Lisp.
 
+[View source](lists.lisp#L35)
+
 ### `(cdr-safe x)`
 
 The cdr of X, or nil if X is not a cons.
 From Emacs Lisp.
+
+[View source](lists.lisp#L48)
 
 ### `(append1 list item)`
 
@@ -1528,6 +1840,8 @@ Append an atom to a list.
 
     (append1 list item)
     ≡ (append list (list item))
+
+[View source](lists.lisp#L53)
 
 ### `(in x &rest items)`
 
@@ -1539,16 +1853,22 @@ candidate matches are constant.
 
 From Arc.
 
+[View source](lists.lisp#L60)
+
 ### `(memq item list)`
 
 Like (member ... :test #'eq).
 Should only be used for symbols.
+
+[View source](lists.lisp#L83)
 
 ### `(delq item list)`
 
 Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
+
+[View source](lists.lisp#L91)
 
 ### `(mapply fn list &rest lists)`
 
@@ -1581,9 +1901,13 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
 
+[View source](lists.lisp#L108)
+
 ### `(assocdr item alist &rest args)`
 
 Like (cdr (assoc ...))
+
+[View source](lists.lisp#L162)
 
 ### `(assocadr item alist &rest args)`
 
@@ -1592,9 +1916,13 @@ Like `assocdr` for alists of proper lists.
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
+[View source](lists.lisp#L167)
+
 ### `(rassocar item alist &rest args)`
 
 Like (car (rassoc ...))
+
+[View source](lists.lisp#L175)
 
 ### `(firstn n list)`
 
@@ -1607,10 +1935,14 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
+[View source](lists.lisp#L180)
+
 ### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
+
+[View source](lists.lisp#L192)
 
 ### `(efface item list)`
 
@@ -1618,11 +1950,15 @@ Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
+[View source](lists.lisp#L203)
+
 ### `(pop-assoc key alist &rest args)`
 
 Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
+
+[View source](lists.lisp#L222)
 
 ### `(mapcar-into fn list)`
 
@@ -1630,17 +1966,25 @@ Like (map-into list fn list).
 
 From PAIP.
 
+[View source](lists.lisp#L238)
+
 ### `(nthrest n list)`
 
 Alias for `nthcdr`.
+
+[View source](lists.lisp#L247)
 
 ### `(plist-keys plist)`
 
 Return the keys of a plist.
 
+[View source](lists.lisp#L251)
+
 ### `(plist-values plist)`
 
 Return the values of a plist.
+
+[View source](lists.lisp#L257)
 
 ## Strings
 
@@ -1651,13 +1995,19 @@ Is CHAR whitespace?
 Spaces, tabs, any kind of line break, page breaks, and no-break spaces
 are considered whitespace.
 
+[View source](strings.lisp#L20)
+
 ### `(trim-whitespace string)`
 
 STRING without whitespace at ends.
 
+[View source](strings.lisp#L28)
+
 ### `(ascii-char-p char)`
 
 Is CHAR an ASCII char?
+
+[View source](strings.lisp#L32)
 
 ### `(with-string (var &optional stream) &body body)`
 
@@ -1676,22 +2026,30 @@ functions.
       (with-string (s stream)
         ...))
 
+[View source](strings.lisp#L51)
+
 ### `(collapse-whitespace string)`
 
 Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character.
 
+[View source](strings.lisp#L80)
+
 ### `(blankp seq)`
 
 SEQ is either empty, or consists entirely of characters that
 satisfy `whitespacep`.
+
+[View source](strings.lisp#L99)
 
 ### `(concat &rest strings)`
 
 Abbreviation for (concatenate 'string ...).
 
 From Emacs Lisp.
+
+[View source](strings.lisp#L113)
 
 ### `(mapconcat fun seq separator &key stream)`
 
@@ -1707,9 +2065,13 @@ like the first argument to `format`.
 
 From Emacs Lisp.
 
+[View source](strings.lisp#L138)
+
 ### `(string-join strings &optional separator)`
 
 Like `(mapconcat #'string STRINGS (string SEPARATOR))'.
+
+[View source](strings.lisp#L160)
 
 ### `(string-upcase-initials string)`
 
@@ -1722,23 +2084,33 @@ each word are not changed.
 
 From Emacs Lisp (where it is simply `upcase-initials`).
 
+[View source](strings.lisp#L165)
+
 ### `(nstring-upcase-initials string)`
 
 Destructive version of `string-upcase-initials`.
+
+[View source](strings.lisp#L177)
 
 ### `(same-case-p string)`
 
 Every character with case in STRING has the same case.
 Return `:upper` or `:lower` as appropriate.
 
+[View source](strings.lisp#L196)
+
 ### `(nstring-invert-case string)`
 
 Destructive version of `string-invert-case`.
+
+[View source](strings.lisp#L219)
 
 ### `(string-invert-case string)`
 
 Invert the case of STRING.
 This does the same thing as a case-inverting readtable.
+
+[View source](strings.lisp#L228)
 
 ### `(words string &key start end)`
 
@@ -1761,6 +2133,8 @@ The definition of a word is the same as that used by
 
 Cf. `tokens`.
 
+[View source](strings.lisp#L235)
+
 ### `(tokens string &key start end)`
 
 Separate STRING into tokens.
@@ -1771,6 +2145,8 @@ Tokens are runs of non-whitespace characters.
 
 Cf. `words`.
 
+[View source](strings.lisp#L265)
+
 ### `(word-wrap string &key column stream)`
 
 Return a word-wrapped version of STRING that breaks at COLUMN.
@@ -1779,9 +2155,13 @@ Note that this is not a general-purpose word-wrapping routine like you
 would find in a text editor: in particular, any existing whitespace is
 removed.
 
+[View source](strings.lisp#L280)
+
 ### `(lines string)`
 
 A list of lines in STRING.
+
+[View source](strings.lisp#L312)
 
 ### `(fmt control-string &rest args)`
 
@@ -1791,6 +2171,8 @@ Like (format nil ...), binding `*pretty-pretty*` to `nil`, which in
 some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
+
+[View source](strings.lisp#L317)
 
 ### `(escape string table &key start end stream)`
 
@@ -1804,6 +2186,8 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
+[View source](strings.lisp#L332)
+
 ### `(ellipsize string n &key ellipsis)`
 
 If STRING is longer than N, truncate it and append ELLIPSIS.
@@ -1816,25 +2200,37 @@ ELLIPSIS, so the string may come out longer than it started.
 
 From Arc.
 
+[View source](strings.lisp#L364)
+
 ### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
+
+[View source](strings.lisp#L403)
 
 ### `(string^= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a prefix of S2?
 
+[View source](strings.lisp#L403)
+
 ### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
+
+[View source](strings.lisp#L408)
 
 ### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
 
+[View source](strings.lisp#L408)
+
 ### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
+
+[View source](strings.lisp#L413)
 
 ### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
@@ -1847,6 +2243,8 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
+[View source](strings.lisp#L413)
+
 ### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
 Does S1 occur in S2 as a token?
@@ -1855,13 +2253,19 @@ Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing.
 
+[View source](strings.lisp#L424)
+
 ### `(string-tokenp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
+[View source](strings.lisp#L424)
+
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
+
+[View source](strings.lisp#L448)
 
 ### `(string-replace-all old string new &key start end stream)`
 
@@ -1878,6 +2282,8 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
+[View source](strings.lisp#L464)
+
 ### `(chomp string &optional suffixes)`
 
 If STRING ends in one of SUFFIXES, remove that suffix.
@@ -1887,6 +2293,8 @@ carriage return, or a literal carriage return followed by a literal
 line feed.
 
 Takes care that the longest suffix is always removed first.
+
+[View source](strings.lisp#L503)
 
 ## Sequences
 
@@ -1901,6 +2309,8 @@ operations on the subsequence returned may mutate the original.
 `nsubseq` also works with `setf`, with the same behavior as
 `replace`.
 
+[View source](sequences.lisp#L154)
+
 ### `(filter pred seq &rest args &key count &allow-other-keys)`
 
 Almost, but not quite, an alias for `remove-if-not`.
@@ -1914,11 +2324,15 @@ number of items to *keep*, not remove.
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)
 
-### `(filterf g189536 pred &rest args)`
+[View source](sequences.lisp#L208)
+
+### `(filterf g pred &rest args)`
 
 Modify-macro for FILTER.
 The place designed by the first argument is set to th result of
 calling FILTER with PRED, the place, and ARGS.
+
+[View source](sequences.lisp#L237)
 
 ### `(keep item seq &rest args &key test from-end key count &allow-other-keys)`
 
@@ -1937,9 +2351,13 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
      (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
      => '((x 1) (x 3))
 
+[View source](sequences.lisp#L243)
+
 ### `(single seq)`
 
 Is SEQ a sequence of one element?
+
+[View source](sequences.lisp#L277)
 
 ### `(partition pred seq &key start end key)`
 
@@ -1959,6 +2377,8 @@ the sequence; `partition` always returns the “true” elements first.
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)
 
+[View source](sequences.lisp#L283)
+
 ### `(partitions preds seq &key start end key)`
 
 Generalized version of PARTITION.
@@ -1968,6 +2388,8 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match.
+
+[View source](sequences.lisp#L308)
 
 ### `(assort seq &key key test start end)`
 
@@ -1982,6 +2404,8 @@ You can think of `assort` as being akin to `remove-duplicates`:
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)
 
+[View source](sequences.lisp#L331)
+
 ### `(runs seq &key start end key test)`
 
 Return a list of runs of similar elements in SEQ.
@@ -1990,6 +2414,8 @@ The arguments START, END, and KEY are as for `reduce`.
     (runs '(head tail head head tail))
     => '((head) (tail) (head head) (tail))
 
+[View source](sequences.lisp#L378)
+
 ### `(batches seq n &key start end)`
 
 Return SEQ in batches of N elements.
@@ -1997,12 +2423,16 @@ Return SEQ in batches of N elements.
     (batches (iota 11) 2)
     => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
 
+[View source](sequences.lisp#L403)
+
 ### `(frequencies seq &rest hash-table-args &key key &allow-other-keys)`
 
 Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
 From Clojure.
+
+[View source](sequences.lisp#L432)
 
 ### `(scan fn seq &key key initial-value)`
 
@@ -2019,6 +2449,8 @@ of the successive results at each step.
 
 From APL and descendants.
 
+[View source](sequences.lisp#L454)
+
 ### `(nub seq &rest args &key start end key test)`
 
 Remove duplicates from SEQ, starting from the end.
@@ -2026,11 +2458,15 @@ TEST defaults to `equal`.
 
 From Haskell.
 
+[View source](sequences.lisp#L478)
+
 ### `(gcp seqs &key test)`
 
 The greatest common prefix of SEQS.
 
 If there is no common prefix, return NIL.
+
+[View source](sequences.lisp#L486)
 
 ### `(gcs seqs &key test)`
 
@@ -2038,25 +2474,35 @@ The greatest common suffix of SEQS.
 
 If there is no common suffix, return NIL.
 
+[View source](sequences.lisp#L503)
+
 ### `(length< &rest seqs)`
 
 Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer.
+
+[View source](sequences.lisp#L521)
 
 ### `(length> &rest seqs)`
 
 Is each length-designator in SEQS longer than the next?
 A length designator may be a sequence or an integer.
 
+[View source](sequences.lisp#L527)
+
 ### `(length>= &rest seqs)`
 
 Is each length-designator in SEQS longer or as long as the next?
 A length designator may be a sequence or an integer.
 
+[View source](sequences.lisp#L554)
+
 ### `(length<= &rest seqs)`
 
 Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer.
+
+[View source](sequences.lisp#L559)
 
 ### `(longer x y)`
 
@@ -2064,9 +2510,13 @@ Return the longer of X and Y.
 
 If X and Y are of equal length, return X.
 
+[View source](sequences.lisp#L564)
+
 ### `(longest seqs)`
 
 Return the longest seq in SEQS.
+
+[View source](sequences.lisp#L588)
 
 ### `(slice seq start &optional end)`
 
@@ -2077,6 +2527,8 @@ Both START and END accept negative bounds.
 
 Setf of `slice` is like setf of `ldb`: afterwards, the place being set
 holds a new sequence which is not EQ to the old.
+
+[View source](sequences.lisp#L610)
 
 ### `(ordering seq &key unordered-to-end from-end test key)`
 
@@ -2100,12 +2552,16 @@ the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order.
 
+[View source](sequences.lisp#L644)
+
 ### `(take n seq)`
 
 Return, at most, the first N elements of SEQ, as a *new* sequence
 of the same type as SEQ.
 
 If N is longer than SEQ, SEQ is simply copied.
+
+[View source](sequences.lisp#L687)
 
 ### `(drop n seq)`
 
@@ -2114,6 +2570,8 @@ The sequence returned is a new sequence of the same type as SEQ.
 
 If N is greater than the length of SEQ, returns an empty sequence of
 the same type.
+
+[View source](sequences.lisp#L697)
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -2126,6 +2584,8 @@ only ever called once per element.
 
 The name is from Arc.
 
+[View source](sequences.lisp#L809)
+
 ### `(extrema seq pred &key key start end)`
 
 Like EXTREMUM, but returns both the minimum and the maximum (as two
@@ -2133,6 +2593,8 @@ values).
 
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
+
+[View source](sequences.lisp#L857)
 
 ### `(halves seq &optional split)`
 
@@ -2144,10 +2606,14 @@ The split is made using `ceiling` rather than `truncate`. This is on
 the theory that, if SEQ is a single-element list, it should be
 returned unchanged.
 
+[View source](sequences.lisp#L893)
+
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
+
+[View source](sequences.lisp#L911)
 
 ### `(deltas seq &optional fn)`
 
@@ -2167,10 +2633,14 @@ function as a second argument:
 
 From Q.
 
-### `(inconsistent-graph-constraints x)`
+[View source](sequences.lisp#L926)
+
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
+
+[View source](sequences.lisp#L950)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -2200,10 +2670,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
+[View source](sequences.lisp#L987)
+
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
+
+[View source](sequences.lisp#L1045)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -2247,8 +2721,12 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
+[View source](sequences.lisp#L1074)
+
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
+
+[View source](sequences.lisp#L1116)
 

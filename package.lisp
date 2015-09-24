@@ -70,6 +70,7 @@
    #:~>>
    #:cond-every
    #:nest
+   #:sort-values
    ;; Threads.
    #:synchronized
    #:monitor

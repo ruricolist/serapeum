@@ -600,3 +600,135 @@ From Zetalisp."
                            `((,fn ,keyform ,test) ,@body)
                            `((or ,@(mapcar (lambda (x) `(,fn ,keyform ,x)) test))
                              ,@body))))))
+
+(def sorting-networks
+  '((2
+     (0 1))
+    (3
+     (1 2)
+     (0 2)
+     (0 1))
+    (4
+     (0 1)
+     (2 3)
+     (0 2)
+     (1 3)
+     (1 2))
+    (5
+     (0 1)
+     (3 4)
+     (2 4)
+     (2 3)
+     (0 3)
+     (0 2)
+     (1 4)
+     (1 3)
+     (1 2))
+    (6
+     (1 2)
+     (0 2)
+     (0 1)
+     (4 5)
+     (3 5)
+     (3 4)
+     (0 3)
+     (1 4)
+     (2 5)
+     (2 4)
+     (1 3)
+     (2 3))
+    (7
+     (1 2)
+     (0 2)
+     (0 1)
+     (3 4)
+     (5 6)
+     (3 5)
+     (4 6)
+     (4 5)
+     (0 4)
+     (0 3)
+     (1 5)
+     (2 6)
+     (2 5)
+     (1 3)
+     (2 4)
+     (2 3))
+    (8
+     (0 1)
+     (2 3)
+     (0 2)
+     (1 3)
+     (1 2)
+     (4 5)
+     (6 7)
+     (4 6)
+     (5 7)
+     (5 6)
+     (0 4)
+     (1 5)
+     (1 4)
+     (2 6)
+     (3 7)
+     (3 6)
+     (2 4)
+     (3 5)
+     (3 4)))
+  "Sorting networks for 2 to 8 elements.")
+
+(defun sorting-network (size)
+  (check-type size (integer 2 *))
+  (let ((sn (cdr (assoc size sorting-networks))))
+    (unless sn
+      (error "No sorting network of size ~d" size))
+    sn))
+
+(defmacro sort-values/network (pred &rest values)
+  (with-gensyms (swap)
+    `(macrolet ((,swap (x y)
+                  `(unless (funcall ,',pred ,x ,y)
+                     (rotatef ,x ,y))))
+       ,(let ((network (sorting-network (length values))))
+          (assert network)
+          (let ((temps (make-gensym-list (length values))))
+            `(let ,(mapcar #'list temps values)
+               ,@(loop for (x y) in network
+                       collect `(,swap ,(nth x temps) ,(nth y temps)))
+               (values ,@temps)))))))
+
+(defmacro sort-values/temp-vector (pred &rest values)
+  (with-gensyms (temp)
+    `(let ((,temp (make-array ,(length values))))
+       (declare (dynamic-extent ,temp))
+       ,@(loop for i from 0 
+               for v in values
+               collect `(setf (svref ,temp ,i) ,v))
+       ;; Keep compiler quiet.
+       (setf ,temp (sort ,temp ,pred))
+       (values ,@(loop for i from 0
+                       for nil in values
+                       collect `(svref ,temp ,i))))))
+
+(defmacro sort-values (pred &rest values)
+  "Sort VALUES with PRED and return as multiple values.
+
+Equivalent to 
+
+    (values-list (sort (list VALUES...) pred))
+
+But with less consing, and potentially faster."
+  ;; Remember to evaluate `pred' no matter what.
+  (with-gensyms (gpred)
+    `(let ((,gpred (ensure-function ,pred)))
+       (declare (ignorable ,gpred)
+                (optimize speed (safety 0) (debug 0) (compilation-speed 0)))
+       ,(match values
+          ((list) `(values))
+          ((list x) `(values ,x))
+          ;; The strategy here is to use a sorting network if the
+          ;; inputs are few, and a stack-allocated vector if the
+          ;; inputs are many.
+          (otherwise
+           (if (<= (length values) 8)
+               `(sort-values/network ,gpred ,@values)
+               `(sort-values/temp-vector ,gpred ,@values)))))))

@@ -302,7 +302,18 @@
     (is-true
      (let ((x 1))
        (select 1
-         (x t))))))
+         (x t)))))
+
+  (test sort-values
+    (is (null (sort-values #'>)))
+    ;; Should this be an error?
+    (is (eql t (sort-values #'> t)))
+    (for-all ((list (a-list-of (random 100)
+                               (lambda () (random 100)))))
+      (is
+       (equal (sort (copy-list list) #'>)
+              (multiple-value-list
+               (eval `(sort-values #'> ,@list))))))))
 
 (suite threads)
 

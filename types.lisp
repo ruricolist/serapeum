@@ -4,6 +4,16 @@
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))
 
+(deftype tuple (&rest types)
+  "A proper list where each element has the same type as the corresponding element in TYPES.
+
+    (typep '(1 :x #\c) '(tuple integer keyword character)) => T"
+  (reduce (lambda (x y)
+            `(cons ,x ,y))
+          types
+          :from-end t
+          :initial-value 'null))
+
 (deftype -> (args values)
   "The type of a function from ARGS to VALUES."
   `(function ,args ,values))

@@ -22,6 +22,7 @@
    #:assure
    #:assuref
    #:wholenum
+   #:tuple
    ;; Definitions.
    #:defconst
    #:defsubst

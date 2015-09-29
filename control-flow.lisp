@@ -678,10 +678,8 @@ From Zetalisp."
 
 (defun sorting-network (size)
   (check-type size (integer 2 *))
-  (let ((sn (cdr (assoc size sorting-networks))))
-    (unless sn
-      (error "No sorting network of size ~d" size))
-    sn))
+  (or (cdr (assoc size sorting-networks))
+      (error "No sorting network of size ~d" size)))
 
 (defmacro sort-values/network (pred &rest values)
   (with-gensyms (swap)

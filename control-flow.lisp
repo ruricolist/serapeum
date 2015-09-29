@@ -719,6 +719,7 @@ But with less consing, and potentially faster."
   (with-gensyms (gpred)
     `(let ((,gpred (ensure-function ,pred)))
        (declare (ignorable ,gpred)
+                (function ,gpred)
                 (optimize speed (safety 0) (debug 0) (compilation-speed 0)))
        ,(match values
           ((list) `(values))

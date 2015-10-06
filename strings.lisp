@@ -405,10 +405,36 @@ From Arc."
     (let ((ms (call mismatch s1 s2)))
       (or (not ms) (= ms end1))))
 
+  (macrolet ((dcm (name test)
+               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+                  (if args call
+                      (if (and (stringp s1) (= (length s1) 1))
+                          `((lambda (s)
+                              (and (plusp (length s))
+                                   (,',test ,(character s1)
+                                     (aref s 0))))
+                            (string ,s2))
+                          call)))))
+    (dcm string^= char=)
+    (dcm string-prefixp char-equal))
+
   (defcmp (string$= string-suffixp) (s1 s2)
     "Is S1 a suffix of S2?"
     (let ((ms (call mismatch s1 s2 :from-end t)))
       (or (not ms) (= ms start1))))
+
+  (macrolet ((dcm (name test)
+               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+                  (if args call
+                      (if (and (stringp s1) (= (length s1) 1))
+                          `((lambda (s)
+                              (and (plusp (length s))
+                                   (,',test ,(character s1)
+                                     (aref s (1- (length s))))))
+                            (string ,s2))
+                          call)))))
+    (dcm string$= char=)
+    (dcm string-suffixp char-equal))
 
   (defcmp (string*= string-containsp) (s1 s2)
     "Is S1 a substring of S2?
@@ -420,6 +446,15 @@ This is similar, but not identical, to SEARCH.
      (string*= nil \"foo\") => NIL
      (string*= nil \"nil\") => T"
     (call search s1 s2))
+
+  (macrolet ((dcm (name test)
+               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+                  (if args call
+                      (if (and (stringp s1) (= (length s1) 1))
+                          `(position ,(character s1) (string ,s2) :test #',',test)
+                          call)))))
+    (dcm string*= char=)
+    (dcm string-containsp char-equal))
 
   (defcmp (string~= string-tokenp) (s1 s2)
     "Does S1 occur in S2 as a token?

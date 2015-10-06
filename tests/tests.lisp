@@ -649,19 +649,30 @@ Robinson.")))
     (is (string^= "foo" "foobar"))
     (is (string^= "foo" "foo"))
     (is (not (string^= "foo" "fo")))
-    (is (string^= "a long string" "string" :start1 (length "a long "))))
+    (is (string^= "a long string" "string" :start1 (length "a long ")))
+    (is (not (string^= "a" "")))
+    (is (string^= "a" "abe"))
+    (is (string^= "a" '|abc|))
+    (is (not (string^= "a" "be"))))
 
   (test string$=
     (is (string$= "bar" "foobar"))
     (is (string$= "bar" "bar"))
     (is (not (string$= "bar" "ar")))
     (is (not (string$= "1x" "2x")))
-    (is (string$= "/" "foo/")))
+    (is (string$= "/" "foo/"))
+    (is (not (string$= "/" "")))
+    (is (string$= "c" '|abc|))
+    (is (string$= "/" "/")))
 
   (test string*=
     (is (search nil "any string"))
     (is (not (string*= nil "any string")))
-    (is (string*= nil "NIL")))
+    (is (string*= nil "NIL"))
+    (is (not (string*= "a" "")))
+    (is (string*= "a" "a"))
+    (is (string*= "a" '|abc|))
+    (is (string*= "a" "abe")))
 
   (test string~=
     (is (string~= "foo" "foo bar"))

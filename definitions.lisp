@@ -6,7 +6,7 @@
 ;;; symbol macros to get lexical behavior from global variables (via
 ;;; `defparameter' and `defconstant', respectively).
 
-(defmacro def (var &body (&optional val (doc nil docp)))
+(defmacro def (var &body (&optional val documentation))
   "The famous \"deflex\".
 
 Define a top level (global) lexical VAR with initial value VAL,
@@ -31,28 +31,10 @@ The original `deflex' is due to Rob Warnock."
          (backing-var (intern (concatenate 'string s0 s1 s2) s3)))
     ;; Note: The DEFINE-SYMBOL-MACRO must precede VAL so VAL can close
     ;; over VAR.
-    #+sbcl
     `(progn
        (define-symbol-macro ,var ,backing-var)
-       (sb-ext:defglobal ,backing-var nil ,@(unsplice doc))
-       (setq ,backing-var ,val)
-       ,@(unsplice (when docp `(setf (documentation ',var 'variable) ,doc)))
-       ',var)
-    #+ccl
-    `(progn
-       (define-symbol-macro ,var ,backing-var)
-       (ccl:defstatic ,backing-var nil ,@(unsplice doc))
-       (setq ,backing-var ,val)
-       ,@(unsplice (when docp `(setf (documentation ',var 'variable) ,doc)))
-       ',var)
-    #-(or sbcl ccl)
-    `(progn
-       (define-symbol-macro ,var ,backing-var)
-       (defvar ,backing-var nil ,doc)
-       (setq ,backing-var ,val)
-       ,@(when docp
-           (unsplice `(setf (documentation ',backing-var 'variable) ,doc
-                            (documentation ',var 'variable) ,doc)))
+       (global-vars:define-global-parameter* ,backing-var ,val
+         ,@(unsplice documentation))
        ',var)))
 
 (defun same-literal-p (x y)

@@ -291,3 +291,6 @@
    #:split-sequence
    #:split-sequence-if
    #:split-sequence-if-not))
+
+(defpackage #:serapeum-user
+  (:use #:cl #:alexandria #:serapeum))

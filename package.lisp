@@ -290,7 +290,9 @@
    #:mvfoldr
    #:split-sequence
    #:split-sequence-if
-   #:split-sequence-if-not))
+   #:split-sequence-if-not
+   #:take-while
+   #:drop-while))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

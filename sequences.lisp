@@ -715,9 +715,6 @@ the same type."
     (member-if-not pred seq)
     (subseq seq (position-if-not pred seq))))
 
-(defsubst count-while (pred seq)
-  (position-if-not pred seq))
-
 ;;;# `bestn'
 (defun bisect-left (vec item pred &key key)
   "Return the index in VEC to insert ITEM and keep VEC sorted."

@@ -266,10 +266,20 @@ definitions."
                    (loop (unless forms
                            (return))
                          (let ((*orig-form* (pop forms)))
+                           ;; NB This `restart-case' has no associated
+                           ;; signals or handlers: we're using the
+                           ;; continuations directly.
                            (restart-case
                                (seen (expand-partially *orig-form*))
+                             ;; This is used to (recursively) flatten
+                             ;; progns into top-level forms.
                              (splice (spliced-forms)
                                (setf forms (append spliced-forms forms)))
+                             ;; This is used to move a macro
+                             ;; definition from inside the `local`
+                             ;; form to around it. Obviously it only
+                             ;; works when the macro precedes other
+                             ;; body forms.
                              (eject-macro (name wrapper)
                                (check-beginning name)
                                (let ((body

@@ -171,7 +171,12 @@
       (is (equal '(1 2 3)
                  (collecting
                    (do-seq (x #(1 2 3))
-                     (collect x))))))))
+                     (collect x)))))))
+
+  (test local+progn
+    (is (equal '((1) (2))
+               (multiple-value-list
+                (local (with-collectors (xs ys) (xs 1) (ys 2))))))))
 
 (suite binding
 

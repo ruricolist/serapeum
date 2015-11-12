@@ -141,6 +141,9 @@ Lisp."
 
 ;; Internal definitions.
 
+(defvar *in-let*)
+(defvar *orig-form*)
+
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
@@ -248,29 +251,32 @@ Returns `plus', not 4.
 The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels in-let? orig-form exprs)
-      (declare (special in-let? orig-form))
+    (let (vars hoisted-vars labels *in-let* *orig-form* exprs)
       (labels ((in-env? ()
                  "Are we within a binding form?"
-                 in-let?)
+                 *in-let*)
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
-                 (not (or vars hoisted-vars labels in-let?)))
-               (splice (new old list)
-                 "Like `substitute', but replaces OLD by inlining NEW, a list."
-                 (cond ((null list) nil)
-                       ((eql (first list) old)
-                        (append new (rest list)))
-                       (t (cons (first list) (splice new old (rest list))))))
+                 (not (or vars hoisted-vars labels *in-let*)))
                (check-beginning (offender)
                  (unless (at-beginning?)
                    (error "Macro definitions in `local' must precede other expressions.~%Offender: ~s" offender)))
                (expand-top (forms)
-                 (mapcar (lambda (form)
-                           (let ((orig-form form))
-                             (declare (special orig-form))
-                             (expand-partially form)))
-                         forms))
+                 (with-collector (seen)
+                   (loop (unless forms
+                           (return))
+                         (let ((*orig-form* (pop forms)))
+                           (restart-case
+                               (seen (expand-partially *orig-form*))
+                             (splice (spliced-forms)
+                               (setf forms (append spliced-forms forms)))
+                             (eject-macro (name wrapper)
+                               (check-beginning name)
+                               (let ((body
+                                       (append (seen)
+                                               forms)))
+                                 (return-from local
+                                   (append wrapper (list `(local ,@body)))))))))))
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
                  `(progn ,@(mapcar #'expand-partially body)))
@@ -282,17 +288,13 @@ definitions."
                  (if (consp form)
                      (destructuring-case form
                        ((defmacro name args &body body)
-                        (check-beginning name)
-                        (return-from local
-                          `(macrolet ((,name ,args ,@body))
-                             ;; NB Remove, not substitute.
-                             (local ,@(remove orig-form orig-body)))))
+                        (invoke-restart 'eject-macro
+                                        name
+                                        `(macrolet ((,name ,args ,@body)))))
                        ((define-symbol-macro sym exp)
-                        (check-beginning sym)
-                        (return-from local
-                          `(symbol-macrolet ((,sym ,exp))
-                             ;; NB Remove, not substitute.
-                             (local ,@(remove orig-form orig-body)))))
+                        (invoke-restart 'eject-macro
+                                        sym
+                                        `(symbol-macrolet ((,sym ,exp)))))
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
@@ -332,7 +334,7 @@ definitions."
                        ((defconst name expr &optional docstring)
                         (expand-partially `(defconstant ,name ,expr ,docstring)))
                        ((defun name args &body body)
-                        (if in-let?
+                        (if *in-let*
                             (expand-partially
                              `(defalias ,name
                                 (named-lambda ,name ,args
@@ -351,8 +353,9 @@ definitions."
                        ((progn &body body)
                         (if (single body)
                             (expand-partially (first body))
-                            (return-from local
-                              `(local ,@(splice body orig-form orig-body)))))
+                            (if *in-let*
+                                `(progn ,@(mapcar #'expand-partially body))
+                                (invoke-restart 'splice body))))
                        (((prog1 multiple-value-prog1) f &body body)
                         `(,(car form) ,(expand-partially f)
                           ,(expand-body body)))
@@ -366,18 +369,18 @@ definitions."
                             nil))
                        (((let let* flet labels)
                          bindings &body body)
-                        (let ((in-let? t)) (declare (special in-let?))
+                        (let ((*in-let* t))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,bindings
                               ,@decls
                               ,(expand-body body)))))
                        (((multiple-value-bind destructuring-bind progv)
                          vars expr &body body)
-                        (let ((in-let? t)) (declare (special in-let?))
+                        (let ((*in-let* t))
                           (multiple-value-bind (body decls) (parse-body body)
                             `(,(car form) ,vars ,expr
-                               ,@decls
-                               ,(expand-body body)))))
+                              ,@decls
+                              ,(expand-body body)))))
                        ((locally &body body)
                         (multiple-value-bind (body decls) (parse-body body)
                           `(locally ,@decls

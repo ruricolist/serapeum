@@ -706,11 +706,14 @@ the same type."
     (subseq seq (min (length seq) n))))
 
 (defsubst take-while (pred seq)
+  "Return the prefix of SEQ for which PRED returns true."
   (seq-dispatch seq
     (ldiff seq (member-if-not pred seq))
     (subseq seq 0 (position-if-not pred seq))))
 
 (defsubst drop-while (pred seq)
+  "Return the largest possible suffix of SEQ for which PRED returns
+false when called on the first element."
   (seq-dispatch seq
     (member-if-not pred seq)
     (subseq seq (position-if-not pred seq))))

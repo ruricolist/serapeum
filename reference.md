@@ -1,4 +1,4 @@
-# Function Listing For Serapeum (27 files, 239 functions)
+# Function Listing For SERAPEUM (27 files, 243 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -188,7 +188,7 @@ Declaim the ftype of a function from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L11)
+[View source](types.lisp#L21)
 
 ### `(assure type-spec &body (form))`
 
@@ -209,18 +209,18 @@ by FORM. (But see `assuref`.)
 
 From ISLISP.
 
-[View source](types.lisp#L49)
+[View source](types.lisp#L59)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L68)
+[View source](types.lisp#L78)
 
 ## Definitions
 
-### `(def var &body (&optional val (doc nil docp)))`
+### `(def var &body (&optional val documentation))`
 
 The famous "deflex".
 
@@ -254,7 +254,7 @@ different literal representation than the old value.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L65)
+[View source](definitions.lisp#L47)
 
 ### `(defsubst name params &body body)`
 
@@ -270,7 +270,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L89)
+[View source](definitions.lisp#L71)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -283,7 +283,7 @@ documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L111)
+[View source](definitions.lisp#L93)
 
 ### `(defplace name args &body (form &optional docstring))`
 
@@ -291,7 +291,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L137)
+[View source](definitions.lisp#L119)
 
 ### `(defcondition name supers &body (slots &rest options))`
 
@@ -301,7 +301,7 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-[View source](definitions.lisp#L149)
+[View source](definitions.lisp#L131)
 
 ### `(local &body orig-body)`
 
@@ -411,7 +411,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](definitions.lisp#L162)
+[View source](definitions.lisp#L144)
 
 ## Binding
 
@@ -819,6 +819,18 @@ Note that (unlike `case-using`), FN is not evaluated.
 From Zetalisp.
 
 [View source](control-flow.lisp#L587)
+
+### `(sort-values pred &rest values)`
+
+Sort VALUES with PRED and return as multiple values.
+
+Equivalent to 
+
+    (values-list (sort (list VALUES...) pred))
+
+But with less consing, and potentially faster.
+
+[View source](control-flow.lisp#L710)
 
 ## Threads
 
@@ -1724,6 +1736,19 @@ organized, without any loss of power.
 
 [View source](clos.lisp#L61)
 
+### `(ensure-superclass metaclass superclass)`
+
+Ensure that all instances of METACLASS inherit from SUPERCLASS.
+
+Be careful: this defines two `:around` methods on METACLASS: one on
+`initialize-instance` and one on `reinitialize-instance`. If you have
+already defined such methods, they will be shadowed.
+
+This is based on code by Pascal Costanza from Cliki:
+<http://www.cliki.net/MOP%20design%20patterns>
+
+[View source](clos.lisp#L152)
+
 ## Hooks
 
 ### `(add-hook name fn &key append)`
@@ -2218,19 +2243,19 @@ Is S1 a prefix of S2?
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L408)
+[View source](strings.lisp#L421)
 
 ### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
 
-[View source](strings.lisp#L408)
+[View source](strings.lisp#L421)
 
 ### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L413)
+[View source](strings.lisp#L439)
 
 ### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
@@ -2243,7 +2268,7 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L413)
+[View source](strings.lisp#L439)
 
 ### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
@@ -2253,19 +2278,19 @@ Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L424)
+[View source](strings.lisp#L459)
 
 ### `(string-tokenp s1 s2 &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L424)
+[View source](strings.lisp#L459)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L448)
+[View source](strings.lisp#L483)
 
 ### `(string-replace-all old string new &key start end stream)`
 
@@ -2282,7 +2307,7 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L464)
+[View source](strings.lisp#L499)
 
 ### `(chomp string &optional suffixes)`
 
@@ -2294,7 +2319,7 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L503)
+[View source](strings.lisp#L538)
 
 ## Sequences
 
@@ -2573,6 +2598,19 @@ the same type.
 
 [View source](sequences.lisp#L697)
 
+### `(take-while pred seq)`
+
+Return the prefix of SEQ for which PRED returns true.
+
+[View source](sequences.lisp#L708)
+
+### `(drop-while pred seq)`
+
+Return the largest possible suffix of SEQ for which PRED returns
+false when called on the first element.
+
+[View source](sequences.lisp#L714)
+
 ### `(bestn n seq pred &key key memo)`
 
 Partial sorting.
@@ -2635,7 +2673,7 @@ From Q.
 
 [View source](sequences.lisp#L926)
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

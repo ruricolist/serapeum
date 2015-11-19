@@ -99,7 +99,7 @@ can prevent optimization.")
 The type of the float is determined by, in order:
 - TYPE, if it is supplied;
 - The type specified in the exponent of the string;
-- `*read-default-float-format*'
+- or `*read-default-float-format*'.
 
      (parse-float \"1.0\") => 1.0s0
      (parse-float \"1.0d0\") => 1.0d0

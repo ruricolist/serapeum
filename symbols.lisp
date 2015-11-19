@@ -16,7 +16,7 @@ intern a keyword -- which is usually both unnecessary and unwise."
 ;;; before calling `symbol-value'.
 
 (defsubst bound-value (s &optional default)
-  "If S is bound, return (values s t). Otherwise, return DEFAULT."
+  "If S is bound, return (values s t). Otherwise, return DEFAULT and nil."
   (if (boundp s)
       (values (symbol-value s) t)
       (values default nil)))

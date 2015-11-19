@@ -11,8 +11,8 @@ in the order they appear in it:
 Note that `path-join' does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
-    (path-join \"dir1\" \"dir2\" \"file\") -> \"file\"
-    (path-join \"dir1/\" \"dir2/\" \"file\") -> \"dir1/dir2/file\""
+    (path-join \"dir1\" \"dir2\" \"file\") -> #p\"file\"
+    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\""
   (the pathname
        (reduce (lambda (x y)
                  (merge-pathnames y x))
@@ -52,7 +52,7 @@ BUFFER-SIZE."
                                                  (aref buffer2 j))))))))))
 
 (defun file-size (file &key (element-type '(unsigned-byte 8)))
-  "The size of FILE, in bytes."
+  "The size of FILE, in units of ELEMENT-TYPE (defaults to bytes)."
   (check-type file (or string pathname))
   (with-input-from-file (in file :element-type element-type)
     (file-length in)))

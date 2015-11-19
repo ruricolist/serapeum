@@ -213,7 +213,7 @@ used once they are defined.
 Perhaps surprisingly, `let' forms (as well as `let*' and
 `multiple-value-bind') *are* descended into; the only difference is
 that `defun' is implicitly translated into `defalias'. This means you
-use the top-level idiom of wrapping `let' around `defun'.
+can use the top-level idiom of wrapping `let' around `defun'.
 
     (local
       (let ((x 2))

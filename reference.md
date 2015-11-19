@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (27 files, 243 functions)
+# Function Listing For SERAPEUM (27 files, 242 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -373,7 +373,7 @@ used once they are defined.
 Perhaps surprisingly, `let` forms (as well as `let*` and
 `multiple-value-bind`) *are* descended into; the only difference is
 that `defun` is implicitly translated into `defalias`. This means you
-use the top-level idiom of wrapping `let` around `defun`.
+can use the top-level idiom of wrapping `let` around `defun`.
 
     (local
       (let ((x 2))
@@ -411,7 +411,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](definitions.lisp#L144)
+[View source](definitions.lisp#L147)
 
 ## Binding
 
@@ -1310,8 +1310,8 @@ in the order they appear in it:
 Note that `path-join` does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
-    (path-join "dir1" "dir2" "file") -> "file"
-    (path-join "dir1/" "dir2/" "file") -> "dir1/dir2/file"
+    (path-join "dir1" "dir2" "file") -> #p"file"
+    (path-join "dir1/" "dir2/" "file") -> #p"dir1/dir2/file"
 
 [View source](files.lisp#L3)
 
@@ -1333,7 +1333,7 @@ BUFFER-SIZE.
 
 ### `(file-size file &key element-type)`
 
-The size of FILE, in bytes.
+The size of FILE, in units of ELEMENT-TYPE (defaults to bytes).
 
 [View source](files.lisp#L54)
 
@@ -1350,7 +1350,7 @@ intern a keyword -- which is usually both unnecessary and unwise.
 
 ### `(bound-value s &optional default)`
 
-If S is bound, return (values s t). Otherwise, return DEFAULT.
+If S is bound, return (values s t). Otherwise, return DEFAULT and nil.
 
 [View source](symbols.lisp#L18)
 
@@ -1500,7 +1500,7 @@ Parse STRING as a float of TYPE.
 The type of the float is determined by, in order:
 - TYPE, if it is supplied;
 - The type specified in the exponent of the string;
-- `*read-default-float-format*`
+- or `*read-default-float-format*`.
 
      (parse-float "1.0") => 1.0s0
      (parse-float "1.0d0") => 1.0d0
@@ -1735,19 +1735,6 @@ it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power.
 
 [View source](clos.lisp#L61)
-
-### `(ensure-superclass metaclass superclass)`
-
-Ensure that all instances of METACLASS inherit from SUPERCLASS.
-
-Be careful: this defines two `:around` methods on METACLASS: one on
-`initialize-instance` and one on `reinitialize-instance`. If you have
-already defined such methods, they will be shadowed.
-
-This is based on code by Pascal Costanza from Cliki:
-<http://www.cliki.net/MOP%20design%20patterns>
-
-[View source](clos.lisp#L152)
 
 ## Hooks
 

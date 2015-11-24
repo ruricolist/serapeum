@@ -28,6 +28,7 @@
    #:defsubst
    #:defalias
    #:def
+   #:define-values
    #:defplace
    #:defcondition
    #:local

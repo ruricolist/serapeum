@@ -37,6 +37,15 @@ The original `deflex' is due to Rob Warnock."
          ,@(unsplice documentation))
        ',var)))
 
+(defmacro define-values (values &body (expr))
+  "Like `def', but for multiple values.
+Each variable in VALUES is bound as with `def', then set all at once
+as with `multiple-value-setq'."
+  `(progn
+     ,@(loop for v in values collect `(def ,v nil))
+     (setf (values ,@values) ,expr)
+     (values ,@(loop for v in values collect `(quote ,v)))))
+
 (defun same-literal-p (x y)
   "A predicate that compares whether X and Y have the same literal
   representation."
@@ -177,6 +186,7 @@ when it is equivalent to `progn').
 The recognized definition forms are:
 
 - `def', for lexical variables (as with `letrec')
+- `define-values', for multiple lexical variables at once.
 - `defun', for local functions (as with `labels')
 - `defalias', to bind values in the function namespace (like `fbindrec*')
 - `declaim', to make declarations (as with `declare')
@@ -188,8 +198,8 @@ Also, with serious restrictions, you can use:
 - `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
 
 \(Note that the top-level definition forms defined by Common Lisp
-are (necessarily) supplemented by two from Serapeum: `def' and
-`defalias'.)
+are (necessarily) supplemented by three from Serapeum: `def',
+`define-values', and `defalias'.)
 
 The exact order in which the bindings are made depends on how `local'
 is implemented at the time you read this. The only guarantees are that
@@ -333,6 +343,7 @@ definitions."
                                 (unless (member var hoisted-vars :key #'first)
                                   (pushnew var vars))
                                 `(progn (setf ,var ,expr) ',var)))))
+                       ;; `define-values' needs no special support.
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
                         (let ((expanded (macroexpand expr env)))

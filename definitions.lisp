@@ -111,8 +111,8 @@ Name from Emacs Lisp."
   `(progn
      ;; Give the function a temporary definition at compile time so
      ;; the compiler doesn't complain about its being undefined.
+     (declaim (notinline ,alias))
      (eval-when (:compile-toplevel)
-       (declaim (notinline ,alias))
        (unless (fboundp ',alias)
          (defun ,alias (&rest args)
            (declare (ignore args)))))

@@ -153,6 +153,22 @@ Lisp."
 (defvar *in-let*)
 (defvar *orig-form*)
 
+(defmacro nonlocal (&body body)
+  `(progn ,@body))
+
+(defmacro local* (&body body)
+  "Like `local', but leave the last form in BODY intact.
+
+     (local*
+       (defun aux-fn ...)
+       (defun entry-point ...))
+     =>
+     (labels ((aux-fn ...))
+       (defun entry-point ...)) "
+  `(local
+     ,@(butlast body)
+     (nonlocal ,@(last body))))
+
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
@@ -307,6 +323,8 @@ definitions."
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
                  (if (consp form)
                      (destructuring-case form
+                       ((nonlocal &body _) (declare (ignore _))
+                        (expansion-done form))
                        ((defmacro name args &body body)
                         (invoke-restart 'eject-macro
                                         name

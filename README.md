@@ -204,7 +204,7 @@ bindings. You can use `defun` instead of labels, `defmacro` instead of
 `macrolet`, `def` (which is Serapeum’s macro for top-level lexical
 bindings) instead of `let`, and so forth.
 
-This has two advantages:
+This has three advantages:
 
 1. Given a set of variable, function, and macro bindings, you can
    leave it to the compiler to figure out how to nest them. (This
@@ -215,6 +215,11 @@ This has two advantages:
 2. You can use macro-defining macros (macros that expand into
    `defmacro`), as well as macros that expand into `defun` forms, to
    create local bindings.
+
+3. You can (using `local*`) easily switch to block compilation of
+   top-level functions.
+
+### Using macros that expand into top-level definitions
 
 For example, memoizing local functions is usually clumsy; given `local`
 you can define a single `defmemo` form that supports both `defun`
@@ -243,7 +248,26 @@ This expands into `let` and `labels` as you might expect.
                (fibonacci (- n 2)))))
     
       (fibonacci 100))
-    => 573147844013817084101
+      => 573147844013817084101
+
+### Block compiling
+
+The macro `local*` is almost the same as `local`, except that it
+leaves the last form in the body intact. This is useful for obtaining
+block compilation in Lisps that don’t have a syntax for it.
+
+During development, you define functions at the top level inside a `progn`.
+
+     (progn
+       (defun aux-fn ...)
+       (defun entry-point ...))
+
+Then, when you decide you want block compilation, simply switch the
+`progn` to a `local*`:
+
+     (local*
+       (defun aux-fn ...)
+       (defun entry-point ...))
 
 # Function reference.
 

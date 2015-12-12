@@ -32,6 +32,7 @@
    #:defplace
    #:defcondition
    #:local
+   #:local*
    ;; Binding.
    #:letrec
    #:letrec*

@@ -23,19 +23,38 @@ version creates a backing variable that is \"global\" or \"static\",
 so there is not just a change in semantics, but also a gain in
 efficiency.
 
+If VAR is a list that starts with `values`, each element is treated as
+a separate variable and initialized as if by `(setf (values VAR...)
+VAL)`.
+
 The original `deflex' is due to Rob Warnock."
-  (let* ((s0 (symbol-name '#:*storage-for-deflex-var-))
-         (s1 (symbol-name var))
-         (s2 (symbol-name '#:*))
-         (s3 (symbol-package var))	; BUGFIX [see above]
-         (backing-var (intern (concatenate 'string s0 s1 s2) s3)))
-    ;; Note: The DEFINE-SYMBOL-MACRO must precede VAL so VAL can close
-    ;; over VAR.
-    `(progn
-       (define-symbol-macro ,var ,backing-var)
-       (global-vars:define-global-parameter* ,backing-var ,val
-         ,@(unsplice documentation))
-       ',var)))
+  (ematch var
+    ((list 'values)
+     `(progn ,val))
+    ((list 'values var)
+     `(def ,var ,val ,@(unsplice documentation)))
+    ((list* 'values vars)
+     `(mvdef ,vars ,val ,@(unsplice documentation)))
+    ((and var (type (and symbol (not null))))
+     (let* ((s0 (symbol-name '#:*storage-for-deflex-var-))
+            (s1 (symbol-name var))
+            (s2 (symbol-name '#:*))
+            (s3 (symbol-package var))	; BUGFIX [see above]
+            (backing-var (intern (concatenate 'string s0 s1 s2) s3)))
+       ;; Note: The DEFINE-SYMBOL-MACRO must precede VAL so VAL can close
+       ;; over VAR.
+       `(progn
+          (define-symbol-macro ,var ,backing-var)
+          (global-vars:define-global-parameter* ,backing-var ,val
+            ,@(unsplice documentation))
+          ',var)))))
+
+(defmacro mvdef (vars &body (&optional expr documentation))
+  `(progn
+     ,@(loop for var in vars
+             collect `(def ,var nil ,@(unsplice documentation)))
+     (setf (values ,@vars) ,expr)
+     ',vars))
 
 (defmacro define-values (values &body (expr))
   "Like `def', but for multiple values.
@@ -338,29 +357,31 @@ definitions."
                           (push `(declare ,spec) decls)))
                        ((def var &optional expr docstring)
                         (declare (ignore docstring))
-                        ;; Remember `def' returns a symbol.
-                        (let ((expr (macroexpand expr env)))
-                          (if (and
-                               (or (constantp expr)
-                                   ;; Don't hoist if it could be
-                                   ;; altered by a macro or
-                                   ;; symbol-macro, or if it's in a
-                                   ;; lexical env.
-                                   (and (not (in-env?))
-                                        (constantp expr env)))
-                               ;;Don't hoist if null.
-                               (not (null expr))
-                               ;; Don't hoist unless this is the first
-                               ;; binding for this var.
-                               (not (member var vars)))
-                              (progn
-                                (push (list var expr) hoisted-vars)
-                                `',var)
-                              (progn
-                                ;; Don't duplicate the binding.
-                                (unless (member var hoisted-vars :key #'first)
-                                  (pushnew var vars))
-                                `(progn (setf ,var ,expr) ',var)))))
+                        (if (listp var)
+                            (expand-partially (macroexpand form env))
+                            ;; Remember `def' returns a symbol.
+                            (let ((expr (macroexpand expr env)))
+                              (if (and
+                                   (or (constantp expr)
+                                       ;; Don't hoist if it could be
+                                       ;; altered by a macro or
+                                       ;; symbol-macro, or if it's in a
+                                       ;; lexical env.
+                                       (and (not (in-env?))
+                                            (constantp expr env)))
+                                   ;;Don't hoist if null.
+                                   (not (null expr))
+                                   ;; Don't hoist unless this is the first
+                                   ;; binding for this var.
+                                   (not (member var vars)))
+                                  (progn
+                                    (push (list var expr) hoisted-vars)
+                                    `',var)
+                                  (progn
+                                    ;; Don't duplicate the binding.
+                                    (unless (member var hoisted-vars :key #'first)
+                                      (pushnew var vars))
+                                    `(progn (setf ,var ,expr) ',var))))))
                        ;; `define-values' needs no special support.
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))

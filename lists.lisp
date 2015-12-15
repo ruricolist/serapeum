@@ -60,14 +60,16 @@ From Emacs Lisp."
 (defun in (x &rest items)
   "Is X equal to any of ITEMS?
 
-`(in x xs...)` is always equivalent to `(member x xs :test equal)`,
+`(in x xs...)` is always equivalent to `(and (member x xs :test equal) t)`,
 but `in` can sometimes compile to more efficient code when the
 candidate matches are constant.
 
 From Arc."
-  (declare (inline member)
+  (declare (optimize (speed 3) (safety 1))
            (dynamic-extent items))
-  (member x items :test #'equal))
+  (loop for item in items
+        when (equal x item)
+          return t))
 
 (define-compiler-macro in (x &rest items)
   (once-only (x)

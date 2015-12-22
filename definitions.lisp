@@ -382,7 +382,6 @@ definitions."
                                     (unless (member var hoisted-vars :key #'first)
                                       (pushnew var vars))
                                     `(progn (setf ,var ,expr) ',var))))))
-                       ;; `define-values' needs no special support.
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
                         (let ((expanded (macroexpand expr env)))

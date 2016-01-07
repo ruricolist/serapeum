@@ -7,8 +7,15 @@
 (deftype tuple (&rest types)
   "A proper list where each element has the same type as the corresponding element in TYPES.
 
-    (typep '(1 :x #\c) '(tuple integer keyword character)) => T"
+    (typep '(1 :x #\c) '(tuple integer keyword character)) => T
+
+As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
+    (tuple 'function symbol)
+    ≡ (tuple (eql function) symbol)"
   (reduce (lambda (x y)
+            (match x
+              ((list 'quote form)
+               (setf x `(eql ,form))))
             `(cons ,x ,y))
           types
           :from-end t

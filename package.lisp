@@ -118,6 +118,7 @@
    #:maphash-return
    #:set-hash-table
    #:hash-table-set
+   #:hash-table-predicate
    ;; Pathnames.
    #:path-join
    #:write-stream-into-file

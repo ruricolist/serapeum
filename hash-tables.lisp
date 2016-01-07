@@ -267,3 +267,13 @@ Without STRICT, equivalent to `hash-table-values'."
       (unless (setp set :test test :key key)
         (error "Not a set: ~a" set)))
     set))
+
+(defun hash-table-predicate (hash-table)
+  "Return a predicate for membership in HASH-TABLE.
+The predicate returns the same two values as `gethash', but in the
+opposite order."
+  (check-type hash-table hash-table)
+  (lambda (x)
+    (multiple-value-bind (val val?)
+        (gethash x hash-table)
+      (values val? val))))

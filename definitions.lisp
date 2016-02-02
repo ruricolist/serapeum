@@ -70,7 +70,15 @@ as with `multiple-value-setq'."
   representation."
   (or (equal x y)
       ;; Crude, but reliable.
-      (string= (prin1-to-string x) (prin1-to-string y))))
+      (handler-case
+          ;; "If ‘*read-eval*’ is false and ‘*print-readably*’ is true,
+          ;; any such method that would output a reference to the
+          ;; "‘#.’" reader macro will either output something else or
+          ;; will signal an error (as described above)."
+          (let ((*read-eval* t))
+            (string= (write-to-string x :readably t)
+                     (write-to-string y :readably t)))
+        (print-not-readable () nil))))
 
 (defmacro defconst (symbol init &optional docstring)
   "Define a constant, lexically.

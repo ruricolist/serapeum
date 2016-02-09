@@ -563,3 +563,18 @@ Takes care that the longest suffix is always removed first."
               (sort (copy-seq suffixes) #'> :key #'length)
               suffixes)
           :initial-value string))
+
+(defun string-count (substring string &key (start 0) end)
+  "Count how many times SUBSTRING appears in STRING."
+  (declare (array-length start)
+           ((or array-length null) end))
+  (let* ((substring (string substring))
+         (string (string string))
+         (end (or end (length string)))
+         (len (length substring)))
+    (nlet rec ((start start)
+               (hits 0))
+      (let ((match (search substring string :start2 start :end2 end)))
+        (if (not match)
+            hits
+            (rec (+ match len) (1+ hits)))))))

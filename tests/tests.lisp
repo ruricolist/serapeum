@@ -700,7 +700,12 @@ Robinson.")))
   (test chomp
     ;; Remove the longest sequence first.
     (is (equal "abc"
-               (chomp "abcxyz" (list "z" "yz" "xyz"))))))
+               (chomp "abcxyz" (list "z" "yz" "xyz")))))
+
+  (test string-count
+    (is (zerop (string-count "foo" "")))
+    (is (zerop (string-count "foo" "fofofo")))
+    (is (= 1 (string-count "foo" "fofoofo")))))
 
 (suite sequences
 

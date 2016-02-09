@@ -254,6 +254,7 @@
    #:string-replace
    #:string-replace-all
    #:chomp
+   #:string-count
    ;; Sequences.
    #:keep
    #:filter

@@ -7,6 +7,9 @@ After Eulisp."
   (apply #'make-instance class initargs))
 
 (define-compiler-macro make (class &rest initargs)
+  (when (constantp class)
+    (unless (typep (eval class) '(or class symbol))
+      (warn "~s cannot designate a class" class)))
   `(make-instance ,class ,@initargs))
 
 (defun class-name-safe (x)
@@ -48,12 +51,12 @@ If X is a class, it designates itself."
            (around-form (if around
                             `(call-method ,(first around)
                                           (,@(rest around)
-                                           (make-method ,form)))
+                                             (make-method ,form)))
                             form)))
       (if context
           `(call-method ,(first context)
                         (,@(rest context)
-                         (make-method ,around-form)))
+                           (make-method ,around-form)))
           around-form))))
 
 

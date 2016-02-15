@@ -1,7 +1,7 @@
 (in-package #:cl-user)
 
-(eval-when (:compile-toplevel :load-toplevel)
-  (ql:quickload '(:serapeum :cl-ppcre :swank)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload '(:serapeum :cl-ppcre :swank) :silent t))
 
 (defpackage #:serapeum.docs
   (:use #:cl #:alexandria #:serapeum)
@@ -142,3 +142,6 @@ This saves needless updates to the documentation."
   (render-function-reference-as-markdown
    :serapeum
    :stream (asdf:system-relative-pathname :serapeum "reference.md")))
+
+(update-function-reference)
+(uiop:quit)

@@ -1,12 +1,12 @@
 (in-package :serapeum)
 
-(defsubst make (class &rest initargs)
+(defsubst make (class &rest initargs &key &allow-other-keys)
   "Shorthand for `make-instance'.
 After Eulisp."
   (declare (dynamic-extent initargs))
   (apply #'make-instance class initargs))
 
-(define-compiler-macro make (class &rest initargs)
+(define-compiler-macro make (class &rest initargs &key &allow-other-keys)
   (when (constantp class)
     (unless (typep (eval class) '(or class symbol))
       (warn "~s cannot designate a class" class)))

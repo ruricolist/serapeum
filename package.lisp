@@ -247,10 +247,10 @@
    #:string$=
    #:string~=
    #:string*=
-   #:string-prefixp
-   #:string-suffixp
-   #:string-containsp
-   #:string-tokenp
+   #:string-prefix-p
+   #:string-suffix-p
+   #:string-contains-p
+   #:string-token-p
    #:string-replace
    #:string-replace-all
    #:chomp

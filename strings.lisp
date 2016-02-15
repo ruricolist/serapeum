@@ -400,11 +400,12 @@ From Arc."
                             (let ((docstring (format nil "Like `~(~a~)', but case-insensitive." name1)))
                               (mkdef name2 :docstring docstring))))))))
 
-  (defcmp (string^= string-prefixp) (s1 s2)
+  (defcmp (string^= string-prefix-p) (s1 s2)
     "Is S1 a prefix of S2?"
     (let ((ms (call mismatch s1 s2)))
       (or (not ms) (= ms end1))))
 
+  ;; Optimization: the prefix is a single character.
   (macrolet ((dcm (name test)
                `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
                   (if args call
@@ -416,13 +417,14 @@ From Arc."
                             (string ,s2))
                           call)))))
     (dcm string^= char=)
-    (dcm string-prefixp char-equal))
+    (dcm string-prefix-p char-equal))
 
-  (defcmp (string$= string-suffixp) (s1 s2)
+  (defcmp (string$= string-suffix-p) (s1 s2)
     "Is S1 a suffix of S2?"
     (let ((ms (call mismatch s1 s2 :from-end t)))
       (or (not ms) (= ms start1))))
 
+  ;; Optimization: the suffix is a single character.
   (macrolet ((dcm (name test)
                `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
                   (if args call
@@ -434,9 +436,9 @@ From Arc."
                             (string ,s2))
                           call)))))
     (dcm string$= char=)
-    (dcm string-suffixp char-equal))
+    (dcm string-suffix-p char-equal))
 
-  (defcmp (string*= string-containsp) (s1 s2)
+  (defcmp (string*= string-contains-p) (s1 s2)
     "Is S1 a substring of S2?
 
 This is similar, but not identical, to SEARCH.
@@ -447,6 +449,7 @@ This is similar, but not identical, to SEARCH.
      (string*= nil \"nil\") => T"
     (call search s1 s2))
 
+  ;; Optimization: the substring is a single character.
   (macrolet ((dcm (name test)
                `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
                   (if args call
@@ -454,9 +457,9 @@ This is similar, but not identical, to SEARCH.
                           `(position ,(character s1) (string ,s2) :test #',',test)
                           call)))))
     (dcm string*= char=)
-    (dcm string-containsp char-equal))
+    (dcm string-contains-p char-equal))
 
-  (defcmp (string~= string-tokenp) (s1 s2)
+  (defcmp (string~= string-token-p) (s1 s2)
     "Does S1 occur in S2 as a token?
 
 Equivalent to

@@ -19,12 +19,13 @@ If X is a class, the name of the class itself."
       (class-name x)
       (class-name (class-of x))))
 
-(defun find-class-safe (x)
+(defun find-class-safe (x &optional env)
   "The class designated by X.
 If X is a class, it designates itself."
-  (etypecase x
+  (typecase x
     (class x)
-    (symbol (find-class x nil))))
+    (symbol (find-class x nil env))
+    (t nil)))
 
 
 

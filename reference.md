@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (27 files, 242 functions)
+# Function Listing For SERAPEUM (27 files, 246 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -188,7 +188,7 @@ Declaim the ftype of a function from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L21)
+[View source](types.lisp#L28)
 
 ### `(assure type-spec &body (form))`
 
@@ -209,14 +209,14 @@ by FORM. (But see `assuref`.)
 
 From ISLISP.
 
-[View source](types.lisp#L59)
+[View source](types.lisp#L66)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L78)
+[View source](types.lisp#L85)
 
 ## Definitions
 
@@ -238,9 +238,21 @@ version creates a backing variable that is "global" or "static",
 so there is not just a change in semantics, but also a gain in
 efficiency.
 
+If VAR is a list that starts with `values`, each element is treated as
+a separate variable and initialized as if by `(setf (values VAR...)
+VAL)`.
+
 The original `deflex` is due to Rob Warnock.
 
 [View source](definitions.lisp#L9)
+
+### `(define-values values &body (expr))`
+
+Like `def`, but for multiple values.
+Each variable in VALUES is bound as with `def`, then set all at once
+as with `multiple-value-setq`.
+
+[View source](definitions.lisp#L59)
 
 ### `(defconst symbol init &optional docstring)`
 
@@ -254,7 +266,7 @@ different literal representation than the old value.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L47)
+[View source](definitions.lisp#L83)
 
 ### `(defsubst name params &body body)`
 
@@ -270,7 +282,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L71)
+[View source](definitions.lisp#L107)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -283,7 +295,7 @@ documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L93)
+[View source](definitions.lisp#L129)
 
 ### `(defplace name args &body (form &optional docstring))`
 
@@ -291,7 +303,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L119)
+[View source](definitions.lisp#L155)
 
 ### `(defcondition name supers &body (slots &rest options))`
 
@@ -301,7 +313,20 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-[View source](definitions.lisp#L131)
+[View source](definitions.lisp#L167)
+
+### `(local* &body body)`
+
+Like `local`, but leave the last form in BODY intact.
+
+     (local*
+       (defun aux-fn ...)
+       (defun entry-point ...))
+     =>
+     (labels ((aux-fn ...))
+       (defun entry-point ...)) 
+
+[View source](definitions.lisp#L186)
 
 ### `(local &body orig-body)`
 
@@ -337,6 +362,7 @@ when it is equivalent to `progn`).
 The recognized definition forms are:
 
 - `def`, for lexical variables (as with `letrec`)
+- `define-values`, for multiple lexical variables at once.
 - `defun`, for local functions (as with `labels`)
 - `defalias`, to bind values in the function namespace (like `fbindrec*`)
 - `declaim`, to make declarations (as with `declare`)
@@ -348,8 +374,8 @@ Also, with serious restrictions, you can use:
 - `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
 
 (Note that the top-level definition forms defined by Common Lisp
-are (necessarily) supplemented by two from Serapeum: `def` and
-`defalias`.)
+are (necessarily) supplemented by three from Serapeum: `def',
+`define-values`, and `defalias`.)
 
 The exact order in which the bindings are made depends on how `local`
 is implemented at the time you read this. The only guarantees are that
@@ -411,7 +437,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](definitions.lisp#L147)
+[View source](definitions.lisp#L199)
 
 ## Binding
 
@@ -1296,6 +1322,14 @@ Without STRICT, equivalent to `hash-table-values`.
 
 [View source](hash-tables.lisp#L260)
 
+### `(hash-table-predicate hash-table)`
+
+Return a predicate for membership in HASH-TABLE.
+The predicate returns the same two values as `gethash`, but in the
+opposite order.
+
+[View source](hash-tables.lisp#L271)
+
 ## Files
 
 ### `(path-join &rest pathnames)`
@@ -1647,7 +1681,7 @@ Has a compiler macro.
 
 ## Clos
 
-### `(make class &rest initargs)`
+### `(make class &rest initargs &key &allow-other-keys)`
 
 Shorthand for `make-instance`.
 After Eulisp.
@@ -1659,14 +1693,14 @@ After Eulisp.
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L12)
+[View source](clos.lisp#L15)
 
-### `(find-class-safe x)`
+### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L19)
+[View source](clos.lisp#L22)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -1734,7 +1768,7 @@ docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power.
 
-[View source](clos.lisp#L61)
+[View source](clos.lisp#L65)
 
 ## Hooks
 
@@ -1859,7 +1893,7 @@ Append an atom to a list.
 
 Is X equal to any of ITEMS?
 
-`(in x xs...)` is always equivalent to `(member x xs :test equal)`,
+`(in x xs...)` is always equivalent to `(and (member x xs :test equal) t)`,
 but `in` can sometimes compile to more efficient code when the
 candidate matches are constant.
 
@@ -1872,7 +1906,7 @@ From Arc.
 Like (member ... :test #'eq).
 Should only be used for symbols.
 
-[View source](lists.lisp#L83)
+[View source](lists.lisp#L85)
 
 ### `(delq item list)`
 
@@ -1880,7 +1914,7 @@ Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-[View source](lists.lisp#L91)
+[View source](lists.lisp#L93)
 
 ### `(mapply fn list &rest lists)`
 
@@ -1913,13 +1947,13 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
 
-[View source](lists.lisp#L108)
+[View source](lists.lisp#L110)
 
 ### `(assocdr item alist &rest args)`
 
 Like (cdr (assoc ...))
 
-[View source](lists.lisp#L162)
+[View source](lists.lisp#L164)
 
 ### `(assocadr item alist &rest args)`
 
@@ -1928,13 +1962,13 @@ Like `assocdr` for alists of proper lists.
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
-[View source](lists.lisp#L167)
+[View source](lists.lisp#L169)
 
 ### `(rassocar item alist &rest args)`
 
 Like (car (rassoc ...))
 
-[View source](lists.lisp#L175)
+[View source](lists.lisp#L177)
 
 ### `(firstn n list)`
 
@@ -1947,14 +1981,14 @@ The first N elements of LIST, as a fresh list:
 Common Lisp, unless it was deliberately left out as an exercise for
 Maclisp users.)
 
-[View source](lists.lisp#L180)
+[View source](lists.lisp#L182)
 
 ### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
 
-[View source](lists.lisp#L192)
+[View source](lists.lisp#L194)
 
 ### `(efface item list)`
 
@@ -1962,7 +1996,7 @@ Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
-[View source](lists.lisp#L203)
+[View source](lists.lisp#L205)
 
 ### `(pop-assoc key alist &rest args)`
 
@@ -1970,7 +2004,7 @@ Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
 
-[View source](lists.lisp#L222)
+[View source](lists.lisp#L224)
 
 ### `(mapcar-into fn list)`
 
@@ -1978,25 +2012,25 @@ Like (map-into list fn list).
 
 From PAIP.
 
-[View source](lists.lisp#L238)
+[View source](lists.lisp#L240)
 
 ### `(nthrest n list)`
 
 Alias for `nthcdr`.
 
-[View source](lists.lisp#L247)
+[View source](lists.lisp#L249)
 
 ### `(plist-keys plist)`
 
 Return the keys of a plist.
 
-[View source](lists.lisp#L251)
+[View source](lists.lisp#L253)
 
 ### `(plist-values plist)`
 
 Return the values of a plist.
 
-[View source](lists.lisp#L257)
+[View source](lists.lisp#L259)
 
 ## Strings
 
@@ -2214,35 +2248,35 @@ From Arc.
 
 [View source](strings.lisp#L364)
 
-### `(string-prefixp s1 s2 &key start1 end1 start2 end2)`
-
-Like `string^=`, but case-insensitive.
-
-[View source](strings.lisp#L403)
-
 ### `(string^= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a prefix of S2?
 
 [View source](strings.lisp#L403)
 
-### `(string-suffixp s1 s2 &key start1 end1 start2 end2)`
+### `(string-prefix-p s1 s2 &key start1 end1 start2 end2)`
+
+Like `string^=`, but case-insensitive.
+
+[View source](strings.lisp#L403)
+
+### `(string-suffix-p s1 s2 &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L421)
+[View source](strings.lisp#L422)
 
 ### `(string$= s1 s2 &key start1 end1 start2 end2)`
 
 Is S1 a suffix of S2?
 
-[View source](strings.lisp#L421)
+[View source](strings.lisp#L422)
 
-### `(string-containsp s1 s2 &key start1 end1 start2 end2)`
+### `(string-contains-p s1 s2 &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L439)
+[View source](strings.lisp#L441)
 
 ### `(string*= s1 s2 &key start1 end1 start2 end2)`
 
@@ -2255,7 +2289,7 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L439)
+[View source](strings.lisp#L441)
 
 ### `(string~= s1 s2 &key start1 end1 start2 end2)`
 
@@ -2265,19 +2299,19 @@ Equivalent to
      (find S1 (tokens S2) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L459)
+[View source](strings.lisp#L462)
 
-### `(string-tokenp s1 s2 &key start1 end1 start2 end2)`
+### `(string-token-p s1 s2 &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L459)
+[View source](strings.lisp#L462)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L483)
+[View source](strings.lisp#L486)
 
 ### `(string-replace-all old string new &key start end stream)`
 
@@ -2294,7 +2328,7 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L499)
+[View source](strings.lisp#L502)
 
 ### `(chomp string &optional suffixes)`
 
@@ -2306,7 +2340,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L538)
+[View source](strings.lisp#L541)
+
+### `(string-count substring string &key start end)`
+
+Count how many times SUBSTRING appears in STRING.
+
+[View source](strings.lisp#L570)
 
 ## Sequences
 
@@ -2660,7 +2700,7 @@ From Q.
 
 [View source](sequences.lisp#L926)
 
-### `(inconsistent-graph-constraints x)`
+### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.

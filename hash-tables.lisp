@@ -245,6 +245,8 @@ values. That is, each element of SET is stored as if by
   (let* ((hash-table-args
            (remove-from-plist hash-table-args
                               :key :strict))
+         ;; Use multiple-value-call so the provided arguments override
+         ;; the defaults.
          (table (multiple-value-call #'make-hash-table
                   (values-list hash-table-args)
                   :size (length set))))
@@ -252,6 +254,7 @@ values. That is, each element of SET is stored as if by
       (if (not strict)
           (dolist (item set)
             (setf (gethash (funcall key item) table) item))
+          ;; We can check for set-ness while building the hash table.
           (dolist (item set)
             (when (nth-value 1 (swaphash (funcall key item) item table))
               (error "Not a set: ~a" set)))))

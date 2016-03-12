@@ -108,11 +108,11 @@ The type of the float is determined by, in order:
 Of course you could just use `parse-number', but sometimes only a
 float will do."
   (assert (subtypep type 'float))
-  (let* ((stream (make-string-input-stream string start end))
-         (float (read-float stream junk-allowed type)))
-    (if type-supplied-p
-        (coerce float type)
-        float)))
+  (with-input-from-string (stream string :start start :end end)
+    (let ((float (read-float stream junk-allowed type)))
+      (if type-supplied-p
+          (coerce float type)
+          float))))
 
 ;;; When parse-float is called with a constant `:type' argument, wrap
 ;;; it in a `the' form.

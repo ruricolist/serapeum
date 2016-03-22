@@ -116,14 +116,14 @@ It is also possible to construct a \"thunk\" with arguments.
         (call-with-foo #',thunk))
 
 Needs a better name."
-  (with-gensyms (b thunk gargs)
+  (with-gensyms (b stack-thunk gargs)
     `(let ((,b ,var)
-           (,var ',thunk)
+           (,var ',stack-thunk)
            (,gargs (list ,@args)))
-       `(flet ((,',thunk ,,gargs
+       `(flet ((,',stack-thunk ,,gargs
                  ,@,b))
-          (declare (dynamic-extent (function ,',thunk)))
-          (symbol-macrolet ((,',thunk (function ,',thunk)))
+          (declare (dynamic-extent (function ,',stack-thunk)))
+          (symbol-macrolet ((,',stack-thunk (function ,',stack-thunk)))
             ,,@body)))))
 
 ;;;# Expanding macros

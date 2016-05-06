@@ -10,6 +10,10 @@ do:
 
 without package conflicts.
 
+In general, Serapeum tries to provide complete, correct
+implementations of utilities for which a complete, correct
+implementation is non-trivial.
+
 There may already be too many utility libraries for Common Lisp.
 Releasing another has become something to apologize for, not
 celebrate. But I would rather make my apologies than have to maintain
@@ -82,6 +86,15 @@ eliminate the overhead of higher-order functions like `compose` and
 `curry`. And `fbindrec`, which builds on `fbind`, further implements
 the optimizing transformation from Waddell et. al., *Fixing Letrec*.
 
+For binding values in the function namespace at the top level,
+Serapeum provides `defalias`:
+
+    (defalias xcons (flip #'cons))
+    
+This is equivalent to `(setf (fdefinition ...))`, but also gives the
+function a compile-time definition so compilers don’t complain about
+its being undefined.
+
 ## Dividing sequences
 
 All recent functional programming languages share a family of useful
@@ -93,7 +106,7 @@ For each function, we ensure:
 - It is efficient.
 - It returns like sequences for like (lists for lists, strings for
   strings, &c.).
-- It accomodates generic sequences (`list` and `vector` are not
+- It accommodates generic sequences (`list` and `vector` are not
   necessarily an exhaustive partition of `sequence`).
 - It has a distinctive name which does not use any of the weasel words
   “split,” “divide,” or “group.”

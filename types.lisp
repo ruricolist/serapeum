@@ -14,7 +14,8 @@ As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
     ≡ (tuple (eql function) symbol)"
   (reduce (lambda (x y)
             (match x
-              ((list 'quote form)
+              ((or (list 'quote form)
+                   (and form (type keyword)))
                (setf x `(eql ,form))))
             `(cons ,x ,y))
           types

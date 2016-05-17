@@ -474,7 +474,7 @@ definitions."
                (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
                (var-names (append (mapcar #'car hoisted-vars) vars)))
           (when (null exprs)
-            (warn "No expressions in `local' form"))
+            (simple-style-warning "No expressions in `local' form"))
           (multiple-value-bind (var-decls decls)
               (partition-declarations var-names decls)
             (multiple-value-bind (fn-decls decls)

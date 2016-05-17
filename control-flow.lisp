@@ -49,12 +49,12 @@ From Arc."
                    (values nil sure)
                    (subtype? type2 type1))))
            (check-subtypep (subtype)
-             (multiple-value-bind (subtype sure)
+             (multiple-value-bind (subtype? sure?)
                  (subtype? subtype type)
-               (cond ((not sure)
+               (cond ((not sure?)
                       (warn "Can't tell if ~s is a subtype of ~s. Is ~s defined?"
                             subtype type type))
-                     ((not subtype)
+                     ((not subtype?)
                       (warn "~s is not a subtype of ~s" subtype type)))))
            (explode-type (type)
              (match type

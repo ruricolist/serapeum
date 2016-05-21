@@ -3,10 +3,6 @@
 (deftype string-offset ()
   '(integer #.(- array-dimension-limit) #.array-dimension-limit))
 
-(defconst alphabet
-  "abcdefghijklmnopqrstuvwxyz"
-  "The 26 lowercase letters of the English alphabet.")
-
 (defconst no-break-space
   #-abcl #\No-break_space
   #+abcl (code-char 160))

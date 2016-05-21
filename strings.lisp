@@ -121,15 +121,17 @@ From Emacs Lisp."
 
 (defun mapconcat/seq (fun seq sep stream)
   (declare (function fun) (string sep))
-  (let ((i 0)
-        (ult (1- (length seq))))
-    (declare (type array-index i ult))
-    (map nil
-         (lambda (elt)
-           (write-string (funcall fun elt) stream)
-           (unless (= (prog1 i (incf i)) ult)
-             (write-string sep stream)))
-         seq)))
+  (if (emptyp seq)
+      (make-string 0)
+      (let ((i 0)
+            (ult (1- (length seq))))
+        (declare (type array-index i ult))
+        (map nil
+             (lambda (elt)
+               (write-string (funcall fun elt) stream)
+               (unless (= (prog1 i (incf i)) ult)
+                 (write-string sep stream)))
+             seq))))
 
 (defun mapconcat (fun seq separator &key stream)
   "Build a string by mapping FUN over SEQ.

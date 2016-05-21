@@ -314,6 +314,7 @@ removed."
   (declare (string string))
   (values (split-sequence-if #'newline? string :remove-empty-subseqs t)))
 
+(-> fmt ((or string function) &rest t) string)
 (defun fmt (control-string &rest args)
   "A cousin of `format` expressly for fast formatting of strings.
 
@@ -324,10 +325,11 @@ Has a compiler macro with `formatter'."
   (let ((*print-pretty* nil))
     (the string (format nil "~?" control-string args))))
 
-(define-compiler-macro fmt (&whole decline control-string &rest args)
-  (if (stringp control-string)
-      `(fmt (formatter ,control-string) ,@args)
-      decline))
+(define-compiler-macro fmt (control-string &rest args)
+  ;; NB We want to expand into a call to `format` whenever possible,
+  ;; so Lisp can check the number of arguments.
+  `(let (*print-pretty*)
+     (the string (format nil ,control-string ,@args))))
 
 (defun escape (string table &key (start 0) end stream)
   "Write STRING to STREAM, escaping with TABLE.

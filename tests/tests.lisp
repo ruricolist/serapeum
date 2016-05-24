@@ -176,7 +176,18 @@
   (test local+progn
     (is (equal '((1) (2))
                (multiple-value-list
-                (local (with-collectors (xs ys) (xs 1) (ys 2))))))))
+                (local (with-collectors (xs ys) (xs 1) (ys 2)))))))
+
+  (test local+symbol-macros
+    (is (equal '(1 1)
+               (let (a b)
+                 (local
+                   (define-symbol-macro x (setq a 1))
+                   x
+                   (define-symbol-macro redefine-x (def x (setq b 1)))
+                   redefine-x
+                   x)
+                 (list a b))))))
 
 (suite binding
 

@@ -375,13 +375,13 @@ Returns `plus', not 4.
 The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels *in-let* *orig-form* exprs)
+    (let (vars hoisted-vars labels *in-let* *orig-form* exprs symbol-macros)
       (labels ((in-subenv? ()
                  "Are we within a binding form?"
-                 *in-let*)
+                 (or *in-let* symbol-macros))
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
-                 (not (or vars hoisted-vars labels *in-let*)))
+                 (not (or vars hoisted-vars labels (in-subenv?))))
                (check-beginning (offender)
                  (unless (at-beginning?)
                    (error "Macro definitions in `local' must precede other expressions.~%Offender: ~s" offender)))
@@ -414,12 +414,53 @@ definitions."
                (expand-body (body)
                  "Shorthand for recursing on an implicit `progn'."
                  `(progn ,@(mapcar #'expand-partially body)))
+               (symbol-macro (name exp)
+                 (push (list name exp) symbol-macros))
+               (shadow-symbol-macro (name)
+                 (removef symbol-macros name :key #'car))
                (expansion-done (form)
+                 (setf form (wrap-symbol-macros form))
                  (push form exprs)
                  form)
+               (expand-in-env-1 (form &optional env)
+                 "Like macroexpand-1, but handle local symbol macro bindings."
+                 (if (symbolp form)
+                     (let ((exp (assoc form symbol-macros)))
+                       (if exp
+                           (progn
+                             (when (eql exp form)
+                               (error "Recursive symbol macro: ~a" form))
+                             (values (second exp) t))
+                           (macroexpand-1 form env)))
+                     (macroexpand-1 form env)))
+               (expand-in-env (form &optional env)
+                 (let (exps? exp?)
+                   (loop (setf (values form exp?) (expand-in-env-1 form env)
+                               exps? (or exps? exp?))
+                         (unless exp?
+                           (return (values form exps?))))))
+               (wrap-symbol-macros (form)
+                 (if (null symbol-macros) form
+                     `(symbol-macrolet ,symbol-macros
+                        ,form)))
+               (step-expansion (form)
+                 (multiple-value-bind (exp exp?)
+                     (expand-in-env-1 form env)
+                   (if exp?
+                       ;; Try to make sure that, if the
+                       ;; expansion bottoms out, we return the
+                       ;; original form instead of the expanded
+                       ;; one. It makes no semantic difference,
+                       ;; but it does make the expansion easier
+                       ;; to read.
+                       (let ((next-exp (expand-partially exp)))
+                         (if (eq exp next-exp)
+                             (expansion-done form)
+                             exp))
+                       (expansion-done form))))
                (expand-partially (form)
                  "Macro-expand FORM until it becomes a definition form or macro expansion stops."
-                 (if (consp form)
+                 (if (atom form) (step-expansion form)
                      (destructuring-case form
                        ((nonlocal &body _) (declare (ignore _))
                         (expansion-done form))
@@ -427,10 +468,10 @@ definitions."
                         (invoke-restart 'eject-macro
                                         name
                                         `(macrolet ((,name ,args ,@body)))))
+                       ;; Surprisingly, define-symbol-macro does not take documentation.
                        ((define-symbol-macro sym exp)
-                        (invoke-restart 'eject-macro
-                                        sym
-                                        `(symbol-macrolet ((,sym ,exp)))))
+                        (symbol-macro sym exp)
+                        `',sym)
                        ((declaim &rest specs)
                         (dolist (spec specs)
                           (push `(declare ,spec) decls)))
@@ -438,33 +479,36 @@ definitions."
                         (declare (ignore docstring))
                         (if (listp var)
                             ;; That is, (def (values ...) ...).
-                            (expand-partially (macroexpand form env))
+                            (expand-partially (expand-in-env form env))
                             ;; Remember `def' returns a symbol.
-                            (let ((expr (macroexpand expr env)))
-                              (if (and
-                                   (or (constantp expr)
-                                       ;; Don't hoist if it could be
-                                       ;; altered by a macro or
-                                       ;; symbol-macro, or if it's in a
-                                       ;; lexical env.
-                                       (and (not (in-subenv?))
-                                            (constantp expr env)))
-                                   ;;Don't hoist if null.
-                                   (not (null expr))
-                                   ;; Don't hoist unless this is the first
-                                   ;; binding for this var.
-                                   (not (member var vars)))
-                                  (progn
-                                    (push (list var expr) hoisted-vars)
-                                    `',var)
-                                  (progn
-                                    ;; Don't duplicate the binding.
-                                    (unless (member var hoisted-vars :key #'first)
-                                      (pushnew var vars))
-                                    `(progn (setf ,var ,expr) ',var))))))
+                            (progn
+                              (shadow-symbol-macro var)
+                              (let ((expr (expand-in-env expr env)))
+                                (if (and
+                                     (or (constantp expr)
+                                         ;; Don't hoist if it could be
+                                         ;; altered by a macro or
+                                         ;; symbol-macro, or if it's in a
+                                         ;; lexical env.
+                                         (and (not (in-subenv?))
+                                              (constantp expr env)))
+                                     ;;Don't hoist if null.
+                                     (not (null expr))
+                                     ;; Don't hoist unless this is the first
+                                     ;; binding for this var.
+                                     (not (member var vars)))
+                                    (progn
+                                      (push (list var expr) hoisted-vars)
+                                      `',var)
+                                    (progn
+                                      ;; Don't duplicate the binding.
+                                      (unless (member var hoisted-vars :key #'first)
+                                        (pushnew var vars))
+                                      `(progn (setf ,var ,expr) ',var)))))))
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
-                        (let ((expanded (macroexpand expr env)))
+                        (shadow-symbol-macro name)
+                        (let ((expanded (expand-in-env expr env)))
                           (if (and (not (in-subenv?)) (constantp expanded))
                               (expand-partially
                                `(define-symbol-macro ,name ,expr))
@@ -527,21 +571,7 @@ definitions."
                        ((block name &body body)
                         `(block ,name ,(expand-body body)))
                        ((otherwise &rest rest) (declare (ignore rest))
-                        (multiple-value-bind (exp exp?)
-                            (macroexpand-1 form env)
-                          (if exp?
-                              ;; Try to make sure that, if the
-                              ;; expansion bottoms out, we return the
-                              ;; original form instead of the expanded
-                              ;; one. It makes no semantic difference,
-                              ;; but it does make the expansion easier
-                              ;; to read.
-                              (let ((next-exp (expand-partially exp)))
-                                (if (eq exp next-exp)
-                                    (expansion-done form)
-                                    exp))
-                              (expansion-done form)))))
-                     (expansion-done form))))
+                        (step-expansion form))))))
         (let* ((body (expand-top body))
                (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
                (var-names (append (mapcar #'car hoisted-vars) vars)))

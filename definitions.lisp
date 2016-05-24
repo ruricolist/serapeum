@@ -366,6 +366,7 @@ definitions."
                        ((def var &optional expr docstring)
                         (declare (ignore docstring))
                         (if (listp var)
+                            ;; That is, (def (values ...) ...).
                             (expand-partially (macroexpand form env))
                             ;; Remember `def' returns a symbol.
                             (let ((expr (macroexpand expr env)))

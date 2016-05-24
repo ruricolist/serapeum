@@ -305,7 +305,7 @@ The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
     (let (vars hoisted-vars labels *in-let* *orig-form* exprs)
-      (labels ((in-env? ()
+      (labels ((in-subenv? ()
                  "Are we within a binding form?"
                  *in-let*)
                (at-beginning? ()
@@ -375,7 +375,7 @@ definitions."
                                        ;; altered by a macro or
                                        ;; symbol-macro, or if it's in a
                                        ;; lexical env.
-                                       (and (not (in-env?))
+                                       (and (not (in-subenv?))
                                             (constantp expr env)))
                                    ;;Don't hoist if null.
                                    (not (null expr))
@@ -393,7 +393,7 @@ definitions."
                        ((defconstant name expr &optional docstring)
                         (declare (ignore docstring))
                         (let ((expanded (macroexpand expr env)))
-                          (if (and (not (in-env?)) (constantp expanded))
+                          (if (and (not (in-subenv?)) (constantp expanded))
                               (expand-partially
                                `(define-symbol-macro ,name ,expr))
                               (push (list name `(load-time-value ,expr t)) hoisted-vars)))

@@ -179,6 +179,7 @@ Lisp."
 
 (defvar *in-let*)
 (defvar *orig-form*)
+(defvar *symbol-macros*)
 
 (defmacro nonlocal (&body body)
   `(progn ,@body))
@@ -305,11 +306,11 @@ The recognized definition forms are:
 - `defalias', to bind values in the function namespace (like `fbindrec*')
 - `declaim', to make declarations (as with `declare')
 - `defconstant' and `defconst', which behave exactly like symbol macros
+- `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
 
 Also, with serious restrictions, you can use:
 
 - `defmacro', for local macros (as with `defmacro')
-- `define-symbol-macro', to bind symbol macros (as with `symbol-macrolet')
 
 \(Note that the top-level definition forms defined by Common Lisp
 are (necessarily) supplemented by three from Serapeum: `def',
@@ -348,13 +349,12 @@ can use the top-level idiom of wrapping `let' around `defun'.
 
 Support for macros is sharply limited.
 
-1. Macros and symbol macros must precede all other expressions.
+1. Macros defined with `defmacro' must precede all other expressions.
 
 2. Macros and symbol macros cannot be defined inside of binding forms
 like `let'.
 
-3. `symbol-macrolet' and `macrolet' are not allowed at the top level
-of a `local' form.
+3. `macrolet' is not allowed at the top level of a `local' form.
 
 These restrictions are undesirable, but well justified: it is
 impossible to handle the general case both correctly and portably, and
@@ -375,10 +375,10 @@ Returns `plus', not 4.
 The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels *in-let* *orig-form* exprs symbol-macros)
+    (let (vars hoisted-vars labels *in-let* *orig-form* exprs *symbol-macros*)
       (labels ((in-subenv? ()
                  "Are we within a binding form?"
-                 (or *in-let* symbol-macros))
+                 (or *in-let* *symbol-macros*))
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
                  (not (or vars hoisted-vars labels (in-subenv?))))
@@ -415,9 +415,9 @@ definitions."
                  "Shorthand for recursing on an implicit `progn'."
                  `(progn ,@(mapcar #'expand-partially body)))
                (symbol-macro (name exp)
-                 (push (list name exp) symbol-macros))
+                 (push (list name exp) *symbol-macros*))
                (shadow-symbol-macro (name)
-                 (removef symbol-macros name :key #'car))
+                 (removef *symbol-macros* name :key #'car))
                (expansion-done (form)
                  (setf form (wrap-symbol-macros form))
                  (push form exprs)
@@ -425,7 +425,7 @@ definitions."
                (expand-in-env-1 (form &optional env)
                  "Like macroexpand-1, but handle local symbol macro bindings."
                  (if (symbolp form)
-                     (let ((exp (assoc form symbol-macros)))
+                     (let ((exp (assoc form *symbol-macros*)))
                        (if exp
                            (progn
                              (when (eql exp form)
@@ -440,8 +440,8 @@ definitions."
                          (unless exp?
                            (return (values form exps?))))))
                (wrap-symbol-macros (form)
-                 (if (null symbol-macros) form
-                     `(symbol-macrolet ,symbol-macros
+                 (if (null *symbol-macros*) form
+                     `(symbol-macrolet ,*symbol-macros*
                         ,form)))
                (step-expansion (form)
                  (multiple-value-bind (exp exp?)
@@ -564,6 +564,12 @@ definitions."
                             `(,(car form) ,vars ,expr
                               ,@decls
                               ,(expand-body body)))))
+                       ((symbol-macrolet binds &body body)
+                        (let ((*symbol-macros*
+                                (append binds *symbol-macros*)))
+                          (multiple-value-bind (body decls) (parse-body body)
+                            `(locally ,@decls
+                               ,(expand-body body)))))
                        ((locally &body body)
                         (multiple-value-bind (body decls) (parse-body body)
                           `(locally ,@decls

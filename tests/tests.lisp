@@ -199,7 +199,18 @@
                  (define-symbol-macro x 1)
                  (let ((x 2))
                    (def x 3))
-                 x)))))
+                 x)))
+
+    (is (equal (local
+                 (define-symbol-macro x 1)
+                 (let ((x 2))
+                   (def x 3)
+                   x))
+               (local
+                 (define-symbol-macro x 1)
+                 (symbol-macrolet ((x 2))
+                   (def x 3)
+                   x))))))
 
 (suite binding
 

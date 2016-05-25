@@ -179,7 +179,6 @@ Lisp."
 
 (defvar *in-let*)
 (defvar *orig-form*)
-(defvar *symbol-macros*)
 
 (defmacro nonlocal (&body body)
   `(progn ,@body))
@@ -375,10 +374,10 @@ Returns `plus', not 4.
 The `local' macro is loosely based on Racket's support for internal
 definitions."
   (multiple-value-bind (body decls) (parse-body orig-body)
-    (let (vars hoisted-vars labels *in-let* *orig-form* exprs *symbol-macros*)
+    (let (vars hoisted-vars labels *in-let* *orig-form* exprs symbol-macros)
       (labels ((in-subenv? ()
                  "Are we within a binding form?"
-                 (or *in-let* *symbol-macros*))
+                 (or *in-let* symbol-macros))
                (at-beginning? ()
                  "Return non-nil if this is the first form in the `local'."
                  (not (or vars hoisted-vars labels (in-subenv?))))
@@ -415,9 +414,10 @@ definitions."
                  "Shorthand for recursing on an implicit `progn'."
                  `(progn ,@(mapcar #'expand-partially body)))
                (symbol-macro (name exp)
-                 (push (list name exp) *symbol-macros*))
+                 (push (list name exp) symbol-macros))
                (shadow-symbol-macro (name)
-                 (removef *symbol-macros* name :key #'car))
+                 ;; Note that this removed /all/ instances.
+                 (removef symbol-macros name :key #'car))
                (expansion-done (form)
                  (setf form (wrap-symbol-macros form))
                  (push form exprs)
@@ -425,7 +425,7 @@ definitions."
                (expand-in-env-1 (form &optional env)
                  "Like macroexpand-1, but handle local symbol macro bindings."
                  (if (symbolp form)
-                     (let ((exp (assoc form *symbol-macros*)))
+                     (let ((exp (assoc form symbol-macros)))
                        (if exp
                            (progn
                              (when (eql exp form)
@@ -440,8 +440,8 @@ definitions."
                          (unless exp?
                            (return (values form exps?))))))
                (wrap-symbol-macros (form)
-                 (if (null *symbol-macros*) form
-                     `(symbol-macrolet ,*symbol-macros*
+                 (if (null symbol-macros) form
+                     `(symbol-macrolet ,symbol-macros
                         ,form)))
                (step-expansion (form)
                  (multiple-value-bind (exp exp?)
@@ -568,12 +568,14 @@ definitions."
                         (unwind-protect
                              (progn
                                (dolist (bind binds)
-                                 (push bind *symbol-macros*))
+                                 (push bind symbol-macros))
                                (multiple-value-bind (body decls) (parse-body body)
                                  `(locally ,@decls
                                     ,(expand-body body))))
-                          (setf *symbol-macros*
-                                (remove-if (op (member _ binds)) *symbol-macros*))))
+                          (setf symbol-macros
+                                (remove-if (lambda (bind)
+                                             (member bind binds))
+                                           symbol-macros))))
                        ((locally &body body)
                         (multiple-value-bind (body decls) (parse-body body)
                           `(locally ,@decls

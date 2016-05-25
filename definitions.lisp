@@ -196,6 +196,77 @@ Lisp."
      ,@(butlast body)
      (nonlocal ,@(last body))))
 
+(defun initialize-binds-from-decls (binds-in decls &optional env)
+  "Given a list of bindings and a set of declarations, look for any
+uninitialized bindings. If there are any, try to extrapolate
+reasonable initialization values for them based on the declarations in
+DECLS."
+  (labels ((var-decls-type (var decls)
+             (let ((bind-decls (partition-declarations (list var) decls)))
+               (block decls-type
+                 (loop (dolist (decl bind-decls)
+                         (print decl)
+                         (match decl
+                           ((list 'declare (list 'type typespec (and _ (eql var))))
+                            (return-from decls-type typespec))
+                           ((list 'declare (list typespec (and _ (eql var))))
+                            (return-from decls-type typespec))))
+                       ;; If we can't find a declaration, default to `t`.
+                       (return-from decls-type t)))))
+           ;; Curiously, alexandria:type= doesn't take an environment arg.
+           (type=? (x y)
+             (and (subtypep x y env)
+                  (subtypep y x env)))
+           (initialization-value (var decls)
+             (let ((type (var-decls-type var decls)))
+               (cond
+                 ;; Needless; this is the default behavior.
+                 #+ () ((type=? type 'boolean) nil)
+                 ((or (type=? type 'bit)
+                      (type=? type 'fixnum)
+                      (type=? type 'array-index)
+                      (subtypep type 'unsigned-byte env))
+                  0)
+                 ((type=? type '(complex integer)) #C(0 0))
+                 ((type=? type 'single-float) 0f0)
+                 ((type=? type 'double-float) 0d0)
+                 ((type=? type 'float) 0.0)
+                 ((type=? type '(complex single-float)) #C(0f0 0f0))
+                 ((type=? type '(complex double-float)) #C(0d0 0d0))
+                 ((type=? type '(complex float)) #C(0.0 0.0))
+                 ;; Strings aren't immutable.
+                 #+ () ((type=? type 'string) (make-string 0))
+                 ((type=? type 'pathname) 'uiop:*nil-pathname*)
+                 ((type=? type 'function) '#'identity)
+                 ;; TODO More character types? E.g. base-char on SBCL?
+                 ((type=? type 'character) (code-char 0)))))
+           (binds-out (binds-in decls binds-out)
+             (if (endp binds-in)
+                 (nreverse binds-out)
+                 (let ((var (first binds-in)))
+                   (if (listp var)
+                       ;; Already initialized.
+                       (let ((binds-in (rest binds-in))
+                             (binds-out (cons var binds-out)))
+                         (binds-out binds-in decls binds-out))
+                       (let* ((init (initialization-value var decls))
+                              (bind (if init `(,var ,init) var)))
+                         (binds-out (rest binds-in)
+                                    decls
+                                    (cons bind binds-out))))))))
+    ;; Shortcut: no declarations, just return the bindings.
+    (if (null decls)
+        binds-in
+        (binds-out binds-in decls '()))))
+
+(defmacro let-initialized (bindings &body body &environment env)
+  "Like LET, but if any of BINDINGS are uninitialized, try to give
+them sane initialization values."
+  (multiple-value-bind (body decls) (parse-body body)
+    `(let ,(initialize-binds-from-decls bindings decls env)
+       ,@decls
+       ,@body)))
+
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.
 
@@ -496,8 +567,8 @@ definitions."
                              ;; would hoist anything we know for sure
                              ;; is not a closure, but that's
                              ;; complicated.)
-                             `((let (,@hoisted-vars
-                                     ,@vars)
+                             `((let-initialized (,@hoisted-vars
+                                                 ,@vars)
                                  ,@var-decls
                                  ,@body))
                              body))

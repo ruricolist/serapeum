@@ -431,7 +431,7 @@ definitions."
                                     (assoc form *local-symbol-macros*))))
                        (if exp
                            (progn
-                             (when (eql exp form)
+                             (when (eq (second exp) form)
                                (error "Recursive symbol macro: ~a" form))
                              (values (second exp) t))
                            (macroexpand-1 form env)))

@@ -416,7 +416,7 @@ definitions."
                (symbol-macro (name exp)
                  (push (list name exp) symbol-macros))
                (shadow-symbol-macro (name)
-                 ;; Note that this removed /all/ instances.
+                 ;; Note that this removes /all/ instances.
                  (removef symbol-macros name :key #'car))
                (expansion-done (form)
                  (setf form (wrap-symbol-macros form))
@@ -572,6 +572,7 @@ definitions."
                                (multiple-value-bind (body decls) (parse-body body)
                                  `(locally ,@decls
                                     ,(expand-body body))))
+                          ;; New macros may been defined.
                           (setf symbol-macros
                                 (remove-if (lambda (bind)
                                              (member bind binds))

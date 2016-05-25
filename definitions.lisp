@@ -565,11 +565,15 @@ definitions."
                               ,@decls
                               ,(expand-body body)))))
                        ((symbol-macrolet binds &body body)
-                        (let ((*symbol-macros*
-                                (append binds *symbol-macros*)))
-                          (multiple-value-bind (body decls) (parse-body body)
-                            `(locally ,@decls
-                               ,(expand-body body)))))
+                        (unwind-protect
+                             (progn
+                               (dolist (bind binds)
+                                 (push bind *symbol-macros*))
+                               (multiple-value-bind (body decls) (parse-body body)
+                                 `(locally ,@decls
+                                    ,(expand-body body))))
+                          (setf *symbol-macros*
+                                (remove-if (op (member _ binds)) *symbol-macros*))))
                        ((locally &body body)
                         (multiple-value-bind (body decls) (parse-body body)
                           `(locally ,@decls

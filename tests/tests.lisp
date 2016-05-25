@@ -187,7 +187,19 @@
                    (define-symbol-macro redefine-x (def x (setq b 1)))
                    redefine-x
                    x)
-                 (list a b))))))
+                 (list a b)))))
+
+  (test shadow-symbol-macro-in-symbol-macrolet
+    (is (equal (local
+                 (define-symbol-macro x 1)
+                 (symbol-macrolet ((x 2))
+                   (def x 3))
+                 x)
+               (local
+                 (define-symbol-macro x 1)
+                 (let ((x 2))
+                   (def x 3))
+                 x)))))
 
 (suite binding
 

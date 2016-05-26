@@ -4,9 +4,8 @@
 
 (in-package :serapeum/internal-definitions)
 
-(defvar *in-let*)
+(defvar *subenv*)
 (defvar *orig-form*)
-(defvar *local-symbol-macros*)
 
 (defmacro nonlocal (&body body)
   `(progn ,@body))
@@ -107,11 +106,96 @@ them sane initialization values."
    :env nil
    :decls nil))
 
+(deftype expr () t)
+
+(adt:defdata binding
+  (var symbol expr)
+  (symbol-macro symbol expr)
+  (fun symbol expr)
+  ;; But of course we can't get the function.
+  (macro symbol function))
+
+(defmethod .name ((self binding))
+  (adt:match binding self
+    ((var name _) name)
+    ((symbol-macro name _) name)
+    ((fun name _) name)
+    ((macro name _) name)))
+
+(defmethod .init ((self binding))
+  (adt:match binding self
+    ((var _ init) init)
+    ((symbol-macro _ init) init)
+    ((fun _ init) init)
+    ((macro _ init) init)))
+
+(defgeneric .vars (env)
+  (:method ((env null))
+    nil))
+
+(defgeneric .funs (env)
+  (:method ((env null))
+    nil))
+
+(defclass subenv ()
+  ((vars :initarg :vars :reader .vars)
+   (funs :initarg :funs :reader .funs))
+  (:default-initargs
+   :vars nil
+   :funs nil)
+  (:documentation "Minimal lexical environment."))
+
+(defun expand-binding (bind)
+  (if (listp bind)
+      bind
+      (list bind bind)))
+
+(defun augment/vars (binds &optional (subenv *subenv*))
+  (let ((vars (mapcar (op (apply #'var (expand-binding _))) binds)))
+    (make 'subenv
+          :vars (append vars (.vars subenv))
+          :funs (.funs subenv))))
+
+(defun augment/symbol-macros (symbol-macros &optional (subenv *subenv*))
+  (make 'subenv
+        :vars (append (mapcar (op (apply #'symbol-macro _)) symbol-macros)
+                      (.vars subenv))
+        :funs (.funs subenv)))
+
+(defun augment/funs (funs &optional (subenv *subenv*))
+  (make 'subenv
+        :vars (.vars subenv)
+        :funs (append (mapcar (op (apply #'fun _)) funs)
+                      (.funs subenv))))
+
+;;; Of course this isn't used at the moment.
+(defun augment/macros (macros &optional (subenv *subenv*))
+  (make 'subenv
+        :vars (.vars subenv)
+        :funs (append (mapcar (op (apply #'macro _)) macros)
+                      (.funs subenv))))
+
+(defun visible-of-type (type subenv)
+  (let* ((vars (.vars subenv))
+         (visible (remove-duplicates vars :from-end t :key #'.name))
+         (of-type (remove-if-not (of-type type) visible)))
+    of-type))
+
+(defun symbol-macro-bindings (&optional (subenv *subenv*))
+  (loop for sm in (visible-of-type 'symbol-macro subenv)
+        collect (list (.name sm) (.init sm))))
+
+(defun remove-shadowed (binds &optional (subenv *subenv*))
+  (remove-if (op (member (ensure-car _)
+                         (.vars subenv)
+                         :key #'.name))
+             binds))
+
 (defmethods internal-definitions-env
     (self vars decls hoisted-vars labels exprs global-symbol-macros env)
   (:method in-subenv? (self)
     "Are we within a binding form?"
-    (or *in-let* global-symbol-macros *local-symbol-macros*))
+    (or *subenv* global-symbol-macros))
   (:method at-beginning? (self)
     "Return non-nil if this is the first form in the `local'."
     (not (or vars hoisted-vars labels (in-subenv? self))))
@@ -149,7 +233,7 @@ them sane initialization values."
     `(progn ,@(mapcar (op (expand-partially self _)) body)))
   (:method save-symbol-macro (self name exp)
     (push (list name exp) global-symbol-macros))
-  (:method shadow-symbol-macro (self name)
+  (:method shadow! (self name)
     ;; Note that this removes /all/ instances.
     (removef global-symbol-macros name :key #'car))
   (:method expansion-done (self form)
@@ -159,8 +243,8 @@ them sane initialization values."
   (:method expand-in-env-1 (self form &optional env)
     "Like macroexpand-1, but handle local symbol macro bindings."
     (if (symbolp form)
-        (let ((exp (or (assoc form global-symbol-macros)
-                       (assoc form *local-symbol-macros*))))
+        (let ((exp (or (assoc form (symbol-macro-bindings *subenv*))
+                       (assoc form (remove-shadowed global-symbol-macros *subenv*)))))
           (if exp
               (progn
                 (when (eq (second exp) form)
@@ -176,7 +260,8 @@ them sane initialization values."
               (return (values form exps?))))))
   (:method wrap-symbol-macros (self form)
     (let ((symbol-macros
-            (append *local-symbol-macros* global-symbol-macros)))
+            (append (symbol-macro-bindings *subenv*)
+                    (remove-shadowed global-symbol-macros *subenv*))))
       (if (null symbol-macros) form
           `(symbol-macrolet ,symbol-macros
              ,form))))
@@ -199,16 +284,25 @@ them sane initialization values."
     "Macro-expand FORM until it becomes a definition form or macro expansion stops."
     (if (atom form) (step-expansion self form)
         (destructuring-case form
+          ;; A special form to stop expansion.
           ((nonlocal &body _) (declare (ignore _))
            (expansion-done self form))
+          ;; Definition forms.
           ((defmacro name args &body body)
            (invoke-restart 'eject-macro
                            name
                            `(macrolet ((,name ,args ,@body)))))
-          ;; Surprisingly, define-symbol-macro does not take documentation.
+          ;; NB `define-symbol-macro' does not take documentation.
           ((define-symbol-macro sym exp)
-           (save-symbol-macro self sym exp)
-           `',sym)
+           (if (at-beginning? self)
+               ;; Might as well eject the symbol macro if we're at the
+               ;; beginning, to keep things simple.
+               (invoke-restart 'eject-macro
+                               sym
+                               `(symbol-macrolet ((,sym ,exp))))
+               (progn
+                 (save-symbol-macro self sym exp)
+                 `',sym)))
           ((declaim &rest specs)
            (dolist (spec specs)
              (push `(declare ,spec) decls)))
@@ -219,7 +313,7 @@ them sane initialization values."
                (expand-partially self (expand-in-env form env))
                ;; Remember `def' returns a symbol.
                (progn
-                 (shadow-symbol-macro self var)
+                 (shadow! self var)
                  (let ((expr (expand-in-env self expr env)))
                    (if (and
                         (or (constantp expr)
@@ -244,7 +338,7 @@ them sane initialization values."
                          `(progn (setf ,var ,expr) ',var)))))))
           ((defconstant name expr &optional docstring)
            (declare (ignore docstring))
-           (shadow-symbol-macro self name)
+           (shadow! self name)
            (let ((expanded (expand-in-env self expr env)))
              (if (and (not (in-subenv? self)) (constantp expanded))
                  (expand-partially self
@@ -254,7 +348,7 @@ them sane initialization values."
           ((defconst name expr &optional docstring)
            (expand-partially self `(defconstant ,name ,expr ,docstring)))
           ((defun name args &body body)
-           (if *in-let*
+           (if *in-binding-form*
                (expand-partially self
                                  `(defalias ,name
                                     (named-lambda ,name ,args
@@ -270,10 +364,11 @@ them sane initialization values."
              (push `(declare (type function ,temp)) decls)
              (push `(,name (&rest args) (apply ,temp args)) labels)
              `(progn (setf ,temp (ensure-function ,expr)) ',name)))
+          ;; Sequencing.
           ((progn &body body)
            (if (single body)
                (expand-partially self (first body))
-               (if *in-let*
+               (if *in-binding-form*
                    `(progn ,@(mapcar (op (expand-partially self _)) body))
                    (invoke-restart 'splice body))))
           (((prog1 multiple-value-prog1) f &body body)
@@ -287,32 +382,50 @@ them sane initialization values."
            (if (member :execute situations)
                (expand-body self body)
                nil))
-          (((let let* flet labels)
-            bindings &body body)
-           (let ((*in-let* t))
-             (multiple-value-bind (body decls) (parse-body body)
-               `(,(car form) ,bindings
-                 ,@decls
-                 ,(expand-body self body)))))
-          (((multiple-value-bind destructuring-bind progv)
-            vars expr &body body)
-           (let ((*in-let* t))
-             (multiple-value-bind (body decls) (parse-body body)
-               `(,(car form) ,vars ,expr
-                 ,@decls
-                 ,(expand-body self body)))))
-          ((symbol-macrolet binds &body body)
-           (multiple-value-bind (body decls) (parse-body body)
-             `(locally ,@decls
-                ,(let ((*local-symbol-macros*
-                         (append binds *local-symbol-macros*)))
-                   (expand-body self body)))))
           ((locally &body body)
            (multiple-value-bind (body decls) (parse-body body)
              `(locally ,@decls
                 ,(expand-body self body))))
           ((block name &body body)
            `(block ,name ,(expand-body self body)))
+          ((progv vars expr &body body)
+           ;; Is this really the right way to handle progv? Should we
+           ;; bother?
+           (multiple-value-bind (body decls) (parse-body body)
+             `(,(car form) ,vars ,expr
+               ,@decls
+               ,(expand-body self body))))
+          ;; Function binding forms.
+          (((flet labels)
+            bindings &body body)
+           (let ((*subenv* (augment/funs bindings)))
+             (multiple-value-bind (body decls) (parse-body body)
+               `(,(car form) ,bindings
+                 ,@decls
+                 ,(expand-body self body)))))
+          ;; Variable-namespace binding forms.
+          (((let let*)
+            bindings &body body)
+           (let ((*subenv* (augment/vars bindings)))
+             (multiple-value-bind (body decls) (parse-body body)
+               `(,(car form) ,bindings
+                 ,@decls
+                 ,(expand-body self body)))))
+          ((multiple-value-bind vars expr &body body)
+           (let ((*subenv* (augment/vars vars)))
+             (multiple-value-bind (body decls) (parse-body body)
+               `(,(car form) ,vars ,expr
+                 ,@decls
+                 ,(expand-body self body)))))
+          ;; Don't even try to handle destructuring-bind ourselves.
+          ((destructuring-bind vars expr &body body)
+           (declare (ignore vars expr body))
+           (expand-partially self (macroexpand form env)))
+          ((symbol-macrolet binds &body body)
+           (multiple-value-bind (body decls) (parse-body body)
+             `(locally ,@decls
+                ,(let ((*subenv* (augment/symbol-macros binds)))
+                   (expand-body self body)))))
           ((otherwise &rest rest) (declare (ignore rest))
            (step-expansion self form)))))
   (:method generate-internal-definitions (self body)
@@ -463,9 +576,11 @@ Returns `plus', not 4.
 
 The `local' macro is loosely based on Racket's support for internal
 definitions."
-  (catch 'local
+  (let (*in-binding-form*
+        *orig-form*
+        *subenv*)
     (multiple-value-bind (body decls) (parse-body orig-body)
-      (let (*in-let* *orig-form* *local-symbol-macros*)
+      (catch 'local
         (generate-internal-definitions
          (make 'internal-definitions-env
                :decls decls

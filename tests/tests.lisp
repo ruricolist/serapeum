@@ -42,7 +42,7 @@
 
 (suite definitions
   
-  (test local
+  (test internal-definitions
     (is (eql 2
              (local
                (def x 1)
@@ -127,7 +127,7 @@
                  (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
                    (list x y z))))))
 
-  (test local+macros
+  (test internal-definitions+macros
     (is (equal '(x)
                (local
                  (declaim (ignorable x))
@@ -173,12 +173,12 @@
                    (do-seq (x #(1 2 3))
                      (collect x)))))))
 
-  (test local+progn
+  (test internal-definitions+progn
     (is (equal '((1) (2))
                (multiple-value-list
                 (local (with-collectors (xs ys) (xs 1) (ys 2)))))))
 
-  (test local+symbol-macros
+  (test internal-definitions+symbol-macros
     (is (equal '(1 1)
                (let (a b)
                  (local
@@ -189,7 +189,7 @@
                    x)
                  (list a b)))))
 
-  (test shadow-symbol-macro-in-symbol-macrolet
+  (test internal-definitions+symbol-macrolet
     (is (equal (local
                  (define-symbol-macro x 1)
                  (symbol-macrolet ((x 2))

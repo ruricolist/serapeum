@@ -107,11 +107,12 @@ them sane initialization values."
    :decls nil))
 
 (deftype expr () t)
+(deftype body () 'list)
 
 (adt:defdata binding
   (var symbol expr)
   (symbol-macro symbol expr)
-  (fun symbol expr)
+  (fun symbol body)
   ;; But of course we can't get the function.
   (macro symbol function))
 
@@ -165,7 +166,9 @@ them sane initialization values."
 (defun augment/funs (funs &optional (subenv *subenv*))
   (make 'subenv
         :vars (.vars subenv)
-        :funs (append (mapcar (op (apply #'fun _)) funs)
+        :funs (append (mapcar (lambda (spec)
+                                (fun (first spec) (rest spec)))
+                              funs)
                       (.funs subenv))))
 
 ;;; Of course this isn't used at the moment.
@@ -348,7 +351,7 @@ them sane initialization values."
           ((defconst name expr &optional docstring)
            (expand-partially self `(defconstant ,name ,expr ,docstring)))
           ((defun name args &body body)
-           (if *in-binding-form*
+           (if *subenv*
                (expand-partially self
                                  `(defalias ,name
                                     (named-lambda ,name ,args
@@ -368,7 +371,7 @@ them sane initialization values."
           ((progn &body body)
            (if (single body)
                (expand-partially self (first body))
-               (if *in-binding-form*
+               (if *subenv*
                    `(progn ,@(mapcar (op (expand-partially self _)) body))
                    (invoke-restart 'splice body))))
           (((prog1 multiple-value-prog1) f &body body)
@@ -576,8 +579,7 @@ Returns `plus', not 4.
 
 The `local' macro is loosely based on Racket's support for internal
 definitions."
-  (let (*in-binding-form*
-        *orig-form*
+  (let (*orig-form*
         *subenv*)
     (multiple-value-bind (body decls) (parse-body orig-body)
       (catch 'local

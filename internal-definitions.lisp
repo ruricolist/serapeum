@@ -107,7 +107,8 @@ them sane initialization values."
    :env nil
    :decls nil))
 
-(defmethods internal-definitions-env (self vars decls hoisted-vars labels exprs global-symbol-macros env)
+(defmethods internal-definitions-env
+    (self vars decls hoisted-vars labels exprs global-symbol-macros env)
   (:method in-subenv? (self)
     "Are we within a binding form?"
     (or *in-let* global-symbol-macros *local-symbol-macros*))

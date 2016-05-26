@@ -201,7 +201,7 @@ them sane initialization values."
     (or *subenv* global-symbol-macros))
   (:method at-beginning? (self)
     "Return non-nil if this is the first form in the `local'."
-    (not (or vars hoisted-vars labels (in-subenv? self))))
+    (not (or exprs vars hoisted-vars labels (in-subenv? self))))
   (:method check-beginning (self offender)
     (unless (at-beginning? self)
       (error "Macro definitions in `local' must precede other expressions.~%Offender: ~s" offender)))
@@ -330,7 +330,8 @@ them sane initialization values."
                         (not (null expr))
                         ;; Don't hoist unless this is the first
                         ;; binding for this var.
-                        (not (member var vars)))
+                        (not (or (member var vars)
+                                 (member var hoisted-vars :key #'ensure-car))))
                        (progn
                          (push (list var expr) hoisted-vars)
                          `',var)

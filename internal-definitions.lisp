@@ -261,7 +261,7 @@ them sane initialization values."
     `(progn ,@(mapcar (op (expand-partially self _)) body)))
   (:method save-symbol-macro (self name exp)
     (push (list name exp) global-symbol-macros))
-  (:method shadow! (self name)
+  (:method shadow-symbol-macro (self name)
     ;; Note that this removes /all/ instances.
     (removef global-symbol-macros name :key #'car))
   (:method expansion-done (self form)
@@ -346,7 +346,7 @@ them sane initialization values."
                (expand-partially self (expand-in-env self form env))
                ;; Remember `def' returns a symbol.
                (progn
-                 (shadow! self var)
+                 (shadow-symbol-macro self var)
                  (let* ((expr (expand-in-env self expr env))
                         (var (if (in-subenv? self)
                                  (ensure-var-alias self var)
@@ -381,7 +381,7 @@ them sane initialization values."
           ;; TODO wrap expr?
           ((defconstant name expr &optional docstring)
            (declare (ignore docstring))
-           (shadow! self name)
+           (shadow-symbol-macro self name)
            (let ((expanded (expand-in-env self expr env)))
              (if (and (not (in-subenv? self)) (constantp expanded))
                  (expand-partially self

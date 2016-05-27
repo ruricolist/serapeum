@@ -1,5 +1,6 @@
 (defpackage :serapeum/internal-definitions
   (:use :cl :alexandria :serapeum :optima)
+  (:shadowing-import-from :uiop :nest)
   #+sb-package-locks (:implement :serapeum :serapeum/internal-definitions))
 
 (in-package :serapeum/internal-definitions)
@@ -96,6 +97,7 @@ them sane initialization values."
 
 (defclass internal-definitions-env ()
   ((vars :initform nil)
+   (var-aliases :initform nil)
    (decls :initarg :decls)
    (hoisted-vars :initform nil)
    (labels :initform nil)
@@ -194,8 +196,28 @@ them sane initialization values."
                          :key #'.name))
              binds))
 
+(defun shadow-names (binds)
+  (remove-duplicates binds :from-end t :key #'ensure-car))
+
 (defmethods internal-definitions-env
-    (self vars decls hoisted-vars labels exprs global-symbol-macros env)
+    (self vars decls hoisted-vars var-aliases labels exprs global-symbol-macros env)
+  (:method ensure-var-alias (self var)
+    (if-let (match (assoc var var-aliases))
+      (cdr match)
+      (let ((alias (gensym (string var))))
+        (push (cons var alias) var-aliases)
+        alias)))
+  (:method var-alias-bindings (self)
+    (loop for (var . alias) in var-aliases
+          collect (list var alias)))
+  (:method alias-decls (self decls)
+    ;; XXX Is this reliable?
+    (sublis var-aliases decls))
+  (:method hoisted-var? (self var)
+    (member var hoisted-vars :key #'first))
+  (:method known-var? (self var)
+    (or (member var vars)
+        (hoisted-var? self var)))
   (:method in-subenv? (self)
     "Are we within a binding form?"
     (or *subenv* global-symbol-macros))
@@ -317,7 +339,10 @@ them sane initialization values."
                ;; Remember `def' returns a symbol.
                (progn
                  (shadow! self var)
-                 (let ((expr (expand-in-env self expr env)))
+                 (let ((expr (expand-in-env self expr env))
+                       (var (if (in-subenv? self)
+                                (ensure-var-alias self var)
+                                var)))
                    (if (and
                         (or (constantp expr)
                             ;; Don't hoist if it could be
@@ -331,10 +356,13 @@ them sane initialization values."
                         ;; Don't hoist unless this is the first
                         ;; binding for this var.
                         (not (or (member var vars)
-                                 (member var hoisted-vars :key #'ensure-car))))
+                                 (member var hoisted-vars :key #'first))))
                        (progn
                          (push (list var expr) hoisted-vars)
-                         `',var)
+                         ;; This is needed in case the var ends up
+                         ;; being aliased. Hoisting vars isn't about
+                         ;; saving setfs, it's about type inference.
+                         `(progn (setf ,var ,expr) ',var))
                        (progn
                          ;; Don't duplicate the binding.
                          (unless (member var hoisted-vars :key #'first)
@@ -435,44 +463,48 @@ them sane initialization values."
   (:method generate-internal-definitions (self body)
     (let* ((body (expand-top self body))
            (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
-           (var-names (append (mapcar #'car hoisted-vars) vars)))
+           (var-names (append (mapcar #'first hoisted-vars) vars))
+           (aliased-vars (mapcar #'first var-aliases)))
       (when (null exprs)
         (simple-style-warning "No expressions in `local' form"))
-      (multiple-value-bind (var-decls decls)
-          (partition-declarations var-names decls)
-        (multiple-value-bind (fn-decls decls)
-            (partition-declarations fn-names decls)
-          ;; These functions aren't necessary, but they
-          ;; make the expansion cleaner.
-          (labels ((wrap-decls (body)
-                     (if decls
-                         `(locally ,@decls
-                            ,@body)
-                         `(progn ,@body)))
-                   (wrap-vars (body)
-                     (if (or hoisted-vars vars)
-                         ;; As an optimization, hoist constant
-                         ;; bindings, e.g. (def x 1), so the
-                         ;; compiler can infer their types or
-                         ;; make use of declarations. (Ideally we
-                         ;; would hoist anything we know for sure
-                         ;; is not a closure, but that's
-                         ;; complicated.)
-                         `((let-initialized (,@hoisted-vars
-                                             ,@vars)
-                             ,@var-decls
-                             ,@body))
-                         body))
-                   (wrap-labels (body)
-                     (if labels
-                         `((labels ,labels
-                             ,@fn-decls
-                             ,@body))
-                         body)))
-            (wrap-decls
-             (wrap-vars
-              (wrap-labels
-               body)))))))))
+      (nest
+       (multiple-value-bind (var-decls decls) (partition-declarations var-names decls))
+       (multiple-value-bind (fn-decls decls) (partition-declarations fn-names decls))
+       (multiple-value-bind (aliased-decls decls) (partition-declarations aliased-vars decls))
+       ;; These functions aren't necessary, but they
+       ;; make the expansion cleaner.
+       (labels ((wrap-decls (body)
+                  (if decls
+                      `(locally ,@decls
+                         ,@body)
+                      `(progn ,@body)))
+                (wrap-vars (body)
+                  (if (or hoisted-vars vars)
+                      ;; As an optimization, hoist constant
+                      ;; bindings, e.g. (def x 1), so the
+                      ;; compiler can infer their types or
+                      ;; make use of declarations. (Ideally we
+                      ;; would hoist anything we know for sure
+                      ;; is not a closure, but that's
+                      ;; impractical.)
+                      `((let-initialized (,@hoisted-vars
+                                          ,@vars)
+                          ,@var-decls
+                          ;; Un-alias the vars.
+                          (symbol-macrolet ,(var-alias-bindings self)
+                            ,@aliased-decls
+                            ,@body)))
+                      body))
+                (wrap-labels (body)
+                  (if labels
+                      `((labels ,(shadow-names labels)
+                          ,@fn-decls
+                          ,@body))
+                      body))))
+       (wrap-decls
+        (wrap-vars
+         (wrap-labels
+          body)))))))
 
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.

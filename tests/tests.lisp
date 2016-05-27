@@ -127,6 +127,48 @@
                  (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
                    (list x y z))))))
 
+  (test let-over-def
+    (is (eql 3
+             (local
+               (def x 1)
+               (let ((x 2))
+                 (def x 3))
+               x)))
+    (is (eql 2
+             (let ((y 2))
+               (local
+                 (let ((x 1))
+                   (def x y))
+                 x)))))
+
+  (test let-over-def-vs-hoisting
+    (is (equal '(1 3))
+        (let (a b)
+          (local
+            (def x 1)
+            (setf a x)
+            (let ((x 2))
+              (def x 3))
+            (setf b x))
+          (list a b))))
+
+  (test flet-over-defalias
+    (is (eql 3
+             (local
+               (defun x ()
+                 1)
+               (flet ((x () 2))
+                 (defalias x (constantly 3)))
+               (x)))))
+
+  (test redefining-functions
+    (is (eql 3
+             (local
+               (defalias x (constantly 1))
+               (defalias x (constantly 2))
+               (defun x () 3)
+               (x)))))
+
   (test internal-definitions+macros
     (is (equal '(x)
                (local
@@ -155,15 +197,20 @@
                  (fn))))
 
     ;; Defmacro inside progn.
-    (let* ((x nil)
-           (y
+    (is (eql 2
              (local
                (progn
-                 (setq x 1)
                  (defmacro m () 2)
                  (m)))))
-      (is (eql x 1))
-      (is (eql y 2)))
+
+    (signals error
+      (eval
+       '(let (x)
+         (flet ((m () 1))
+           (local
+             (setq x (m))
+             (defmacro m () 2)
+             x)))))
 
     (local
       (define-do-macro do-seq ((var seq &optional return) &body body)
@@ -212,16 +259,12 @@
                    (def x 3)
                    x))))
 
-    (is (equal (local
-                 (def x 1)
-                 (let ((x 2))
-                   (def x 3)
-                   x))
-               (local
-                 (def x 1)
-                 (let ((x 2))
-                   (define-symbol-macro x 3)
-                   x))))))
+    (is (eql 3
+             (local
+               (def x 1)
+               (let ((x 2))
+                 (define-symbol-macro x 3))
+               x)))))
 
 (suite binding
 

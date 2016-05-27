@@ -335,7 +335,7 @@ them sane initialization values."
            (declare (ignore docstring))
            (if (listp var)
                ;; That is, (def (values ...) ...).
-               (expand-partially self (expand-in-env form env))
+               (expand-partially self (expand-in-env self form env))
                ;; Remember `def' returns a symbol.
                (progn
                  (shadow! self var)

@@ -455,7 +455,7 @@ them sane initialization values."
            (expand-partially self (macroexpand form env)))
           ((symbol-macrolet binds &body body)
            (multiple-value-bind (body decls) (parse-body body)
-             `(locally ,@decls
+             `(symbol-macrolet ,binds ,@decls
                 ,(let ((*subenv* (augment/symbol-macros binds)))
                    (expand-body self body)))))
           ((otherwise &rest rest) (declare (ignore rest))

@@ -256,6 +256,8 @@ them sane initialization values."
                                   forms)))
                     (throw 'local
                       (append wrapper (list `(local ,@body)))))))))))
+  (:method eject-macro (self name wrapper)
+    (invoke-restart 'eject-macro name wrapper))
   (:method expand-body (self body)
     "Shorthand for recursing on an implicit `progn'."
     `(progn ,@(mapcar (op (expand-partially self _)) body)))
@@ -322,17 +324,16 @@ them sane initialization values."
            (expansion-done self form))
           ;; Definition forms.
           ((defmacro name args &body body)
-           (invoke-restart 'eject-macro
-                           name
-                           `(macrolet ((,name ,args ,@body)))))
+           (eject-macro self name
+                        `(macrolet ((,name ,args ,@body)))))
+
           ;; NB `define-symbol-macro' does not take documentation.
           ((define-symbol-macro sym exp)
            (if (at-beginning? self)
                ;; Might as well eject the symbol macro if we're at the
                ;; beginning, to keep things simple.
-               (invoke-restart 'eject-macro
-                               sym
-                               `(symbol-macrolet ((,sym ,exp))))
+               (eject-macro self sym
+                            `(symbol-macrolet ((,sym ,exp))))
                (progn
                  (save-symbol-macro self sym exp)
                  `',sym)))

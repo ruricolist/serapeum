@@ -627,8 +627,7 @@ Support for macros is sharply limited.
 
 1. Macros defined with `defmacro' must precede all other expressions.
 
-2. Macros and symbol macros cannot be defined inside of binding forms
-like `let'.
+2. Macros cannot be defined inside of binding forms like `let'.
 
 3. `macrolet' is not allowed at the top level of a `local' form.
 

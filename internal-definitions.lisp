@@ -6,7 +6,6 @@
 (in-package :serapeum/internal-definitions)
 
 (defvar *subenv*)
-(defvar *orig-form*)
 
 (defmacro nonlocal (&body body)
   `(progn ,@body))
@@ -234,12 +233,12 @@ them sane initialization values."
     (with-collector (seen)
       (loop (unless forms
               (return))
-            (let ((*orig-form* (pop forms)))
+            (let ((orig-form (pop forms)))
               ;; NB This `restart-case' has no associated
               ;; signals or handlers: we're using the
               ;; continuations directly.
               (restart-case
-                  (seen (expand-partially self *orig-form*))
+                  (seen (expand-partially self orig-form))
                 ;; This is used to (recursively) flatten
                 ;; progns into top-level forms.
                 (splice (spliced-forms)
@@ -651,8 +650,7 @@ Returns `plus', not 4.
 
 The `local' macro is loosely based on Racket's support for internal
 definitions."
-  (let (*orig-form*
-        *subenv*)
+  (let (*subenv*)
     (multiple-value-bind (body decls) (parse-body orig-body)
       (catch 'local
         (generate-internal-definitions

@@ -322,7 +322,8 @@ them sane initialization values."
           ;; A special form to stop expansion.
           ((nonlocal &body _) (declare (ignore _))
            (expansion-done self form))
-          ;; Definition forms.
+
+          ;; DEFINITION FORMS.
           ((defmacro name args &body body)
            (eject-macro self name
                         `(macrolet ((,name ,args ,@body)))))
@@ -337,9 +338,11 @@ them sane initialization values."
                (progn
                  (save-symbol-macro self sym exp)
                  `',sym)))
+
           ((declaim &rest specs)
            (dolist (spec specs)
              (push `(declare ,spec) decls)))
+
           ((def var &optional expr docstring)
            (declare (ignore docstring))
            (if (listp var)
@@ -379,6 +382,7 @@ them sane initialization values."
                          (unless (member var hoisted-vars :key #'first)
                            (pushnew var vars))
                          `(progn (setf ,var ,expr) ',var)))))))
+
           ;; TODO wrap expr?
           ((defconstant name expr &optional docstring)
            (declare (ignore docstring))
@@ -389,8 +393,10 @@ them sane initialization values."
                                    `(define-symbol-macro ,name ,expr))
                  (push (list name `(load-time-value ,expr t)) hoisted-vars)))
            `',name)
+
           ((defconst name expr &optional docstring)
            (expand-partially self `(defconstant ,name ,expr ,docstring)))
+
           ((defun name args &body body)
            (if *subenv*
                (expand-partially self
@@ -401,6 +407,7 @@ them sane initialization values."
                  (push `(,name ,args ,@body) labels)
                  ;; `defun' returns a symbol.
                  `',name)))
+
           ((defalias name expr &optional docstring)
            (declare (ignore docstring))
            (let ((temp (string-gensym 'fn))
@@ -411,32 +418,39 @@ them sane initialization values."
              (push `(declare (ignorable ,temp)) decls)
              (push `(,name (&rest args) (apply ,temp args)) labels)
              `(progn (setf ,temp (ensure-function ,expr)) ',name)))
-          ;; Sequencing.
+
+          ;; SEQUENCING.
           ((progn &body body)
            (if (single body)
                (expand-partially self (first body))
                (if *subenv*
                    `(progn ,@(mapcar (op (expand-partially self _)) body))
                    (invoke-restart 'splice body))))
+
           (((prog1 multiple-value-prog1) f &body body)
            `(,(car form) ,(expand-partially self f)
              ,(expand-body self body)))
+
           ((prog2 f1 f2 &body body)
            `(prog2 ,(expand-partially self f1)
                 ,(expand-partially self f2)
               ,(expand-body self body)))
+
           ((eval-when situations &body body)
            (if (member :execute situations)
                (expand-body self body)
                (progn
                  (simple-style-warning "Useless eval-when.")
                  nil)))
+
           ((locally &body body)
            (multiple-value-bind (body decls) (parse-body body)
              `(locally ,@decls
                 ,(expand-body self body))))
+
           ((block name &body body)
            `(block ,name ,(expand-body self body)))
+
           ((progv vars expr &body body)
            ;; Is this really the right way to handle progv? Should we
            ;; bother?
@@ -444,7 +458,8 @@ them sane initialization values."
              `(,(car form) ,vars ,(wrap-expr self expr)
                ,@decls
                ,(expand-body self body))))
-          ;; Function binding forms.
+
+          ;; FUNCTION BINDING FORMS.
           (((flet labels)
             bindings &body body)
            (let ((*subenv* (augment/funs bindings)))
@@ -452,7 +467,8 @@ them sane initialization values."
                `(,(car form) ,bindings
                  ,@decls
                  ,(expand-body self body)))))
-          ;; Variable-namespace binding forms.
+
+          ;; VARIABLE BINDING FORMS.
           (((let let*)
             bindings &body body)
            ;; TODO Should be put the wrapped bindings in the subenv?
@@ -462,21 +478,26 @@ them sane initialization values."
                `(,(car form) ,bindings
                  ,@decls
                  ,(expand-body self body)))))
+
           ((multiple-value-bind vars expr &body body)
            (let ((*subenv* (augment/vars vars)))
              (multiple-value-bind (body decls) (parse-body body)
                `(,(car form) ,vars ,(wrap-expr self expr)
                  ,@decls
                  ,(expand-body self body)))))
+
           ;; Don't even try to handle destructuring-bind ourselves.
           ((destructuring-bind vars expr &body body)
            (declare (ignore vars expr body))
            (expand-partially self (macroexpand form env)))
+
           ((symbol-macrolet binds &body body)
            (multiple-value-bind (body decls) (parse-body body)
              `(locally ,@decls
                 ,(let ((*subenv* (augment/symbol-macros binds)))
                    (expand-body self body)))))
+
+          ;; Fallthrough.
           ((otherwise &rest rest) (declare (ignore rest))
            (step-expansion self form)))))
   (:method generate-internal-definitions (self body)

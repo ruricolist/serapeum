@@ -383,7 +383,6 @@ them sane initialization values."
                            (pushnew var vars))
                          `(progn (setf ,var ,expr) ',var)))))))
 
-          ;; TODO wrap expr?
           ((defconstant name expr &optional docstring)
            (declare (ignore docstring))
            (shadow-symbol-macro self name)
@@ -391,7 +390,7 @@ them sane initialization values."
              (if (and (not (in-subenv? self)) (constantp expanded))
                  (expand-partially self
                                    `(define-symbol-macro ,name ,expr))
-                 (push (list name `(load-time-value ,expr t)) hoisted-vars)))
+                 (push (list name `(load-time-value ,(wrap-expr self expr) t)) hoisted-vars)))
            `',name)
 
           ((defconst name expr &optional docstring)

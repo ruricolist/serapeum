@@ -3,6 +3,10 @@
 (defun run-tests ()
   (5am:run! 'serapeum))
 
+(defun run-tests/quiet ()
+  (handler-bind ((warning #'muffle-warning))
+    (run-tests)))
+
 (defun debug-test (test)
   (let ((5am:*debug-on-error* t)
         (5am:*debug-on-failure* t))
@@ -142,15 +146,15 @@
                  x)))))
 
   (test let-over-def-vs-hoisting
-    (is (equal '(1 3))
-        (let (a b)
-          (local
-            (def x 1)
-            (setf a x)
-            (let ((x 2))
-              (def x 3))
-            (setf b x))
-          (list a b))))
+    (is (equal '(1 3)
+               (let (a b)
+                 (local
+                   (def x 1)
+                   (setf a x)
+                   (let ((x 2))
+                     (def x 3))
+                   (setf b x))
+                 (list a b)))))
 
   ;; Test that the binding from the or doesn't end up outside the
   ;; symbol macrolet form.
@@ -161,6 +165,22 @@
          (local
            (symbol-macrolet ((x (car xy)))
              (or x 1)))))))
+
+  (test symbol-macro-before-macro
+    (is (eql 1
+             (local
+               (define-symbol-macro x 1)
+               (defmacro foo () 'foo)
+               x))))
+
+  (test expr-env
+    (is (eql 2
+             (let ((a 1))
+               (local
+                 (+ 2 2)
+                 (define-symbol-macro x a)
+                 (def y (+ x 1))
+                 y)))))
 
   (test flet-over-defalias
     (is (eql 3

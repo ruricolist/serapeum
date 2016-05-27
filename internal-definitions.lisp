@@ -153,6 +153,9 @@ them sane initialization values."
       bind
       (list bind bind)))
 
+(defun expand-bindings (bindings)
+  (mapcar #'expand-binding bindings))
+
 (defun augment/vars (binds &optional (subenv *subenv*))
   (let ((vars (mapcar (op (apply #'var (expand-binding _))) binds)))
     (make 'subenv
@@ -290,6 +293,11 @@ them sane initialization values."
       (if (null symbol-macros) form
           `(symbol-macrolet ,symbol-macros
              ,form))))
+  (:method wrap-bindings (self bindings)
+    (loop for (var expr) in (expand-bindings bindings)
+          if (constantp expr)
+            collect `(,var ,expr)
+          else collect `(,var ,(wrap-expr self expr))))
   (:method step-expansion (self form)
     (multiple-value-bind (exp exp?)
         (expand-in-env-1 self form env)
@@ -339,24 +347,26 @@ them sane initialization values."
                ;; Remember `def' returns a symbol.
                (progn
                  (shadow! self var)
-                 (let ((expr (expand-in-env self expr env))
-                       (var (if (in-subenv? self)
-                                (ensure-var-alias self var)
-                                var)))
-                   (if (and
-                        (or (constantp expr)
-                            ;; Don't hoist if it could be
-                            ;; altered by a macro or
-                            ;; symbol-macro, or if it's in a
-                            ;; lexical env.
-                            (and (not (in-subenv? self))
-                                 (constantp expr env)))
-                        ;;Don't hoist if null.
-                        (not (null expr))
-                        ;; Don't hoist unless this is the first
-                        ;; binding for this var.
-                        (not (or (member var vars)
-                                 (member var hoisted-vars :key #'first))))
+                 (let* ((expr (expand-in-env self expr env))
+                        (var (if (in-subenv? self)
+                                 (ensure-var-alias self var)
+                                 var))
+                        (hoistable?
+                          (and
+                           (or (constantp expr)
+                               ;; Don't hoist if it could be altered
+                               ;; by a macro or symbol-macro, or if
+                               ;; it's in a lexical env.
+                               (and (not (in-subenv? self))
+                                    (constantp expr env)))
+                           ;;Don't hoist if null.
+                           (not (null expr))
+                           ;; Don't hoist unless this is the first
+                           ;; binding for this var.
+                           (not (or (member var vars)
+                                    (member var hoisted-vars :key #'first)))))
+                        (expr (wrap-expr self expr)))
+                   (if hoistable?
                        (progn
                          (push (list var expr) hoisted-vars)
                          ;; This is needed in case the var ends up
@@ -368,6 +378,7 @@ them sane initialization values."
                          (unless (member var hoisted-vars :key #'first)
                            (pushnew var vars))
                          `(progn (setf ,var ,expr) ',var)))))))
+          ;; TODO wrap expr?
           ((defconstant name expr &optional docstring)
            (declare (ignore docstring))
            (shadow! self name)
@@ -391,9 +402,12 @@ them sane initialization values."
                  `',name)))
           ((defalias name expr &optional docstring)
            (declare (ignore docstring))
-           (let ((temp (string-gensym 'fn)))
+           (let ((temp (string-gensym 'fn))
+                 (expr (wrap-expr self expr)))
              (push `(,temp #'identity) hoisted-vars)
              (push `(declare (type function ,temp)) decls)
+             ;; In case of redefinition.
+             (push `(declare (ignorable ,temp)) decls)
              (push `(,name (&rest args) (apply ,temp args)) labels)
              `(progn (setf ,temp (ensure-function ,expr)) ',name)))
           ;; Sequencing.
@@ -413,7 +427,9 @@ them sane initialization values."
           ((eval-when situations &body body)
            (if (member :execute situations)
                (expand-body self body)
-               nil))
+               (progn
+                 (simple-style-warning "Useless eval-when.")
+                 nil)))
           ((locally &body body)
            (multiple-value-bind (body decls) (parse-body body)
              `(locally ,@decls
@@ -424,7 +440,7 @@ them sane initialization values."
            ;; Is this really the right way to handle progv? Should we
            ;; bother?
            (multiple-value-bind (body decls) (parse-body body)
-             `(,(car form) ,vars ,expr
+             `(,(car form) ,vars ,(wrap-expr self expr)
                ,@decls
                ,(expand-body self body))))
           ;; Function binding forms.
@@ -438,7 +454,9 @@ them sane initialization values."
           ;; Variable-namespace binding forms.
           (((let let*)
             bindings &body body)
-           (let ((*subenv* (augment/vars bindings)))
+           ;; TODO Should be put the wrapped bindings in the subenv?
+           (let* ((*subenv* (augment/vars bindings))
+                  (bindings (wrap-bindings self bindings)))
              (multiple-value-bind (body decls) (parse-body body)
                `(,(car form) ,bindings
                  ,@decls
@@ -446,7 +464,7 @@ them sane initialization values."
           ((multiple-value-bind vars expr &body body)
            (let ((*subenv* (augment/vars vars)))
              (multiple-value-bind (body decls) (parse-body body)
-               `(,(car form) ,vars ,expr
+               `(,(car form) ,vars ,(wrap-expr self expr)
                  ,@decls
                  ,(expand-body self body)))))
           ;; Don't even try to handle destructuring-bind ourselves.
@@ -455,7 +473,7 @@ them sane initialization values."
            (expand-partially self (macroexpand form env)))
           ((symbol-macrolet binds &body body)
            (multiple-value-bind (body decls) (parse-body body)
-             `(symbol-macrolet ,binds ,@decls
+             `(locally ,@decls
                 ,(let ((*subenv* (augment/symbol-macros binds)))
                    (expand-body self body)))))
           ((otherwise &rest rest) (declare (ignore rest))
@@ -468,8 +486,8 @@ them sane initialization values."
       (when (null exprs)
         (simple-style-warning "No expressions in `local' form"))
       (nest
-       (multiple-value-bind (var-decls decls) (partition-declarations var-names decls))
-       (multiple-value-bind (fn-decls decls) (partition-declarations fn-names decls))
+       (multiple-value-bind (var-decls decls)     (partition-declarations var-names decls))
+       (multiple-value-bind (fn-decls decls)      (partition-declarations fn-names decls))
        (multiple-value-bind (aliased-decls decls) (partition-declarations aliased-vars decls))
        ;; These functions aren't necessary, but they
        ;; make the expansion cleaner.

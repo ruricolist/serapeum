@@ -262,7 +262,7 @@ them sane initialization values."
     ;; Note that this removes /all/ instances.
     (removef global-symbol-macros name :key #'car))
   (:method expansion-done (self form)
-    (setf form (wrap-symbol-macros self form))
+    (setf form (wrap-expr self form))
     (push form exprs)
     form)
   (:method expand-in-env-1 (self form &optional env)
@@ -283,7 +283,7 @@ them sane initialization values."
                   exps? (or exps? exp?))
             (unless exp?
               (return (values form exps?))))))
-  (:method wrap-symbol-macros (self form)
+  (:method wrap-expr (self form)
     (let ((symbol-macros
             (append (symbol-macro-bindings *subenv*)
                     (remove-shadowed global-symbol-macros *subenv*))))

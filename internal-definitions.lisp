@@ -140,14 +140,6 @@ them sane initialization values."
   (:method ((env null))
     nil))
 
-(defclass subenv ()
-  ((vars :initarg :vars :reader .vars)
-   (funs :initarg :funs :reader .funs))
-  (:default-initargs
-   :vars nil
-   :funs nil)
-  (:documentation "Minimal lexical environment."))
-
 (defun expand-binding (bind)
   (if (listp bind)
       bind
@@ -155,6 +147,14 @@ them sane initialization values."
 
 (defun expand-bindings (bindings)
   (mapcar #'expand-binding bindings))
+
+(defclass subenv ()
+  ((vars :initarg :vars :reader .vars)
+   (funs :initarg :funs :reader .funs))
+  (:default-initargs
+   :vars nil
+   :funs nil)
+  (:documentation "Minimal lexical environment."))
 
 (defun augment/vars (binds &optional (subenv *subenv*))
   (let ((vars (mapcar (op (apply #'var (expand-binding _))) binds)))

@@ -152,6 +152,16 @@
             (setf b x))
           (list a b))))
 
+  ;; Test that the binding from the or doesn't end up outside the
+  ;; symbol macrolet form.
+  (test symbol-macrolet-scope
+    (finishes
+      (eval
+       '(let ((xy (cons 'x 'y)))
+         (local
+           (symbol-macrolet ((x (car xy)))
+             (or x 1)))))))
+
   (test flet-over-defalias
     (is (eql 3
              (local

@@ -32,7 +32,6 @@ DECLS."
              (let ((bind-decls (partition-declarations (list var) decls)))
                (block decls-type
                  (loop (dolist (decl bind-decls)
-                         (print decl)
                          (match decl
                            ((list 'declare (list 'type typespec (and _ (eql var))))
                             (return-from decls-type typespec))

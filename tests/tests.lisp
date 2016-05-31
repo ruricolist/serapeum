@@ -298,7 +298,23 @@
                (def x 1)
                (let ((x 2))
                  (define-symbol-macro x 3))
-               x)))))
+               x))))
+
+  (test exprs-before-macros
+    (is (eql 1
+             (let (a (b 1))
+               (local
+                 (setq a b)
+                 (define-symbol-macro b 2))
+               a)))
+
+    (signals error
+      (eval*
+       '(flet ((b () 1))
+         (let (a)
+           (local
+             (setq a (b))
+             (defmacro b () 2))))))))
 
 (suite binding
 

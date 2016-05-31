@@ -231,6 +231,11 @@ This has three advantages:
 
 3. You can (using `local*`) easily switch to block compilation of
    top-level functions.
+   
+Serapeum’s implementation of internal definitions is as complete as it
+can be while remaining portable. That means full support for
+variables, functions, and symbol macros, but restricted support for
+macros.
 
 ### Using macros that expand into top-level definitions
 

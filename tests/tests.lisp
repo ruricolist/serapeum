@@ -24,6 +24,10 @@
   (lambda ()
     (map-into (make-list len) fn)))
 
+(defun eval* (form)
+  "Variant of eval forcing macroexpansion."
+  (funcall (compile nil (eval `(lambda () ,form)))))
+
 (def-suite serapeum)
 (in-suite serapeum)
 
@@ -160,7 +164,7 @@
   ;; symbol macrolet form.
   (test symbol-macrolet-scope
     (finishes
-      (eval
+      (eval*
        '(let ((xy (cons 'x 'y)))
          (local
            (symbol-macrolet ((x (car xy)))
@@ -234,7 +238,7 @@
                  (m)))))
 
     (signals error
-      (eval
+      (eval*
        '(let (x)
          (flet ((m () 1))
            (local

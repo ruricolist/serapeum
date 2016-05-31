@@ -17,7 +17,8 @@
                #:fare-quasiquote-extras
                #:parse-declarations-1.0
                #:introspect-environment
-               #:global-vars)
+               #:global-vars
+               #:cl-algebraic-data-type)
   ;; Having had to untangle the dependencies once it seems worthwhile
   ;; to be explicit about them, if only to keep them under control.
   :components ((:file "package")
@@ -28,6 +29,8 @@
                 :depends-on ("package"))
                (:file "definitions"
                 :depends-on ("macro-tools" "iter"))
+               (:file "internal-definitions"
+                :depends-on ("definitions" "clos" "op"))
                (:file "binding"
                 :depends-on ("macro-tools"))
                (:file "control-flow"

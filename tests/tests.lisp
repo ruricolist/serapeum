@@ -3,6 +3,10 @@
 (defun run-tests ()
   (5am:run! 'serapeum))
 
+(defun run-tests/quiet ()
+  (handler-bind ((warning #'muffle-warning))
+    (run-tests)))
+
 (defun debug-test (test)
   (let ((5am:*debug-on-error* t)
         (5am:*debug-on-failure* t))
@@ -19,6 +23,10 @@
 (defun a-list-of (len fn)
   (lambda ()
     (map-into (make-list len) fn)))
+
+(defun eval* (form)
+  "Variant of eval forcing macroexpansion."
+  (funcall (compile nil (eval `(lambda () ,form)))))
 
 (def-suite serapeum)
 (in-suite serapeum)
@@ -42,7 +50,7 @@
 
 (suite definitions
   
-  (test local
+  (test internal-definitions
     (is (eql 2
              (local
                (def x 1)
@@ -127,13 +135,81 @@
                  (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
                    (list x y z))))))
 
-  (test local+macros
+  (test let-over-def
+    (is (eql 3
+             (local
+               (def x 1)
+               (let ((x 2))
+                 (def x 3))
+               x)))
+    (is (eql 2
+             (let ((y 2))
+               (local
+                 (let ((x 1))
+                   (def x y))
+                 x)))))
+
+  (test let-over-def-vs-hoisting
+    (is (equal '(1 3)
+               (let (a b)
+                 (local
+                   (def x 1)
+                   (setf a x)
+                   (let ((x 2))
+                     (def x 3))
+                   (setf b x))
+                 (list a b)))))
+
+  ;; Test that the binding from the or doesn't end up outside the
+  ;; symbol macrolet form.
+  (test symbol-macrolet-scope
+    (finishes
+      (eval*
+       '(let ((xy (cons 'x 'y)))
+         (local
+           (symbol-macrolet ((x (car xy)))
+             (or x 1)))))))
+
+  (test symbol-macro-before-macro
+    (is (eql 1
+             (local
+               (define-symbol-macro x 1)
+               (defmacro foo () 'foo)
+               x))))
+
+  (test expr-env
+    (is (eql 2
+             (let ((a 1))
+               (local
+                 (+ 2 2)
+                 (define-symbol-macro x a)
+                 (def y (+ x 1))
+                 y)))))
+
+  (test flet-over-defalias
+    (is (eql 3
+             (local
+               (defun x ()
+                 1)
+               (flet ((x () 2))
+                 (defalias x (constantly 3)))
+               (x)))))
+
+  (test redefining-functions
+    (is (eql 3
+             (local
+               (defalias x (constantly 1))
+               (defalias x (constantly 2))
+               (defun x () 3)
+               (x)))))
+
+  (test internal-definitions+macros
     (is (equal '(x)
                (local
                  (declaim (ignorable x))
                  (defmacro q (x)
                    `(quote ,x))
-               
+                 
                  (def x 1)
 
                  (list (q x)))))
@@ -155,28 +231,90 @@
                  (fn))))
 
     ;; Defmacro inside progn.
-    (let* ((x nil)
-           (y
+    (is (eql 2
              (local
-              (progn
-                (setq x 1)
-                (defmacro m () 2)
-                (m)))))
-      (is (eql x 1))
-      (is (eql y 2)))
+               (progn
+                 (defmacro m () 2)
+                 (m)))))
+
+    (signals error
+      (eval*
+       '(let (x)
+         (flet ((m () 1))
+           (local
+             (setq x (m))
+             (defmacro m () 2)
+             x)))))
 
     (local
-     (define-do-macro do-seq ((var seq &optional return) &body body)
-       `(map nil (lambda (,var) ,@body) ,seq))
+      (define-do-macro do-seq ((var seq &optional return) &body body)
+        `(map nil (lambda (,var) ,@body) ,seq))
       (is (equal '(1 2 3)
                  (collecting
                    (do-seq (x #(1 2 3))
                      (collect x)))))))
 
-  (test local+progn
+  (test internal-definitions+progn
     (is (equal '((1) (2))
                (multiple-value-list
-                (local (with-collectors (xs ys) (xs 1) (ys 2))))))))
+                (local (with-collectors (xs ys) (xs 1) (ys 2)))))))
+
+  (test internal-definitions+symbol-macros
+    (is (equal '(1 1)
+               (let (a b)
+                 (local
+                   (define-symbol-macro x (setq a 1))
+                   x
+                   (define-symbol-macro redefine-x (def x (setq b 1)))
+                   redefine-x
+                   x)
+                 (list a b)))))
+
+  (test internal-definitions+symbol-macrolet
+    (is (equal (local
+                 (define-symbol-macro x 1)
+                 (symbol-macrolet ((x 2))
+                   (def x 3))
+                 x)
+               (local
+                 (define-symbol-macro x 1)
+                 (let ((x 2))
+                   (def x 3))
+                 x)))
+
+    (is (equal (local
+                 (define-symbol-macro x 1)
+                 (let ((x 2))
+                   (def x 3)
+                   x))
+               (local
+                 (define-symbol-macro x 1)
+                 (symbol-macrolet ((x 2))
+                   (def x 3)
+                   x))))
+
+    (is (eql 3
+             (local
+               (def x 1)
+               (let ((x 2))
+                 (define-symbol-macro x 3))
+               x))))
+
+  (test exprs-before-macros
+    (is (eql 1
+             (let (a (b 1))
+               (local
+                 (setq a b)
+                 (define-symbol-macro b 2))
+               a)))
+
+    (signals error
+      (eval*
+       '(flet ((b () 1))
+         (let (a)
+           (local
+             (setq a (b))
+             (defmacro b () 2))))))))
 
 (suite binding
 

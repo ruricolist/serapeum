@@ -141,7 +141,7 @@ them sane initialization values."
 (defun expand-binding (bind)
   (if (listp bind)
       bind
-      (list bind bind)))
+      (list bind nil)))
 
 (defun expand-bindings (bindings)
   (mapcar #'expand-binding bindings))

@@ -314,7 +314,21 @@
          (let (a)
            (local
              (setq a (b))
-             (defmacro b () 2))))))))
+             (defmacro b () 2)))))))
+
+  (test expanding-bindings
+    (is (eql 2
+             (local
+               (let (x)
+                 (setq x 2)
+                 (def x 1)
+                 x))))
+
+    (is (null
+         (local
+           (let (y)
+             (def x y))
+           x)))))
 
 (suite binding
 

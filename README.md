@@ -287,7 +287,7 @@ Then, when you decide you want block compilation, simply switch the
        (defun aux-fn ...)
        (defun entry-point ...))
 
-# Function reference.
+# Function reference
 
 The complete reference is in a [separate file](reference.md).
 

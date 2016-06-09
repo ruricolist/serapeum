@@ -319,7 +319,7 @@ them sane initialization values."
     "Macro-expand FORM until it becomes a definition form or macro expansion stops."
     (if (atom form) (step-expansion self form)
         (destructuring-case form
-          ;; A special form to stop expansion.
+          ;; A specific form to stop expansion.
           ((nonlocal &body _) (declare (ignore _))
            (expansion-done self form))
 

@@ -490,14 +490,17 @@ but without consing."
   (check-type old string)
   (check-type new string)
   (check-type string string)
-  (let ((start (search old string :start2 start :end2 end)))
-    (with-string (s stream)
-      (if (null start) (write-string string s)
-          (progn
-            (unless (zerop start)
-              (write-string string s :start 0 :end start))
-            (write-string new s)
-            (write-string string s :start (+ start (1- (length new)))))))))
+  (cond ((and (= (length old) 1) (= (length new) 1))
+         (substitute new old string :start start :end end :count 1))
+        (t
+         (let ((start (search old string :start2 start :end2 end)))
+           (with-string (s stream)
+             (if (null start) (write-string string s)
+                 (progn
+                   (unless (zerop start)
+                     (write-string string s :start 0 :end start))
+                   (write-string new s)
+                   (write-string string s :start (+ start (1- (length new)))))))))))
 
 (defun string-replace-all (old string new &key (start 0) end stream)
   "Do search-and-replace for constant strings.
@@ -517,26 +520,33 @@ like the first argument to `format'."
   (check-type old string)
   (check-type new string)
   (check-type string string)
-  (unless (search old string :start2 start :end2 end)
-    (return-from string-replace-all string))
-  (let* ((end (or end (length string)))
-         (len (length old)))
-    (declare (array-length len))
-    (with-string (s stream)
-      (unless (zerop start)
-        (write-string string s :start 0 :end start))
-      (nlet rep ((start start))
-        (declare (array-length start))
-        (let ((match (search old string :start2 start :end2 end)))
-          (declare ((or array-length null) match))
-          (if (not match)
-              ;; No end, because we want the whole remainder of the
-              ;; string.
-              (write-string string s :start start)
-              (progn
-                (write-string string s :start start :end match)
-                (write-string new s)
-                (rep (+ match len)))))))))
+  (cond
+    ((not (search old string :start2 start :end2 end))
+     (return-from string-replace-all string))
+    ;; The use case in mind here is one where you have a list of
+    ;; substitutions.
+    ((and (= (length new) 1)
+          (= (length old) 1))
+     (substitute new old string :start start :end end))
+    (t
+     (let* ((end (or end (length string)))
+            (len (length old)))
+       (declare (array-length len))
+       (with-string (s stream)
+         (unless (zerop start)
+           (write-string string s :start 0 :end start))
+         (nlet rep ((start start))
+           (declare (array-length start))
+           (let ((match (search old string :start2 start :end2 end)))
+             (declare ((or array-length null) match))
+             (if (not match)
+                 ;; No end, because we want the whole remainder of the
+                 ;; string.
+                 (write-string string s :start start)
+                 (progn
+                   (write-string string s :start start :end match)
+                   (write-string new s)
+                   (rep (+ match len)))))))))))
 
 (defun chomp (string
               &optional

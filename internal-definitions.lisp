@@ -140,7 +140,9 @@ them sane initialization values."
 
 (defun expand-binding (bind)
   (if (listp bind)
-      bind
+      (if (rest bind)
+          bind
+          (append bind '(nil)))
       (list bind nil)))
 
 (defun expand-bindings (bindings)

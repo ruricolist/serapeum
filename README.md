@@ -237,7 +237,7 @@ can be while remaining portable. That means full support for
 variables, functions, and symbol macros, but restricted support for
 macros.
 
-### Using macros that expand into top-level definitions
+### Example: macros that expand into top-level definitions
 
 For example, memoizing local functions is usually clumsy; given `local`
 you can define a single `defmemo` form that supports both `defun`
@@ -268,7 +268,7 @@ This expands into `let` and `labels` as you might expect.
       (fibonacci 100))
       => 573147844013817084101
 
-### Block compiling
+### Example: block compiling
 
 The macro `local*` is almost the same as `local`, except that it
 leaves the last form in the body intact. This is useful for obtaining

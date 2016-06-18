@@ -16,18 +16,18 @@ string is provided, it is attached to both the name |VAR| and the name
 'VARIABLE. The new VAR will have lexical scope and thus may be
 shadowed by LET bindings without affecting its dynamic (global) value.
 
-It is possible for VAL to close over VAR.
+The original `deflex' is due to Rob Warnock.
 
-In implementations that support it (SBCL and CCL, at the moment) this
+This version of `deflex' differs from the original in the following ways:
+
+- It is possible for VAL to close over VAR.
+- In implementations that support it (SBCL and CCL, at the moment) this
 version creates a backing variable that is \"global\" or \"static\",
 so there is not just a change in semantics, but also a gain in
 efficiency.
-
-If VAR is a list that starts with `values`, each element is treated as
+- If VAR is a list that starts with `values`, each element is treated as
 a separate variable and initialized as if by `(setf (values VAR...)
-VAL)`.
-
-The original `deflex' is due to Rob Warnock."
+VAL)`."
   (ematch var
     ((list 'values)
      `(progn ,val))
@@ -58,8 +58,8 @@ The original `deflex' is due to Rob Warnock."
 
 (defmacro define-values (values &body (expr))
   "Like `def', but for multiple values.
-Each variable in VALUES is bound as with `def', then set all at once
-as with `multiple-value-setq'."
+Each variable in VALUES is given a global, lexical binding, as with
+`def', then set all at once, as with `multiple-value-setq'."
   `(progn
      ,@(loop for v in values collect `(def ,v nil))
      (setf (values ,@values) ,expr)

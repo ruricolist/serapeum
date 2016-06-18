@@ -115,7 +115,7 @@ It is also possible to construct a \"thunk\" with arguments.
         (declare (dynamic-extent #',thunk))
         (call-with-foo #',thunk))
 
-Needs a better name."
+Someday this may have a better name."
   (with-gensyms (b stack-thunk gargs)
     `(let ((,b ,var)
            (,var ',stack-thunk)
@@ -231,8 +231,9 @@ consistency with the rest of CL, you have to do all of the following:
 - The entire loop must be surrounded with an implicit `nil' block.
 - The body of the loop must be an implicit `tagbody'.
 - There must be an optional `return' form which, if given, supplies
-  the values to return from the loop. While this return form is
-  being evaluated, the iteration variables are bound to `nil'.
+  the values to return from the loop.
+- While this return form is being evaluated, the iteration variables
+  must be bound to `nil'.
 
 Say you wanted to define a `do-hash' macro that iterates over hash
 tables. A full implementation would look like this:

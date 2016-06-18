@@ -27,7 +27,7 @@ As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
   `(function ,args ,values))
 
 (defmacro -> (function args values)
-  "Declaim the ftype of a function from ARGS to VALUES.
+  "Declaim the ftype of FUNCTION from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)"
@@ -69,7 +69,7 @@ As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
 
 `assure' is to `the' as `check-type' is to `declare'.
 
-     (the string 1) => undefined
+     (the string 1)    => undefined
      (assure string 1) => error
 
 The value returned from the `assure' form is guaranteed to satisfy

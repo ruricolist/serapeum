@@ -578,7 +578,7 @@ when it is equivalent to `progn').
 The recognized definition forms are:
 
 - `def', for lexical variables (as with `letrec')
-- `define-values', for multiple lexical variables at once.
+- `define-values', for multiple lexical variables at once
 - `defun', for local functions (as with `labels')
 - `defalias', to bind values in the function namespace (like `fbindrec*')
 - `declaim', to make declarations (as with `declare')
@@ -624,7 +624,8 @@ can use the top-level idiom of wrapping `let' around `defun'.
       (adder 2))
     => 4
 
-Support for macros is sharply limited.
+Support for macros is sharply limited. (Symbol macros, on the other
+hand, are completely supported.)
 
 1. Macros defined with `defmacro' must precede all other expressions.
 
@@ -637,7 +638,7 @@ impossible to handle the general case both correctly and portably, and
 while some special cases could be provided for, the cost in complexity
 of implementation and maintenance would be prohibitive.
 
-The value returned by the `local` form is that of the last form in
+The value returned by the `local' form is that of the last form in
 BODY. Note that definitions have return values in `local' just like
 they do at the top level. For example:
 

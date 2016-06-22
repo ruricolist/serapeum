@@ -21,3 +21,10 @@ intern a keyword -- which is usually both unnecessary and unwise."
       (values (symbol-value s) t)
       (values default nil)))
 
+(defun (setf bound-value) (val sym)
+  "Like `(setf (symbol-value SYM) VAL)', but raises an error if SYM is
+  not already bound."
+  (unless (boundp sym)
+    (error "Attempt to set bound value of ~s, an unbound symbol.~%Value: ~a"
+           sym val))
+  (setf (symbol-value sym) val))

@@ -1,8 +1,9 @@
-# Function Listing For SERAPEUM (27 files, 246 functions)
+# Function Listing For SERAPEUM (28 files, 247 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
 - [Definitions](#definitions)
+- [Internal Definitions](#internal-definitions)
 - [Binding](#binding)
 - [Control Flow](#control-flow)
 - [Threads](#threads)
@@ -94,7 +95,7 @@ It is also possible to construct a "thunk" with arguments.
         (declare (dynamic-extent #',thunk))
         (call-with-foo #',thunk))
 
-Needs a better name.
+Someday this may have a better name.
 
 [View source](macro-tools.lisp#L77)
 
@@ -146,8 +147,9 @@ consistency with the rest of CL, you have to do all of the following:
 - The entire loop must be surrounded with an implicit `nil` block.
 - The body of the loop must be an implicit `tagbody`.
 - There must be an optional `return` form which, if given, supplies
-  the values to return from the loop. While this return form is
-  being evaluated, the iteration variables are bound to `nil`.
+  the values to return from the loop.
+- While this return form is being evaluated, the iteration variables
+  must be bound to `nil`.
 
 Say you wanted to define a `do-hash` macro that iterates over hash
 tables. A full implementation would look like this:
@@ -177,18 +179,18 @@ Using `define-do-macro` takes care of all of this for you.
 
 Like `define-modify-macro`, but arranges to return the original value.
 
-[View source](macro-tools.lisp#L283)
+[View source](macro-tools.lisp#L284)
 
 ## Types
 
 ### `(-> function args values)`
 
-Declaim the ftype of a function from ARGS to VALUES.
+Declaim the ftype of FUNCTION from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L28)
+[View source](types.lisp#L29)
 
 ### `(assure type-spec &body (form))`
 
@@ -196,7 +198,7 @@ Macro for inline type checking.
 
 `assure` is to `the` as `check-type` is to `declare`.
 
-     (the string 1) => undefined
+     (the string 1)    => undefined
      (assure string 1) => error
 
 The value returned from the `assure` form is guaranteed to satisfy
@@ -209,14 +211,14 @@ by FORM. (But see `assuref`.)
 
 From ISLISP.
 
-[View source](types.lisp#L66)
+[View source](types.lisp#L67)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L85)
+[View source](types.lisp#L86)
 
 ## Definitions
 
@@ -231,26 +233,26 @@ string is provided, it is attached to both the name |VAR| and the name
 'VARIABLE. The new VAR will have lexical scope and thus may be
 shadowed by LET bindings without affecting its dynamic (global) value.
 
-It is possible for VAL to close over VAR.
+The original `deflex` is due to Rob Warnock.
 
-In implementations that support it (SBCL and CCL, at the moment) this
+This version of `deflex` differs from the original in the following ways:
+
+- It is possible for VAL to close over VAR.
+- In implementations that support it (SBCL and CCL, at the moment) this
 version creates a backing variable that is "global" or "static",
 so there is not just a change in semantics, but also a gain in
 efficiency.
-
-If VAR is a list that starts with `values`, each element is treated as
+- If VAR is a list that starts with `values`, each element is treated as
 a separate variable and initialized as if by `(setf (values VAR...)
 VAL)`.
-
-The original `deflex` is due to Rob Warnock.
 
 [View source](definitions.lisp#L9)
 
 ### `(define-values values &body (expr))`
 
 Like `def`, but for multiple values.
-Each variable in VALUES is bound as with `def`, then set all at once
-as with `multiple-value-setq`.
+Each variable in VALUES is given a global, lexical binding, as with
+`def`, then set all at once, as with `multiple-value-setq`.
 
 [View source](definitions.lisp#L59)
 
@@ -315,6 +317,8 @@ Lisp.
 
 [View source](definitions.lisp#L167)
 
+## Internal Definitions
+
 ### `(local* &body body)`
 
 Like `local`, but leave the last form in BODY intact.
@@ -326,7 +330,7 @@ Like `local`, but leave the last form in BODY intact.
      (labels ((aux-fn ...))
        (defun entry-point ...)) 
 
-[View source](definitions.lisp#L186)
+[View source](internal-definitions.lisp#L13)
 
 ### `(local &body orig-body)`
 
@@ -362,16 +366,16 @@ when it is equivalent to `progn`).
 The recognized definition forms are:
 
 - `def`, for lexical variables (as with `letrec`)
-- `define-values`, for multiple lexical variables at once.
+- `define-values`, for multiple lexical variables at once
 - `defun`, for local functions (as with `labels`)
 - `defalias`, to bind values in the function namespace (like `fbindrec*`)
 - `declaim`, to make declarations (as with `declare`)
 - `defconstant` and `defconst`, which behave exactly like symbol macros
+- `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
 
 Also, with serious restrictions, you can use:
 
 - `defmacro`, for local macros (as with `defmacro`)
-- `define-symbol-macro`, to bind symbol macros (as with `symbol-macrolet`)
 
 (Note that the top-level definition forms defined by Common Lisp
 are (necessarily) supplemented by three from Serapeum: `def',
@@ -408,15 +412,14 @@ can use the top-level idiom of wrapping `let` around `defun`.
       (adder 2))
     => 4
 
-Support for macros is sharply limited.
+Support for macros is sharply limited. (Symbol macros, on the other
+hand, are completely supported.)
 
-1. Macros and symbol macros must precede all other expressions.
+1. Macros defined with `defmacro` must precede all other expressions.
 
-2. Macros and symbol macros cannot be defined inside of binding forms
-like `let`.
+2. Macros cannot be defined inside of binding forms like `let`.
 
-3. `symbol-macrolet` and `macrolet` are not allowed at the top level
-of a `local` form.
+3. `macrolet` is not allowed at the top level of a `local` form.
 
 These restrictions are undesirable, but well justified: it is
 impossible to handle the general case both correctly and portably, and
@@ -437,7 +440,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](definitions.lisp#L199)
+[View source](internal-definitions.lisp#L548)
 
 ## Binding
 
@@ -1320,7 +1323,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L260)
+[View source](hash-tables.lisp#L263)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -1328,7 +1331,24 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L271)
+[View source](hash-tables.lisp#L274)
+
+### `(hash-table-function hash-table &key read-only)`
+
+Return a function for accessing HASH-TABLE.
+
+Calling the function with a single argument is equivalent to `gethash`
+against HASH-TABLE.
+
+    (def x (make-hash-table))
+
+    (funcall (hash-table-function x) y)
+    ≡ (gethash y x)
+
+If READ-ONLY is nil, then calling the function with two arguments is
+equivalent to `(setf (gethash ...))' against HASH-TABLE.
+
+[View source](hash-tables.lisp#L284)
 
 ## Files
 
@@ -2041,19 +2061,19 @@ Is CHAR whitespace?
 Spaces, tabs, any kind of line break, page breaks, and no-break spaces
 are considered whitespace.
 
-[View source](strings.lisp#L20)
+[View source](strings.lisp#L16)
 
 ### `(trim-whitespace string)`
 
 STRING without whitespace at ends.
 
-[View source](strings.lisp#L28)
+[View source](strings.lisp#L24)
 
 ### `(ascii-char-p char)`
 
 Is CHAR an ASCII char?
 
-[View source](strings.lisp#L32)
+[View source](strings.lisp#L28)
 
 ### `(with-string (var &optional stream) &body body)`
 
@@ -2072,7 +2092,7 @@ functions.
       (with-string (s stream)
         ...))
 
-[View source](strings.lisp#L51)
+[View source](strings.lisp#L47)
 
 ### `(collapse-whitespace string)`
 
@@ -2080,14 +2100,14 @@ Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character.
 
-[View source](strings.lisp#L80)
+[View source](strings.lisp#L76)
 
 ### `(blankp seq)`
 
 SEQ is either empty, or consists entirely of characters that
 satisfy `whitespacep`.
 
-[View source](strings.lisp#L99)
+[View source](strings.lisp#L95)
 
 ### `(concat &rest strings)`
 
@@ -2095,7 +2115,7 @@ Abbreviation for (concatenate 'string ...).
 
 From Emacs Lisp.
 
-[View source](strings.lisp#L113)
+[View source](strings.lisp#L109)
 
 ### `(mapconcat fun seq separator &key stream)`
 
@@ -2111,13 +2131,13 @@ like the first argument to `format`.
 
 From Emacs Lisp.
 
-[View source](strings.lisp#L138)
+[View source](strings.lisp#L136)
 
 ### `(string-join strings &optional separator)`
 
 Like `(mapconcat #'string STRINGS (string SEPARATOR))'.
 
-[View source](strings.lisp#L160)
+[View source](strings.lisp#L158)
 
 ### `(string-upcase-initials string)`
 
@@ -2130,33 +2150,33 @@ each word are not changed.
 
 From Emacs Lisp (where it is simply `upcase-initials`).
 
-[View source](strings.lisp#L165)
+[View source](strings.lisp#L163)
 
 ### `(nstring-upcase-initials string)`
 
 Destructive version of `string-upcase-initials`.
 
-[View source](strings.lisp#L177)
+[View source](strings.lisp#L175)
 
 ### `(same-case-p string)`
 
 Every character with case in STRING has the same case.
 Return `:upper` or `:lower` as appropriate.
 
-[View source](strings.lisp#L196)
+[View source](strings.lisp#L194)
 
 ### `(nstring-invert-case string)`
 
 Destructive version of `string-invert-case`.
 
-[View source](strings.lisp#L219)
+[View source](strings.lisp#L217)
 
 ### `(string-invert-case string)`
 
 Invert the case of STRING.
 This does the same thing as a case-inverting readtable.
 
-[View source](strings.lisp#L228)
+[View source](strings.lisp#L226)
 
 ### `(words string &key start end)`
 
@@ -2179,7 +2199,7 @@ The definition of a word is the same as that used by
 
 Cf. `tokens`.
 
-[View source](strings.lisp#L235)
+[View source](strings.lisp#L233)
 
 ### `(tokens string &key start end)`
 
@@ -2191,7 +2211,7 @@ Tokens are runs of non-whitespace characters.
 
 Cf. `words`.
 
-[View source](strings.lisp#L265)
+[View source](strings.lisp#L263)
 
 ### `(word-wrap string &key column stream)`
 
@@ -2201,13 +2221,13 @@ Note that this is not a general-purpose word-wrapping routine like you
 would find in a text editor: in particular, any existing whitespace is
 removed.
 
-[View source](strings.lisp#L280)
+[View source](strings.lisp#L278)
 
 ### `(lines string)`
 
 A list of lines in STRING.
 
-[View source](strings.lisp#L312)
+[View source](strings.lisp#L310)
 
 ### `(fmt control-string &rest args)`
 
@@ -2218,7 +2238,7 @@ some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
 
-[View source](strings.lisp#L317)
+[View source](strings.lisp#L316)
 
 ### `(escape string table &key start end stream)`
 
@@ -2328,7 +2348,7 @@ always included verbatim.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L502)
+[View source](strings.lisp#L505)
 
 ### `(chomp string &optional suffixes)`
 
@@ -2340,13 +2360,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L541)
+[View source](strings.lisp#L551)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L570)
+[View source](strings.lisp#L580)
 
 ## Sequences
 

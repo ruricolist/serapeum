@@ -280,3 +280,24 @@ opposite order."
     (multiple-value-bind (val val?)
         (gethash x hash-table)
       (values val? val))))
+
+(defun hash-table-function (hash-table &key read-only)
+  "Return a function for accessing HASH-TABLE.
+
+Calling the function with a single argument is equivalent to `gethash'
+against HASH-TABLE.
+
+    (def x (make-hash-table))
+
+    (funcall (hash-table-function x) y)
+    ≡ (gethash y x)
+
+If READ-ONLY is nil, then calling the function with two arguments is
+equivalent to `(setf (gethash ...))' against HASH-TABLE."
+  (if read-only
+      (lambda (key)
+        (gethash key hash-table))
+      (lambda (key &optional (value nil value?))
+        (if value?
+            (setf (gethash key hash-table) value)
+            (gethash key hash-table)))))

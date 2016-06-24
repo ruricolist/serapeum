@@ -39,8 +39,8 @@ If X is a class, it designates itself."
    (primary () :required t)
    (after (:after)))
   (flet ((call-methods (methods)
-           (mapcar #'(lambda (method)
-                       `(call-method ,method))
+           (mapcar (lambda (method)
+                     `(call-method ,method))
                    methods)))
     (let* ((form (if (or before after (rest primary))
                      `(multiple-value-prog1
@@ -52,12 +52,12 @@ If X is a class, it designates itself."
            (around-form (if around
                             `(call-method ,(first around)
                                           (,@(rest around)
-                                             (make-method ,form)))
+                                           (make-method ,form)))
                             form)))
       (if context
           `(call-method ,(first context)
                         (,@(rest context)
-                           (make-method ,around-form)))
+                         (make-method ,around-form)))
           around-form))))
 
 

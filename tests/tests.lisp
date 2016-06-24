@@ -477,7 +477,15 @@
       (is
        (equal (sort (copy-list list) #'>)
               (multiple-value-list
-               (eval `(sort-values #'> ,@list))))))))
+               (eval `(sort-values #'> ,@list)))))))
+
+  (test convert-string-case-to-case
+    (is (= 4)
+        (string-case "x"
+          ("a" 1)
+          ("b" 2)
+          ("c" 3)
+          ("x" 4)))))
 
 (suite threads)
 

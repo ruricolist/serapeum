@@ -201,30 +201,51 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 (defun expand-string-case (sf default cases)
   "Expand a string-case macro with a minimum of duplicated code."
   (once-only (sf)
-    (let ((keys (mapcar #'car cases)))
-      (flet ((single (l) (null (cdr l))))
-        (if (every #'single keys)
-            ;; Simple.
-            `(string-case:string-case (,sf :default ,default)
-               ,@(loop for ((k) . body) in cases
-                       collect (cons k body)))
-            (let* ((simple (remove-if-not #'single cases :key #'car))
-                   (complex (set-difference cases simple)))
-              (with-gensyms (block)
-                `(block ,block
-                   ,(let ((tags (make-gensym-list (length complex) (string 'body))))
-                      `(tagbody
-                          (return-from ,block
-                            (string-case:string-case (,sf :default ,default)
-                              ,@(loop for ((key) . body) in simple
-                                      collect `(,key ,@body))
-                              ,@(loop for keys in (mapcar #'car complex)
-                                      for tag in tags
-                                      append (loop for k in keys
-                                                   collect `(,k (go ,tag))))))
-                          ,@(loop for tag in tags
-                                  for body in (mapcar #'cdr complex)
-                                  append `(,tag (return-from ,block (progn ,@body))))))))))))))
+    (let* ((key-lists (mapcar #'car cases))
+           (keys (apply #'append key-lists)))
+      (flet ((single (l)
+               (if (listp l)
+                   (null (cdr l))
+                   (= (length l) 1))))
+        (cond
+          ;; Every string is of length 1.
+          ((every #'single keys)
+           `(and (= (length ,sf) 1)
+                 (case (aref ,sf 0)
+                   ,@(loop for (key-list . body) in cases
+                           collect `(,(mapcar (lambda (key)
+                                                (aref key 0))
+                                              key-list)
+                                     ,@body)))))
+          ((every #'single key-lists)
+           ;; Each clause has only one key.
+           `(string-case:string-case (,sf :default ,default)
+              ,@(loop for ((k) . body) in cases
+                      collect (cons k body))))
+          ;; Some clauses have multiple keys.
+          (t
+           (let* ((simple (remove-if-not #'single cases :key #'car))
+                  (complex (set-difference cases simple)))
+             (with-gensyms (block)
+               `(block ,block
+                  ,(let ((tags (make-gensym-list (length complex) (string 'body))))
+                     `(tagbody
+                         (return-from ,block
+                           (string-case:string-case (,sf :default ,default)
+                             ;; Just inline the simple clauses.
+                             ,@(loop for ((key) . body) in simple
+                                     collect `(,key ,@body))
+                             ;; Convert the complex clauses into a
+                             ;; series of simple clauses that jump to
+                             ;; the same body.
+                             ,@(loop for key-lists in (mapcar #'car complex)
+                                     for tag in tags
+                                     append (loop for k in key-lists
+                                                  collect `(,k (go ,tag))))))
+                         ;; The tags to jump to.
+                         ,@(loop for tag in tags
+                                 for body in (mapcar #'cdr complex)
+                                 append `(,tag (return-from ,block (progn ,@body)))))))))))))))
 
 (defmacro string-case (stringform &body cases)
   "Efficient `case'-like macro with string keys.

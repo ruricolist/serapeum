@@ -69,6 +69,8 @@
                 :depends-on ("package"))
                (:file "clos"
                 :depends-on ("package"))
+               (:file "mop"
+                :depends-on ("package"))
                (:file "hooks"
                 :depends-on ("package"))
                (:file "fbind"

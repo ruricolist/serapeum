@@ -285,7 +285,7 @@ Then, when you decide you want block compilation, simply switch the
 
 ## CLOS
 
-Serapeum includes some utilities for CLOS. These utitilies do nothing
+Serapeum includes some utilities for CLOS. These utilities do nothing
 earthshaking, but since the function reference does not include them,
 they should be documented somewhere.
 
@@ -293,19 +293,56 @@ they should be documented somewhere.
 
 Serapeum exports a method combination, `serapeum:standard/context`.
 You may recognize it as the `wrapping-standard` method combination
-written by [Tim Bradshaw](https://github.com/tfeb).
+due to [Tim Bradshaw](https://github.com/tfeb).
 
 Generic functions defined with `standard/context` behave the same as
-ordinary generic functions, except that they accept an extra
+ordinary generic functions, except that they allow an extra
 qualifier, `:context`. This extra qualifier works almost like
 `:around`, except instead of being run in most-specific-first order,
 like methods defined with `:around`, methods defined with `:context`
 are run in most-specific-last order. Furthermore, `:context` methods
-take priority of any other methods, including `:around` methods.
+take priority over any other methods, including `:around` methods.
 
 The big idea is that a class can use `:context` methods to make sure
-that any methods defined by subclasses – even `:around` methods – are
-evaluated in a certain dynamic context.
+that any methods defined by subclasses – even `:around` methods – run
+in a certain dynamic context.
+
+### Metaclass: topmost-object-class
+
+In most cases, when I write a metaclass, I want all of the classes
+defined using that metaclass to inherit from a specific class.
+Injecting a topmost class is not difficult to do, but it involves a
+certain amount of boilerplate.
+
+To eliminate that boilerplate, Serapeum exports a metaclass,
+`topmost-object-class`, to use as a base class for your metaclasses.
+When you define a metaclass, all you have to do to ensure that classes
+defined using your metaclass inherit from a specific class is to
+supply the name of the class to inherit from in the definition of the
+metaclass. This is better demonstrated than explained:
+
+``` lisp
+;;; The class to inherit from.
+(defclass my-topmost-object ()
+  ())
+
+;;; The metaclass.
+(defclass my-metaclass (serapeum:topmost-object-class)
+  ()
+  (:default-initargs
+   :topmost-class 'my-topmost-object))
+
+(defclass my-class ()
+  ()
+  (:metaclass my-metaclass))
+
+(typep (make-instance 'my-class) 'my-topmost-object) => t
+```
+
+Note that, since the topmost object is usually a standard class, there
+is a `validate-superclass` method which allows an instance of
+`topmost-object-class` to inherit from a standard class.
+
 # Function reference
 
 The complete reference is in a [separate file](reference.md).

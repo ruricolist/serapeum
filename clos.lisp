@@ -29,39 +29,6 @@ If X is a class, it designates itself."
 
 
 
-;;; See https://github.com/tfeb/interim-lisp/blob/master/wrapping-standard.lisp
-;;; and http://www.lispworks.com/documentation/HyperSpec/Body/m_defi_4.htm
-
-(define-method-combination standard/context ()
-  ((around (:around))
-   (context (:context) :order :most-specific-last)
-   (before (:before))
-   (primary () :required t)
-   (after (:after)))
-  (flet ((call-methods (methods)
-           (mapcar (lambda (method)
-                     `(call-method ,method))
-                   methods)))
-    (let* ((form (if (or before after (rest primary))
-                     `(multiple-value-prog1
-                          (progn ,@(call-methods before)
-                                 (call-method ,(first primary)
-                                              ,(rest primary)))
-                        ,@(call-methods (reverse after)))
-                     `(call-method ,(first primary))))
-           (around-form (if around
-                            `(call-method ,(first around)
-                                          (,@(rest around)
-                                           (make-method ,form)))
-                            form)))
-      (if context
-          `(call-method ,(first context)
-                        (,@(rest context)
-                         (make-method ,around-form)))
-          around-form))))
-
-
-
 (defmacro defmethods (class (self . slots) &body body)
   "Concisely define methods that specialize on the same class.
 

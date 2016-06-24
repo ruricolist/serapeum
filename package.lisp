@@ -184,8 +184,10 @@
    #:class-name-safe
    #:find-class-safe
    #:make
-   #:standard/context
    #:defmethods
+   ;; MOP.
+   #:standard/context
+   #:topmost-object-class
    ;; Hooks.
    #:*hook*
    #:add-hook

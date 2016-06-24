@@ -29,7 +29,7 @@ If X is a class, it designates itself."
 
 
 
-;;; See http://www.tfeb.org/programs/lisp/wrapping-standard.lisp
+;;; See https://github.com/tfeb/interim-lisp/blob/master/wrapping-standard.lisp
 ;;; and http://www.lispworks.com/documentation/HyperSpec/Body/m_defi_4.htm
 
 (define-method-combination standard/context ()

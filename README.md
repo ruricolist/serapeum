@@ -10,10 +10,6 @@ do:
 
 without package conflicts.
 
-In general, Serapeum tries to provide complete, correct
-implementations of utilities for which a complete, correct
-implementation is non-trivial.
-
 There may already be too many utility libraries for Common Lisp.
 Releasing another has become something to apologize for, not
 celebrate. But I would rather make my apologies than have to maintain

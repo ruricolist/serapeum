@@ -283,6 +283,29 @@ Then, when you decide you want block compilation, simply switch the
        (defun aux-fn ...)
        (defun entry-point ...))
 
+## CLOS
+
+Serapeum includes some utilities for CLOS. These utitilies do nothing
+earthshaking, but since the function reference does not include them,
+they should be documented somewhere.
+
+### Method combination: standard with context
+
+Serapeum exports a method combination, `serapeum:standard/context`.
+You may recognize it as the `wrapping-standard` method combination
+written by [Tim Bradshaw](https://github.com/tfeb).
+
+Generic functions defined with `standard/context` behave the same as
+ordinary generic functions, except that they accept an extra
+qualifier, `:context`. This extra qualifier works almost like
+`:around`, except instead of being run in most-specific-first order,
+like methods defined with `:around`, methods defined with `:context`
+are run in most-specific-last order. Furthermore, `:context` methods
+take priority of any other methods, including `:around` methods.
+
+The big idea is that a class can use `:context` methods to make sure
+that any methods defined by subclasses – even `:around` methods – are
+evaluated in a certain dynamic context.
 # Function reference
 
 The complete reference is in a [separate file](reference.md).

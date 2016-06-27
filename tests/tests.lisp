@@ -855,7 +855,11 @@ Robinson.")))
     (is (equal "The new way"
                (string-replace-all "old" "The old way" "new")))
     (is (equal "The new old way"
-               (string-replace-all "old" "The old old way" "new" :start 3 :end 7))))
+               (string-replace-all "old" "The old old way" "new" :start 3 :end 7)))
+    (is (equal "quux quux quux"
+               (string-replace-all "foo" "foo foo foo" "quux")))
+    (is (equal "quux quux foo"
+               (string-replace-all "foo" "foo foo foo" "quux" :count 2))))
 
   (test chomp
     ;; Remove the longest sequence first.

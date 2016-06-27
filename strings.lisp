@@ -485,24 +485,13 @@ but without consing."
 
 (defun string-replace (old string new &key (start 0) end stream)
   "Like `string-replace-all', but only replace the first match."
-  (declare (array-length start)
-           ((or array-length null) end))
-  (check-type old string)
-  (check-type new string)
-  (check-type string string)
-  (cond ((and (= (length old) 1) (= (length new) 1))
-         (substitute new old string :start start :end end :count 1))
-        (t
-         (let ((start (search old string :start2 start :end2 end)))
-           (with-string (s stream)
-             (if (null start) (write-string string s)
-                 (progn
-                   (unless (zerop start)
-                     (write-string string s :start 0 :end start))
-                   (write-string new s)
-                   (write-string string s :start (+ start (1- (length new)))))))))))
+  (string-replace-all old string new
+                      :start start
+                      :end end
+                      :stream stream
+                      :count 1))
 
-(defun string-replace-all (old string new &key (start 0) end stream)
+(defun string-replace-all (old string new &key (start 0) end stream count)
   "Do search-and-replace for constant strings.
 
 Note that START and END only affect where the replacements are made:
@@ -512,6 +501,16 @@ always included verbatim.
      (string-replace-all \"old\" \"The old old way\" \"new\"
                          :start 3 :end 6)
      => \"The new old way\"
+
+COUNT can be used to limit the maximum number of occurrences to
+replace. If COUNT is not specified, every occurrence of OLD between
+START and END is replaced with NEW.
+
+    (string-replace-all \"foo\" \"foo foo foo\" \"quux\")
+    => \"quux quux quux\"
+
+    (string-replace-all \"foo\" \"foo foo foo\" \"quux\" :count 2)
+    => \"quux quux foo\"
 
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'."
@@ -523,11 +522,13 @@ like the first argument to `format'."
   (cond
     ((not (search old string :start2 start :end2 end))
      string)
+    ((and count (zerop count))
+     string)
     ;; The use case in mind here is one where you have a list of
     ;; substitutions.
     ((and (= (length new) 1)
           (= (length old) 1))
-     (substitute new old string :start start :end end))
+     (substitute new old string :start start :end end :count count))
     (t
      (let* ((end (or end (length string)))
             (len (length old)))
@@ -535,18 +536,20 @@ like the first argument to `format'."
        (with-string (s stream)
          (unless (zerop start)
            (write-string string s :start 0 :end start))
-         (nlet rep ((start start))
-           (declare (array-length start))
+         (nlet rep ((start start)
+                    (count (or count (1- array-dimension-limit))))
+           (declare (array-length start count))
            (let ((match (search old string :start2 start :end2 end)))
              (declare ((or array-length null) match))
-             (if (not match)
+             (if (or (not match) (zerop count))
                  ;; No end, because we want the whole remainder of the
                  ;; string.
                  (write-string string s :start start)
                  (progn
                    (write-string string s :start start :end match)
                    (write-string new s)
-                   (rep (+ match len)))))))))))
+                   (rep (+ match len)
+                        (1- count)))))))))))
 
 (defun chomp (string
               &optional

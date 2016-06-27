@@ -522,7 +522,7 @@ like the first argument to `format'."
   (check-type string string)
   (cond
     ((not (search old string :start2 start :end2 end))
-     (return-from string-replace-all string))
+     string)
     ;; The use case in mind here is one where you have a list of
     ;; substitutions.
     ((and (= (length new) 1)

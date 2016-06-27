@@ -32,8 +32,9 @@ If X is a class, it designates itself."
 (defmacro defmethods (class (self . slots) &body body)
   "Concisely define methods that specialize on the same class.
 
-You can use `defgeneric' to define methods on a single generic
-function without having to repeat the name of the function:
+You can already use `defgeneric' to define an arbitrary number of
+methods on a single generic function without having to repeat the name
+of the function:
 
     (defgeneric fn (x)
       (:method ((x string)) ...)

@@ -167,6 +167,42 @@ and, taken together, they form an exhaustive partition of TYPE."
   (check-exhaustiveness 'case type body env)
   `(ccase ,keyplace ,@body))
 
+;;; Adapted from Alexandria.
+(defun expand-destructuring-case-of (type key clauses case-of)
+  (once-only (key)
+    `(if (typep ,key 'cons)
+         (,case-of ,type (car ,key)
+           ,@(mapcar (lambda (clause)
+                       (destructuring-bind ((keys . lambda-list) &body body) clause
+                         `(,keys
+                           (destructuring-bind ,lambda-list (cdr ,key)
+                             ,@body))))
+                     clauses))
+         (error "Invalid key to DESTRUCTURING-~S: ~S" ',case-of ,key))))
+
+(defmacro destructuring-ecase-of (type expr &body body)
+  "Like `destructuring-ecase', from Alexandria, but with exhaustivness
+checking.
+
+TYPE is a designator for a type, which should be defined as `(member
+...)'. At compile time, the macro checks that, taken together, the
+symbol at the head of each of the destructuring lists in BODY form an
+exhaustive partition of TYPE, and warns if it is not so."
+  (expand-destructuring-case-of type expr body 'ecase-of))
+
+(defmacro destructuring-case-of (type expr &body body)
+  "Like `destructuring-ecase-of', but an `otherwise' clause must also be supplied.
+
+Note that the otherwise clauses must also be a list:
+
+    ((otherwise &rest args) ...)"
+  (expand-destructuring-case-of type expr body 'case-of))
+
+(defmacro destructuring-ccase-of (type keyplace &body body)
+  "Like `destructuring-case-of', but providing a `store-value' restart
+to collect KEYPLACE and try again."
+  (expand-destructuring-case-of type keyplace body 'ccase-of))
+
 (defmacro case-using (pred keyform &body clauses)
   "ISLISP's case-using.
 

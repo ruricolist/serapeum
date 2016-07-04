@@ -202,6 +202,23 @@ them sane initialization values."
 (defun shadow-names (binds)
   (remove-duplicates binds :from-end t :key #'ensure-car))
 
+(deftype internal-definition-form ()
+  '(member
+    nonlocal
+    defmacro define-symbol-macro
+    declaim
+    def
+    defconstant defconst
+    defun defalias
+    progn prog1 multiple-value-prog1 prog2 eval-when locally
+    block
+    progv
+    flet labels
+    let let*
+    multiple-value-bind
+    destructuring-bind
+    symbol-macrolet))
+
 (defmethods internal-definitions-env
     (self vars decls hoisted-vars var-aliases labels exprs global-symbol-macros env)
   (:method ensure-var-alias (self var)
@@ -318,7 +335,7 @@ them sane initialization values."
   (:method expand-partially (self form)
     "Macro-expand FORM until it becomes a definition form or macro expansion stops."
     (if (atom form) (step-expansion self form)
-        (destructuring-case form
+        (destructuring-case-of internal-definition-form form
           ;; A specific form to stop expansion.
           ((nonlocal &body _) (declare (ignore _))
            (expansion-done self form))

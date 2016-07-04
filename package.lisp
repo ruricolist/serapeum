@@ -52,6 +52,9 @@
    #:ecase-of
    #:ctypecase-of
    #:ccase-of
+   #:destructuring-case-of
+   #:destructuring-ccase-of
+   #:destructuring-ecase-of
    #:string-case
    #:string-ecase
    #:case-using

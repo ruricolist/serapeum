@@ -7,7 +7,7 @@
 
 (defvar *subenv*)
 
-(defmacro nonlocal (&body body)
+(defmacro without-internal-definitions (&body body)
   `(progn ,@body))
 
 (defmacro local* (&body body)
@@ -21,7 +21,7 @@
        (defun entry-point ...)) "
   `(local
      ,@(butlast body)
-     (nonlocal ,@(last body))))
+     (without-internal-definitions ,@(last body))))
 
 (defun initialize-binds-from-decls (binds-in decls &optional env)
   "Given a list of bindings and a set of declarations, look for any
@@ -204,7 +204,7 @@ them sane initialization values."
 
 (deftype internal-definition-form ()
   '(member
-    nonlocal
+    without-internal-definitions
     defmacro define-symbol-macro
     declaim
     def
@@ -337,7 +337,7 @@ them sane initialization values."
     (if (atom form) (step-expansion self form)
         (destructuring-case-of internal-definition-form form
           ;; A specific form to stop expansion.
-          ((nonlocal &body _) (declare (ignore _))
+          ((without-internal-definitions &body _) (declare (ignore _))
            (expansion-done self form))
 
           ;; DEFINITION FORMS.

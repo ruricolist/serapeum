@@ -342,6 +342,13 @@ them sane initialization values."
 
           ;; DEFINITION FORMS.
           ((defmacro name args &body body)
+           (when (typep name 'internal-definition-form)
+             ;; Cf. R7RS: " it is an error for a definition to define
+             ;; an identifier whose binding has to be known in order
+             ;; to determine the meaning of the definition itself, or
+             ;; of any preceding definition that belongs to the same
+             ;; group of internal definitions."
+             (error "Cannot shadow ~a in an internal definition." name))
            (eject-macro self name
                         `(macrolet ((,name ,args ,@body)))))
 

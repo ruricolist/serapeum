@@ -91,120 +91,65 @@ This is equivalent to `(setf (fdefinition ...))`, but also gives the
 function a compile-time definition so compilers don’t complain about
 its being undefined.
 
-## Dividing sequences
+## CLOS
 
-All recent functional programming languages share a family of useful
-sequence-related functions with terrible names. All of them are called
-something like “split”, “divide”, or “group”, more or less at random.
+Serapeum includes some utilities for CLOS. These utilities do nothing
+earthshaking, but since the function reference does not include them,
+they should be documented somewhere.
 
-For each function, we ensure:
+### Method combination: standard with context
 
-- It is efficient.
-- It returns like sequences for like (lists for lists, strings for
-  strings, &c.).
-- It accommodates generic sequences (`list` and `vector` are not
-  necessarily an exhaustive partition of `sequence`).
-- It has a distinctive name which does not use any of the weasel words
-  “split,” “divide,” or “group.”
+Serapeum exports a method combination, `serapeum:standard/context`.
+You may recognize it as the `wrapping-standard` method combination
+due to [Tim Bradshaw](https://github.com/tfeb).
 
-The function that returns *runs* of like elements in a sequence is
-called `runs`:
+Generic functions defined with `standard/context` behave the same as
+ordinary generic functions, except that they allow an extra
+qualifier, `:context`. This extra qualifier works almost like
+`:around`, except instead of being run in most-specific-first order,
+like methods defined with `:around`, methods defined with `:context`
+are run in most-specific-last order. Furthermore, `:context` methods
+take priority over any other methods, including `:around` methods.
 
-    (runs '(head tail head head tail))
-    => '((head) (tail) (head head) (tail))
+The big idea is that a class can use `:context` methods to make sure
+that any methods defined by subclasses – even `:around` methods – run
+in a certain dynamic context.
 
-The function that returns a sequence in *batches* of a certain size is
-called `batches`:
+### Metaclass: topmost-object-class
 
-    (batches (iota 11) 2)
-    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
+In most cases, when I write a metaclass, I want all of the classes
+defined using that metaclass to inherit from a specific class.
+Injecting a topmost class is not difficult to do, but it involves a
+certain amount of boilerplate.
 
-The function which groups the like elements of a sequence is called
-`assort` (because it returns a sequence *assorted by* some property).
+To eliminate that boilerplate, Serapeum exports a metaclass,
+`topmost-object-class`, to use as a base class for your metaclasses.
+When you define a metaclass, all you have to do to ensure that classes
+defined using your metaclass inherit from a specific class is to
+supply the name of the class to inherit from in the definition of the
+metaclass. This is better demonstrated than explained:
 
-    (assort (iota 10)
-            :key (lambda (n) (mod n 3)))
-    => '((0 3 6 9) (1 4 7) (2 5 8))
+``` lisp
+;;; The class to inherit from.
+(defclass my-topmost-object ()
+  ())
 
-The function that takes a predicate and a sequence, and returns two
-sequences – one sequence of the elements for which the function
-returns true, and one sequence of the elements for which it returns
-false – is (still) called `partition`.
+;;; The metaclass.
+(defclass my-metaclass (serapeum:topmost-object-class)
+  ()
+  (:default-initargs
+   :topmost-class 'my-topmost-object))
 
-    (partition #'oddp (iota 10))
-    => (1 3 5 7 9), (0 2 4 6 8)
+(defclass my-class ()
+  ()
+  (:metaclass my-metaclass))
 
-The generalized version of `partition`, which takes a number of
-functions and returns the items that satisfy each condition, is called
-`partitions`.
-
-    (partitions (list #'primep #'evenp) (iota 10))
-    => ((2 3 5 7) (0 4 6 8)), (1 9)
-
-Items that do not belong in any partition are returned as a second value.
-
-Serapeum simply re-exports `split-sequence`, which seems to be firmly
-rooted under its present name.
-
-## Compile-time exhaustiveness checking
-
-`etypecase-of` is just like `etypecase`, except that it takes an
-additional argument – the type to be matched against – and warns, at
-compile time, if the clauses in its body are not an exhaustive
-partition of that type.
-
-```
-(defun negative-integer? (n)
-  (etypecase-of t n
-    ((not integer) nil)
-    ((integer * -1) t)
-    ((integer 1 *) nil)))
-=> Warning
-
-(defun negative-integer? (n)
-  (etypecase-of t n
-    ((not integer) nil)
-    ((integer * -1) t)
-    ((integer 1 *) nil)
-    ((integer 0) nil)))
-=> No warning
+(typep (make-instance 'my-class) 'my-topmost-object) => t
 ```
 
-`ecase-of` is a succint variant of `etypecase` with the same syntax as
-`ecase`.
-
-We may call a type defined using `member` an *enumeration*. Take an
-enumeration like this:
-
-```
-(deftype switch-state ()
-  '(member :on :off :stuck :broken))
-```
-
-Now we can use `ecase-of` to take all the states of the switch into
-account.
-
-```
-(defun flick (switch)
-  (ecase-of switch-state (state switch)
-    (:on (switch-off switch))
-    (:off (switch-on switch))))
-=> Warning
-
-(defun flick (switch)
-  (ecase-of switch-state (state switch)
-    (:on (switch-off switch))
-    (:off (switch-on switch))
-    ((:stuck :broken) (error "Sorry, can't flick ~a" switch))))
-=> No warning
-```
-
-`typecase-of` and `case-of` are `etypecase-of` and `ecase-of`,
-respectively, except that they expect, and enforce, the presence of an
-`otherwise` clause.
-
-There are continuable versions of these macros – `ctypecase-of` and
-`ccase-of`.
+Note that, since the topmost object is usually a standard class, there
+is a `validate-superclass` method which allows an instance of
+`topmost-object-class` to inherit from a standard class.
 
 ## Internal definitions
 
@@ -282,66 +227,121 @@ Then, when you decide you want block compilation, simply switch the
      (local*
        (defun aux-fn ...)
        (defun entry-point ...))
+       
+## Compile-time exhaustiveness checking
 
-## CLOS
+`etypecase-of` is just like `etypecase`, except that it takes an
+additional argument – the type to be matched against – and warns, at
+compile time, if the clauses in its body are not an exhaustive
+partition of that type.
 
-Serapeum includes some utilities for CLOS. These utilities do nothing
-earthshaking, but since the function reference does not include them,
-they should be documented somewhere.
+```
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)))
+=> Warning
 
-### Method combination: standard with context
-
-Serapeum exports a method combination, `serapeum:standard/context`.
-You may recognize it as the `wrapping-standard` method combination
-due to [Tim Bradshaw](https://github.com/tfeb).
-
-Generic functions defined with `standard/context` behave the same as
-ordinary generic functions, except that they allow an extra
-qualifier, `:context`. This extra qualifier works almost like
-`:around`, except instead of being run in most-specific-first order,
-like methods defined with `:around`, methods defined with `:context`
-are run in most-specific-last order. Furthermore, `:context` methods
-take priority over any other methods, including `:around` methods.
-
-The big idea is that a class can use `:context` methods to make sure
-that any methods defined by subclasses – even `:around` methods – run
-in a certain dynamic context.
-
-### Metaclass: topmost-object-class
-
-In most cases, when I write a metaclass, I want all of the classes
-defined using that metaclass to inherit from a specific class.
-Injecting a topmost class is not difficult to do, but it involves a
-certain amount of boilerplate.
-
-To eliminate that boilerplate, Serapeum exports a metaclass,
-`topmost-object-class`, to use as a base class for your metaclasses.
-When you define a metaclass, all you have to do to ensure that classes
-defined using your metaclass inherit from a specific class is to
-supply the name of the class to inherit from in the definition of the
-metaclass. This is better demonstrated than explained:
-
-``` lisp
-;;; The class to inherit from.
-(defclass my-topmost-object ()
-  ())
-
-;;; The metaclass.
-(defclass my-metaclass (serapeum:topmost-object-class)
-  ()
-  (:default-initargs
-   :topmost-class 'my-topmost-object))
-
-(defclass my-class ()
-  ()
-  (:metaclass my-metaclass))
-
-(typep (make-instance 'my-class) 'my-topmost-object) => t
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)
+    ((integer 0) nil)))
+=> No warning
 ```
 
-Note that, since the topmost object is usually a standard class, there
-is a `validate-superclass` method which allows an instance of
-`topmost-object-class` to inherit from a standard class.
+`ecase-of` is a succint variant of `etypecase` with the same syntax as
+`ecase`.
+
+We may call a type defined using `member` an *enumeration*. Take an
+enumeration like this:
+
+```
+(deftype switch-state ()
+  '(member :on :off :stuck :broken))
+```
+
+Now we can use `ecase-of` to take all the states of the switch into
+account.
+
+```
+(defun flick (switch)
+  (ecase-of switch-state (state switch)
+    (:on (switch-off switch))
+    (:off (switch-on switch))))
+=> Warning
+
+(defun flick (switch)
+  (ecase-of switch-state (state switch)
+    (:on (switch-off switch))
+    (:off (switch-on switch))
+    ((:stuck :broken) (error "Sorry, can't flick ~a" switch))))
+=> No warning
+```
+
+`typecase-of` and `case-of` are `etypecase-of` and `ecase-of`,
+respectively, except that they expect, and enforce, the presence of an
+`otherwise` clause.
+
+There are continuable versions of these macros – `ctypecase-of` and
+`ccase-of`.
+
+## Dividing sequences
+
+All recent functional programming languages share a family of useful
+sequence-related functions with terrible names. All of them are called
+something like “split”, “divide”, or “group”, more or less at random.
+
+For each function, we ensure:
+
+- It is efficient.
+- It returns like sequences for like (lists for lists, strings for
+  strings, &c.).
+- It accommodates generic sequences (`list` and `vector` are not
+  necessarily an exhaustive partition of `sequence`).
+- It has a distinctive name which does not use any of the weasel words
+  “split,” “divide,” or “group.”
+
+The function that returns *runs* of like elements in a sequence is
+called `runs`:
+
+    (runs '(head tail head head tail))
+    => '((head) (tail) (head head) (tail))
+
+The function that returns a sequence in *batches* of a certain size is
+called `batches`:
+
+    (batches (iota 11) 2)
+    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
+
+The function which groups the like elements of a sequence is called
+`assort` (because it returns a sequence *assorted by* some property).
+
+    (assort (iota 10)
+            :key (lambda (n) (mod n 3)))
+    => '((0 3 6 9) (1 4 7) (2 5 8))
+
+The function that takes a predicate and a sequence, and returns two
+sequences – one sequence of the elements for which the function
+returns true, and one sequence of the elements for which it returns
+false – is (still) called `partition`.
+
+    (partition #'oddp (iota 10))
+    => (1 3 5 7 9), (0 2 4 6 8)
+
+The generalized version of `partition`, which takes a number of
+functions and returns the items that satisfy each condition, is called
+`partitions`.
+
+    (partitions (list #'primep #'evenp) (iota 10))
+    => ((2 3 5 7) (0 4 6 8)), (1 9)
+
+Items that do not belong in any partition are returned as a second value.
+
+Serapeum simply re-exports `split-sequence`, which seems to be firmly
+rooted under its present name.
 
 # Function reference
 

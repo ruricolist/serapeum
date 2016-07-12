@@ -507,7 +507,7 @@ Cf. `ensure2'."
             setter
             `(or (ignoring (or unbound-slot unbound-variable)
                    ,getter)
-                 (progn ,newval)))))
+                 (progn ,@newval)))))
 
 (defmacro ensure2 (place &body newval &environment env)
   "Like `ensure', but specifically for accessors that return a second

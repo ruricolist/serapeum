@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (28 files, 247 functions)
+# Function Listing For SERAPEUM (28 files, 250 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -440,7 +440,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](internal-definitions.lisp#L548)
+[View source](internal-definitions.lisp#L572)
 
 ## Binding
 
@@ -613,6 +613,35 @@ Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and t
 
 [View source](control-flow.lisp#L165)
 
+### `(destructuring-ecase-of type expr &body body)`
+
+Like `destructuring-ecase`, from Alexandria, but with exhaustivness
+checking.
+
+TYPE is a designator for a type, which should be defined as `(member
+...)`. At compile time, the macro checks that, taken together, the
+symbol at the head of each of the destructuring lists in BODY form an
+exhaustive partition of TYPE, and warns if it is not so.
+
+[View source](control-flow.lisp#L183)
+
+### `(destructuring-case-of type expr &body body)`
+
+Like `destructuring-ecase-of`, but an `otherwise` clause must also be supplied.
+
+Note that the otherwise clauses must also be a list:
+
+    ((otherwise &rest args) ...)
+
+[View source](control-flow.lisp#L193)
+
+### `(destructuring-ccase-of type keyplace &body body)`
+
+Like `destructuring-case-of`, but providing a `store-value` restart
+to collect KEYPLACE and try again.
+
+[View source](control-flow.lisp#L201)
+
 ### `(case-using pred keyform &body clauses)`
 
 ISLISP's case-using.
@@ -626,7 +655,7 @@ This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause.
 
-[View source](control-flow.lisp#L170)
+[View source](control-flow.lisp#L206)
 
 ### `(string-case stringform &body cases)`
 
@@ -634,7 +663,7 @@ Efficient `case`-like macro with string keys.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L229)
+[View source](control-flow.lisp#L286)
 
 ### `(string-ecase stringform &body cases)`
 
@@ -642,14 +671,14 @@ Efficient `ecase`-like macro with string keys.
 
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L237)
+[View source](control-flow.lisp#L294)
 
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L256)
+[View source](control-flow.lisp#L313)
 
 ### `(cond-let var &body clauses)`
 
@@ -661,13 +690,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L262)
+[View source](control-flow.lisp#L319)
 
 ### `(econd-let symbol &rest clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L283)
+[View source](control-flow.lisp#L340)
 
 ### `(cond-every &body clauses)`
 
@@ -685,7 +714,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L296)
+[View source](control-flow.lisp#L353)
 
 ### `(bcond &rest clauses)`
 
@@ -712,19 +741,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L329)
+[View source](control-flow.lisp#L386)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...))
 
-[View source](control-flow.lisp#L382)
+[View source](control-flow.lisp#L439)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...))
 
-[View source](control-flow.lisp#L388)
+[View source](control-flow.lisp#L445)
 
 ### `(comment &body body)`
 
@@ -736,13 +765,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L394)
+[View source](control-flow.lisp#L451)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L404)
+[View source](control-flow.lisp#L461)
 
 ### `(nix place)`
 
@@ -751,7 +780,7 @@ Set PLACE to nil and return the old value of PLACE.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L408)
+[View source](control-flow.lisp#L465)
 
 ### `(ensure place &body newval)`
 
@@ -765,14 +794,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L423)
+[View source](control-flow.lisp#L480)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L455)
+[View source](control-flow.lisp#L512)
 
 ### `(~> needle &rest holes)`
 
@@ -786,14 +815,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L522)
+[View source](control-flow.lisp#L579)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L536)
+[View source](control-flow.lisp#L593)
 
 ### `(nest &rest things)`
 
@@ -817,7 +846,7 @@ Is equivalent to:
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L543)
+[View source](control-flow.lisp#L600)
 
 ### `(select keyform &body clauses)`
 
@@ -837,7 +866,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L568)
+[View source](control-flow.lisp#L625)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -847,7 +876,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L587)
+[View source](control-flow.lisp#L644)
 
 ### `(sort-values pred &rest values)`
 
@@ -859,7 +888,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L710)
+[View source](control-flow.lisp#L767)
 
 ## Threads
 
@@ -1726,8 +1755,9 @@ If X is a class, it designates itself.
 
 Concisely define methods that specialize on the same class.
 
-You can use `defgeneric` to define methods on a single generic
-function without having to repeat the name of the function:
+You can already use `defgeneric` to define an arbitrary number of
+methods on a single generic function without having to repeat the name
+of the function:
 
     (defgeneric fn (x)
       (:method ((x string)) ...)
@@ -1788,7 +1818,7 @@ docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power.
 
-[View source](clos.lisp#L65)
+[View source](clos.lisp#L32)
 
 ## Hooks
 
@@ -2333,7 +2363,7 @@ Like `string-replace-all`, but only replace the first match.
 
 [View source](strings.lisp#L486)
 
-### `(string-replace-all old string new &key start end stream)`
+### `(string-replace-all old string new &key start end stream count)`
 
 Do search-and-replace for constant strings.
 
@@ -2345,10 +2375,20 @@ always included verbatim.
                          :start 3 :end 6)
      => "The new old way"
 
+COUNT can be used to limit the maximum number of occurrences to
+replace. If COUNT is not specified, every occurrence of OLD between
+START and END is replaced with NEW.
+
+    (string-replace-all "foo" "foo foo foo" "quux")
+    => "quux quux quux"
+
+    (string-replace-all "foo" "foo foo foo" "quux" :count 2)
+    => "quux quux foo"
+
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L505)
+[View source](strings.lisp#L494)
 
 ### `(chomp string &optional suffixes)`
 
@@ -2360,13 +2400,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L551)
+[View source](strings.lisp#L554)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L580)
+[View source](strings.lisp#L583)
 
 ## Sequences
 

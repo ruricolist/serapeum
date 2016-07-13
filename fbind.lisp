@@ -57,6 +57,35 @@ it only applies to functions not yet bound.")
     (notany (disjoin #'second #'third)
             (append opt keys aux))))
 
+(defun declared-ftype (fn decls env)
+  "Return the declared arguments and return types as values."
+  (let ((decls (partition-declarations `(#',fn) decls env)))
+    (dolist (decl decls)
+      (match decl
+        (`(declare (ftype ,sig ,_))
+          (return
+            (match sig
+              (`(function ,args ,ret)
+                (values args ret t))
+              (`(-> ,args ,ret)
+                (values args ret t)))))))))
+
+(defun build-bind/ftype (var temp decls env)
+  (multiple-value-bind (args ret known?)
+      (declared-ftype var decls env)
+    (flet ((give-up ()
+             `(,var (&rest args)
+                    (declare (dynamic-extent args))
+                    (apply ,temp args))))
+      (cond ((not known?) (give-up))
+            ((notany (lambda (arg)
+                       (member arg '(&optional &key &allow-other-keys &rest)))
+                     args)
+             (let ((args (make-gensym-list (length args))))
+               `(,var ,args (the ,ret (funcall ,temp ,@args)))))
+            ;; We only care about fixed args at the moment.
+            (t (give-up))))))
+
 (defun partition-declarations-by-kind
     (simple complex lambda decls)
   (flet ((partn (defs decls)
@@ -220,6 +249,7 @@ symbol)."
   ;; let-over-lambda), we hoist the bindings to the top and bind
   ;; the lambda directly with flet.
   (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings))
+           (body decls (parse-body body))
            (vars  (mapcar #'first bindings))
            (exprs (mapcar #'second bindings))
            (temps (mapcar #'string-gensym vars)))
@@ -235,10 +265,9 @@ symbol)."
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
                         for temp in temps
-                        collect `(,var (&rest args)
-                                       (declare (dynamic-extent args))
-                                       (apply ,temp args))))
+                        collect (build-bind/ftype var temp decls env)))
            #-sbcl (declare (inline ,@vars))
+           ,@decls
            ,@body)))))
 
 (defmacro fbind* (bindings &body body &environment env)
@@ -315,11 +344,11 @@ generates another are undefined."
   (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings))
            (body decls (parse-body body))
            (simple complex lambda unref
-                   (partition-fbinds (append bindings lambdas)
-                                     body))
+            (partition-fbinds (append bindings lambdas)
+                              body))
            (temps (mapcar (compose #'gensym #'string #'first) complex))
            (simple-decls complex-decls lambda-decls others
-                         (partition-declarations-by-kind simple complex lambda decls)))
+            (partition-declarations-by-kind simple complex lambda decls)))
     `(let ,env
        ,@(when env-decls (unsplice `(declare ,@env-decls)))
        ;; Simple expressions reference functions already defined
@@ -332,9 +361,7 @@ generates another are undefined."
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
-                        collect `(,name (&rest args)
-                                        (declare (dynamic-extent args))
-                                        (apply ,temp args)))
+                        collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
              (comment "Lambdas")
              (labels (,@(loop for (name lambda) in lambda
@@ -379,9 +406,7 @@ used in successive bindings."
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
-                        collect `(,name (&rest args)
-                                        (declare (dynamic-extent args))
-                                        (apply ,temp args)))
+                        collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
              (comment "Lambdas")
              (labels (,@(loop for (name lambda) in lambda

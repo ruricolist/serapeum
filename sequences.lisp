@@ -740,18 +740,28 @@ false when called on the first element."
 ;;; TODO Allow the heap to have variable arity?
 ;;; http://www.pvk.ca/Blog/2014/04/13/number-systems-for-implicit-data-structures/
 
+(deftype heap ()
+  '(vector t))
+
 (defsubst heap-parent (i)
+  (declare (array-index i))
   (ash (1- i) -1))
 
 (defsubst heap-left (i)
+  (declare (array-index i))
   (1+ (ash i 1)))
 
 (defsubst heap-right (i)
+  (declare (array-index i))
   (+ 2 (ash i 1)))
 
 (defun heapify (heap start &key (key #'identity) (test #'>=))
-  (declare (function key test))
+  (declare (function key test)
+           (array-index start)
+           (heap heap))
   (fbind (key (ge test))
+    (declare (ftype (-> (t) t) key)
+             (ftype (-> (t t) t) ge))
     (let ((l (heap-left start))
           (r (heap-right start))
           (size (length heap))
@@ -771,7 +781,7 @@ false when called on the first element."
     heap))
 
 (defun heap-insert (heap new-item &key (key #'identity) (test #'>=))
-  (declare (function key test))
+  (declare (function key test) (heap heap))
   (fbind (key (ge test))
     (vector-push-extend nil heap)
     (loop for i = (1- (length heap)) then parent-i
@@ -784,10 +794,12 @@ false when called on the first element."
                   (return-from heap-insert i))))
 
 (defun heap-maximum (heap)
+  (declare (heap heap))
   (unless (zerop (length heap))
     (aref heap 0)))
 
 (defun heap-extract (heap i &key (key #'identity) (test #'>=))
+  (declare (heap heap) (array-index i))
   (unless (> (length heap) i)
     (error "Heap underflow"))
   (prog1
@@ -800,10 +812,11 @@ false when called on the first element."
   (heap-extract heap 0 :key key :test test))
 
 (defun heap-extract-all (heap &key (key #'identity) (test #'>=))
+  (declare (heap heap))
   (loop while (> (length heap) 0)
         collect (heap-extract-maximum heap :key key :test test)))
 
-(defun make-heap (&optional (size 100))
+(defsubst make-heap (&optional (size 100))
   (make-array size :adjustable t :fill-pointer 0))
 
 (defun bestn (n seq pred &key (key #'identity) memo)

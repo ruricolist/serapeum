@@ -77,8 +77,9 @@ From Arc."
                   items)
            `(case ,x ((,@items) t)))
           ((every #'stringp items)
-           `(string-case ,x
-              ((,@items) t)))
+           `(and (stringp ,x)
+                 (string-case ,x
+                   ((,@items) t))))
           (t `(or ,@(loop for item in items
                           collect `(equal ,x ,item)))))))
 

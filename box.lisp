@@ -32,10 +32,18 @@ recognize boxes using a type or predicate."
 
 (declaim (inline unbox (setf unbox)))
 
-(defun unbox (x)
+(defsubst unbox (x)
   "The value in the box X."
   (box-value x))
 
-(defun (setf unbox) (value x)
+(defsubst (setf unbox) (value x)
   "Put VALUE in box X."
   (setf (box-value x) value))
+
+;;; The compiler macros are included for CAS.
+
+(define-compiler-macro unbox (x)
+  `(box-value ,x))
+
+(define-compiler-macro (setf unbox) (value x)
+  `(setf (box-value ,x) ,value))

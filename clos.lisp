@@ -94,24 +94,28 @@ Is `defmethods' trivial? Yes, in terms of its implementation. This
 docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power."
-  `(macrolet ((:method (name &body body)
-                (let* ((class ',class)
-                       (self ',self)
-                       (slots ',slots)
-                       (qualifier (when (not (listp (car body))) (pop body)))
-                       (args (pop body))
-                       (docstring (when (stringp (car body)) (pop body)))
-                       (args-with-self (substitute (list self class) self args)))
-                  (when (equal args-with-self args)
-                    (warn "No binding for ~s in ~s" self args))
-                  `(symbol-macrolet ,(loop for slot in slots
-                                           ;; Same as with-slots, use
-                                           ;; (x y) alias slot Y to
-                                           ;; var X.
-                                           for alias = (if (listp slot) (first slot) slot)
-                                           for slot-name = (if (listp slot) (second slot) slot)
-                                           collect `(,alias (slot-value ,self ',slot-name)))
-                     (defmethod ,name ,@(unsplice qualifier) ,args-with-self
-                       ,@(unsplice docstring)
-                       ,@body)))))
-     ,@body))
+  (multiple-value-bind (body decls) (parse-body body)
+    (multiple-value-bind (slot-decls decls) (partition-declarations slots decls)
+      `(macrolet ((:method (name &body body)
+                    (let* ((class ',class)
+                           (self ',self)
+                           (slots ',slots)
+                           (qualifier (when (not (listp (car body))) (pop body)))
+                           (args (pop body))
+                           (docstring (when (stringp (car body)) (pop body)))
+                           (args-with-self (substitute (list self class) self args)))
+                      (when (equal args-with-self args)
+                        (warn "No binding for ~s in ~s" self args))
+                      `(symbol-macrolet ,(loop for slot in slots
+                                               ;; Same as with-slots, use
+                                               ;; (x y) alias slot Y to
+                                               ;; var X.
+                                               for alias = (if (listp slot) (first slot) slot)
+                                               for slot-name = (if (listp slot) (second slot) slot)
+                                               collect `(,alias (slot-value ,self ',slot-name)))
+                         ,@',slot-decls
+                         (defmethod ,name ,@(unsplice qualifier) ,args-with-self
+                           ,@(unsplice docstring)
+                           ,@body)))))
+         ,@decls
+         ,@body))))

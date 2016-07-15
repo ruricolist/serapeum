@@ -57,10 +57,14 @@ it only applies to functions not yet bound.")
     (notany (disjoin #'second #'third)
             (append opt keys aux))))
 
-(defun declared-ftype (fn decls env)
-  "Return the declared arguments and return types as values."
+(defun declared-ftype (fn decls &optional env)
+  "If DECLS contains an ftype declaration for FN, return it.
+Returns three values. The first two values are the arguments type and
+return type. The third is a boolean, which is `t' only when there was
+an ftype declaration."
+  (check-type fn symbol)
   (let ((decls (partition-declarations `(#',fn) decls env)))
-    (dolist (decl decls)
+    (dolist (decl decls (values nil nil nil))
       (match decl
         (`(declare (ftype ,sig ,_))
           (return

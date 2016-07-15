@@ -275,6 +275,7 @@
    #:nub
    #:gcp
    #:gcs
+   #:of-length
    #:length<
    #:length<=
    #:length>

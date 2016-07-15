@@ -518,6 +518,21 @@ If there is no common suffix, return NIL."
                (return)))
          seqs)))))
 
+(defun of-length (length)
+  "Return a predicate that returns T when called on a sequence of
+length LENGTH.
+
+    (funcall (of-length 3) '(1 2 3)) => t
+    (funcall (of-length 1) '(1 2 3)) => nil"
+  (lambda (seq)
+    (sequence-of-length-p seq length)))
+
+(define-compiler-macro of-length (&whole call length &environment env)
+  (if (constantp length env)
+      `(lambda (seq)
+         (sequence-of-length-p seq ,length))
+      call))
+
 (defun length< (&rest seqs)
   "Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer."

@@ -51,6 +51,7 @@ DECLS."
                  ((or (type=? type 'bit)
                       (type=? type 'fixnum)
                       (type=? type 'array-index)
+                      (type=? type 'array-length)
                       (subtypep type 'unsigned-byte env))
                   0)
                  ((type=? type '(complex integer)) #C(0 0))

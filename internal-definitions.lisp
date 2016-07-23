@@ -30,15 +30,13 @@ reasonable initialization values for them based on the declarations in
 DECLS."
   (labels ((var-decls-type (var decls)
              (let ((bind-decls (partition-declarations (list var) decls)))
-               (block decls-type
-                 (loop (dolist (decl bind-decls)
-                         (match decl
-                           ((list 'declare (list 'type typespec (and _ (eql var))))
-                            (return-from decls-type typespec))
-                           ((list 'declare (list typespec (and _ (eql var))))
-                            (return-from decls-type typespec))))
-                       ;; If we can't find a declaration, default to `t`.
-                       (return-from decls-type t)))))
+               ;; If we can't find a declaration, default to `t`.
+               (dolist (decl bind-decls t)
+                 (match decl
+                   ((list 'declare (list 'type typespec (and _ (eql var))))
+                    (return typespec))
+                   ((list 'declare (list typespec (and _ (eql var))))
+                    (return typespec))))))
            ;; Curiously, alexandria:type= doesn't take an environment arg.
            (type=? (x y)
              (and (subtypep x y env)

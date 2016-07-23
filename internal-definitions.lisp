@@ -70,15 +70,15 @@ DECLS."
            (binds-out (binds-in decls binds-out)
              (if (endp binds-in)
                  (nreverse binds-out)
-                 (let ((var (first binds-in)))
+                 (destructuring-bind (var . binds-in) binds-in
                    (if (listp var)
                        ;; Already initialized.
-                       (let ((binds-in (rest binds-in))
-                             (binds-out (cons var binds-out)))
-                         (binds-out binds-in decls binds-out))
+                       (binds-out binds-in
+                                  decls
+                                  (cons var binds-out))
                        (let* ((init (initialization-value var decls))
                               (bind (if init `(,var ,init) var)))
-                         (binds-out (rest binds-in)
+                         (binds-out binds-in
                                     decls
                                     (cons bind binds-out))))))))
     ;; Shortcut: no declarations, just return the bindings.

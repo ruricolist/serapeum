@@ -86,7 +86,7 @@ an ftype declaration."
                        (member arg lambda-list-keywords))
                      args)
              (let ((args (make-gensym-list (length args))))
-               `(,var ,args (the ,ret (funcall ,temp ,@args)))))
+               `(,var ,args (funcall ,temp ,@args))))
             ;; We only care about fixed args at the moment.
             (t (give-up))))))
 

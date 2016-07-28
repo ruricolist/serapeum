@@ -83,7 +83,7 @@ an ftype declaration."
                     (apply ,temp args))))
       (cond ((not known?) (give-up))
             ((notany (lambda (arg)
-                       (member arg '(&optional &key &allow-other-keys &rest)))
+                       (member arg lambda-list-keywords))
                      args)
              (let ((args (make-gensym-list (length args))))
                `(,var ,args (the ,ret (funcall ,temp ,@args)))))

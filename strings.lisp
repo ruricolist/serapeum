@@ -401,46 +401,48 @@ From Arc."
                             (let ((docstring (format nil "Like `~(~a~)', but case-insensitive." name1)))
                               (mkdef name2 :docstring docstring))))))))
 
-  (defcmp (string^= string-prefix-p) (s1 s2)
+  (defcmp (string^= string-prefix-p) (prefix string)
     "Is S1 a prefix of S2?"
-    (let ((ms (call mismatch s1 s2)))
+    (let ((ms (call mismatch prefix string)))
       (or (not ms) (= ms end1))))
 
   ;; Optimization: the prefix is a single character.
   (macrolet ((dcm (name test)
-               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+               `(define-compiler-macro ,name (&whole call prefix string &rest args)
                   (if args call
-                      (if (and (stringp s1) (= (length s1) 1))
+                      (if (and (stringp prefix)
+                               (= (length prefix) 1))
                           `((lambda (s)
                               (and (plusp (length s))
-                                   (,',test ,(character s1)
+                                   (,',test ,(character prefix)
                                      (aref s 0))))
-                            (string ,s2))
+                            (string ,string))
                           call)))))
     (dcm string^= char=)
     (dcm string-prefix-p char-equal))
 
-  (defcmp (string$= string-suffix-p) (s1 s2)
-    "Is S1 a suffix of S2?"
-    (let ((ms (call mismatch s1 s2 :from-end t)))
+  (defcmp (string$= string-suffix-p) (suffix string)
+    "Is SUFFIX a suffix of S2?"
+    (let ((ms (call mismatch suffix string :from-end t)))
       (or (not ms) (= ms start1))))
 
   ;; Optimization: the suffix is a single character.
   (macrolet ((dcm (name test)
-               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+               `(define-compiler-macro ,name (&whole call suffix string &rest args)
                   (if args call
-                      (if (and (stringp s1) (= (length s1) 1))
+                      (if (and (stringp suffix)
+                               (= (length suffix) 1))
                           `((lambda (s)
                               (and (plusp (length s))
-                                   (,',test ,(character s1)
+                                   (,',test ,(character suffix)
                                      (aref s (1- (length s))))))
-                            (string ,s2))
+                            (string ,string))
                           call)))))
     (dcm string$= char=)
     (dcm string-suffix-p char-equal))
 
-  (defcmp (string*= string-contains-p) (s1 s2)
-    "Is S1 a substring of S2?
+  (defcmp (string*= string-contains-p) (substring string)
+    "Is SUBSTRING a substring of S2?
 
 This is similar, but not identical, to SEARCH.
 
@@ -448,37 +450,38 @@ This is similar, but not identical, to SEARCH.
      (search \"nil\" \"nil\") => 0
      (string*= nil \"foo\") => NIL
      (string*= nil \"nil\") => T"
-    (call search s1 s2))
+    (call search substring string))
 
   ;; Optimization: the substring is a single character.
   (macrolet ((dcm (name test)
-               `(define-compiler-macro ,name (&whole call s1 s2 &rest args)
+               `(define-compiler-macro ,name (&whole call substring string &rest args)
                   (if args call
-                      (if (and (stringp s1) (= (length s1) 1))
-                          `(position ,(character s1) (string ,s2) :test #',',test)
+                      (if (and (stringp substring)
+                               (= (length substring) 1))
+                          `(position ,(character substring) (string ,string) :test #',',test)
                           call)))))
     (dcm string*= char=)
     (dcm string-contains-p char-equal))
 
-  (defcmp (string~= string-token-p) (s1 s2)
-    "Does S1 occur in S2 as a token?
+  (defcmp (string~= string-token-p) (token string)
+    "Does TOKEN occur in STRING as a token?
 
 Equivalent to
-     (find S1 (tokens S2) :test #'string=),
+     (find TOKEN (tokens STRING) :test #'string=),
 but without consing."
     ;; Adapted from split-sequence.
-    (let ((len (length s2))
+    (let ((len (length string))
           (end end2))
       (declare (array-length len end))
       (macrolet ((compare-segment (left right)
-                   `(not (mismatch s1 s2 :start1 start1 :end1 end1
-                                         :start2 ,left :end2 ,right
-                                         :test test))))
+                   `(not (mismatch token string :start1 start1 :end1 end1
+                                                :start2 ,left :end2 ,right
+                                                :test test))))
         (loop for left of-type array-length
                 = start2
                   then (+ right 1)
               for right of-type array-length
-                = (min (or (position-if #'whitespacep s2 :start left) len)
+                = (min (or (position-if #'whitespacep string :start left) len)
                        end)
                   thereis (and (not (= right left))
                                (compare-segment left right))

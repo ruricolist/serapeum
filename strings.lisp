@@ -365,7 +365,8 @@ is to return a string."
   "If STRING is longer than N, truncate it and append ELLIPSIS.
 
 Note that the resulting string is longer than N by the length of
-ELLIPSIS, so the string may come out longer than it started.
+ELLIPSIS, so if N is very small the string may come out longer than it
+started.
 
      (ellipsize \"abc\" 2)
      => \"ab...\"

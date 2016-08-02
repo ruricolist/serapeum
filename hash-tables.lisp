@@ -281,7 +281,7 @@ opposite order."
         (gethash x hash-table)
       (values val? val))))
 
-(defun hash-table-function (hash-table &key read-only)
+(defun hash-table-function (hash-table &key read-only strict)
   "Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash'
@@ -293,11 +293,34 @@ against HASH-TABLE.
     ≡ (gethash y x)
 
 If READ-ONLY is nil, then calling the function with two arguments is
-equivalent to `(setf (gethash ...))' against HASH-TABLE."
-  (if read-only
-      (lambda (key)
-        (gethash key hash-table))
-      (lambda (key &optional (value nil value?))
-        (if value?
-            (setf (gethash key hash-table) value)
-            (gethash key hash-table)))))
+equivalent to `(setf (gethash ...))' against HASH-TABLE.
+
+If STRICT is non-nil, then the function signals an error if it is
+called with a key that is not present in HASH-TABLE. This applies to
+setting keys, as well as looking them up."
+  (assure function
+    (if strict
+        (flet ((no-such-key (key)
+                 (error "Hash table ~a has no key ~a" hash-table key)))
+          (if read-only
+              (lambda (key)
+                (multiple-value-bind (value present?)
+                    (gethash key hash-table)
+                  (if present?
+                      value
+                      (no-such-key key))))
+              (lambda (key &optional (value nil value?))
+                (multiple-value-bind (old-value present?)
+                    (gethash key hash-table)
+                  (if present?
+                      (if value?
+                          (setf (gethash key hash-table) value)
+                          old-value)
+                      (no-such-key key))))))
+        (if read-only
+            (lambda (key)
+              (gethash key hash-table))
+            (lambda (key &optional (value nil value?))
+              (if value?
+                  (setf (gethash key hash-table) value)
+                  (gethash key hash-table)))))))

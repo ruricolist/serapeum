@@ -231,7 +231,7 @@ number of items to *keep*, not remove.
       decline))
 
 (declaim (inline filter/swapped-arguments))
-(defun filter/swapped-arguments (seq pred &rest args)
+(defun filter/swapped-arguments (seq pred &rest args &key &allow-other-keys)
   (apply #'filter pred seq args))
 
 (define-modify-macro filterf (pred &rest args)

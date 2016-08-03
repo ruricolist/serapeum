@@ -310,3 +310,53 @@ Using `define-do-macro' takes care of all of this for you.
     (multiple-value-bind (args rest?)
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
+
+(defmacro with-templated-body (&environment env (var expr) overtype (&rest subtypes) &body body)
+  "Macro to instantiate fast paths for subtypes of a given type."
+  (let* ((subtypes
+           (sort (remove-duplicates subtypes :test #'type=)
+                 #'subtypep))
+         (subtypes-exhaustive?
+           (type= `(or ,@subtypes) overtype)))
+    (assert (every (lambda (type)
+                     (subtypep type overtype env))
+                   subtypes))
+    ;; TODO Should this be inlined (speed) or not inlined (memory)?
+    ;; Ideally we could just check the optimization qualities.
+    (flet ((for-space ()
+             (let ((fns (make-gensym-list (length subtypes) 'fn))
+                   (default (gensym (string 'default))))
+               `(flet (,@(loop for fn in fns
+                               for type in subtypes
+                               collect `(,fn (,var)
+                                            (declare (type ,type ,var))
+                                          ,@body))
+                       ,@(unsplice
+                             (unless subtypes-exhaustive?
+                               `(,default (,var)
+                                          (declare (type ,overtype ,var))
+                                          ,@body))))
+                  (declare (dynamic-extent ,@(loop for fn in fns collect `#',fn)
+                                           ,@(unsplice
+                                              (unless subtypes-exhaustive?
+                                                `#',default))))
+                  (etypecase ,var
+                    ,@(loop for type in subtypes
+                            for fn in fns
+                            collect `(,type (,fn ,var)))
+                    ,@(unsplice
+                       (unless subtypes-exhaustive?
+                         `(,overtype (,default ,var))))))))
+           (for-speed ()
+             ;; But is it actually faster?
+             `(etypecase ,var
+                ,@(loop for type in subtypes
+                        collect `(,type ,@body))
+                ,@(unsplice
+                   (unless (type= `(or ,@subtypes) overtype)
+                     `(,overtype ,@body))))))
+      `(let ((,var ,expr))
+         ,(if (> (policy-quality 'speed env)
+                 (policy-quality 'space env))
+              (for-speed)
+              (for-space))))))

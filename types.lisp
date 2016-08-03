@@ -52,17 +52,40 @@ As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
   (declare (optimize (debug 0)))
   (if (typep datum spec)
       datum
-      (let ((new (wrong-type datum spec use-value
-                   "Supply a value to use instead")))
-        (require-type new spec))))
+      (%require-type datum spec)))
+
+(define-compiler-macro require-type (&whole call datum spec)
+  (if (constantp spec)
+      (once-only (datum)
+        `(if (typep ,datum ,spec)
+             ,datum
+             (%require-type ,datum ,spec)))
+      call))
+
+(defun %require-type (datum spec)
+  (declare (optimize (debug 0)))
+  (let ((new (wrong-type datum spec use-value
+               "Supply a value to use instead")))
+    (require-type new spec)))
 
 (defun require-type-for (datum spec place)
   (declare (optimize (debug 0)))
   (if (typep datum spec)
       datum
-      (let ((new (wrong-type datum spec store-value
-                   (lambda (s) (format s "Supply a new value for ~s" place)))))
-        (require-type-for new spec place))))
+      (%require-type-for datum spec place)))
+
+(define-compiler-macro require-type-for (&whole call datum spec place)
+  (if (constantp spec)
+      (once-only (datum)
+        `(if (typep ,datum ,spec)
+             ,datum
+             (%require-type-for ,datum ,spec ,place)))
+      call))
+
+(defun %require-type-for (datum spec place)
+  (let ((new (wrong-type datum spec store-value
+               (lambda (s) (format s "Supply a new value for ~s" place)))))
+    (require-type-for new spec place)))
 
 (defmacro assure (type-spec &body (form))
   "Macro for inline type checking.
@@ -81,6 +104,7 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 From ISLISP."
+  ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
 
 (defmacro assuref (place type-spec)

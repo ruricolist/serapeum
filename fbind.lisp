@@ -77,6 +77,7 @@ an ftype declaration."
 (defun build-bind/ftype (var temp decls env)
   (multiple-value-bind (args ret known?)
       (declared-ftype var decls env)
+    (declare (ignore ret))
     (flet ((give-up ()
              `(,var (&rest args)
                     (declare (dynamic-extent args))

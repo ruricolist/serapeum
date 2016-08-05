@@ -324,22 +324,25 @@ Using `define-do-macro' takes care of all of this for you.
     ;; TODO Should this be inlined (speed) or not inlined (memory)?
     ;; Ideally we could just check the optimization qualities.
     (flet ((for-space ()
-             (let ((fns (make-gensym-list (length subtypes) 'fn))
-                   (default (gensym (string 'default))))
+             (let* ((fns (make-gensym-list (length subtypes) 'fn))
+                    (default? (not subtypes-exhaustive?))
+                    (default (and default? (gensym (string 'default))))
+                    (sharp-quoted-fns
+                      (append (loop for fn in fns
+                                    collect `(function ,fn))
+                              (and default? `(function ,default)))))
                `(flet (,@(loop for fn in fns
                                for type in subtypes
                                collect `(,fn (,var)
-                                            (declare (type ,type ,var))
-                                          ,@body))
+                                             (declare (type ,type ,var))
+                                             ,@body))
                        ,@(unsplice
-                             (unless subtypes-exhaustive?
-                               `(,default (,var)
-                                          (declare (type ,overtype ,var))
-                                          ,@body))))
-                  (declare (dynamic-extent ,@(loop for fn in fns collect `#',fn)
-                                           ,@(unsplice
-                                              (unless subtypes-exhaustive?
-                                                `#',default))))
+                             (and default?
+                                  `(,default (,var)
+                                             (declare (type ,overtype ,var))
+                                             ,@body))))
+                  (declare (notinline ,@fns ,@(unsplice default)))
+                  (declare (dynamic-extent ,@sharp-quoted-fns))
                   (etypecase ,var
                     ,@(loop for type in subtypes
                             for fn in fns

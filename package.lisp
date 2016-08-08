@@ -17,6 +17,7 @@
    #:callf #:callf2
    #:define-do-macro
    #:define-post-modify-macro
+   #:with-templated-body
    ;; Types.
    #:->
    #:assure

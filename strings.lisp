@@ -175,8 +175,9 @@ From Emacs Lisp (where it is simply `upcase-initials')."
 (defun nstring-upcase-initials (string)
   "Destructive version of `string-upcase-initials'."
   (lret ((string (string string)))
-    (with-templated-body (string string) string
-        ((simple-array character (*)))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*))))
       (when (= (length string) 0)
         (return-from nstring-upcase-initials
           string))
@@ -197,9 +198,10 @@ From Emacs Lisp (where it is simply `upcase-initials')."
   "Every character with case in STRING has the same case.
 Return `:upper' or `:lower' as appropriate."
   (let ((string (string string)))
-    (declare (optimize speed))
-    (with-templated-body (string string) string
-        ((simple-array character (*)))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
       (let ((length (length string)))
         (declare (array-length length))
         (nlet invert ((i 0)
@@ -210,7 +212,7 @@ Return `:upper' or `:lower' as appropriate."
               (cond ((eq ucp lcp) nil)
                     (ucp :upper)
                     (lcp :lower))
-              (let ((char (char string i)))
+              (let ((char (aref string i)))
                 (cond ((upper-case-p char)
                        (invert (1+ i) t lcp))
                       ((lower-case-p char)
@@ -362,8 +364,10 @@ is to return a string."
                      (values (gethash c table))))))
     (declare (ftype (function (character) (or string null)) rep))
     (with-string (stream stream)
-      (with-templated-body (string string) string
-          ((simple-array character (*)))
+      (with-templated-body (string string)
+          (:type string
+           :subtypes ((simple-array character (*)))
+           :in-subtypes (declare (optimize (speed 3) (safety 0))))
         (nlet escape ((start start))
           (when (< start end)
             (let ((next (position-if #'rep string
@@ -542,8 +546,9 @@ like the first argument to `format'."
   (check-type new string)
   (check-type string string)
   (let ((new (simplify-string new)))
-    (with-templated-body (string string) string
-        ((simple-array character (*)))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*))))
       (cond
         ((not (search old string :start2 start :end2 end))
          string)
@@ -613,8 +618,9 @@ Takes care that the longest suffix is always removed first."
          (string (string string))
          (end (or end (length string)))
          (len (length substring)))
-    (with-templated-body (string string) string
-        ((simple-array character (*)))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*))))
       (nlet rec ((start start)
                  (hits 0))
         (let ((match (search substring string :start2 start :end2 end)))

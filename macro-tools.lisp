@@ -311,7 +311,28 @@ Using `define-do-macro' takes care of all of this for you.
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
 
-(defmacro with-templated-body (&environment env (var expr) overtype (&rest subtypes) &body body)
+(defun inline-keywords (body)
+  "Given BODY, return two values: a list of the leading inline keyword
+arguments, and the rest of the body.
+
+Inline keywords are like the keyword arguments to individual cases in
+`restart-case'."
+  (labels ((rec (keywords body)
+             (match body
+               ((list* (and kw (type keyword)) val body)
+                (rec (list* val kw keywords)
+                     body))
+               ((list (and _ (type keyword)))
+                (error "Invalid leading keywords in ~s" body))
+               (otherwise
+                (values (nreverse keywords) body)))))
+    (rec nil body)))
+
+(defmacro with-templated-body (&environment env (var expr)
+                                            (&key ((:type overtype) (required-argument :type))
+                                                  (subtypes (required-argument :subtypes))
+                                                  in-subtypes)
+                               &body body)
   "Macro to instantiate fast paths for subtypes of a given type."
   (let* ((subtypes
            (sort (remove-duplicates subtypes :test #'type=)
@@ -330,17 +351,18 @@ Using `define-do-macro' takes care of all of this for you.
                     (sharp-quoted-fns
                       (append (loop for fn in fns
                                     collect `(function ,fn))
-                              (and default? `(function ,default)))))
+                              (and default? `((function ,default))))))
                `(flet (,@(loop for fn in fns
                                for type in subtypes
                                collect `(,fn (,var)
                                              (declare (type ,type ,var))
+                                             ,in-subtypes
                                              ,@body))
                        ,@(unsplice
                              (and default?
-                                  `(,default (,var)
-                                             (declare (type ,overtype ,var))
-                                             ,@body))))
+                              `(,default (,var)
+                                (declare (type ,overtype ,var))
+                                ,@body))))
                   (declare (notinline ,@fns ,@(unsplice default)))
                   (declare (dynamic-extent ,@sharp-quoted-fns))
                   (etypecase ,var
@@ -354,7 +376,9 @@ Using `define-do-macro' takes care of all of this for you.
              ;; But is it actually faster?
              `(etypecase ,var
                 ,@(loop for type in subtypes
-                        collect `(,type ,@body))
+                        collect `(,type
+                                  (locally ,in-subtypes
+                                    ,@body)))
                 ,@(unsplice
                    (unless (type= `(or ,@subtypes) overtype)
                      `(,overtype ,@body))))))

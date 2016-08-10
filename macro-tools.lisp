@@ -328,12 +328,23 @@ Inline keywords are like the keyword arguments to individual cases in
                 (values (nreverse keywords) body)))))
     (rec nil body)))
 
+(defun speed>space (env)
+  (> (policy-quality 'speed env)
+     (policy-quality 'space env)))
+
+(defun space>speed (env)
+  (> (policy-quality 'space env)
+     (policy-quality 'speed env)))
+
 (defmacro with-templated-body (&environment env (var expr)
                                             (&key ((:type overtype) (required-argument :type))
                                                   (subtypes (required-argument :subtypes))
-                                                  in-subtypes)
+                                                  in-subtypes
+                                                  (inline t inline-supplied?))
                                &body body)
   "Macro to instantiate fast paths for subtypes of a given type."
+  (unless inline-supplied?
+    (setf inline (not (space>speed env))))
   (let* ((subtypes
            (sort (remove-duplicates subtypes :test #'type=)
                  #'subtypep))
@@ -345,6 +356,9 @@ Inline keywords are like the keyword arguments to individual cases in
     ;; TODO Should this be inlined (speed) or not inlined (memory)?
     ;; Ideally we could just check the optimization qualities.
     (flet ((for-space ()
+             ;; The idea here is that the local functions will be
+             ;; lambda-lifted by the Lisp compiler, thus saving space,
+             ;; while the actual closures can be made dynamic extent.
              (let* ((fns (make-gensym-list (length subtypes) 'fn))
                     (default? (not subtypes-exhaustive?))
                     (default (and default? (gensym (string 'default))))
@@ -355,9 +369,9 @@ Inline keywords are like the keyword arguments to individual cases in
                `(flet (,@(loop for fn in fns
                                for type in subtypes
                                collect `(,fn (,var)
-                                             (declare (type ,type ,var))
-                                             ,in-subtypes
-                                             ,@body))
+                                            (declare (type ,type ,var))
+                                          ,in-subtypes
+                                          ,@body))
                        ,@(unsplice
                              (and default?
                               `(,default (,var)
@@ -383,7 +397,6 @@ Inline keywords are like the keyword arguments to individual cases in
                    (unless (type= `(or ,@subtypes) overtype)
                      `(,overtype ,@body))))))
       `(let ((,var ,expr))
-         ,(if (> (policy-quality 'speed env)
-                 (policy-quality 'space env))
+         ,(if inline
               (for-speed)
               (for-space))))))

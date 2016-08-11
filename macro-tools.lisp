@@ -353,8 +353,6 @@ Inline keywords are like the keyword arguments to individual cases in
     (assert (every (lambda (type)
                      (subtypep type overtype env))
                    subtypes))
-    ;; TODO Should this be inlined (speed) or not inlined (memory)?
-    ;; Ideally we could just check the optimization qualities.
     (flet ((for-space ()
              ;; The idea here is that the local functions will be
              ;; lambda-lifted by the Lisp compiler, thus saving space,
@@ -369,14 +367,14 @@ Inline keywords are like the keyword arguments to individual cases in
                `(flet (,@(loop for fn in fns
                                for type in subtypes
                                collect `(,fn (,var)
-                                            (declare (type ,type ,var))
-                                          ,in-subtypes
-                                          ,@body))
+                                             (declare (type ,type ,var))
+                                             ,in-subtypes
+                                             ,@body))
                        ,@(unsplice
                              (and default?
-                              `(,default (,var)
-                                (declare (type ,overtype ,var))
-                                ,@body))))
+                                  `(,default (,var)
+                                             (declare (type ,overtype ,var))
+                                             ,@body))))
                   (declare (notinline ,@fns ,@(unsplice default)))
                   (declare (dynamic-extent ,@sharp-quoted-fns))
                   (etypecase ,var

@@ -342,7 +342,47 @@ Inline keywords are like the keyword arguments to individual cases in
                                                   in-subtypes
                                                   (inline t inline-supplied?))
                                &body body)
-  "Macro to instantiate fast paths for subtypes of a given type."
+  "A macro that emits BODY more than once, dispatching on the type of EXPR.
+
+Suppose you are writing a function that takes a string or a number. On
+the one hand, you want the function to be generic, and work with any
+kind of string or number. On the other hand, you know Lisp can produce
+more efficient code for certain subtypes. E.g. a fixnum instead of an
+integer.
+
+Using `with-templated-body', you can write the code generically, but
+still have Lisp compile in \"fast paths\" for subtypes it can handle
+more efficiently.
+
+    (with-templated-body (var expr)
+       (:type integer
+        :subtypes (fixnum))
+      ...)
+    ≅
+    (flet ((aux-function (var)
+             ...))
+      (declare (inline aux-function))
+      (let ((var expr))
+        (etypecase var
+          (fixnum (aux-function var))
+          (integer (aux-function var)))))
+
+In the example expansion, the code is inlined. This is default. Having
+the code inlined makes it easy to check the disassembly of the
+function and see what, if any, difference the templating is actually
+making.
+
+You can also turn off inlining. If `with-templated-body' can see that
+the `space' optimization quality is greater than the `speed'
+optimization quality, it does not inline. But, since querying
+environments is not portable, if not inlining matters, there is an
+option to forbid it.
+
+    (with-templated-body (var expr)
+       (:type ...
+        :subtypes ...
+        :inline nil)
+      ...)"
   (unless inline-supplied?
     (setf inline (not (space>speed env))))
   (let* ((subtypes

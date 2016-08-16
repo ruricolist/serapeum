@@ -11,7 +11,11 @@
 
 As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
     (tuple 'function symbol)
-    ≡ (tuple (eql function) symbol)"
+    ≡ (tuple (eql function) symbol)
+
+The same shortcut works for keywords.
+    (tuple :name symbol)
+    ≡ (tuple (eql :name) symbol)"
   (reduce (lambda (x y)
             (match x
               ((or (list 'quote form)

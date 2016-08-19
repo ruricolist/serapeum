@@ -2,8 +2,8 @@
 
 (defpackage #:serapeum
   (:use :cl :alexandria :optima :split-sequence :parse-number
-   :named-readtables :tcr.parse-declarations-1.0
-   :introspect-environment)
+    :named-readtables :tcr.parse-declarations-1.0
+    :introspect-environment)
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)
   (:export
@@ -42,6 +42,7 @@
    #:lret*
    #:and-let*
    ;; Control flow.
+   #:eval-always
    #:eval-and-compile
    #:no
    #:nor

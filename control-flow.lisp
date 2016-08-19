@@ -1,12 +1,16 @@
 (in-package :serapeum)
 (in-readtable :fare-quasiquote)
 
-(defmacro eval-and-compile (&body body)
-  "Emacs's `eval-and-compile'.
-
-Shorthand for
+(defmacro eval-always (&body body)
+  "Shorthand for
         (eval-when (:compile-toplevel :load-toplevel :execute) ...)"
   `(eval-when (:compile-toplevel :load-toplevel :execute)
+     ,@body))
+
+(defmacro eval-and-compile (&body body)
+  "Emacs's `eval-and-compile'.
+Alias for `eval-always'."
+  `(eval-always
      ,@body))
 
 (defun no (x)

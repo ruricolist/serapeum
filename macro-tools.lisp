@@ -328,113 +328,71 @@ Inline keywords are like the keyword arguments to individual cases in
                 (values (nreverse keywords) body)))))
     (rec nil body)))
 
-(defun speed>space (env)
-  (> (policy-quality 'speed env)
-     (policy-quality 'space env)))
-
-(defun space>speed (env)
-  (> (policy-quality 'space env)
-     (policy-quality 'speed env)))
-
 (defmacro with-templated-body (&environment env (var expr)
                                             (&key ((:type overtype) (required-argument :type))
                                                   (subtypes (required-argument :subtypes))
-                                                  in-subtypes
-                                                  (inline t inline-supplied?))
+                                                  in-subtypes)
                                &body body)
   "A macro that emits BODY more than once, dispatching on the type of EXPR.
 
 Suppose you are writing a function that takes a string or a number. On
 the one hand, you want the function to be generic, and work with any
 kind of string or number. On the other hand, you know Lisp can produce
-more efficient code for certain subtypes. E.g. a fixnum instead of an
-integer.
+more efficient code for certain subtypes.
 
-Using `with-templated-body', you can write the code generically, but
-still have Lisp compile in \"fast paths\" for subtypes it can handle
-more efficiently.
+The ideal would be to be able to write the code generically, but still
+have Lisp compile \"fast paths\" for subtypes it can handle more
+efficiently. E.g. `fixnum' instead of `integer', or `(simple-array
+character (*))' instead of `string'.
 
-    (with-templated-body (var expr)
-       (:type integer
-        :subtypes (fixnum))
-      ...)
-    ≅
-    (flet ((aux-function (var)
-             ...))
-      (declare (inline aux-function))
-      (let ((var expr))
-        (etypecase var
-          (fixnum (aux-function var))
-          (integer (aux-function var)))))
-
-In the example expansion, the code is inlined. This is default. Having
-the code inlined makes it easy to check the disassembly of the
-function and see what, if any, difference the templating is actually
-making.
-
-You can also turn off inlining. If `with-templated-body' can see that
-the `space' optimization quality is greater than the `speed'
-optimization quality, it does not inline. But, since querying
-environments is not portable, if not inlining matters, there is an
-option to forbid it.
-
-    (with-templated-body (var expr)
-       (:type ...
-        :subtypes ...
-        :inline nil)
-      ...)"
-  (unless inline-supplied?
-    (setf inline (not (space>speed env))))
+You could write code to do this by hand, but there would be pitfalls.
+One is that how a type is divided up can vary between Lisps, resulting
+in spurious warnings. Another is code bloat -- the naive way of
+handling templating, by repeating the same code inline, drastically
+increases the size of the disassembly."
   (let* ((subtypes
            (sort (remove-duplicates subtypes :test #'type=)
                  #'subtypep))
          (subtypes-exhaustive?
-           (type= `(or ,@subtypes) overtype)))
+           (type= `(or ,@subtypes) overtype))
+         (var-type
+           (and (symbolp expr)
+                (introspect-environment:variable-type expr env))))
     (assert (every (lambda (type)
                      (subtypep type overtype env))
                    subtypes))
-    (flet ((for-space ()
-             ;; The idea here is that the local functions will be
-             ;; lambda-lifted by the Lisp compiler, thus saving space,
-             ;; while the actual closures can be made dynamic extent.
-             (let* ((fns (make-gensym-list (length subtypes) 'fn))
-                    (default? (not subtypes-exhaustive?))
-                    (default (and default? (gensym (string 'default))))
-                    (sharp-quoted-fns
-                      (append (loop for fn in fns
-                                    collect `(function ,fn))
-                              (and default? `((function ,default))))))
-               `(flet (,@(loop for fn in fns
-                               for type in subtypes
-                               collect `(,fn (,var)
-                                             (declare (type ,type ,var))
-                                             ,in-subtypes
-                                             ,@body))
-                       ,@(unsplice
-                             (and default?
-                                  `(,default (,var)
-                                             (declare (type ,overtype ,var))
-                                             ,@body))))
-                  (declare (notinline ,@fns ,@(unsplice default)))
-                  (declare (dynamic-extent ,@sharp-quoted-fns))
-                  (etypecase ,var
-                    ,@(loop for type in subtypes
-                            for fn in fns
-                            collect `(,type (,fn ,var)))
-                    ,@(unsplice
-                       (unless subtypes-exhaustive?
-                         `(,overtype (,default ,var))))))))
-           (for-speed ()
-             ;; But is it actually faster?
-             `(etypecase ,var
-                ,@(loop for type in subtypes
-                        collect `(,type
-                                  (locally ,in-subtypes
-                                    ,@body)))
-                ,@(unsplice
-                   (unless (type= `(or ,@subtypes) overtype)
-                     `(,overtype ,@body))))))
-      `(let ((,var ,expr))
-         ,(if inline
-              (for-speed)
-              (for-space))))))
+    (if (and (not (type= var-type t))
+             (loop for subtype in subtypes
+                     thereis (subtypep var-type subtype)))
+        `(progn ,@body)
+        `(let ((,var ,expr))
+           ;; The idea here is that the local functions will be
+           ;; lambda-lifted by the Lisp compiler, thus saving space, while
+           ;; any actual closures can be made dynamic-extent.
+           ,(let* ((fns (make-gensym-list (length subtypes) 'template-fn-))
+                   (default? (not subtypes-exhaustive?))
+                   (default (and default? (gensym (string 'default))))
+                   (qfns
+                     (append (loop for fn in fns
+                                   collect `(function ,fn))
+                             (and default? `((function ,default))))))
+              `(flet (,@(loop for fn in fns
+                              for type in subtypes
+                              collect `(,fn (,var)
+                                            (declare (type ,type ,var))
+                                            ,in-subtypes
+                                            ,@body))
+                      ,@(unsplice
+                            (and default?
+                                 `(,default (,var)
+                                            (declare (type ,overtype ,var))
+                                            ,@body))))
+                 (declare (notinline ,@fns ,@(unsplice default)))
+                 (declare (dynamic-extent ,@qfns))
+                 (etypecase ,var
+                   ,@(loop for type in subtypes
+                           for fn in fns
+                           collect `(,type (,fn ,var)))
+                   ,@(unsplice
+                      (unless subtypes-exhaustive?
+                        `(,overtype (,default ,var)))))))))))

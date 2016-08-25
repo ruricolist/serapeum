@@ -349,50 +349,50 @@ You could write code to do this by hand, but there would be pitfalls.
 One is that how a type is divided up can vary between Lisps, resulting
 in spurious warnings. Another is code bloat -- the naive way of
 handling templating, by repeating the same code inline, drastically
-increases the size of the disassembly."
+increases the size of the disassembly.
+
+The idea of `with-templated-body' is to provide a high-level way to
+ask for this kind of compilation.
+"
   (let* ((subtypes
            (sort (remove-duplicates subtypes :test #'type=)
                  #'subtypep))
          (subtypes-exhaustive?
-           (type= `(or ,@subtypes) overtype))
-         (var-type
-           (and (symbolp expr)
-                (introspect-environment:variable-type expr env))))
+           (type= `(or ,@subtypes) overtype)))
     (assert (every (lambda (type)
                      (subtypep type overtype env))
                    subtypes))
-    (if (and (not (type= var-type t))
-             (loop for subtype in subtypes
-                     thereis (subtypep var-type subtype)))
-        `(progn ,@body)
-        `(let ((,var ,expr))
-           ;; The idea here is that the local functions will be
-           ;; lambda-lifted by the Lisp compiler, thus saving space, while
-           ;; any actual closures can be made dynamic-extent.
-           ,(let* ((fns (make-gensym-list (length subtypes) 'template-fn-))
-                   (default? (not subtypes-exhaustive?))
-                   (default (and default? (gensym (string 'default))))
-                   (qfns
-                     (append (loop for fn in fns
-                                   collect `(function ,fn))
-                             (and default? `((function ,default))))))
-              `(flet (,@(loop for fn in fns
-                              for type in subtypes
-                              collect `(,fn (,var)
-                                            (declare (type ,type ,var))
-                                            ,in-subtypes
-                                            ,@body))
-                      ,@(unsplice
-                            (and default?
-                                 `(,default (,var)
-                                            (declare (type ,overtype ,var))
-                                            ,@body))))
-                 (declare (notinline ,@fns ,@(unsplice default)))
-                 (declare (dynamic-extent ,@qfns))
-                 (etypecase ,var
-                   ,@(loop for type in subtypes
-                           for fn in fns
-                           collect `(,type (,fn ,var)))
-                   ,@(unsplice
-                      (unless subtypes-exhaustive?
-                        `(,overtype (,default ,var)))))))))))
+    `(let ((,var ,expr))
+       ;; The idea here is that the local functions will be
+       ;; lambda-lifted by the Lisp compiler, thus saving space, while
+       ;; any actual closures can be made dynamic-extent.
+       ,(let* ((fns (make-gensym-list (length subtypes) 'template-fn-))
+               (default? (not subtypes-exhaustive?))
+               (default (and default? (gensym (string 'default))))
+               (qfns
+                 (append (loop for fn in fns
+                               collect `(function ,fn))
+                         (and default? `((function ,default))))))
+          `(flet (,@(loop for fn in fns
+                          for type in subtypes
+                          collect `(,fn (,var)
+                                        (declare (type ,type ,var))
+                                        ,in-subtypes
+                                        ,@body))
+                  ,@(unsplice
+                        (and default?
+                             `(,default (,var)
+                                        (declare (type ,overtype ,var))
+                                        ,@body))))
+             (declare (notinline ,@fns ,@(unsplice default)))
+             (declare (dynamic-extent ,@qfns))
+             ;; Give Lisp permission to ignore functions if it can
+             ;; infer a type for EXPR.
+             (declare (ignorable ,@qfns))
+             (etypecase ,var
+               ,@(loop for type in subtypes
+                       for fn in fns
+                       collect `(,type (,fn ,var)))
+               ,@(unsplice
+                  (unless subtypes-exhaustive?
+                    `(,overtype (,default ,var))))))))))

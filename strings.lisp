@@ -541,14 +541,18 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'."
   (declare (array-length start)
-           ((or array-length null) end))
+           ((or array-length null) end)
+           ;; Can't be more matches than characters.
+           ((or array-length null) count))
   (check-type old string)
   (check-type new string)
   (check-type string string)
-  (let ((new (simplify-string new)))
+  (let ((new (simplify-string new))
+        (old (simplify-string old)))
     (with-templated-body (string string)
         (:type string
-         :subtypes ((simple-array character (*))))
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
       (cond
         ((not (search old string :start2 start :end2 end))
          string)

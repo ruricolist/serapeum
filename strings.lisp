@@ -614,15 +614,18 @@ Takes care that the longest suffix is always removed first."
   "Count how many times SUBSTRING appears in STRING."
   (declare (array-length start)
            ((or array-length null) end))
-  (let* ((substring (string substring))
+  (let* ((substring (simplify-string (string substring)))
          (string (string string))
          (end (or end (length string)))
          (len (length substring)))
     (with-templated-body (string string)
         (:type string
-         :subtypes ((simple-array character (*))))
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
       (nlet rec ((start start)
                  (hits 0))
+        ;; There can't be more hits than characters.
+        (declare (type array-length hits))
         (let ((match (search substring string :start2 start :end2 end)))
           (if (not match)
               hits

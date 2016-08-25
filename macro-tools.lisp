@@ -333,7 +333,7 @@ Inline keywords are like the keyword arguments to individual cases in
                                                   (subtypes (required-argument :subtypes))
                                                   in-subtypes)
                                &body body)
-  "A macro that emits BODY more than once, dispatching on the type of EXPR.
+  "A macro that emits BODY once for each subtype in SUBTYPES.
 
 Suppose you are writing a function that takes a string or a number. On
 the one hand, you want the function to be generic, and work with any
@@ -352,8 +352,16 @@ handling templating, by repeating the same code inline, drastically
 increases the size of the disassembly.
 
 The idea of `with-templated-body' is to provide a high-level way to
-ask for this kind of compilation.
-"
+ask for this kind of compilation. It checks that SUBTYPES are really
+subtypes of TYPE; it telescopes duplicated subtypes; it eliminates the
+default case if the subtypes are exhaustive; and it arranges for each
+specialization of BODY to be called out-of-line. It also permits
+supplying declarations to be used in the specializations, but not in
+the default case.
+
+This is not a macro that lends itself to trivial examples. If you want
+to understand how to use it, the best idea is to look at how it is
+used elsewhere in Serapeum."
   (let* ((subtypes
            (sort (remove-duplicates subtypes :test #'type=)
                  #'subtypep))

@@ -143,18 +143,22 @@ float will do."
 Defaults to little-endian."
   (let ((bits (make-array (integer-length int)
                           :element-type 'bit)))
-    (if big-endian
-        (loop for i below (integer-length int)
-              for j downfrom (1- (integer-length int)) to 0
-              do (setf (sbit bits j)
-                       (if (logbitp i int)
-                           1
-                           0)))
-        (loop for i below (integer-length int)
-              do (setf (sbit bits i)
-                       (if (logbitp i int)
-                           1
-                           0))))
+    (with-templated-body (int int)
+        (:type integer
+         :subtypes ((unsigned-byte 32) (unsigned-byte 64) fixnum)
+         :in-subtypes (declare (optimize speed)))
+      (if big-endian
+          (loop for i below (integer-length int)
+                for j downfrom (1- (integer-length int)) to 0
+                do (setf (sbit bits j)
+                         (if (logbitp i int)
+                             1
+                             0)))
+          (loop for i below (integer-length int)
+                do (setf (sbit bits i)
+                         (if (logbitp i int)
+                             1
+                             0)))))
     bits))
 
 (defun unbits (bits &key big-endian)

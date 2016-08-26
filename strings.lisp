@@ -175,19 +175,22 @@ From Emacs Lisp (where it is simply `upcase-initials')."
 (defun nstring-upcase-initials (string)
   "Destructive version of `string-upcase-initials'."
   (lret ((string (string string)))
-    (when (= (length string) 0)
-      (return-from nstring-upcase-initials
-        string))
-    (setf (aref string 0)
-          (char-upcase (aref string 0)))
-    (loop for i from 0
-          for j from 1 below (length string)
-          for x = (aref string i)
-          for y = (aref string j)
-          when (and (not (alphanumericp x))
-                    (alphanumericp y))
-            do (setf (aref string j)
-                     (char-upcase y)))))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*))))
+      (when (= (length string) 0)
+        (return-from nstring-upcase-initials
+          string))
+      (setf (aref string 0)
+            (char-upcase (aref string 0)))
+      (loop for i from 0
+            for j from 1 below (length string)
+            for x = (aref string i)
+            for y = (aref string j)
+            when (and (not (alphanumericp x))
+                      (alphanumericp y))
+              do (setf (aref string j)
+                       (char-upcase y))))))
 
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/EO1mZBtiXX0/JuuhKJ6eMHIJ
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/0CSkbAd8NTg/UnHQf9YIf8kJ
@@ -195,23 +198,26 @@ From Emacs Lisp (where it is simply `upcase-initials')."
   "Every character with case in STRING has the same case.
 Return `:upper' or `:lower' as appropriate."
   (let ((string (string string)))
-    (declare (optimize speed))
-    (let ((length (length string)))
-      (declare (array-length length))
-      (nlet invert ((i 0)
-                    (ucp nil)
-                    (lcp nil))
-        (declare (array-length i))
-        (if (= i length)
-            (cond ((eq ucp lcp) nil)
-                  (ucp :upper)
-                  (lcp :lower))
-            (let ((char (char string i)))
-              (cond ((upper-case-p char)
-                     (invert (1+ i) t lcp))
-                    ((lower-case-p char)
-                     (invert (1+ i) ucp t))
-                    (t (invert (1+ i) ucp lcp)))))))))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
+      (let ((length (length string)))
+        (declare (array-length length))
+        (nlet invert ((i 0)
+                      (ucp nil)
+                      (lcp nil))
+          (declare (array-length i))
+          (if (= i length)
+              (cond ((eq ucp lcp) nil)
+                    (ucp :upper)
+                    (lcp :lower))
+              (let ((char (aref string i)))
+                (cond ((upper-case-p char)
+                       (invert (1+ i) t lcp))
+                      ((lower-case-p char)
+                       (invert (1+ i) ucp t))
+                      (t (invert (1+ i) ucp lcp))))))))))
 
 (-> nstring-invert-case (string-designator) string)
 (defun nstring-invert-case (string)
@@ -333,32 +339,48 @@ Has a compiler macro with `formatter'."
   "Write STRING to STREAM, escaping with TABLE.
 
 TABLE should be either a hash table, with characters for keys and
-strings for values, or a function that takes a character and returns a
-string.
+strings for values, or a function that takes a character and
+returns (only) either a string or null.
+
+That is, the signature of TABLE should be:
+
+    (function (character) (or string null))
+
+where `nil' means to pass the character through unchanged.
 
 STREAM can be used to specify a stream to write to, like the first
 argument to `format'. The default behavior, with no stream specified,
 is to return a string."
+  (declare (string string)
+           ((or function hash-table) table)
+           (array-index start)
+           ((or array-index null) end)
+           (optimize (safety 1) (debug 0)))
   (unless end
     (setf end (length string)))
-  (with-string (stream stream)
-    (fbind ((rep (if (functionp table)
-                     table
-                     (lambda (c)
-                       (gethash c table)))))
-      (nlet escape ((start start))
-        (when (< start end)
-          (let ((next (position-if #'rep string
-                                   :start start
-                                   :end end)))
-            (if (not next)
-                (write-string string stream :start start :end end)
-                (progn
-                  (write-string string stream :start start :end next)
-                  (let ((escape (rep (char string next))))
-                    (unless (emptyp escape)
-                      (write-string escape stream))
-                    (escape (1+ next)))))))))))
+  (fbind ((rep (if (functionp table)
+                   table
+                   (lambda (c)
+                     (values (gethash c table))))))
+    (declare (ftype (function (character) (or string null)) rep))
+    (with-string (stream stream)
+      (with-templated-body (string string)
+          (:type string
+           :subtypes ((simple-array character (*)))
+           :in-subtypes (declare (optimize (speed 3) (safety 0))))
+        (nlet escape ((start start))
+          (when (< start end)
+            (let ((next (position-if #'rep string
+                                     :start start
+                                     :end end)))
+              (if (not next)
+                  (write-string string stream :start start :end end)
+                  (progn
+                    (write-string string stream :start start :end next)
+                    (let ((escape (rep (char string next))))
+                      (unless (emptyp escape)
+                        (write-string escape stream))
+                      (escape (1+ next))))))))))))
 
 (-> ellipsize (string array-length &key (:ellipsis string)) string)
 (defun ellipsize (string n &key (ellipsis "..."))
@@ -519,41 +541,49 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'."
   (declare (array-length start)
-           ((or array-length null) end))
+           ((or array-length null) end)
+           ;; Can't be more matches than characters.
+           ((or array-length null) count))
   (check-type old string)
   (check-type new string)
   (check-type string string)
-  (cond
-    ((not (search old string :start2 start :end2 end))
-     string)
-    ((and count (zerop count))
-     string)
-    ;; The use case in mind here is one where you have a list of
-    ;; substitutions.
-    ((and (= (length new) 1)
-          (= (length old) 1))
-     (substitute new old string :start start :end end :count count))
-    (t
-     (let* ((end (or end (length string)))
-            (len (length old)))
-       (declare (array-length len))
-       (with-string (s stream)
-         (unless (zerop start)
-           (write-string string s :start 0 :end start))
-         (nlet rep ((start start)
-                    (count (or count (1- array-dimension-limit))))
-           (declare (array-length start count))
-           (let ((match (search old string :start2 start :end2 end)))
-             (declare ((or array-length null) match))
-             (if (or (not match) (zerop count))
-                 ;; No end, because we want the whole remainder of the
-                 ;; string.
-                 (write-string string s :start start)
-                 (progn
-                   (write-string string s :start start :end match)
-                   (write-string new s)
-                   (rep (+ match len)
-                        (1- count)))))))))))
+  (let ((new (simplify-string new))
+        (old (simplify-string old)))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
+      (cond
+        ((not (search old string :start2 start :end2 end))
+         string)
+        ((and count (zerop count))
+         string)
+        ;; The use case in mind here is one where you have a list of
+        ;; substitutions.
+        ((and (= (length new) 1)
+              (= (length old) 1))
+         (substitute new old string :start start :end end :count count))
+        (t
+         (let* ((end (or end (length string)))
+                (len (length old)))
+           (declare (array-length len))
+           (with-string (s stream)
+             (unless (zerop start)
+               (write-string string s :start 0 :end start))
+             (nlet rep ((start start)
+                        (count (or count (1- array-dimension-limit))))
+               (declare (array-length start count))
+               (let ((match (search old string :start2 start :end2 end)))
+                 (declare ((or array-length null) match))
+                 (if (or (not match) (zerop count))
+                     ;; No end, because we want the whole remainder of the
+                     ;; string.
+                     (write-string string s :start start)
+                     (progn
+                       (write-string string s :start start :end match)
+                       (write-string new s)
+                       (rep (+ match len)
+                            (1- count)))))))))))))
 
 (defun chomp (string
               &optional
@@ -588,13 +618,19 @@ Takes care that the longest suffix is always removed first."
   "Count how many times SUBSTRING appears in STRING."
   (declare (array-length start)
            ((or array-length null) end))
-  (let* ((substring (string substring))
+  (let* ((substring (simplify-string (string substring)))
          (string (string string))
          (end (or end (length string)))
          (len (length substring)))
-    (nlet rec ((start start)
-               (hits 0))
-      (let ((match (search substring string :start2 start :end2 end)))
-        (if (not match)
-            hits
-            (rec (+ match len) (1+ hits)))))))
+    (with-templated-body (string string)
+        (:type string
+         :subtypes ((simple-array character (*)))
+         :in-subtypes (declare (optimize speed)))
+      (nlet rec ((start start)
+                 (hits 0))
+        ;; There can't be more hits than characters.
+        (declare (type array-length hits))
+        (let ((match (search substring string :start2 start :end2 end)))
+          (if (not match)
+              hits
+              (rec (+ match len) (1+ hits))))))))

@@ -62,7 +62,7 @@
                (:file "vectors"
                 :depends-on ("package"))
                (:file "numbers"
-                :depends-on ("macro-tools"))
+                :depends-on ("macro-tools" "types"))
                (:file "octets"
                 :depends-on ("types"))
                (:file "time"

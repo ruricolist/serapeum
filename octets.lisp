@@ -25,20 +25,24 @@
 (defun octets (n &key big-endian)
   "Return N, an integer, as an octet vector.
 Defaults to little-endian order."
-  (let* ((n-bits (integer-length n))
-         (n-bytes (ceiling n-bits 8))
-         (vec (make-octet-vector n-bytes)))
-    (declare (octet-vector vec))
-    (if big-endian
-        (loop for i from (1- n-bytes) downto 0
-              for j from 0
-              do (setf (aref vec j)
-                       (ldb (byte 8 (* i 8)) n)))
-        (loop for i from 0 below n-bytes
-              for byte from 0 by 8
-              do (setf (aref vec i)
-                       (ldb (byte 8 byte) n))))
-    vec))
+  (with-templated-body (n n)
+      (:type integer
+       :subtypes ((unsigned-byte 32) (unsigned-byte 64) fixnum)
+       :in-subtypes (declare (optimize speed)))
+    (let* ((n-bits (integer-length n))
+           (n-bytes (ceiling n-bits 8))
+           (vec (make-octet-vector n-bytes)))
+      (declare (octet-vector vec))
+      (if big-endian
+          (loop for i from (1- n-bytes) downto 0
+                for j from 0
+                do (setf (aref vec j)
+                         (ldb (byte 8 (* i 8)) n)))
+          (loop for i from 0 below n-bytes
+                for byte from 0 by 8
+                do (setf (aref vec i)
+                         (ldb (byte 8 byte) n))))
+      vec)))
 
 (-> unoctets (octet-vector &key (:big-endian t)) integer)
 (defun unoctets (bytes &key big-endian)

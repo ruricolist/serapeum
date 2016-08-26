@@ -310,3 +310,20 @@ Using `define-do-macro' takes care of all of this for you.
     (multiple-value-bind (args rest?)
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
+
+(defun inline-keywords (body)
+  "Given BODY, return two values: a list of the leading inline keyword
+arguments, and the rest of the body.
+
+Inline keywords are like the keyword arguments to individual cases in
+`restart-case'."
+  (labels ((rec (keywords body)
+             (match body
+               ((list* (and kw (type keyword)) val body)
+                (rec (list* val kw keywords)
+                     body))
+               ((list (and _ (type keyword)))
+                (error "Invalid leading keywords in ~s" body))
+               (otherwise
+                (values (nreverse keywords) body)))))
+    (rec nil body)))

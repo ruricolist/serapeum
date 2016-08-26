@@ -154,6 +154,11 @@ specialization of BODY to be called out-of-line. It also permits
 supplying declarations to be used in the specializations, but not in
 the default case.
 
+Note that `with-templated-body' is intended to be used around
+relatively expensive code, particularly loops. For simpler code, the
+gains from specialized compilation may not justify the overhead of
+type dispatch and a (local) function call.
+
 This is not a macro that lends itself to trivial examples. If you want
 to understand how to use it, the best idea is to look at how it is
 used elsewhere in Serapeum."

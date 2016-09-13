@@ -108,6 +108,11 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 From ISLISP."
+  (when (constantp form)
+    (let ((val (eval form)))
+      (unless (typep val type-spec)
+        (warn "Constant expression ~s is not of type ~a"
+              form type-spec))))
   ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
 

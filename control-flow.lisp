@@ -620,9 +620,18 @@ Is equivalent to:
       (with-open-file (in file2 :direction output)
         ...))
 
+If the outer macro has no arguments, you may omit the parentheses.
+
+    (nest
+      with-standard-io-syntax
+      ...)
+    ≡ (with-standard-io-syntax
+        ...)
+
 From UIOP, based on a suggestion by Marco Baringer."
   (reduce (lambda (outer inner)
-            `(,@outer ,inner))
+            (let ((outer (ensure-list outer)))
+              `(,@outer ,inner)))
           things
           :from-end t))
 

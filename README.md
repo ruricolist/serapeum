@@ -52,6 +52,61 @@ print the README as a preamble to their own function reference).
 Most utilities in Serapeum stand alone, but there are some families
 that deserve separate introduction.
 
+## Dividing sequences
+
+All recent functional programming languages share a family of useful
+sequence-related functions with terrible names. All of them are called
+something like “split”, “divide”, or “group”, more or less at random.
+
+For each function, we ensure:
+
+- It is efficient.
+- It returns like sequences for like (lists for lists, strings for
+  strings, &c.).
+- It accommodates generic sequences (`list` and `vector` are not
+  necessarily an exhaustive partition of `sequence`).
+- It has a distinctive name which does not use any of the weasel words
+  “split,” “divide,” or “group.”
+
+The function that returns *runs* of like elements in a sequence is
+called `runs`:
+
+    (runs '(head tail head head tail))
+    => '((head) (tail) (head head) (tail))
+
+The function that returns a sequence in *batches* of a certain size is
+called `batches`:
+
+    (batches (iota 11) 2)
+    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
+
+The function which groups the like elements of a sequence is called
+`assort` (because it returns a sequence *assorted by* some property).
+
+    (assort (iota 10)
+            :key (lambda (n) (mod n 3)))
+    => '((0 3 6 9) (1 4 7) (2 5 8))
+
+The function that takes a predicate and a sequence, and returns two
+sequences – one sequence of the elements for which the function
+returns true, and one sequence of the elements for which it returns
+false – is (still) called `partition`.
+
+    (partition #'oddp (iota 10))
+    => (1 3 5 7 9), (0 2 4 6 8)
+
+The generalized version of `partition`, which takes a number of
+functions and returns the items that satisfy each condition, is called
+`partitions`.
+
+    (partitions (list #'primep #'evenp) (iota 10))
+    => ((2 3 5 7) (0 4 6 8)), (1 9)
+
+Items that do not belong in any partition are returned as a second value.
+
+Serapeum simply re-exports `split-sequence`, which seems to be firmly
+rooted under its present name.
+
 ## Binding values in the function namespace
 
 `fbind`, `fbind*`, `fbindrec`, and `fbindrec*` bind values in the
@@ -287,61 +342,6 @@ respectively, except that they expect, and enforce, the presence of an
 
 There are continuable versions of these macros – `ctypecase-of` and
 `ccase-of`.
-
-## Dividing sequences
-
-All recent functional programming languages share a family of useful
-sequence-related functions with terrible names. All of them are called
-something like “split”, “divide”, or “group”, more or less at random.
-
-For each function, we ensure:
-
-- It is efficient.
-- It returns like sequences for like (lists for lists, strings for
-  strings, &c.).
-- It accommodates generic sequences (`list` and `vector` are not
-  necessarily an exhaustive partition of `sequence`).
-- It has a distinctive name which does not use any of the weasel words
-  “split,” “divide,” or “group.”
-
-The function that returns *runs* of like elements in a sequence is
-called `runs`:
-
-    (runs '(head tail head head tail))
-    => '((head) (tail) (head head) (tail))
-
-The function that returns a sequence in *batches* of a certain size is
-called `batches`:
-
-    (batches (iota 11) 2)
-    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
-
-The function which groups the like elements of a sequence is called
-`assort` (because it returns a sequence *assorted by* some property).
-
-    (assort (iota 10)
-            :key (lambda (n) (mod n 3)))
-    => '((0 3 6 9) (1 4 7) (2 5 8))
-
-The function that takes a predicate and a sequence, and returns two
-sequences – one sequence of the elements for which the function
-returns true, and one sequence of the elements for which it returns
-false – is (still) called `partition`.
-
-    (partition #'oddp (iota 10))
-    => (1 3 5 7 9), (0 2 4 6 8)
-
-The generalized version of `partition`, which takes a number of
-functions and returns the items that satisfy each condition, is called
-`partitions`.
-
-    (partitions (list #'primep #'evenp) (iota 10))
-    => ((2 3 5 7) (0 4 6 8)), (1 9)
-
-Items that do not belong in any partition are returned as a second value.
-
-Serapeum simply re-exports `split-sequence`, which seems to be firmly
-rooted under its present name.
 
 # Function reference
 

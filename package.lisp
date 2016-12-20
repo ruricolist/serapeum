@@ -32,6 +32,7 @@
    #:define-values
    #:defplace
    #:defcondition
+   #:defstruct-read-only
    #:local
    #:local*
    ;; Binding.

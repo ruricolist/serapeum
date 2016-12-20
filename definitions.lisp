@@ -173,3 +173,53 @@ Lisp."
   `(define-condition ,name ,supers
      ,slots
      ,@options))
+
+(defmacro defstruct-read-only (name-and-opts &body slots)
+  "Easily define a defstruct with no mutable slots.
+
+The syntax of `defstruct-read-only' as close as possible to that of
+`defstruct'. Given an existing structure definition, you can usually
+make it immutable by switching out `defstruct' for
+`defstruct-read-only'.
+
+There are only two syntactic differences:
+
+1. To prevent accidentally inheriting mutable slots,
+   `defstruct-read-only' does not allow inheritance.
+
+2. Slot definitions can use slot options without having to provide an
+   initform. In this case, any attempt to make an instance of the
+   struct without providing a value for that slot will signal an
+   error.
+
+    (my-slot :type string)
+    ≡ (my-slot (required-argument 'my-slot) :read-only t :type string)
+
+The idea here is simply that an unbound slot in an immutable data
+structure does not make sense."
+  (destructuring-bind (name . opts) (ensure-list name-and-opts)
+    (when-let (clause (find :include opts :key #'car))
+      (error "Read-only struct ~a cannot use inheritance: ~s."
+             name clause))
+    `(defstruct ,(if opts `(,name ,@opts) name)
+       ,@(collecting
+           (dolist (slot slots)
+             (let ((slot (ensure-list slot)))
+               (multiple-value-bind (name initform args)
+                   (if (oddp (length slot))
+                       ;; Name (1) + keyword arguments (2n) = 2n+1.
+                       (destructuring-bind (name . args) slot
+                         (values name `(required-argument ',name) args))
+                       ;; Name (1) + initform (1) + keyword arguments (2n) = 2n+2.
+                       (destructuring-bind (name initform . args) slot
+                         (values name initform args)))
+                 (destructuring-bind (&key (read-only t read-only-supplied?) &allow-other-keys) args
+                   (declare (ignore read-only))
+                   (when read-only-supplied?
+                     (simple-style-warning "Redundant read-only declaration in slot definition ~s"
+                                           slot))
+                   (let ((args (remove-from-plist args :read-only)))
+                     (collect `(,name
+                                ,initform
+                                :read-only t
+                                ,@args)))))))))))

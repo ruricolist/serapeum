@@ -328,7 +328,16 @@
          (local
            (let (y)
              (def x y))
-           x)))))
+           x))))
+
+  (test defstruct-read-only
+    (is (equal '(defstruct foo (bar (required-argument 'bar) :read-only t))
+               (macroexpand-1 '(defstruct-read-only foo bar))))
+    (is (equal '(defstruct foo (bar nil :read-only t))
+               (handler-bind ((warning #'muffle-warning))
+                 (macroexpand-1 '(defstruct-read-only foo (bar nil :read-only nil))))))
+    (signals error
+      (macroexpand-1 '(defstruct-read-only (foo (:include bar)))))))
 
 (suite binding
 

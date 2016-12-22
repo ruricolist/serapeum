@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (28 files, 253 functions)
+# Function Listing For SERAPEUM (28 files, 254 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -218,7 +218,7 @@ From ISLISP.
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L114)
+[View source](types.lisp#L119)
 
 ### `(with-templated-body (var expr) (&key ((type overtype) (required-argument type)) (subtypes (required-argument subtypes)) in-subtypes) &body body)`
 
@@ -257,7 +257,7 @@ This is not a macro that lends itself to trivial examples. If you want
 to understand how to use it, the best idea is to look at how it is
 used elsewhere in Serapeum.
 
-[View source](types.lisp#L126)
+[View source](types.lisp#L131)
 
 ## Definitions
 
@@ -355,6 +355,33 @@ nomenclatural convention as every other definition form in Common
 Lisp.
 
 [View source](definitions.lisp#L167)
+
+### `(defstruct-read-only name-and-opts &body slots)`
+
+Easily define a defstruct with no mutable slots.
+
+The syntax of `defstruct-read-only` as close as possible to that of
+`defstruct`. Given an existing structure definition, you can usually
+make it immutable by switching out `defstruct` for
+`defstruct-read-only`.
+
+There are only two syntactic differences:
+
+1. To prevent accidentally inheriting mutable slots,
+   `defstruct-read-only` does not allow inheritance.
+
+2. Slot definitions can use slot options without having to provide an
+   initform. In this case, any attempt to make an instance of the
+   struct without providing a value for that slot will signal an
+   error.
+
+    (my-slot :type string)
+    ≡ (my-slot (required-argument 'my-slot) :read-only t :type string)
+
+The idea here is simply that an unbound slot in an immutable data
+structure does not make sense.
+
+[View source](definitions.lisp#L177)
 
 ## Internal Definitions
 
@@ -888,6 +915,14 @@ Is equivalent to:
       (with-open-file (in file2 :direction output)
         ...))
 
+If the outer macro has no arguments, you may omit the parentheses.
+
+    (nest
+      with-standard-io-syntax
+      ...)
+    ≡ (with-standard-io-syntax
+        ...)
+
 From UIOP, based on a suggestion by Marco Baringer.
 
 [View source](control-flow.lisp#L604)
@@ -910,7 +945,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L629)
+[View source](control-flow.lisp#L638)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -920,7 +955,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L648)
+[View source](control-flow.lisp#L657)
 
 ### `(sort-values pred &rest values)`
 
@@ -932,7 +967,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L771)
+[View source](control-flow.lisp#L780)
 
 ## Threads
 

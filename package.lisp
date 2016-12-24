@@ -306,7 +306,8 @@
    #:split-sequence-if-not
    #:take-while
    #:drop-while
-   #:hash-table-function))
+   #:hash-table-function
+   #:make-hash-table-function))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

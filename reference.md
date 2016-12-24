@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (28 files, 254 functions)
+# Function Listing For SERAPEUM (28 files, 255 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -1471,6 +1471,14 @@ pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
 [View source](hash-tables.lisp#L284)
+
+### `(make-hash-table-function &rest args &key &allow-other-keys)`
+
+Call `hash-table-function` on a fresh hash table.
+ARGS can be args to `hash-table-function` or args to
+`make-hash-table`, as they are disjoint.
+
+[View source](hash-tables.lisp#L381)
 
 ## Files
 

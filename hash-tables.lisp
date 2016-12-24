@@ -377,3 +377,11 @@ specified."
           wrap-strict
           (wrap-key-type key-type)
           (wrap-value-type value-type)))))
+
+(defun make-hash-table-function (&rest args &key &allow-other-keys)
+  "Call `hash-table-function' on a fresh hash table.
+ARGS can be args to `hash-table-function' or args to
+`make-hash-table', as they are disjoint."
+  (apply #'hash-table-function
+         (apply #'make-hash-table :allow-other-keys t args)
+         :allow-other-keys t args))

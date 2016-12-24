@@ -48,7 +48,7 @@
                (:file "trees"
                 :depends-on ("macro-tools"))
                (:file "hash-tables"
-                :depends-on ("iter"))   ;nlet
+                :depends-on ("iter" "types" "control-flow"))
                (:file "files"
                 :depends-on ("package"))
                (:file "symbols"

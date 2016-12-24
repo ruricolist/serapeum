@@ -281,11 +281,13 @@ opposite order."
         (gethash x hash-table)
       (values val? val))))
 
-(defun hash-table-function (hash-table &key read-only strict)
+(defun hash-table-function (hash-table &key read-only strict (key-type 't) (value-type 't)
+                                            strict-types)
   "Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash'
-against HASH-TABLE.
+against a copy of HASH-TABLE at the time HASH-TABLE-FUNCTION was
+called.
 
     (def x (make-hash-table))
 
@@ -297,30 +299,81 @@ equivalent to `(setf (gethash ...))' against HASH-TABLE.
 
 If STRICT is non-nil, then the function signals an error if it is
 called with a key that is not present in HASH-TABLE. This applies to
-setting keys, as well as looking them up."
-  (assure function
-    (if strict
-        (flet ((no-such-key (key)
-                 (error "Hash table ~a has no key ~a" hash-table key)))
-          (if read-only
-              (lambda (key)
-                (multiple-value-bind (value present?)
-                    (gethash key hash-table)
-                  (if present?
-                      value
-                      (no-such-key key))))
-              (lambda (key &optional (value nil value?))
-                (multiple-value-bind (old-value present?)
-                    (gethash key hash-table)
-                  (if present?
-                      (if value?
-                          (setf (gethash key hash-table) value)
-                          old-value)
-                      (no-such-key key))))))
-        (if read-only
-            (lambda (key)
-              (gethash key hash-table))
-            (lambda (key &optional (value nil value?))
-              (if value?
-                  (setf (gethash key hash-table) value)
-                  (gethash key hash-table)))))))
+setting keys, as well as looking them up.
+
+The function is able to restrict what types are permitted as keys and
+values. If KEY-TYPE is specified, an error will be signaled if an
+attempt is made to get or set a key that does not satisfy KEY-TYPE. If
+VALUE-TYPE is specified, an error will be signaled if an attempt is
+made to set a value that does not satisfy VALUE-TYPE. However, the
+hash table provided is *not* checked to ensure that the existing
+pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
+specified."
+  (labels ((no-such-key (key)
+             (error "Hash table ~a has no key ~a" hash-table key))
+           (check-type* (datum type)
+             (unless (typep datum type)
+               (error 'type-error :expected-type type :datum type)))
+           (wrap-hash-table (ht)
+             (if read-only
+                 (lambda (key)
+                   (gethash key ht))
+                 (lambda (key &optional (value nil value?))
+                   (if value?
+                       (setf (gethash key ht) value)
+                       (gethash key ht)))))
+           (wrap-read-only (fun)
+             (if read-only
+                 (lambda (key)
+                   (funcall fun key))
+                 fun))
+           (wrap-strict (fun)
+             (if (not strict) fun
+                 (if read-only
+                     (lambda (key)
+                       (strict-lookup fun key))
+                     (lambda (key &optional (value nil value?))
+                       (if value?
+                           (setf (strict-lookup fun key) value)
+                           (strict-lookup fun key))))))
+           (strict-lookup (fun key)
+             (multiple-value-bind (value present?)
+                 (funcall fun key)
+               (if present?
+                   (values value t)
+                   (no-such-key key))))
+           ((setf strict-lookup) (value fun key)
+             (multiple-value-bind (old-val present?)
+                 (funcall fun key)
+               (declare (ignore old-val))
+               (if present?
+                   (funcall fun key value)
+                   (no-such-key key))))
+           (wrap-key-type (fun type)
+             (if (type= type t) fun
+                 (lambda (key &rest args)
+                   (check-type* key type)
+                   (apply fun key args))))
+           (wrap-value-type (fun type)
+             (if (type= type t) fun
+                 (if read-only fun
+                     (lambda (key &optional (value nil value?))
+                       (if (not value?)
+                           (funcall fun key)
+                           (progn
+                             (check-type* value type)
+                             (funcall fun key value))))))))
+    (when strict-types
+      (unless (and (type= key-type t)
+                   (type= value-type t))
+        (maphash (lambda (k v)
+                   (check-type* k key-type)
+                   (check-type* v value-type))
+                 hash-table)))
+    (assure function
+      (~> hash-table
+          copy-hash-table
+          wrap-hash-table
+          wrap-strict
+          (wrap-key-type key-type)
+          (wrap-value-type value-type)))))

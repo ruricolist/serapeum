@@ -1441,12 +1441,13 @@ opposite order.
 
 [View source](hash-tables.lisp#L274)
 
-### `(hash-table-function hash-table &key read-only strict)`
+### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
 Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash`
-against HASH-TABLE.
+against a copy of HASH-TABLE at the time HASH-TABLE-FUNCTION was
+called.
 
     (def x (make-hash-table))
 
@@ -1459,6 +1460,15 @@ equivalent to `(setf (gethash ...))' against HASH-TABLE.
 If STRICT is non-nil, then the function signals an error if it is
 called with a key that is not present in HASH-TABLE. This applies to
 setting keys, as well as looking them up.
+
+The function is able to restrict what types are permitted as keys and
+values. If KEY-TYPE is specified, an error will be signaled if an
+attempt is made to get or set a key that does not satisfy KEY-TYPE. If
+VALUE-TYPE is specified, an error will be signaled if an attempt is
+made to set a value that does not satisfy VALUE-TYPE. However, the
+hash table provided is *not* checked to ensure that the existing
+pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
+specified.
 
 [View source](hash-tables.lisp#L284)
 

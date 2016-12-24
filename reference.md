@@ -2390,7 +2390,7 @@ From Arc.
 
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
-Is S1 a prefix of S2?
+Is PREFIX a prefix of STRING?
 
 [View source](strings.lisp#L426)
 
@@ -2408,7 +2408,7 @@ Like `string$=`, but case-insensitive.
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
-Is SUFFIX a suffix of S2?
+Is SUFFIX a suffix of STRING?
 
 [View source](strings.lisp#L446)
 
@@ -2420,7 +2420,7 @@ Like `string*=`, but case-insensitive.
 
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
-Is SUBSTRING a substring of S2?
+Is SUBSTRING a substring of STRING?
 
 This is similar, but not identical, to SEARCH.
 

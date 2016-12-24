@@ -424,7 +424,7 @@ From Arc."
                               (mkdef name2 :docstring docstring))))))))
 
   (defcmp (string^= string-prefix-p) (prefix string)
-    "Is S1 a prefix of S2?"
+    "Is PREFIX a prefix of STRING?"
     (let ((ms (call mismatch prefix string)))
       (or (not ms) (= ms end1))))
 
@@ -444,7 +444,7 @@ From Arc."
     (dcm string-prefix-p char-equal))
 
   (defcmp (string$= string-suffix-p) (suffix string)
-    "Is SUFFIX a suffix of S2?"
+    "Is SUFFIX a suffix of STRING?"
     (let ((ms (call mismatch suffix string :from-end t)))
       (or (not ms) (= ms start1))))
 
@@ -464,7 +464,7 @@ From Arc."
     (dcm string-suffix-p char-equal))
 
   (defcmp (string*= string-contains-p) (substring string)
-    "Is SUBSTRING a substring of S2?
+    "Is SUBSTRING a substring of STRING?
 
 This is similar, but not identical, to SEARCH.
 

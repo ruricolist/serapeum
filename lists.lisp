@@ -282,7 +282,7 @@ From PAIP."
 This uses the technique described by Durand and Strandh in their paper
 presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
   (declare (optimize (speed 3)
-                     (safety 0)
+                     (safety 1)
                      (debug 0)
                      (compilation-speed 0)))
   (symbol-macrolet ((small 10000)

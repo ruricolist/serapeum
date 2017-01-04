@@ -367,7 +367,7 @@ is to return a string."
       (with-templated-body (string string)
           (:type string
            :subtypes ((simple-array character (*)))
-           :in-subtypes (declare (optimize (speed 3) (safety 0))))
+           :in-subtypes (declare (optimize (speed 3) (safety 1))))
         (nlet escape ((start start))
           (when (< start end)
             (let ((next (position-if #'rep string

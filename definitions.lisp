@@ -197,29 +197,31 @@ There are only two syntactic differences:
 
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense."
-  (destructuring-bind (name . opts) (ensure-list name-and-opts)
-    (when-let (clause (find :include opts :key #'car))
-      (error "Read-only struct ~a cannot use inheritance: ~s."
-             name clause))
-    `(defstruct ,(if opts `(,name ,@opts) name)
-       ,@(collecting
-           (dolist (slot slots)
-             (let ((slot (ensure-list slot)))
-               (multiple-value-bind (name initform args)
-                   (if (oddp (length slot))
-                       ;; Name (1) + keyword arguments (2n) = 2n+1.
-                       (destructuring-bind (name . args) slot
-                         (values name `(required-argument ',name) args))
-                       ;; Name (1) + initform (1) + keyword arguments (2n) = 2n+2.
-                       (destructuring-bind (name initform . args) slot
-                         (values name initform args)))
-                 (destructuring-bind (&key (read-only t read-only-supplied?) &allow-other-keys) args
-                   (declare (ignore read-only))
-                   (when read-only-supplied?
-                     (simple-style-warning "Redundant read-only declaration in slot definition ~s"
-                                           slot))
-                   (let ((args (remove-from-plist args :read-only)))
-                     (collect `(,name
-                                ,initform
-                                :read-only t
-                                ,@args)))))))))))
+  (let ((docstring (and (stringp (first slots)) (pop slots))))
+    (destructuring-bind (name . opts) (ensure-list name-and-opts)
+      (when-let (clause (find :include opts :key #'car))
+        (error "Read-only struct ~a cannot use inheritance: ~s."
+               name clause))
+      `(defstruct ,(if opts `(,name ,@opts) name)
+         ,@(unsplice docstring)
+         ,@(collecting
+             (dolist (slot slots)
+               (let ((slot (ensure-list slot)))
+                 (multiple-value-bind (name initform args)
+                     (if (oddp (length slot))
+                         ;; Name (1) + keyword arguments (2n) = 2n+1.
+                         (destructuring-bind (name . args) slot
+                           (values name `(required-argument ',name) args))
+                         ;; Name (1) + initform (1) + keyword arguments (2n) = 2n+2.
+                         (destructuring-bind (name initform . args) slot
+                           (values name initform args)))
+                   (destructuring-bind (&key (read-only t read-only-supplied?) &allow-other-keys) args
+                     (declare (ignore read-only))
+                     (when read-only-supplied?
+                       (simple-style-warning "Redundant read-only declaration in slot definition ~s"
+                                             slot))
+                     (let ((args (remove-from-plist args :read-only)))
+                       (collect `(,name
+                                  ,initform
+                                  :read-only t
+                                  ,@args))))))))))))

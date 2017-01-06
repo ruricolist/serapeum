@@ -1,5 +1,6 @@
 (defpackage :serapeum/internal-definitions
-  (:use :cl :alexandria :serapeum :optima)
+  (:use :cl :alexandria :serapeum)
+  (:import-from :trivia :match :ematch)
   (:shadowing-import-from :uiop :nest)
   #+sb-package-locks (:implement :serapeum :serapeum/internal-definitions))
 

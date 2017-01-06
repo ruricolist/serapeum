@@ -418,7 +418,7 @@ Burson."
            (destructuring-bind (test => . body) clause
              (declare (ignore =>))
              (cond ((null body) (error "Missing clause"))
-                   ((single body)
+                   ((null (rest body))
                     (values test (car body)))
                    (t (destructuring-bind (var . body) body
                         (let ((fn `(lambda (,var) ,@body)))

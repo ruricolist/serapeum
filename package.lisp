@@ -1,9 +1,10 @@
 ;;;; package.lisp
 
 (defpackage #:serapeum
-  (:use :cl :alexandria :optima :split-sequence :parse-number
+  (:use :cl :alexandria :split-sequence :parse-number
     :named-readtables :tcr.parse-declarations-1.0
     :introspect-environment)
+  (:import-from :trivia :match :ematch)
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)
   (:export

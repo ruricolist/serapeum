@@ -6,7 +6,8 @@
   :license "MIT"
   :in-order-to ((asdf:test-op (asdf:test-op #:serapeum-tests)))
   :depends-on (#:alexandria
-               #:optima
+               #:trivia
+               #:trivia.quasiquote
                #:uiop
                #:split-sequence
                #:string-case

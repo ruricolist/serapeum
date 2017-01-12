@@ -360,17 +360,19 @@ Lisp.
 
 Easily define a defstruct with no mutable slots.
 
-The syntax of `defstruct-read-only` as close as possible to that of
+The syntax of `defstruct-read-only` is as close as possible to that of
 `defstruct`. Given an existing structure definition, you can usually
-make it immutable by switching out `defstruct` for
+make it immutable simply by switching out `defstruct` for
 `defstruct-read-only`.
 
-There are only two syntactic differences:
+There are only three syntactic differences:
 
 1. To prevent accidentally inheriting mutable slots,
    `defstruct-read-only` does not allow inheritance.
 
-2. Slot definitions can use slot options without having to provide an
+2. The `:copier` option is disabled, because it would be useless.
+
+3. Slot definitions can use slot options without having to provide an
    initform. In this case, any attempt to make an instance of the
    struct without providing a value for that slot will signal an
    error.
@@ -396,7 +398,7 @@ Like `local`, but leave the last form in BODY intact.
      (labels ((aux-fn ...))
        (defun entry-point ...)) 
 
-[View source](internal-definitions.lisp#L13)
+[View source](internal-definitions.lisp#L14)
 
 ### `(local &body orig-body)`
 
@@ -506,7 +508,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](internal-definitions.lisp#L571)
+[View source](internal-definitions.lisp#L572)
 
 ## Binding
 

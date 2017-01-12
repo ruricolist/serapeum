@@ -177,17 +177,19 @@ Lisp."
 (defmacro defstruct-read-only (name-and-opts &body slots)
   "Easily define a defstruct with no mutable slots.
 
-The syntax of `defstruct-read-only' as close as possible to that of
+The syntax of `defstruct-read-only' is as close as possible to that of
 `defstruct'. Given an existing structure definition, you can usually
-make it immutable by switching out `defstruct' for
+make it immutable simply by switching out `defstruct' for
 `defstruct-read-only'.
 
-There are only two syntactic differences:
+There are only three syntactic differences:
 
 1. To prevent accidentally inheriting mutable slots,
    `defstruct-read-only' does not allow inheritance.
 
-2. Slot definitions can use slot options without having to provide an
+2. The `:copier' option is disabled, because it would be useless.
+
+3. Slot definitions can use slot options without having to provide an
    initform. In this case, any attempt to make an instance of the
    struct without providing a value for that slot will signal an
    error.
@@ -202,7 +204,10 @@ structure does not make sense."
       (when-let (clause (find :include opts :key #'car))
         (error "Read-only struct ~a cannot use inheritance: ~s."
                name clause))
-      `(defstruct ,(if opts `(,name ,@opts) name)
+      (when (find :copier opts :key #'car)
+        (error "Read only struct ~a does not need a copier."
+               name))
+      `(defstruct (,name (:copier nil) ,@opts)
          ,@(unsplice docstring)
          ,@(collecting
              (dolist (slot slots)

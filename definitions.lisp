@@ -28,6 +28,13 @@ efficiency.
 - If VAR is a list that starts with `values`, each element is treated as
 a separate variable and initialized as if by `(setf (values VAR...)
 VAL)`."
+  ;; From the ISO-COMPATIBILITY issue writeup: "DEFINE-SYMBOL-MACRO
+  ;; can be used to define global lexicals, by having a global lexical
+  ;; be a symbol macro that expands into a reference to a globally
+  ;; allocated cell that is not subject to dynamic binding." So not
+  ;; only was this use of `define-symbol-macro' foreseen, it is also a
+  ;; major reason why it was included in CL at all. (The same goes for
+  ;; `defconst' below.)
   (ematch var
     ((list 'values)
      `(progn ,val))

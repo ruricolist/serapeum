@@ -237,3 +237,13 @@ structure does not make sense."
                                   ,initform
                                   :read-only t
                                   ,@args))))))))))))
+
+(defmacro defvar-unbound (var &body (docstring))
+  "Define VAR as if by `defvar' with no init form, and set DOCSTRING
+as its documentation.
+
+I believe the name comes from Edi Weitz."
+  `(progn
+     (defvar ,var)
+     (setf (documentation ',var 'variable) ,docstring)
+     ',var))

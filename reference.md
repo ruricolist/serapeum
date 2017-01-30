@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (28 files, 255 functions)
+# Function Listing For SERAPEUM (28 files, 256 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -293,7 +293,7 @@ Like `def`, but for multiple values.
 Each variable in VALUES is given a global, lexical binding, as with
 `def`, then set all at once, as with `multiple-value-setq`.
 
-[View source](definitions.lisp#L59)
+[View source](definitions.lisp#L66)
 
 ### `(defconst symbol init &optional docstring)`
 
@@ -307,7 +307,7 @@ different literal representation than the old value.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L83)
+[View source](definitions.lisp#L90)
 
 ### `(defsubst name params &body body)`
 
@@ -323,7 +323,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L107)
+[View source](definitions.lisp#L114)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -336,7 +336,7 @@ documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L129)
+[View source](definitions.lisp#L136)
 
 ### `(defplace name args &body (form &optional docstring))`
 
@@ -344,7 +344,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L155)
+[View source](definitions.lisp#L162)
 
 ### `(defcondition name supers &body (slots &rest options))`
 
@@ -354,7 +354,7 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-[View source](definitions.lisp#L167)
+[View source](definitions.lisp#L174)
 
 ### `(defstruct-read-only name-and-opts &body slots)`
 
@@ -383,7 +383,16 @@ There are only three syntactic differences:
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense.
 
-[View source](definitions.lisp#L177)
+[View source](definitions.lisp#L184)
+
+### `(defvar-unbound var &body (docstring))`
+
+Define VAR as if by `defvar` with no init form, and set DOCSTRING
+as its documentation.
+
+I believe the name comes from Edi Weitz.
+
+[View source](definitions.lisp#L241)
 
 ## Internal Definitions
 

@@ -34,6 +34,7 @@
    #:defplace
    #:defcondition
    #:defstruct-read-only
+   #:defvar-unbound
    #:local
    #:local*
    ;; Binding.

@@ -170,12 +170,13 @@ table, its value, and the return value of the last call to FN. On the
 first call, INIT is supplied in place of the previous value.
 
 From Guile."
-  (with-hash-table-iterator (next hash-table)
-    (let ((prior init))
-      (loop (multiple-value-bind (more k v) (next)
-              (if more
-                  (setf prior (funcall fn k v prior))
-                  (return prior)))))))
+  (let ((fn (ensure-function fn)))
+    (with-hash-table-iterator (next hash-table)
+      (let ((prior init))
+        (loop (multiple-value-bind (more k v) (next)
+                (if more
+                    (setf prior (funcall fn k v prior))
+                    (return prior))))))))
 
 (defun maphash-return (fn hash-table)
   "Like MAPHASH, but collect and return the values from FN.

@@ -55,8 +55,8 @@ case SUBTREE will be used as the value of the subtree."
                  (let ((tree2 (funcall fun tree)))
                    (if (atom tree2)
                        tree2
-                       (reuse-cons (map-tree (car tree2))
-                                   (map-tree (cdr tree2))
+                       (reuse-cons (map-tree/tag (car tree2) tag)
+                                   (map-tree/tag (cdr tree2) tag)
                                    tree2))))))
       (if tagp
           (map-tree/tag tree tag)

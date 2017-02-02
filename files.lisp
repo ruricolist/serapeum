@@ -6,7 +6,9 @@ With `path-join' you can pass the elements of the pathname being built
 in the order they appear in it:
 
     (path-join (user-homedir-pathname) config-dir config-file)
-    ≡ (merge-pathnames config-file (merge-pathnames config-dir (user-homedir-pathname)))
+    ≡ (uiop:merge-pathnames* config-file
+       (uiop:merge-pathnames* config-dir
+        (user-homedir-pathname)))
 
 Note that `path-join' does not coerce the parts of the pathname into
 directories; you have to do that yourself.
@@ -15,7 +17,7 @@ directories; you have to do that yourself.
     (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\""
   (the pathname
        (reduce (lambda (x y)
-                 (merge-pathnames y x))
+                 (uiop:merge-pathnames* y x))
                pathnames
                :initial-value (make-pathname))))
 

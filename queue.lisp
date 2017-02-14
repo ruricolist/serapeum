@@ -92,11 +92,11 @@ allowing the queue to be declared dynamic-extent."
 
 (declaim (ftype (function (queue) list) qlist))
 (defun qlist (queue)
-  "A list of the times in QUEUE."
+  "A list of the items in QUEUE."
   (cdr (queue-cons queue)))
 
 (defun enq (item queue)
-  "Insert ITEM at end of QUEUE."
+  "Insert ITEM at the end of QUEUE."
   (check-type queue queue)
   (let ((q (queue-cons queue)))
     (setf (car q)

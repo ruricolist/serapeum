@@ -1,7 +1,7 @@
 (in-package #:serapeum)
 
 (defun vect (&rest initial-contents)
-  "Succint constructor for adjustable vectors with fill pointers.
+  "Succinct constructor for adjustable vectors with fill pointers.
 
     (vect 1 2 3)
     ≡ (make-array 3

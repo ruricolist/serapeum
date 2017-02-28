@@ -42,75 +42,92 @@ From Arc."
                (nand ,@(rest forms))
                t))))
 
-(defun check-exhaustiveness (style type body env)
-  ;; Should we do redundancy checking? Is there any Lisp that doesn't
-  ;; already warn about that?
-  (check-type style (member case typecase))
-  (labels ((subtype? (subtype type) (subtypep subtype type env))
-           (same-type? (type1 type2)
-             (multiple-value-bind (sub sure) (subtype? type1 type2)
-               (if (not sub)
-                   (values nil sure)
-                   (subtype? type2 type1))))
-           (check-subtypep (subtype)
-             (multiple-value-bind (subtype? sure?)
-                 (subtype? subtype type)
-               (cond ((not sure?)
-                      (warn "Can't tell if ~s is a subtype of ~s. Is ~s defined?"
-                            subtype type type))
-                     ((not subtype?)
-                      (warn "~s is not a subtype of ~s" subtype type)))))
-           (explode-type (type)
+(defun same-type? (type1 type2 &optional env)
+  "Like `alexandria:type=', but takes an environment."
+  (multiple-value-bind (sub sure) (subtypep type1 type2 env)
+    (if (not sub)
+        (values nil sure)
+        (subtypep type2 type1 env))))
+
+(defun describe-non-exhaustive-match (stream partition type env)
+  (assert (not (same-type? partition type)))
+  (labels ((explode-type (type)
              (match type
                ((list* 'or subtypes) subtypes)
                ((list* 'member subtypes)
                 (loop for subtype in subtypes collect `(eql ,subtype)))))
+
            (extra-types (partition)
              (loop for subtype in (explode-type partition)
-                   unless (subtype? subtype type)
+                   unless (subtypep subtype type env)
                      collect subtype))
+
            (format-extra-types (stream partition)
              (when-let (et (extra-types partition))
                (format stream "~&There are extra types: ~s" et)))
+
            (missing-types (partition)
-             (multiple-value-bind (exp exp?) (typexpand type)
+             (multiple-value-bind (exp exp?) (typexpand type env)
                (when exp?
                  (set-difference (explode-type exp)
                                  (explode-type partition)
                                  :test #'type=))))
+
            (format-missing-types (stream partition)
              (when-let (mt (missing-types partition))
                (format stream "~&There are missing types: ~s" mt)))
-           (generate-warning (part)
-             (with-output-to-string (s)
-               (format s "~&Non-exhaustive match: ")
-               (cond ((subtype? part type)
-                      (format s "~s is a proper subtype of ~s." part type))
-                     ((subtype? type part)
-                      (format s "~s contains types not in ~s." part type))
-                     (t (format s "~s is not the same as ~s" part type)))
-               (format-extra-types s part)
-               (format-missing-types s part)))
-           (check-exhaustive (partition)
-             (multiple-value-bind (same sure) (same-type? partition type)
-               (cond ((not sure)
-                      (warn "Can't check exhaustiveness: cannot determine if ~s is the same as ~s"
-                            partition type))
-                     (same)
-                     (t (warn "~a" (generate-warning partition))))))
-           (check-subtypes (body)
-             (dolist (clause body)
-               (check-subtypep (clause-type clause))))
-           (clause-type (clause)
-             (ecase style
-               ((typecase) (car clause))
-               ((case) `(member ,@(ensure-list (car clause))))))
-           (merge-clause-types (body)
-             (ecase style
-               ((typecase) `(or ,@(mapcar #'car body)))
-               ((case) `(member ,@(mappend (compose #'ensure-list #'car) body))))))
-    (check-subtypes body)
-    (check-exhaustive (merge-clause-types body))))
+
+           (format-subtype-problem (stream partition)
+             (cond ((subtypep partition type env)
+                    (format stream "~s is a proper subtype of ~s." partition type))
+                   ((subtypep type partition env)
+                    (format stream "~s contains types not in ~s." partition type))
+                   (t (format stream "~s is not the same as ~s" partition type)))))
+
+    (format stream "~&Non-exhaustive match: ")
+    (format-subtype-problem stream partition)
+    (format-extra-types stream partition)
+    (format-missing-types stream partition)))
+
+(defun check-exhaustiveness (style type clauses env)
+  ;; Should we do redundancy checking? Is there any Lisp that doesn't
+  ;; already warn about that?
+  (check-type style (member case typecase))
+  (multiple-value-bind (clause-types partition)
+      (ecase style
+        ((typecase)
+         (loop for (type . nil) in clauses
+               collect type into clause-types
+               finally (return (values clause-types
+                                       `(or ,@clause-types)))))
+        ((case)
+         (loop for (key-spec . nil) in clauses
+               for keys = (ensure-list key-spec)
+               for clause-type = `(member ,@keys)
+               collect clause-type into clause-types
+               append keys into all-keys
+               finally (return (values clause-types
+                                       `(member ,@all-keys))))))
+    ;; Check that every clause type is a subtype of TYPE.
+    (dolist (clause-type clause-types)
+      (multiple-value-bind (subtype? sure?)
+          (subtypep clause-type type env)
+        (cond ((not sure?)
+               (warn "Can't tell if ~s is a subtype of ~s. Is ~s defined?"
+                     clause-type type type))
+              ((not subtype?)
+               (warn "~s is not a subtype of ~s" clause-type type)))))
+    ;; Check that the clause types form an exhaustive partition of TYPE.
+    (multiple-value-bind (same sure)
+        (same-type? partition type env)
+      (cond ((not sure)
+             (warn "Can't check exhaustiveness: cannot determine if ~s is the same as ~s"
+                   partition type))
+            (same)
+            (t (warn "~a"
+                     (with-output-to-string (s)
+                       (describe-non-exhaustive-match s partition type env)))))))
+  (values))
 
 (defmacro typecase-of (type x &body clauses &environment env)
   "Like `etypecase-of', but may, and must, have an `otherwise' clause

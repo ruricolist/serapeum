@@ -38,6 +38,7 @@
    #:local
    #:local*
    ;; Binding.
+   #:receive
    #:letrec
    #:letrec*
    #:mvlet

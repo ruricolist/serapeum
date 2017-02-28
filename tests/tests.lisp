@@ -382,6 +382,33 @@
                 (a (funcall f)))
         (is-true a))))
 
+  (test receive
+    (is (equal '(1 2 3)
+               (receive list (values 1 2 3) list)))
+    (is (equal '(1 2 3)
+               (receive (one . more) (values 1 2 3)
+                 (cons one more))))
+    (is (equal '(1 2 3)
+               (receive (one two three) (values 1 2 3)
+                 (list one two three))))
+    (signals error
+      (receive (one two) (values 1 2 3)
+        (list one two)))
+    (signals error
+      (receive (one two three four) (values 1 2 3)
+        (list one two three four)))
+    (signals error
+      (eval
+       '(receive (one two &optional three) (values 1 2 3)
+         (list one two three))))
+
+    (is (null (receive () (values) nil)))
+    (signals error
+      (receive () (values 1)))
+    (is (null (receive x (values) x)))
+    (signals error
+      (receive (x) (values) x)))
+
   (test mvlet*
     (is (= 2 (let ((x 1)) x
                (mvlet* ((x 2)

@@ -59,6 +59,58 @@ Cf. `fbindrec*'."
      (setq ,@(apply #'append bindings))
      (locally ,@body)))
 
+(defmacro receive (formals expr &body body)
+  "Stricter version of `multiple-value-bind'.
+
+Use `receive' when you want to enforce that EXPR should return a
+certain number of values, or a minimum number of values.
+
+If FORMALS is a proper list, then EXPR must return exactly as many
+values -- no more and no less -- as there are variables in FORMALS.
+
+If FORMALS is an improper list (VARS . REST), then EXPR must return at
+least as many values as there are VARS, and any further values are
+bound, as a list, to REST.
+
+Lastly, if FORMALS is a symbol, bind that symbol to all the values
+returned by EXPR, as if by `multiple-value-list'.
+
+From Scheme (SRFI-8)."
+  ;; It's probably not worth stack-allocating the thunk.
+  (cond ((null formals)
+         `(multiple-value-call
+              (lambda ()
+                ,@body)
+            ,expr))
+        ((atom formals)
+         ;; This could also be written:
+         #+ () `(let ((,formals (multiple-value-list ,expr)))
+                  ,@body)
+         ;; But I want it to be possible to declare FORMALS to have
+         ;; dynamic extent, and most Lisps support that for &rest
+         ;; lists.
+         `(multiple-value-call
+              (lambda (&rest ,formals)
+                ,@body)
+            ,expr))
+        ((proper-list-p formals)
+         (when (intersection formals lambda-list-keywords)
+           (error "Lambda list keywords in formals: ~a" formals))
+         `(multiple-value-call
+              (lambda ,formals
+                ,@body)
+            ,expr))
+        (t (let* ((last (last formals))
+                  (vars (append (butlast formals)
+                                (list (car last))))
+                  (rest (cdr last)))
+             (when (intersection (cons rest vars) lambda-list-keywords)
+               (error "Lambda list keywords in formals: ~a" formals))
+             `(multiple-value-call
+                  (lambda (,@vars &rest ,rest)
+                    ,@body)
+                ,expr)))))
+
 (defun simple-binding-p (binding)
   (= (length binding) 2))
 

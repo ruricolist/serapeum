@@ -151,6 +151,9 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
 
 (defun pophash (key hash-table)
   "Lookup KEY in HASH-TABLE, return its value, and remove it.
+
+This is only a shorthand. It is not in itself thread-safe.
+
 From Zetalisp."
   (multiple-value-bind (value present?)
       (gethash key hash-table)
@@ -159,6 +162,9 @@ From Zetalisp."
 
 (defun swaphash (key value hash-table)
   "Set KEY and VALUE in HASH-TABLE, returning the old values of KEY.
+
+This is only a shorthand. It is not in itself thread-safe.
+
 From Zetalisp."
   (multiple-value-prog1 (gethash key hash-table)
     (setf (gethash key hash-table) value)))

@@ -223,9 +223,24 @@ Clojure's `merge'."
   "Return a table like TABLE, but with keys and values flipped.
 
      (gethash :y (flip-hash-table (dict :x :y)))
-     => :x
+     => :x, t
 
-TEST filters which keys to set. KEY defaults to `identity'."
+TEST allows you to filter which keys to set.
+
+     (def number-names (dictq 1 one 2 two 3 three))
+
+     (def name-numbers (flip-hash-table number-names))
+     (def name-odd-numbers (flip-hash-table number-names :filter #'oddp))
+
+     (gethash 'two name-numbers) => 2, t
+     (gethash 'two name-odd-numbers) => nil, nil
+
+KEY allows you to transform the keys in the old hash table.
+
+     (def negative-number-names (flip-hash-table number-names :key #'-))
+     (gethash 'one negative-number-names) => -1, nil
+
+KEY defaults to `identity'."
   (let ((table2 (copy-hash-table/empty table)))
     (ensuring-functions (key test)
       (maphash (lambda (k v)

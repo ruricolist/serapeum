@@ -981,7 +981,21 @@ Robinson.")))
   (test string-count
     (is (zerop (string-count "foo" "")))
     (is (zerop (string-count "foo" "fofofo")))
-    (is (= 1 (string-count "foo" "fofoofo")))))
+    (is (= 1 (string-count "foo" "fofoofo"))))
+
+  (test string+
+    (is (equal "" (string+)))
+    (is (equal "abc" (string+ "a" "b" "c")))
+    (is (equal "12345" (string+ 1 2 3 4 5)))
+    (let ((a "new string"))
+      (is (not (eq a (string+ a)))))
+    (let ((*print-base* 8))
+      (equal "20" (string+ 16)))
+    (let ((my-vec (vector 1 2 3 4)))
+      (let ((*print-array* t))
+        (is (equal "#(1 2 3 4)" (string+ my-vec))))
+      (let ((*print-array* nil))
+        (is (string^= "#<" (string+ my-vec)))))))
 
 (suite sequences
 

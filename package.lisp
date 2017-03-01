@@ -266,6 +266,7 @@
    #:string-replace-all
    #:chomp
    #:string-count
+   #:string+
    ;; Sequences.
    #:keep
    #:filter

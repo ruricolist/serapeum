@@ -85,7 +85,7 @@
                              "iter"
                              "control-flow"
                              "queue"))
-               (:file "strings" :depends-on ("lists"))
+               (:file "strings" :depends-on ("lists" "op"))
                (:file "sequences" :depends-on ("lists"))))
 
 (asdf:defsystem #:serapeum-tests

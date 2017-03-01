@@ -634,3 +634,70 @@ Takes care that the longest suffix is always removed first."
           (if (not match)
               hits
               (rec (+ match len) (1+ hits))))))))
+
+(defun string+ (&rest args)
+  "Optimized function for building small strings.
+
+Roughly equivalent to
+
+    (let ((*print-pretty* nil))
+     (format nil \"~@{~a}\" args...))
+
+But with a compiler macro that can sometimes result in more efficient
+code."
+  (declare (dynamic-extent args))
+  (let ((*print-pretty* nil))
+    (with-output-to-string (s)
+      (dolist (arg args)
+        (typecase arg
+          (string (write-string arg s))
+          (character (write-char arg s))
+          (symbol (write-string (symbol-name arg) s))
+          (t (princ arg s)))))))
+
+(defun simplify-string-plus-args (args)
+  (~>> args
+       ;; Constant-fold where you can.
+       (mapcar (lambda (arg)
+                 (typecase arg
+                   (character (string arg))
+                   (keyword (string arg))
+                   ((member t nil) (string arg))
+                   (t arg))))
+       ;; Fuse strings where possible.
+       (reduce (lambda (x args)
+                 (if (and (stringp x)
+                          (stringp (car args)))
+                     (cons (concat x (car args))
+                           (cdr args))
+                     (cons x args)))
+               _
+               :from-end t
+               :initial-value '())))
+
+(define-compiler-macro string+ (&whole call &rest args)
+  (if (null args)
+      `(make-string 0)
+      (let ((old-args args)
+            (args (simplify-string-plus-args args)))
+        (if (and (= (length old-args)
+                    (length args))
+                 (every (op (type= (type-of _) (type-of _)))
+                        old-args
+                        args))
+            call
+            (if (> (length args) 20) call
+                (if (= (length args) 1)
+                    (if (stringp (first args))
+                        `(copy-seq ,(first args))
+                        `(princ-to-string ,(first args)))
+                    ;; If the arguments are reasonably few, unroll the
+                    ;; loop.
+                    (with-unique-names (stream)
+                      `(let ((*print-pretty* nil))
+                         (with-output-to-string (,stream)
+                           ,@(loop for arg in args
+                                   if (stringp arg)
+                                     collect `(write-string ,arg ,stream)
+                                   else
+                                     collect `(princ ,arg ,stream)))))))))))

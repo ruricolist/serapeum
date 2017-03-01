@@ -304,6 +304,7 @@
    #:inconsistent-graph-constraints
    #:mvfold
    #:mvfoldr
+   #:repeat-sequence
    #:split-sequence
    #:split-sequence-if
    #:split-sequence-if-not

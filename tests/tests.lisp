@@ -1099,4 +1099,20 @@ Robinson.")))
                           (values (min item min)
                                   (max item max)))
                         (iota 10) 0 0))
-               '(0 9)))))
+               '(0 9))))
+
+  (test repeat-sequence
+    (is (equal "131313" (repeat-sequence "13" 3)))
+    (is (equal '(13 13 13) (repeat-sequence '(13) 3)))
+    (is (equal '("13" "13" "13") (repeat-sequence '("13") 3)))
+    (is (vector= #(13 13 13) (repeat-sequence #(13) 3)))
+    ;; 0 repetitions.
+    (is (null (repeat-sequence '(x y z) 0)))
+    (is (equal "" (repeat-sequence "foo" 0)))
+    (is (stringp (repeat-sequence "foo" 0)))
+    ;; Repeating empty sequences.
+    (is (null (repeat-sequence nil 10)))
+    (is (equal "" (repeat-sequence "" (1+ array-dimension-limit))))
+    (is (stringp (repeat-sequence "" (1+ array-dimension-limit))))
+    (is (equal "" (repeat-sequence "" (1+ most-positive-fixnum))))
+    (is (stringp (repeat-sequence "" (1+ most-positive-fixnum))))))

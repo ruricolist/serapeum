@@ -1177,3 +1177,72 @@ values. Cf. `mvfold'."
 (define-compiler-macro mvfoldr (fn seq &rest seeds)
   "Optimize `mvfoldr' with a fixed number of seeds."
   (expand-mvfold fn seq seeds t))
+
+(defun repeat-sequence (seq n)
+  "Return a sequence like SEQ, with the same content, but repeated N times.
+
+    (repeat-sequence \"13\" 3)
+    => \"131313\"
+
+The length of the sequence returned will always be the length of SEQ
+times N.
+
+This means that 0 repetitions results in an empty sequence:
+
+    (repeat-sequence \"13\" 0)
+    => \"\"
+
+Conversely, N may be greater than the possible length of a sequence,
+as long as SEQ is empty.
+
+    (repeat-sequence \"\" (1+ array-dimension-limit))
+    => \"\"
+"
+  (check-type n (integer 0 *))
+  (seq-dispatch seq
+    (repeat-list seq n)
+    (repeat-vector seq n)
+    (let ((len (length seq)))
+      (if (zerop len)
+          (make-sequence-like seq 0)
+          (loop with out = (make-sequence-like seq (* len n))
+                repeat n
+                for offset from 0 by (length seq)
+                do (replace out seq :start1 offset)
+                finally (return out))))))
+
+(defun repeat-list (list n)
+  (declare (optimize speed (safety 0)))
+  (if (null list) nil
+      (let ((n (assure array-index n)))
+        (collecting*
+          (loop repeat n do
+            (loop for item in list do
+              (collect item)))))))
+
+(defun repeat-vector (vec n)
+  (declare (type vector vec)
+           (optimize (safety 0) (debug 0)))
+  (when (= (length vec) 0)
+    (return-from repeat-vector
+      (make-array 0 :element-type (array-element-type vec))))
+  (unless (< (* (length vec) n) array-dimension-limit)
+    (error "A vector of size ~a*~a is impossible" (length vec) n))
+  (let* ((len (length vec))
+         (n n)
+         (len-out (* len n)))
+    (declare (array-index len n len-out))
+    (with-templated-body (vec vec)
+        (:type (vector)
+         :subtypes (#+sbcl (simple-array character (*))
+                    (simple-array t (*)))
+         :in-subtypes (declare (optimize speed)
+                               (inline replace)))
+      (let ((out (make-array len-out :element-type (array-element-type vec))))
+        (nlet rec ((n n) (offset 0))
+          (declare (array-index n offset))
+          (if (zerop n)
+              out
+              (progn
+                (replace out vec :start1 offset)
+                (rec (1- n) (+ offset len)))))))))

@@ -11,7 +11,7 @@ install:
   - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | bash
 
 script:
-  - cl -l fiveam -l serapeum -l serapeum-tests
+  - cl -l fiveam -l serapeum -l serapeum/tests
        -e '(setf fiveam:*debug-on-error* t
                  fiveam:*debug-on-failure* t)'
        -e '(setf *debugger-hook*

@@ -4,7 +4,7 @@
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
-  :in-order-to ((asdf:test-op (asdf:test-op #:serapeum-tests)))
+  :in-order-to ((asdf:test-op (asdf:test-op #:serapeum/tests)))
   :depends-on (#:alexandria
                #:trivia
                #:trivia.quasiquote
@@ -88,7 +88,7 @@
                (:file "strings" :depends-on ("lists" "op"))
                (:file "sequences" :depends-on ("lists"))))
 
-(asdf:defsystem #:serapeum-tests
+(asdf:defsystem #:serapeum/tests
   :description "Test suite for Serapeum."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"

@@ -1,5 +1,9 @@
 (in-package :serapeum)
 
+(defsubst fixnump (n)
+  "Same as `(typep N 'fixnum)'."
+  (typep n 'fixnum))
+
 (define-post-modify-macro finc (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
 

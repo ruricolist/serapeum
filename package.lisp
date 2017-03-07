@@ -157,6 +157,7 @@
    #:vect
    #:vector=
    ;; Numbers.
+   #:fixnump
    #:parse-number
    #:parse-real-number
    #:parse-positive-real-number

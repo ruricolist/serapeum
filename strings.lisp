@@ -635,6 +635,7 @@ Takes care that the longest suffix is always removed first."
               hits
               (rec (+ match len) (1+ hits))))))))
 
+(declaim (ftype (function (&rest t) string) string+))
 (defun string+ (&rest args)
   "Optimized function for building small strings.
 

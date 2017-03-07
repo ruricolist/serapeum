@@ -91,7 +91,7 @@ The same shortcut works for keywords.
                (lambda (s) (format s "Supply a new value for ~s" place)))))
     (require-type-for new spec place)))
 
-(defmacro assure (type-spec &body (form))
+(defmacro assure (type-spec &body (form) &environment env)
   "Macro for inline type checking.
 
 `assure' is to `the' as `check-type' is to `declare'.
@@ -108,14 +108,23 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 From ISLISP."
-  (when (constantp form)
-    (let ((val (eval form)))
-      (unless (typep val type-spec)
-        (warn "Constant expression ~s is not of type ~a"
-              form type-spec))))
   ;; The type nil contains nothing, so it renders the form
   ;; meaningless.
   (assert (not (subtypep type-spec nil)))
+  (let ((exp (macroexpand form env)))
+    ;; A constant expression.
+    (when (constantp exp)
+      (let ((val (constant-form-value exp)))
+        (unless (typep val type-spec)
+          (warn "Constant expression ~s is not of type ~a"
+                form type-spec))))
+    ;; A variable.
+    (when (symbolp exp)
+      (let ((declared-type (variable-type exp env)))
+        (unless (subtypep type-spec declared-type)
+          (warn "Required type ~a is not a subtypep of declared type ~a"
+                type-spec declared-type)))))
+
   ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
 

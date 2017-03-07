@@ -113,6 +113,9 @@ From ISLISP."
       (unless (typep val type-spec)
         (warn "Constant expression ~s is not of type ~a"
               form type-spec))))
+  ;; The type nil contains nothing, so it renders the form
+  ;; meaningless.
+  (assert (not (subtypep type-spec nil)))
   ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
 

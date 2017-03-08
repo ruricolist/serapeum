@@ -189,14 +189,16 @@ The syntax of `defstruct-read-only' is as close as possible to that of
 make it immutable simply by switching out `defstruct' for
 `defstruct-read-only'.
 
-There are only three syntactic differences:
+There are only a few syntactic differences:
 
 1. To prevent accidentally inheriting mutable slots,
    `defstruct-read-only' does not allow inheritance.
 
-2. The `:copier' option is disabled, because it would be useless.
+2. The `:type' option may not be used.
 
-3. Slot definitions can use slot options without having to provide an
+3. The `:copier' option is disabled, because it would be useless.
+
+4. Slot definitions can use slot options without having to provide an
    initform. In this case, any attempt to make an instance of the
    struct without providing a value for that slot will signal an
    error.
@@ -215,6 +217,9 @@ structure does not make sense."
         (when (find :copier opts :key #'ensure-car)
           (error "Read only struct ~a does not need a copier."
                  name))
+        (when-let (clause (find :type opts :key #'car-safe))
+          (error "Read-only structs may not use the ~s option: ~a"
+                 :type clause))
         `(defstruct (,name (:copier nil) ,@opts)
            ,@(unsplice docstring)
            ,@(collecting

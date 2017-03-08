@@ -324,6 +324,11 @@ Cf. `string-case'."
                                   ,stringform ',keys)
                           cases))))
 
+(defmacro eif (test then else)
+  "Like `cl:if', but requires two branches.
+Stands for “exhaustive if”."
+  `(if ,test ,then ,else))
+
 (define-condition econd-failure (error)
   ()
   (:report (lambda (c s)

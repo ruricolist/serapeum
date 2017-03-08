@@ -66,6 +66,7 @@
    #:case-using
    #:select
    #:selector
+   #:eif
    #:econd
    #:econd-failure
    #:econd-let

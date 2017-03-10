@@ -326,14 +326,39 @@ Like (format nil ...), binding `*pretty-pretty*' to `nil', which in
 some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter'."
+  (declare (dynamic-extent args))
   (let ((*print-pretty* nil))
     (the string (format nil "~?" control-string args))))
 
 (define-compiler-macro fmt (control-string &rest args)
-  ;; NB We want to expand into a call to `format` whenever possible,
+  ;; NB We want to expand into a call to `format' whenever possible,
   ;; so Lisp can check the number of arguments.
-  `(let (*print-pretty*)
-     (the string (format nil ,control-string ,@args))))
+  `(the string
+        ,(if (stringp control-string)
+             ;; Optimize some trivial control strings. You wouldn't
+             ;; necessarily write these, but it's common for a complex
+             ;; control string to "erode" over time into something
+             ;; trivial.
+             (cond
+               ;; No directives.
+               ((not (find #\~ control-string))
+                `(copy-seq ,control-string))
+               ;; Same as `princ'.
+               ((member control-string '("~a" "~d" "~f" "~g")
+                        :test #'equalp)
+                (destructuring-bind (arg) args
+                  `(let (*print-pretty*)
+                     (princ-to-string ,arg))))
+               ;; Same as `prin1'.
+               ((equalp control-string "~s")
+                (destructuring-bind (arg) args
+                  `(let (*print-pretty*)
+                     (prin1-to-string ,arg))))
+               (t
+                `(let (*print-pretty*)
+                   (format nil (formatter ,control-string) ,@args))))
+             `(let (*print-pretty*)
+                (format nil ,control-string ,@args)))))
 
 (defun escape (string table &key (start 0) end stream)
   "Write STRING to STREAM, escaping with TABLE.

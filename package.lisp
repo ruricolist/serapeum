@@ -67,6 +67,7 @@
    #:select
    #:selector
    #:eif
+   #:eif-let
    #:econd
    #:econd-failure
    #:econd-let

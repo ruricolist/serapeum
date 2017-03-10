@@ -329,18 +329,30 @@ Cf. `string-case'."
 Stands for “exhaustive if”."
   `(if ,test ,then ,else))
 
+(defmacro eif-let (binds then else)
+  "Like `alexandria:if-let', but requires two branches."
+  `(if-let ,binds ,then ,else))
+
+(defun format-econd-tests (stream tests)
+  (format stream "~@[~&None of these tests were satisfied: ~
+                    ~{~%~^~a~}~]"
+          tests))
+
 (define-condition econd-failure (error)
-  ()
+  ((tests :type list :initarg :tests))
+  (:default-initargs :tests nil)
   (:report (lambda (c s)
-             (declare (ignore c))
-             (format s "ECOND fell through.")))
+             (with-slots (tests) c
+               (format s "ECOND fell through.")
+               (format-econd-tests s tests))))
   (:documentation "A failed ECOND form."))
 
 (defmacro econd (&rest clauses)
   "Like `cond', but signal an error of type `econd-failure' if no
 clause succeeds."
-  `(cond ,@clauses
-         (t (error 'econd-failure))))
+  (let ((tests (mapcar #'car clauses)))
+    `(cond ,@clauses
+           (t (error 'econd-failure :tests ',tests)))))
 
 (defmacro cond-let (var &body clauses)
   "Cross between COND and LET.
@@ -353,15 +365,15 @@ Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
     (`((,test) ,@clauses)
-     `(if-let (,var ,test)
-        ,var
-        (cond-let ,var ,@clauses)))
+      `(if-let (,var ,test)
+         ,var
+         (cond-let ,var ,@clauses)))
     (`((t ,@body) ,@_)
-     `(progn ,@body))
+      `(progn ,@body))
     (`((,test ,@body) ,@clauses)
-     `(if-let (,var ,test)
-        (progn ,@body)
-        (cond-let ,var ,@clauses)))))
+      `(if-let (,var ,test)
+         (progn ,@body)
+         (cond-let ,var ,@clauses)))))
 
 (defmacro econd-let (symbol &rest clauses)
   "Like `cond-let' for `econd'."

@@ -682,48 +682,51 @@ code."
           (t (princ arg s)))))))
 
 (defun simplify-string-plus-args (args)
-  (~>> args
-       ;; Constant-fold where you can.
-       (mapcar (lambda (arg)
-                 (typecase arg
-                   (character (string arg))
-                   (keyword (string arg))
-                   ((member t nil) (string arg))
-                   (t arg))))
-       ;; Fuse strings where possible.
-       (reduce (lambda (x args)
-                 (if (and (stringp x)
-                          (stringp (car args)))
-                     (cons (concat x (car args))
-                           (cdr args))
-                     (cons x args)))
-               _
-               :from-end t
-               :initial-value '())))
+  (reduce (lambda (x args)
+            (if (and (stringp x)
+                     (stringp (car args)))
+                (cons (concat x (car args))
+                      (cdr args))
+                (cons x args)))
+          args
+          :from-end t
+          :key (lambda (arg)
+                 (trivia:match arg
+                   ((and arg (type character))
+                    (string arg))
+                   ((and arg (type keyword))
+                    (symbol-name arg))
+                   ((eql t) #.(string 't))
+                   ((eql nil) #.(string 'nil))
+                   ;; The smallest base is 2, so these are always the
+                   ;; same regardless of `*print-base*'.
+                   ((eql 0) "0")
+                   ((eql 1) "1")
+                   ((list 'quote (and s (type symbol)))
+                    (symbol-name s))
+                   ((list 'quote (and s (type string)))
+                    s)
+                   ((list 'quote (and c (type character)))
+                    (string c))
+                   (otherwise arg)))
+          :initial-value '()))
 
 (define-compiler-macro string+ (&whole call &rest args)
   (if (null args)
       `(make-string 0)
-      (let ((old-args args)
-            (args (simplify-string-plus-args args)))
-        (if (and (= (length old-args)
-                    (length args))
-                 (every (op (type= (type-of _) (type-of _)))
-                        old-args
-                        args))
-            call
-            (if (> (length args) 20) call
-                (if (= (length args) 1)
-                    (if (stringp (first args))
-                        `(copy-seq ,(first args))
-                        `(princ-to-string ,(first args)))
-                    ;; If the arguments are reasonably few, unroll the
-                    ;; loop.
-                    (with-unique-names (stream)
-                      `(let ((*print-pretty* nil))
-                         (with-output-to-string (,stream)
-                           ,@(loop for arg in args
-                                   if (stringp arg)
-                                     collect `(write-string ,arg ,stream)
-                                   else
-                                     collect `(princ ,arg ,stream)))))))))))
+      (let ((args (simplify-string-plus-args args)))
+        (if (> (length args) 20) call
+            (if (= (length args) 1)
+                (if (stringp (first args))
+                    `(copy-seq ,(first args))
+                    `(princ-to-string ,(first args)))
+                ;; If the arguments are reasonably few, unroll the
+                ;; loop.
+                (with-unique-names (stream)
+                  `(let ((*print-pretty* nil))
+                     (with-output-to-string (,stream)
+                       ,@(loop for arg in args
+                               if (stringp arg)
+                                 collect `(write-string ,arg ,stream)
+                               else
+                                 collect `(princ ,arg ,stream))))))))))

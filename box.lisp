@@ -18,6 +18,8 @@ change. In particular, you should not depend on being able to
 recognize boxes using a type or predicate."
   value)
 
+(declaim-freeze-type box)
+
 (setf (documentation 'box 'function)
       "Box a value.")
 

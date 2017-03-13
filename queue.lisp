@@ -49,6 +49,8 @@ The idea is that *collecting* is something we do often enough to
 justifying making *collectors* (queues) first-class."
   (cons nil :type cons :read-only t))
 
+(declaim-freeze-type queue)
+
 (defun queuep (x)
   "Is X a queue?"
   (queue-p x))

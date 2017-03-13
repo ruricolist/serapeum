@@ -37,6 +37,13 @@ The same shortcut works for keywords.
      (defun mod-fixnum+ (x y) ...)"
   `(declaim (ftype (-> ,args ,values) ,function)))
 
+(defmacro declaim-freeze-type (type)
+  "Declare that TYPE is not going to change, for the benefit of Lisps
+  that understand such declarations."
+  (declare (ignorable type))
+  #+sbcl  (declaim (sb-ext:freeze-type type))
+  #+cmucl (declaim (ext:freeze-type type)))
+
 (defun read-new-value ()
   "Read and evaluate a value."
   (format *query-io* "~&New value: ")

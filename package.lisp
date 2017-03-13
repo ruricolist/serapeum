@@ -6,7 +6,7 @@
     :introspect-environment)
   (:import-from :trivia :match :ematch)
   (:documentation "Utilities beyond Alexandria.")
-  #+sb-package-locks (:lock t)
+  #+(or sb-package-locks ecl) (:lock t)
   (:export
    ;; Macro tools.
    #:unsplice

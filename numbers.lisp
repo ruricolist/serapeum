@@ -142,6 +142,8 @@ float will do."
      (round-to 15 10) => 20"
   (* (round number divisor) divisor))
 
+(declaim-constant-function round-to)
+
 (defun bits (int &key big-endian)
   "Return a bit vector of the bits in INT.
 Defaults to little-endian."
@@ -186,6 +188,8 @@ Defaults to little-endian."
 (defun grow (n by)
   "Increase N by a factor."
   (+ n (* n by)))
+
+(declaim-constant-function shrink grow)
 
 (define-modify-macro shrinkf (n) shrink
   "Shrink the value in a place by a factor.")

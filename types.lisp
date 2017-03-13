@@ -44,6 +44,15 @@ The same shortcut works for keywords.
   #+sbcl  (declaim (sb-ext:freeze-type type))
   #+cmucl (declaim (ext:freeze-type type)))
 
+(defmacro declaim-constant-function (&rest fns)
+  "Declare that FNs are constant functions, for the benefit of Lisps
+that understand such declarations."
+  (declare (ignorable fns))
+  #+cmucl
+  `(progn
+     ,@(loop for fn in fns
+             collect `(declaim (ext:constant-function ,fn)))))
+
 (defun read-new-value ()
   "Read and evaluate a value."
   (format *query-io* "~&New value: ")

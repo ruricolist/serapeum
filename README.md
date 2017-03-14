@@ -251,8 +251,24 @@ and `labels`.
                          (apply (lambda ,params
                                   ,@body)
                                   ,args))))))))
+                                  
+At the top level, this expands into an example of “let over defun” (gensyms elided for readability):
 
-This expands into `let` and `labels` as you might expect.
+    (let ((memo-table (make-hash-table :test 'equal)))
+      (defun fibonacci (&rest args)
+        (multiple-value-bind (result result?)
+            (gethash args memo-table)
+          (if result? result
+              (setf (gethash args memo-table)
+                    (apply (lambda (n)
+                             (if (<= n 1)
+                                 1
+                                 (+ (fibonacci (- n 1))
+                                    (fibonacci (- n 2)))))
+                           args))))))
+
+But within a `local` form, it expands differently. This nearly
+identical source form:
 
     (local
       (defmemo fibonacci (n)
@@ -262,7 +278,27 @@ This expands into `let` and `labels` as you might expect.
                (fibonacci (- n 2)))))
     
       (fibonacci 100))
-      => 573147844013817084101
+      
+Expands into this very different code (simplified for readability):
+
+    (let (fn)
+      (labels ((fibonacci (&rest args)
+                 (apply fn args)))
+        (let ((memo-table (make-hash-table :test 'equal)))
+          (setf fn
+                (named-lambda fibonacci (&rest args)
+                  (multiple-value-bind (result result?)
+                      (gethash args memo-table)
+                    (if result? result
+                        (setf (gethash args memo-table)
+                              (apply
+                               (lambda (n)
+                                 (if (<= n 1) 1
+                                     (+ (fibonacci (- n 1))
+                                        (fibonacci (- n 2)))))
+                               args))))))
+          
+          (fibonacci 100))))
 
 ### Example: block compiling
 
@@ -282,6 +318,12 @@ Then, when you decide you want block compilation, simply switch the
      (local*
        (defun aux-fn ...)
        (defun entry-point ...))
+       
+Which expands into something like:
+
+    (labels ((aux-fn-2 ...)
+             (aux-fn-1 ...))
+      (defun entry-point ...))
        
 ## Compile-time exhaustiveness checking
 

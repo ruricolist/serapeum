@@ -41,8 +41,8 @@ The same shortcut works for keywords.
   "Declare that TYPE is not going to change, for the benefit of Lisps
   that understand such declarations."
   (declare (ignorable type))
-  #+sbcl  (declaim (sb-ext:freeze-type type))
-  #+cmucl (declaim (ext:freeze-type type)))
+  #+sbcl  `(declaim (sb-ext:freeze-type ,type))
+  #+cmucl `(declaim (ext:freeze-type ,type)))
 
 (defmacro declaim-constant-function (&rest fns)
   "Declare that FNs are constant functions, for the benefit of Lisps

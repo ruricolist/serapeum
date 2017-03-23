@@ -15,6 +15,9 @@ intern a keyword -- which is usually both unnecessary and unwise."
 ;;; `bound-value' is a contraction for the idiom of checking `boundp'
 ;;; before calling `symbol-value'.
 
+(declaim (ftype (function (symbol &optional t)
+                          (values t boolean))
+                bound-value))
 (defsubst bound-value (s &optional default)
   "If S is bound, return (values s t). Otherwise, return DEFAULT and nil."
   (if (boundp s)

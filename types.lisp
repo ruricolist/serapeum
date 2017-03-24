@@ -156,6 +156,42 @@ PLACE only once."
                    ,temp
                    (setf ,place (require-type-for ,temp ',ts ',place)))))))))
 
+(defun simplify-subtypes (subtypes)
+  (let* ((unique (remove-duplicated-subtypes subtypes))
+         (sorted (sort-subtypes unique))
+         (unshadowed (remove-shadowed-subtypes sorted)))
+    unshadowed))
+
+(defun remove-duplicated-subtypes (subtypes)
+  (remove-duplicates subtypes :test #'type=))
+
+(defun proper-subtypep (subtype type)
+  (and (subtypep subtype type)
+       (not (subtypep type subtype))))
+
+(defun sort-subtypes (subtypes)
+  (let ((sorted (stable-sort subtypes #'proper-subtypep)))
+    (prog1 sorted
+      ;; Subtypes must always precede supertypes.
+      (assert
+       (loop for (type1 . rest) on sorted
+             never (loop for type2 in rest
+                           thereis (proper-subtypep type2 type1)))))))
+
+(defun remove-shadowed-subtypes (subtypes)
+  (assert (equal subtypes (sort-subtypes subtypes)))
+  (labels ((rec (subtypes supertypes)
+             (if (null subtypes)
+                 (nreverse supertypes)
+                 (let ((type (first subtypes))
+                       (supertype (cons 'or supertypes)))
+                   (if (type= type supertype)
+                       ;; Type is shadowed, ignore it.
+                       (rec (cdr subtypes) supertypes)
+                       (rec (cdr subtypes)
+                            (cons type supertypes)))))))
+    (rec subtypes nil)))
+
 (defmacro with-templated-body (&environment env (var expr)
                                             (&key ((:type overtype) (required-argument :type))
                                                   (subtypes (required-argument :subtypes))
@@ -196,8 +232,8 @@ This is not a macro that lends itself to trivial examples. If you want
 to understand how to use it, the best idea is to look at how it is
 used elsewhere in Serapeum."
   (let* ((subtypes
-           (sort (remove-duplicates subtypes :test #'type=)
-                 #'subtypep))
+           ;; Remove duplicate and shadowed types.
+           (simplify-subtypes subtypes))
          (subtypes-exhaustive?
            (type= `(or ,@subtypes) overtype)))
     (assert (every (lambda (type)
@@ -217,14 +253,14 @@ used elsewhere in Serapeum."
           `(flet (,@(loop for fn in fns
                           for type in subtypes
                           collect `(,fn (,var)
-                                       (declare (type ,type ,var))
-                                     ,in-subtypes
-                                     ,@body))
+                                        (declare (type ,type ,var))
+                                        ,in-subtypes
+                                        ,@body))
                   ,@(unsplice
                         (and default?
-                             `(,default (,var)
-                                        (declare (type ,overtype ,var))
-                                        ,@body))))
+                         `(,default (,var)
+                           (declare (type ,overtype ,var))
+                           ,@body))))
              (declare (notinline ,@fns ,@(unsplice default)))
              (declare (dynamic-extent ,@qfns))
              ;; Give Lisp permission to ignore functions if it can

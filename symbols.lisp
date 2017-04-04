@@ -8,7 +8,8 @@
 Like `make-keyword', but preferable in most cases, because it doesn't
 intern a keyword -- which is usually both unnecessary and unwise."
   ;; TODO Should the case of the readtable be respected?
-  (find-symbol (string string) :keyword))
+  (if (keywordp string) string
+      (find-symbol (string string) :keyword)))
 
 ;;;# `bound-value'
 

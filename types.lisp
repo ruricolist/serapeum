@@ -30,15 +30,15 @@ The same shortcut works for keywords.
   '(and (or symbol function)
     (satisfies hash-table-test-p)))
 
+(deftype -> (args values)
+  "The type of a function from ARGS to VALUES."
+  `(function ,args ,values))
+
 (defun hash-table-test-p (x)
   (etypecase x
     (symbol (member x '(eq eql equal equalp)))
     (function (member x (load-time-value
                          (list #'eq #'eql #'equal #'equalp))))))
-
-(deftype -> (args values)
-  "The type of a function from ARGS to VALUES."
-  `(function ,args ,values))
 
 (defmacro -> (function args values)
   "Declaim the ftype of FUNCTION from ARGS to VALUES.
@@ -62,6 +62,11 @@ that understand such declarations."
   `(progn
      ,@(loop for fn in fns
              collect `(declaim (ext:constant-function ,fn)))))
+
+(defmacro truly-the (type expr)
+  #+sbcl `(sb-ext:truly-the ,type ,expr)
+  #+cmucl `(ext:truly-the ,type ,expr)
+  #-(or sbcl cmucl) `(the ,type ,expr))
 
 (defun read-new-value ()
   "Read and evaluate a value."
@@ -202,17 +207,20 @@ PLACE only once."
                             (cons type supertypes)))))))
     (rec subtypes nil)))
 
-(defmacro with-templated-body (&environment env (var expr)
-                                            (&key ((:type overtype) (required-argument :type))
-                                                  (subtypes (required-argument :subtypes))
-                                                  in-subtypes)
-                               &body body)
+(defun subtypes-exhaustive? (type subtypes &optional env)
+  (loop for subtype in subtypes
+        unless (subtypep subtype type env)
+          do (error "~s is not a subtype of ~s" subtype type))
+  (type= type `(or ,@subtypes)))
+
+;;; Based on sb-impl::string-dispatch.
+(defmacro with-types ((&rest types) var &body body)
   "A macro that emits BODY once for each subtype in SUBTYPES.
 
-Suppose you are writing a function that takes a string or a number. On
-the one hand, you want the function to be generic, and work with any
-kind of string or number. On the other hand, you know Lisp can produce
-more efficient code for certain subtypes.
+Suppose you are writing a function that takes a string. On the one
+hand, you want the function to be generic, and work with any kind of
+string. On the other hand, you know your Lisp implementation can
+produce more efficient code for certain subtypes of string.
 
 The ideal would be to be able to write the code generically, but still
 have Lisp compile \"fast paths\" for subtypes it can handle more
@@ -225,61 +233,51 @@ in spurious warnings. Another is code bloat -- the naive way of
 handling templating, by repeating the same code inline, drastically
 increases the size of the disassembly.
 
-The idea of `with-templated-body' is to provide a high-level way to
-ask for this kind of compilation. It checks that SUBTYPES are really
-subtypes of TYPE; it telescopes duplicated subtypes; it eliminates the
-default case if the subtypes are exhaustive; and it arranges for each
-specialization of BODY to be called out-of-line. It also permits
-supplying declarations to be used in the specializations, but not in
-the default case.
+The idea of `with-types' is to provide a high-level way to ask for
+this kind of compilation. It checks that SUBTYPES are really subtypes
+of TYPE; it telescopes duplicated subtypes; it eliminates the default
+case if the subtypes are exhaustive; and it arranges for each actual
+specialization of BODY.
 
-Note that `with-templated-body' is intended to be used around
-relatively expensive code, particularly loops. For simpler code, the
-gains from specialized compilation may not justify the overhead of
-type dispatch and a (local) function call.
+Note that `with-types' is intended to be used around relatively
+expensive code, particularly loops. For simpler code, the gains from
+specialized compilation may not justify the overhead."
+  (let ((types (simplify-subtypes types)))
+    ;; The advantage of the CMUCL/SBCL way (I think) is that, if the
+    ;; compiler is smart enough, it can decide /not/ to bother
+    ;; inlining if the type is such that it cannot do any meaningful
+    ;; specialization.
+    (with-unique-names ((fun type-dispatch-fun))
+      `(flet ((,fun (,var)
+                ,@body))
+         (declare (inline ,fun))
+         (etypecase ,var
+           ,@(loop for type in types
+                   collect `(,type (,fun (truly-the ,type ,var)))))))))
 
-This is not a macro that lends itself to trivial examples. If you want
-to understand how to use it, the best idea is to look at how it is
-used elsewhere in Serapeum."
-  (let* ((subtypes
-           ;; Remove duplicate and shadowed types.
-           (simplify-subtypes subtypes))
-         (subtypes-exhaustive?
-           (type= `(or ,@subtypes) overtype)))
-    (assert (every (lambda (type)
-                     (subtypep type overtype env))
-                   subtypes))
-    `(let ((,var ,expr))
-       ;; The idea here is that the local functions will be
-       ;; lambda-lifted by the Lisp compiler, thus saving space, while
-       ;; any actual closures can be made dynamic-extent.
-       ,(let* ((fns (make-gensym-list (length subtypes) 'template-fn-))
-               (default? (not subtypes-exhaustive?))
-               (default (and default? (gensym (string 'default))))
-               (qfns
-                 (append (loop for fn in fns
-                               collect `(function ,fn))
-                         (and default? `((function ,default))))))
-          `(flet (,@(loop for fn in fns
-                          for type in subtypes
-                          collect `(,fn (,var)
-                                        (declare (type ,type ,var))
-                                        ,in-subtypes
-                                        ,@body))
-                  ,@(unsplice
-                        (and default?
-                         `(,default (,var)
-                           (declare (type ,overtype ,var))
-                           ,@body))))
-             (declare (notinline ,@fns ,@(unsplice default)))
-             (declare (dynamic-extent ,@qfns))
-             ;; Give Lisp permission to ignore functions if it can
-             ;; infer a type for EXPR.
-             (declare (ignorable ,@qfns))
-             (etypecase ,var
-               ,@(loop for type in subtypes
-                       for fn in fns
-                       collect `(,type (,fn ,var)))
-               ,@(unsplice
-                  (unless subtypes-exhaustive?
-                    `(,overtype (,default ,var))))))))))
+(defmacro with-subtypes (type (&rest subtypes) var &body body
+                         &environment env)
+  "Same as `with-types', but SUBTYPES are required to all be
+subtypes of TYPE."
+  (let* ((types
+           (if (subtypes-exhaustive? type subtypes env)
+               subtypes
+               (append subtypes (list type)))))
+    `(with-types ,types ,var
+       ,@body)))
+
+(defmacro with-string-types ((&rest types) var &body body)
+  "Same as `with-types', but all of TYPES must be subtypes of
+TYPE."
+  `(with-subtypes string
+       ;; Always specialize for (simple-array character (*)).
+       ((simple-array character (*))
+        (simple-array base-char (*))
+        ,@types)
+       ,var
+     ,@body))
+
+(defmacro with-vector-types ((&rest types) var &body body)
+  ;; Always specialize for simple vectors.
+  `(with-subtypes vector (simple-vector ,@types) ,var
+     ,@body))

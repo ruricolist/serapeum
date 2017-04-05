@@ -175,9 +175,7 @@ From Emacs Lisp (where it is simply `upcase-initials')."
 (defun nstring-upcase-initials (string)
   "Destructive version of `string-upcase-initials'."
   (lret ((string (string string)))
-    (with-templated-body (string string)
-        (:type string
-         :subtypes ((simple-array character (*))))
+    (with-string-types () string
       (when (= (length string) 0)
         (return-from nstring-upcase-initials
           string))
@@ -198,10 +196,7 @@ From Emacs Lisp (where it is simply `upcase-initials')."
   "Every character with case in STRING has the same case.
 Return `:upper' or `:lower' as appropriate."
   (let ((string (string string)))
-    (with-templated-body (string string)
-        (:type string
-         :subtypes ((simple-array character (*)))
-         :in-subtypes (declare (optimize speed)))
+    (with-string-types () string
       (let ((length (length string)))
         (declare (array-length length))
         (nlet invert ((i 0)
@@ -389,10 +384,7 @@ is to return a string."
                      (values (gethash c table))))))
     (declare (ftype (function (character) (or string null)) rep))
     (with-string (stream stream)
-      (with-templated-body (string string)
-          (:type string
-           :subtypes ((simple-array character (*)))
-           :in-subtypes (declare (optimize (speed 3) (safety 1))))
+      (with-string-types () string
         (nlet escape ((start start))
           (when (< start end)
             (let ((next (position-if #'rep string
@@ -574,10 +566,7 @@ like the first argument to `format'."
   (check-type string string)
   (let ((new (simplify-string new))
         (old (simplify-string old)))
-    (with-templated-body (string string)
-        (:type string
-         :subtypes ((simple-array character (*)))
-         :in-subtypes (declare (optimize speed)))
+    (with-string-types () string
       (cond
         ((not (search old string :start2 start :end2 end))
          string)
@@ -647,10 +636,7 @@ Takes care that the longest suffix is always removed first."
          (string (string string))
          (end (or end (length string)))
          (len (length substring)))
-    (with-templated-body (string string)
-        (:type string
-         :subtypes ((simple-array character (*)))
-         :in-subtypes (declare (optimize speed)))
+    (with-string-types () string
       (nlet rec ((start start)
                  (hits 0))
         ;; There can't be more hits than characters.

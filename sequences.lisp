@@ -1230,12 +1230,7 @@ as long as SEQ is empty.
          (n n)
          (len-out (* len n)))
     (declare (array-index len n len-out))
-    (with-templated-body (vec vec)
-        (:type (vector)
-         :subtypes (#+sbcl (simple-array character (*))
-                    (simple-array t (*)))
-         :in-subtypes (declare (optimize speed)
-                               (inline replace)))
+    (with-vector-types ((simple-array character (*))) vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
           (declare (array-index n offset))

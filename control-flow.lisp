@@ -352,6 +352,8 @@ Stands for “exhaustive if”."
 clause succeeds."
   (let ((tests (mapcar #'car clauses)))
     `(cond ,@clauses
+           ;; SBCL will silently eliminate this branch if it is
+           ;; unreachable.
            (t (error 'econd-failure :tests ',tests)))))
 
 (defmacro cond-let (var &body clauses)

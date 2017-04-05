@@ -752,9 +752,6 @@ false when called on the first element."
 ;;; The heap implementation is borrowed from Zach Beane's timers
 ;;; package for SBCL.
 
-;;; TODO Allow the heap to have variable arity?
-;;; http://www.pvk.ca/Blog/2014/04/13/number-systems-for-implicit-data-structures/
-
 (deftype heap ()
   '(vector t))
 

@@ -852,6 +852,7 @@ The name is from Arc."
                   ;; The original sequence might have been shorter
                   ;; than N.
                   (out (make-sequence-like seq (length bestn))))
+             (assert (length= bestn out))
              (replace out bestn))))
         ((= n 0)
          (make-sequence-like seq 0))

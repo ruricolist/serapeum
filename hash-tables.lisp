@@ -3,16 +3,6 @@
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 
-(deftype ok-hash-table-test ()
-  '(and (or symbol function)
-    (satisfies hash-table-test-p)))
-
-(defun hash-table-test-p (x)
-  (etypecase x
-    (symbol (member x '(eq eql equal equalp)))
-    (function (member x (load-time-value
-                         (list #'eq #'eql #'equal #'equalp))))))
-
 (defun copy-hash-table/empty
     (table
      &key (test (hash-table-test table))

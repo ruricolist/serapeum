@@ -45,7 +45,7 @@
                (:file "op"
                 :depends-on ("package"))
                (:file "functions"
-                :depends-on ("macro-tools"))
+                :depends-on ("macro-tools" "types"))
                (:file "trees"
                 :depends-on ("macro-tools"))
                (:file "hash-tables"

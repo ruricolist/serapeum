@@ -215,7 +215,6 @@ PLACE only once."
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
-;;; Based on sb-impl::string-dispatch.
 (defmacro with-types ((&rest types) var &body body)
   "A macro that emits BODY once for each subtype in SUBTYPES.
 
@@ -249,13 +248,34 @@ specialized compilation may not justify the overhead."
     ;; compiler is smart enough, it can decide /not/ to bother
     ;; inlining if the type is such that it cannot do any meaningful
     ;; specialization.
-    (with-unique-names ((fun type-dispatch-fun))
-      `(flet ((,fun (,var)
-                ,@body))
-         (declare (inline ,fun))
-         (etypecase ,var
-           ,@(loop for type in types
-                   collect `(,type (,fun (truly-the ,type ,var)))))))))
+    (if (or #+(or cmucl sbcl) t)
+;;; Based on sb-impl::string-dispatch.
+        (with-unique-names ((fun type-dispatch-fun))
+          `(flet ((,fun (,var)
+                    ,@body))
+             (declare (inline ,fun))
+             (etypecase ,var
+               ,@(loop for type in types
+                       collect `(,type (,fun (truly-the ,type ,var)))))))
+        ;; The idea here is that the local functions will be
+        ;; lambda-lifted by the Lisp compiler, thus saving space,
+        ;; while any actual closures can be made dynamic-extent.
+        (let* ((fns (make-gensym-list (length types) 'template-fn-))
+               (qfns (append (loop for fn in fns collect `(function ,fn)))))
+          `(flet (,@(loop for fn in fns
+                          for type in types
+                          collect `(,fn (,var)
+                                        (declare (type ,type ,var))
+                                        ,@body)))
+             (declare (notinline ,@fns))
+             (declare (dynamic-extent ,@qfns))
+             ;; Give Lisp permission to ignore functions if it can
+             ;; infer a type for EXPR.
+             (declare (ignorable ,@qfns))
+             (etypecase ,var
+               ,@(loop for type in types
+                       for fn in fns
+                       collect `(,type (,fn ,var)))))))))
 
 (defmacro with-subtypes (type (&rest subtypes) var &body body
                          &environment env)

@@ -378,26 +378,27 @@ is to return a string."
            (optimize (safety 1) (debug 0)))
   (unless end
     (setf end (length string)))
-  (fbind ((rep (if (functionp table)
-                   table
-                   (lambda (c)
-                     (values (gethash c table))))))
-    (declare (ftype (function (character) (or string null)) rep))
-    (with-string (stream stream)
+  (with-string (stream stream)
+    (with-types (function hash-table) table
       (with-string-types () string
-        (nlet escape ((start start))
-          (when (< start end)
-            (let ((next (position-if #'rep string
-                                     :start start
-                                     :end end)))
-              (if (not next)
-                  (write-string string stream :start start :end end)
-                  (progn
-                    (write-string string stream :start start :end next)
-                    (let ((escape (rep (char string next))))
-                      (unless (emptyp escape)
-                        (write-string escape stream))
-                      (escape (1+ next))))))))))))
+        (flet ((rep (c)
+                 (etypecase table
+                   (function (funcall table c))
+                   (hash-table (gethash c table)))))
+          (declare (inline rep))
+          (nlet escape ((start start))
+            (when (< start end)
+              (let ((next (position-if #'rep string
+                                       :start start
+                                       :end end)))
+                (if (not next)
+                    (write-string string stream :start start :end end)
+                    (progn
+                      (write-string string stream :start start :end next)
+                      (let ((escape (rep (char string next))))
+                        (unless (emptyp escape)
+                          (write-string escape stream))
+                        (escape (1+ next)))))))))))))
 
 (-> ellipsize (string array-length &key (:ellipsis string)) string)
 (defun ellipsize (string n &key (ellipsis "..."))

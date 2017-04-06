@@ -35,8 +35,8 @@ the docstrings, but sometimes I have forgotten where I got an idea or
 a name. I regard missing credits as bugs: please report them.
 
 Serapeum is intended to be portable, but it is only tested where it is
-developed, on SBCL and Clozure CL. Patches for other Lisps are
-welcome, whether bug fixes or unportable enhancements.
+developed, on [SBCL][] and [Clozure CL][]. Patches for other Lisps are
+welcome, whether bug fixes or implementation-specific optimizations.
 
 # Commentary
 
@@ -393,3 +393,5 @@ The complete reference is in a [separate file](reference.md).
 be edited by hand.)
 
 [Alexandria]: http://common-lisp.net/project/alexandria/
+[SBCL]: http://sbcl.org
+[Clozure CL]: http://clozure.com

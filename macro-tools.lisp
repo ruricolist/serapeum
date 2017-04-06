@@ -169,37 +169,32 @@ directly into Lisp code:
            (build (filter-declaration-env env2 :affecting xs))
            (build (filter-declaration-env env2 :not-affecting xs)))))))
 
-(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form)
-                        &environment env)
+(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
   "Efficiently dispatch on the type of SEQ."
   (declare (ignorable other-form))
-  (let* ((dispatch-form
-           #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
-           ;; Only SBCL and ABCL support extensible sequences right now.
-           #+(or sbcl abcl)
-           (once-only (seq)
-             `(if (listp ,seq)
-                  ,list-form
-                  ,(if other-form
-                       `(if (arrayp ,seq)
-                            ,array-form
-                            ,other-form)
-                       array-form)))
-           #-(or sbcl abcl ccl)
-           `(if (listp ,seq) ,list-form ,array-form)))
-    (if (not (symbolp seq)) dispatch-form
-        (let ((type (variable-type seq env)))
-          (cond ((subtypep type 'list env)
-                 (return-from seq-dispatch
-                   list-form))
-                ((subtypep type 'array env)
-                 (return-from seq-dispatch
-                   array-form))
-                #+(or sbcl abcl)
-                ((subtypep type 'sequence env)
-                 (return-from seq-dispatch
-                   other-form))
-                (t dispatch-form))))))
+  (let* ((list-form
+           `(let ((,seq (truly-the list ,seq)))
+              ,list-form))
+         (array-form
+           ;; Create a separate branch for simple vectors.
+           `(if (simple-vector-p ,seq)
+                (let ((,seq (truly-the simple-vector ,seq)))
+                  ,array-form)
+                (let ((,seq (truly-the vector ,seq)))
+                  ,array-form))))
+    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
+    ;; Only SBCL and ABCL support extensible sequences right now.
+    #+(or sbcl abcl)
+    (once-only (seq)
+      `(if (listp ,seq)
+           ,list-form
+           ,(if other-form
+                `(if (arrayp ,seq)
+                     ,array-form
+                     ,other-form)
+                array-form)))
+    #-(or sbcl abcl ccl)
+    `(if (listp ,seq) ,list-form ,array-form)))
 
 ;;; `callf' and `callf2' are extracted from the guts of Emacs Lisp's
 ;;; `cl' package.

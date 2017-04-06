@@ -196,6 +196,23 @@ directly into Lisp code:
     #-(or sbcl abcl ccl)
     `(if (listp ,seq) ,list-form ,array-form)))
 
+(defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
+  "Efficiently dispatch on the type of VEC.
+The first form provides special handling for bit vectors. The second
+form provides generic handling for all types of vectors."
+  `(cond ((typep ,vec 'simple-bit-vector)
+          (let ((,vec (truly-the simple-bit-vector ,vec)))
+            ,bit-vector-form))
+         ((typep ,vec 'bit-vector)
+          (let ((,vec (truly-the bit-vector ,vec)))
+            ,bit-vector-form))
+         ((typep ,vec 'simple-vector)
+          (let ((,vec (truly-the simple-vector ,vec)))
+            ,vector-form))
+         (t
+          (let ((,vec (truly-the vector ,vec)))
+            ,vector-form))))
+
 ;;; `callf' and `callf2' are extracted from the guts of Emacs Lisp's
 ;;; `cl' package.
 

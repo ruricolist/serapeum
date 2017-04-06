@@ -206,9 +206,6 @@ form provides generic handling for all types of vectors."
          ((typep ,vec 'bit-vector)
           (let ((,vec (truly-the bit-vector ,vec)))
             ,bit-vector-form))
-         ((typep ,vec 'simple-vector)
-          (let ((,vec (truly-the simple-vector ,vec)))
-            ,vector-form))
          (t
           (let ((,vec (truly-the vector ,vec)))
             ,vector-form))))

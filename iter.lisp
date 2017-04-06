@@ -110,6 +110,7 @@ pass the collector around or return it like any other function."
   (with-gensyms (head tail)
     `(let* ((,head (list nil))
             (,tail ,head))
+       (declare (ignorable ,tail))
        (flet ((,collector (&rest xs)
                 (if xs
                     (dolist (x xs)

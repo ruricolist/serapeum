@@ -116,8 +116,9 @@ pass the collector around or return it like any other function."
                     (dolist (x xs)
                       (setf (cdr ,tail) (setf ,tail (list x))))
                     (cdr ,head))))
+         (declare (inline ,collector))
          ,@body
-         (the list (,collector))))))
+         (the list (cdr ,head))))))
 
 (defmacro collecting (&body body)
   "Like `with-collector', with the collector bound to the result of

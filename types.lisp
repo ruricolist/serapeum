@@ -68,6 +68,8 @@ that understand such declarations."
   #+cmucl `(ext:truly-the ,type ,expr)
   #-(or sbcl cmucl) `(the ,type ,expr))
 
+(declaim (notinline %require-type %require-type-for))
+
 (defun read-new-value ()
   "Read and evaluate a value."
   (format *query-io* "~&New value: ")

@@ -749,7 +749,7 @@ false when called on the first element."
                 (setf end mid)))
               finally (return start))))))
 
-;;; The heap implementation is borrowed from Zach Beane's timers
+;;; The heap implementation is adapted from Zach Beane's timers
 ;;; package for SBCL.
 
 (deftype heap ()
@@ -1225,7 +1225,7 @@ as long as SEQ is empty.
     (return-from repeat-vector
       (make-array 0 :element-type (array-element-type vec))))
   (unless (< (* (length vec) n) array-dimension-limit)
-    (error "A vector of size ~a*~a is impossible" (length vec) n))
+    (error "A vector of size ~a*~a is too big" (length vec) n))
   (let* ((len (length vec))
          (n n)
          (len-out (* len n)))

@@ -124,6 +124,7 @@ that understand such declarations."
       call))
 
 (defun %require-type-for (datum spec place)
+  (declare (optimize (debug 0)))
   (let ((new (wrong-type datum spec store-value
                (lambda (s) (format s "Supply a new value for ~s" place)))))
     (require-type-for new spec place)))

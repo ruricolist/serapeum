@@ -36,6 +36,7 @@
    #:defvar-unbound
    #:local
    #:local*
+   #:block-compile
    ;; Binding.
    #:receive
    #:letrec

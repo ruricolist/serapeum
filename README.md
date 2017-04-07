@@ -225,8 +225,8 @@ This has three advantages:
    `defmacro`), as well as macros that expand into `defun` forms, to
    create local bindings.
 
-3. You can (using `local*`) easily switch to block compilation of
-   top-level functions.
+3. You can (using `local*` or `block-compile`) easily switch to block
+   compilation of top-level functions.
    
 Serapeum’s implementation of internal definitions is as complete as it
 can be while remaining portable. That means full support for
@@ -309,14 +309,16 @@ block compilation in Lisps that don’t have a syntax for it.
 During development, you define functions at the top level inside a `progn`.
 
      (progn
-       (defun aux-fn ...)
+       (defun aux-fn-1 ...)
+       (defun aux-fn-2 ...)
        (defun entry-point ...))
 
 Then, when you decide you want block compilation, simply switch the
 `progn` to a `local*`:
 
      (local*
-       (defun aux-fn ...)
+       (defun aux-fn-1 ...)
+       (defun aux-fn-2 ...)
        (defun entry-point ...))
        
 Which expands into something like:
@@ -324,7 +326,26 @@ Which expands into something like:
     (labels ((aux-fn-2 ...)
              (aux-fn-1 ...))
       (defun entry-point ...))
-       
+      
+This has the slight disadvantage that calls to the entry points,
+including self calls, will still be compiled as global calls. If you
+want calls to the entry points to be compiled as local calls, you can
+use the `block-compile` macro instead.
+
+Using `block-compile`, you can write:
+
+    (block-compile (:entry-points (entry-point))
+      (defun aux-fn-1 ...)
+      (defun aux-fn-2 ...)
+      (defun entry-point ...))
+      
+And have it expand into something like:
+
+    (labels ((aux-fn-2 ...)
+         (aux-fn-1 ...)
+         (entry-point ...))
+      (defalias entry-point #'entry-point))
+
 ## Compile-time exhaustiveness checking
 
 `etypecase-of` is just like `etypecase`, except that it takes an

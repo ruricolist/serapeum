@@ -683,3 +683,17 @@ definitions."
                :decls decls
                :env env)
          body)))))
+
+(defmacro block-compile ((&key entry-points) &body body)
+  "Shorthand for block compilation with `local*'.
+
+Only the functions in ENTRY-POINTS will have global definitions. All
+other functions in BODY will be compiled as purely local functions,
+and all of their calls to one another will be compiled as local calls.
+This includes calls to the entry points, and even self-calls from
+within the entry points."
+  `(local*
+     ,@body
+     (progn
+       ,@(loop for entry-point in entry-points
+               collect `(defalias ,entry-point #',entry-point)))))

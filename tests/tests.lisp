@@ -536,9 +536,9 @@
     (is (null (sort-values #'>)))
     ;; Should this be an error?
     (is (eql t (sort-values #'> t)))
-    (is (eql '(1 2)
-             (multiple-value-list
-              (sort-values #'< 2 1)))))
+    (is (equal '(1 2)
+               (multiple-value-list
+                (sort-values #'< 2 1)))))
 
   (test convert-string-case-to-case
     (is (= 4)

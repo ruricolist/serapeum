@@ -63,7 +63,7 @@ that understand such declarations."
      ,@(loop for fn in fns
              collect `(declaim (ext:constant-function ,fn)))))
 
-(defmacro truly-the (type expr)
+(defmacro truly-the (type &body (expr))
   #+sbcl `(sb-ext:truly-the ,type ,expr)
   #+cmucl `(ext:truly-the ,type ,expr)
   #-(or sbcl cmucl) `(the ,type ,expr))
@@ -93,10 +93,12 @@ that understand such declarations."
 
 (define-compiler-macro require-type (&whole call datum spec)
   (if (constantp spec)
-      (once-only (datum)
-        `(if (typep ,datum ,spec)
-             ,datum
-             (%require-type ,datum ,spec)))
+      (let ((type (eval spec)))
+        (once-only (datum)
+          `(if (typep ,datum ,spec)
+               ,datum
+               (truly-the ,type
+                 (%require-type ,datum ,spec)))))
       call))
 
 (defun %require-type (datum spec)
@@ -113,10 +115,12 @@ that understand such declarations."
 
 (define-compiler-macro require-type-for (&whole call datum spec place)
   (if (constantp spec)
-      (once-only (datum)
-        `(if (typep ,datum ,spec)
-             ,datum
-             (%require-type-for ,datum ,spec ,place)))
+      (let ((type (eval spec)))
+        (once-only (datum)
+          `(if (typep ,datum ,spec)
+               ,datum
+               (truly-the ,type
+                 (%require-type-for ,datum ,spec ,place)))))
       call))
 
 (defun %require-type-for (datum spec place)

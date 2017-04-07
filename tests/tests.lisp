@@ -513,11 +513,11 @@
   (test bcond
     (is (= 2
            (bcond ((assoc 'b '((a 1) (b 2))) => #'cadr)
-                 (t nil))))
+                  (t nil))))
     (is (= 2
            (bcond ((assoc 'b '((a 1) (b 2))) => cons
-                  (cadr cons))
-                 (t nil)))))
+                   (cadr cons))
+                  (t nil)))))
 
   (test select
     (is-true
@@ -536,12 +536,9 @@
     (is (null (sort-values #'>)))
     ;; Should this be an error?
     (is (eql t (sort-values #'> t)))
-    (for-all ((list (a-list-of (random 100)
-                               (lambda () (random 100)))))
-      (is
-       (equal (sort (copy-list list) #'>)
-              (multiple-value-list
-               (eval `(sort-values #'> ,@list)))))))
+    (is (eql '(1 2)
+             (multiple-value-list
+              (sort-values #'< 2 1)))))
 
   (test convert-string-case-to-case
     (is (= 4)

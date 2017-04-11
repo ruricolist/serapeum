@@ -77,12 +77,18 @@ part of the arguments to compare, and compares them using TEST."
                 (loop for item in (nthcdr start seq)
                       for i below (- end start)
                       do (fn item))))
-        (let ((end (or end (length seq))))
-          (if from-end
-              (loop for i downfrom (1- end) to start
-                    do (fn (aref seq i)))
-              (loop for i from start below end
-                    do (fn (aref seq i)))))
+        (with-subtypes vector
+            (simple-bit-vector
+             bit-vector
+             (simple-array character (*))
+             simple-base-string)
+            seq
+          (let ((end (or end (length seq))))
+            (if from-end
+                (loop for i downfrom (1- end) to start
+                      do (fn (vref seq i)))
+                (loop for i from start below end
+                      do (fn (vref seq i))))))
         (let ((end (or end (length seq))))
           (if from-end
               (loop for i downfrom (1- end) to start

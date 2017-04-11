@@ -18,8 +18,8 @@
 
 Spaces, tabs, any kind of line break, page breaks, and no-break spaces
 are considered whitespace."
-  (case char
-    (#.(coerce whitespace 'list) t)))
+  (case (char-code char)
+    (#.(map 'list #'char-code whitespace) t)))
 
 (defsubst trim-whitespace (string)
   "STRING without whitespace at ends."

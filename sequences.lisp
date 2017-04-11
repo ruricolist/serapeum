@@ -54,15 +54,20 @@ part of the arguments to compare, and compares them using TEST."
     (apply #'make-array len :element-type (array-element-type seq) args)
     #+(or sbcl abcl) (apply #'sequence:make-sequence-like seq len args)))
 
+(declaim (inline map-subseq))
 (defun map-subseq (fn seq &optional start end from-end)
   "Helper function to map SEQ between START and END."
-  (declare (type (or null array-index) start end))
-  (when (and start end)
-    (assert (<= start end)))
-  (let ((start (or start 0)))
-    (fbind fn
+  (declare (type (or null array-index) start end)
+           (optimize (debug 0) (safety 1)
+                     (compilation-speed 0)))
+  ;; (when (and start end)
+  ;;   (assert (<= start end)))
+  (let ((start (or start 0))
+        (fn (ensure-function fn)))
+    ;; Use macrolet instead of fbind to minimize code size.
+    (macrolet ((fn (&rest args) `(funcall fn ,@args)))
       (seq-dispatch seq
-        (if (no end)
+        (if (null end)
             (if from-end
                 (list-map-from-end/bordeaux fn seq :start start)
                 (dolist (item (nthcdr start seq))
@@ -84,6 +89,7 @@ part of the arguments to compare, and compares them using TEST."
                     do (fn (elt seq i)))
               (loop for i from start below end
                     do (fn (elt seq i)))))))))
+(declaim (notinline map-subseq))
 
 (define-do-macro do-subseq ((var seq &optional return &key start end from-end) &body body)
   `(map-subseq

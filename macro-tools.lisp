@@ -174,13 +174,16 @@ directly into Lisp code:
   (declare (ignorable other-form))
   (let* ((list-form
            `(let ((,seq (truly-the list ,seq)))
+              (declare (ignorable ,seq))
               ,list-form))
          (array-form
            ;; Create a separate branch for simple vectors.
            `(if (simple-vector-p ,seq)
                 (let ((,seq (truly-the simple-vector ,seq)))
+                  (declare (ignorable ,seq))
                   ,array-form)
                 (let ((,seq (truly-the vector ,seq)))
+                  (declare (ignorable ,seq))
                   ,array-form))))
     #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
     ;; Only SBCL and ABCL support extensible sequences right now.

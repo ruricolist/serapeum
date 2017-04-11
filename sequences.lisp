@@ -430,11 +430,16 @@ From Clojure."
                    :size (values (floor (length seq) 2))
                    :test 'equal)))
       (declare (fixnum total))
-      (map nil
-           (lambda (elt)
-             (incf total)
-             (incf (gethash (key elt) table 0)))
-           seq)
+      (if (typep seq 'bit-vector)
+          (with-subtypes bit-vector (simple-bit-vector) seq
+            (setf (gethash (key 0) table) (count 0 seq)
+                  (gethash (key 1) table) (count 1 seq)
+                  total (length seq)))
+          (map nil
+               (lambda (elt)
+                 (incf total)
+                 (incf (gethash (key elt) table 0)))
+               seq))
       (values table total))))
 
 (defun scan (fn seq &key (key #'identity) (initial-value nil initial-value?))

@@ -1221,7 +1221,8 @@ as long as SEQ is empty.
          (n n)
          (len-out (* len n)))
     (declare (array-index len n len-out))
-    (with-vector-types ((simple-array character (*))) vec
+    (with-vector-types (bit-vector simple-bit-vector (simple-array character (*)))
+                       vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
           (declare (array-index n offset))

@@ -81,16 +81,17 @@ replaced by a single space character."
   (if (< (length string) 1)
       string
       (with-output-to-string (s)
-        (write-char (aref string 0) s)
-        (loop for i of-type array-length from 0
-              for j of-type array-length from 1
-                below (length string)
-              for c1 = (aref string i)
-              for c2 = (aref string j)
-              do (if (whitespacep c2)
-                     (unless (whitespacep c1)
-                       (write-char #\Space s))
-                     (write-char c2 s))))))
+        (with-string-types () string
+          (write-char (vref string 0) s)
+          (loop for i of-type array-length from 0
+                for j of-type array-length from 1
+                  below (length string)
+                for c1 = (vref string i)
+                for c2 = (vref string j)
+                do (if (whitespacep c2)
+                       (unless (whitespacep c1)
+                         (write-char #\Space s))
+                       (write-char c2 s)))))))
 
 (defsubst blankp (seq)
   "SEQ is either empty, or consists entirely of characters that
@@ -179,15 +180,15 @@ From Emacs Lisp (where it is simply `upcase-initials')."
       (when (= (length string) 0)
         (return-from nstring-upcase-initials
           string))
-      (setf (aref string 0)
-            (char-upcase (aref string 0)))
+      (setf (vref string 0)
+            (char-upcase (vref string 0)))
       (loop for i from 0
             for j from 1 below (length string)
-            for x = (aref string i)
-            for y = (aref string j)
+            for x = (vref string i)
+            for y = (vref string j)
             when (and (not (alphanumericp x))
                       (alphanumericp y))
-              do (setf (aref string j)
+              do (setf (vref string j)
                        (char-upcase y))))))
 
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/EO1mZBtiXX0/JuuhKJ6eMHIJ
@@ -207,7 +208,7 @@ Return `:upper' or `:lower' as appropriate."
               (cond ((eq ucp lcp) nil)
                     (ucp :upper)
                     (lcp :lower))
-              (let ((char (aref string i)))
+              (let ((char (vref string i)))
                 (cond ((upper-case-p char)
                        (invert (1+ i) t lcp))
                       ((lower-case-p char)

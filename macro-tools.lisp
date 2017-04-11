@@ -181,7 +181,8 @@ directly into Lisp code:
            `(if (simple-vector-p ,seq)
                 (let ((,seq (truly-the simple-vector ,seq)))
                   (declare (ignorable ,seq))
-                  ,array-form)
+                  (with-vref simple-vector
+                    ,array-form))
                 (let ((,seq (truly-the vector ,seq)))
                   (declare (ignorable ,seq))
                   ,array-form))))
@@ -205,12 +206,23 @@ The first form provides special handling for bit vectors. The second
 form provides generic handling for all types of vectors."
   `(cond ((typep ,vec 'simple-bit-vector)
           (let ((,vec (truly-the simple-bit-vector ,vec)))
-            ,bit-vector-form))
+            (declare (ignorable ,vec))
+            (with-vref simple-bit-vector
+              ,bit-vector-form)))
          ((typep ,vec 'bit-vector)
           (let ((,vec (truly-the bit-vector ,vec)))
-            ,bit-vector-form))
+            (declare (ignorable ,vec))
+            (with-vref bit-vector
+              ,bit-vector-form)))
+         ;; Omitted so we can safely nest within with-vector-types.
+         ;; ((typep ,vec 'simple-vector)
+         ;;  (let ((,vec (truly-the simple-vector ,vec)))
+         ;;    (declare (ignorable ,vec))
+         ;;    (with-vref simple-vector
+         ;;      ,vector-form)))
          (t
           (let ((,vec (truly-the vector ,vec)))
+            (declare (ignorable ,vec))
             ,vector-form))))
 
 ;;; `callf' and `callf2' are extracted from the guts of Emacs Lisp's

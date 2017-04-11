@@ -220,6 +220,38 @@ PLACE only once."
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
+(defmacro vref (vec index)
+  "Dummy global binding for vref.
+Inside of a with-types form, calls to `vref' may be bound to different
+accessors, such as `char' or `schar', or `bit' or `sbit', depending on
+the type being specialized on.
+
+This is actually not used on SBCL or CMUCL, but may be useful
+elsewhere."
+  `(aref ,vec ,index))
+
+(defparameter *vref-by-type*
+  (stable-sort
+   '((simple-bit-vector . sbit)
+     (bit-vector . bit)
+     (string . char)
+     (simple-string . schar)
+     (simple-vector . svref)
+     (t . aref))
+   #'proper-subtypep
+   :key #'car))
+
+(defun type-vref (type)
+  (let ((sym (cdr (assoc type *vref-by-type* :test #'subtypep))))
+    (assert (and (symbolp sym) (not (null sym))))
+    sym))
+
+(defmacro with-vref (type &body body)
+  (let ((vref (type-vref type)))
+    `(macrolet ((vref (v i)
+                  (list ',vref v i)))
+       ,@body)))
+
 (defmacro with-types ((&rest types) var &body body)
   "A macro that emits BODY once for each subtype in SUBTYPES.
 
@@ -271,7 +303,8 @@ specialized compilation may not justify the overhead."
                           for type in types
                           collect `(,fn (,var)
                                         (declare (type ,type ,var))
-                                        ,@body)))
+                                        (with-vref ,type
+                                          ,@body))))
              (declare (notinline ,@fns))
              (declare (dynamic-extent ,@qfns))
              ;; Give Lisp permission to ignore functions if it can

@@ -102,60 +102,40 @@ part of the arguments to compare, and compares them using TEST."
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
 
-(defgeneric make-bucket (seq &optional init))
-
-(defgeneric bucket-push (seq item bucket))
-
-(defgeneric bucket-seq (seq bucket))
-
-(defgeneric bucket-front (seq bucket))
-
-(defmethod make-bucket ((seq list) &optional (init nil initp))
-  (if initp (queue init) (queue)))
-
-(defmethod make-bucket ((seq vector) &optional (init nil initp))
-  (if initp
-      (make-array 1
+(defun make-bucket (seq &optional (init nil initp))
+  (seq-dispatch seq
+    (if initp
+        (queue init)
+        (queue))
+    (with-boolean initp
+      (make-array (eif initp 1 0)
                   :element-type (array-element-type seq)
                   :adjustable t
-                  :fill-pointer 1
-                  :initial-contents (list init))
-      (make-array 0
-                  :element-type (array-element-type seq)
-                  :adjustable t
-                  :fill-pointer 0)))
+                  :fill-pointer (eif initp 1 0)
+                  :initial-contents (and initp (list init))))
+    (if initp
+        (make-bucket () init)
+        (make-bucket ()))))
 
-(defmethod make-bucket ((seq sequence) &optional (init nil initp))
-  (if initp (make-bucket () init) (make-bucket ())))
+(defun bucket-push (seq item bucket)
+  (seq-dispatch seq
+    (enq item bucket)
+    (vector-push-extend item bucket)
+    (bucket-push () item bucket)))
 
-(defmethod bucket-push ((seq list) item bucket)
-  (enq item bucket))
+(defun bucket-seq (seq bucket)
+  (seq-dispatch seq
+    (qlist bucket)
+    bucket
+    (let ((len (qlen bucket)))
+      (make-sequence-like seq len :initial-contents (qlist bucket)))))
 
-(defmethod bucket-push ((seq vector) item bucket)
-  (vector-push-extend item bucket))
-
-(defmethod bucket-push ((seq sequence) item bucket)
-  (bucket-push () item bucket))
-
-(defmethod bucket-seq ((seq list) bucket)
-  (qlist bucket))
-
-(defmethod bucket-seq ((seq vector) bucket)
-  bucket)
-
-(defmethod bucket-seq ((seq sequence) bucket)
-  (let ((len (qlen bucket)))
-    (make-sequence-like seq len :initial-contents (qlist bucket))))
-
-(defmethod bucket-front ((seq list) bucket)
-  (front bucket))
-
-(defmethod bucket-front ((seq vector) bucket)
-  (when (> (length bucket) 0)
-    (aref bucket 0)))
-
-(defmethod bucket-front ((seq sequence) bucket)
-  (bucket-front () bucket))
+(defun bucket-front (seq bucket)
+  (seq-dispatch seq
+    (front bucket)
+    (when (> (length bucket) 0)
+      (vref bucket 0))
+    (bucket-front () bucket)))
 
 (defun nsubseq (seq start &optional end)
   "Return a subsequence that may share structure with SEQ.

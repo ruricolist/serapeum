@@ -308,3 +308,12 @@ TYPE."
   ;; Always specialize for simple vectors.
   `(with-subtypes vector (simple-vector ,@types) ,var
      ,@body))
+
+(defmacro with-boolean (var &body body)
+  `(if ,var
+       ,@body
+       ,@body))
+
+(defmacro with-nullable ((var type) &body body)
+  `(with-types (null ,type) ,var
+     ,@body))

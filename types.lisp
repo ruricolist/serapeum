@@ -247,10 +247,16 @@ elsewhere."
     sym))
 
 (defmacro with-vref (type &body body)
+  ;; Although this macro is only intended for internal use, package
+  ;; lock violations can still occur when functions it is used in are
+  ;; inlined.
   (let ((vref (type-vref type)))
-    `(macrolet ((vref (v i)
-                  (list ',vref v i)))
-       ,@body)))
+    (if (eql vref 'aref)
+        `(progn ,@body)
+        `(locally (declare #+sbcl (sb-ext:disable-package-locks vref))
+           (macrolet ((vref (v i) (list ',vref v i)))
+             (declare #+sbcl (sb-ext:enable-package-locks vref))
+             ,@body)))))
 
 (defmacro with-types ((&rest types) var &body body)
   "A macro that emits BODY once for each subtype in SUBTYPES.

@@ -170,15 +170,16 @@ Defaults to little-endian."
   "Turn a sequence of BITS into an integer.
 Defaults to little-endian."
   (declare (bit-vector bits))
-  (if big-endian
-      (reduce (lambda (x y)
-                (+ (ash x 1) y))
-              bits)
-      (loop with int = 0
-            for bit across bits
-            for i from 0
-            do (setf int (logior int (ash bit i)))
-            finally (return int))))
+  (with-types (bit-vector simple-bit-vector) bits
+    (if big-endian
+        (reduce (lambda (x y)
+                  (+ (ash x 1) y))
+                bits)
+        (loop with int = 0
+              for bit across bits
+              for i from 0
+              do (setf int (logior int (ash bit i)))
+              finally (return int)))))
 
 (defun shrink (n by)
   "Decrease N by a factor."

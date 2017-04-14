@@ -121,17 +121,15 @@ float will do."
 ;;; When parse-float is called with a constant `:type' argument, wrap
 ;;; it in a `the' form.
 
-;; Prevent recursive macro-expansion.
-(defun parse-float-wrapper (&rest args)
-  (apply #'parse-float args))
-
 (define-compiler-macro parse-float (&whole decline string &rest args
                                            &key type
                                            &allow-other-keys)
   (if (and type (constantp type))
       (let ((type (eval type)))
         (assert (subtypep type 'float))
-        `(truly-the ,type (parse-float-wrapper ,string ,@args)))
+        `(locally (declare (notinline parse-float))
+           (truly-the ,type
+             (parse-float ,string ,@args))))
       decline))
 
 (declaim (inline round-to))

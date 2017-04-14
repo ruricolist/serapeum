@@ -59,14 +59,12 @@ Has a compiler macro."
             (* months +seconds-in-day+ month-days)
             (* years +seconds-in-day+ year-days))))
 
-(defun interval-aux (&rest args)
-  "Dummy to prevent recursive expansion."
-  (apply #'interval args))
-
-(define-compiler-macro interval (&whole decline
+(define-compiler-macro interval (&whole call
                                         &rest args
                                         &environment env)
   (if (loop for arg in args
             always (constantp arg env))
-      `(load-time-value (interval-aux ,@args))
-      decline))
+      `(load-time-value
+        (locally (declare (notinline interval))
+          (interval ,@args)))
+      call))

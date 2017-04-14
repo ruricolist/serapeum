@@ -205,6 +205,10 @@ LOW and HIGH are automatically swapped if HIGH is less than LOW.
 From Zetalisp."
   (when (> low high)
     (rotatef low high))
+  (when (= low high)
+    (error 'arithmetic-error
+           :operation 'random-in-range
+           :operands (list low high)))
   (if (and (minusp low) (plusp high))
       (+ (- (random (abs low)))
          (random high))

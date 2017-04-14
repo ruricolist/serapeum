@@ -755,7 +755,12 @@
       (is (<= -100 n))
       (is (> 1 n)))
 
-    (signals error (random-in-range 1 1))))
+    (signals error
+      (eval '(random-in-range 1 1)))
+
+    (signals error
+      (locally (declare (notinline random-in-range))
+        (random-in-range 1 1)))))
 
 (suite octets
 

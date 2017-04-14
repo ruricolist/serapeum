@@ -217,3 +217,41 @@ From Zetalisp."
          (random high))
       (let ((range (- high low)))
         (+ low (random range)))))
+
+(define-compiler-macro random-in-range (&whole call low high)
+  "When LOW and HIGH are both numbers, wrap the call in a "
+  (when (constantp low)
+    (setf low (eval low)))
+  (when (constantp high)
+    (setf high (eval high)))
+  (or (and (numberp low) (numberp high)
+           (progn
+             (cond ((> low high)
+                    (rotatef low high))
+                   ((= low high)
+                    (error "Equal arguments to ~s: ~s ~s"
+                           'random-in-range
+                           low high)))
+             (assert (< low high))
+             (let ((types-worth-checking
+                     ;; TODO Are there other types worth checking?
+                     '(integer single-float double-float)))
+               ;; Low and high have the same type.
+               (flet ((both-of-type? (type)
+                        (and (typep low type)
+                             (typep high type)
+                             type)))
+                 (let ((interval-type
+                         (loop for type in types-worth-checking
+                                 thereis (both-of-type? type))))
+                   (and interval-type
+                        (let ((type `(,interval-type ,low (,high))))
+                          (assert (subtypep type 'number))
+                          (assert (subtypep type interval-type))
+                          ;; Note (high) is exclusive.
+                          (assert (not (typep high type)))
+                          (assert (typep low type))
+                          `(locally (declare (notinline random-in-range))
+                             (truly-the ,type
+                               (random-in-range ,low ,high))))))))))
+      call))

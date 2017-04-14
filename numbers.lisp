@@ -131,7 +131,7 @@ float will do."
   (if (and type (constantp type))
       (let ((type (eval type)))
         (assert (subtypep type 'float))
-        `(the ,type (parse-float-wrapper ,string ,@args)))
+        `(truly-the ,type (parse-float-wrapper ,string ,@args)))
       decline))
 
 (declaim (inline round-to))

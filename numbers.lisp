@@ -181,6 +181,8 @@ Defaults to little-endian."
               do (setf int (logior int (ash bit i)))
               finally (return int)))))
 
+(declaim (inline shrink grow))
+
 (defun shrink (n by)
   "Decrease N by a factor."
   (- n (* n by)))
@@ -188,8 +190,6 @@ Defaults to little-endian."
 (defun grow (n by)
   "Increase N by a factor."
   (+ n (* n by)))
-
-(declaim-constant-function shrink grow)
 
 (define-modify-macro shrinkf (n) shrink
   "Shrink the value in a place by a factor.")

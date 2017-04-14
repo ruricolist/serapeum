@@ -1002,6 +1002,21 @@ Robinson.")))
 
 (suite sequences
 
+  (test single
+    ;; This is too trivial to really need a test, but it also serves a
+    ;; regression for a package lock problem.
+    (is (not (single '())))
+    (is (single '(t)))
+    (is (not (single '(t t))))
+
+    (is (not (single "")))
+    (is (single "x"))
+    (is (not (single "xx")))
+
+    (is (not (single #())))
+    (is (single #(t)))
+    (is (not (single #(t t)))))
+
   (test filter-with-count
     (is (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
     (is (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))

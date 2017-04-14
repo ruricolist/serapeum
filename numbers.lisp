@@ -210,6 +210,9 @@ From Zetalisp."
            :operation 'random-in-range
            :operands (list low high)))
   (if (and (minusp low) (plusp high))
+      ;; We do it this way lest low+high exceed the possible size of a
+      ;; float. E.g. (random-in-range most-negative-double-float
+      ;; most-positive-double-float) should work.
       (+ (- (random (abs low)))
          (random high))
       (let ((range (- high low)))

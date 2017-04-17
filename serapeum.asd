@@ -124,4 +124,5 @@
                  (:file "fbind"        :depends-on ("tests"))
                  (:file "lists"        :depends-on ("tests"))
                  (:file "strings"      :depends-on ("tests"))
-                 (:file "sequences"    :depends-on ("tests"))))
+                 (:file "sequences"    :depends-on ("tests"))
+                 (:file "quicklisp"    :depends-on ("tests"))))

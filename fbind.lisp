@@ -256,7 +256,7 @@ symbol)."
            (exprs (mapcar #'second bindings))
            (temps (mapcar #'string-gensym vars)))
     `(let ,env
-       ,@(when env-decls (unsplice `(declare ,@env-decls)))
+       ,@(and env-decls (unsplice `(declare ,@env-decls)))
        (let ,(loop for temp in temps
                    for expr in exprs
                    collect `(,temp (ensure-function ,expr)))

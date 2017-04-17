@@ -1,0 +1,73 @@
+(in-package :serapeum.tests)
+
+(def-suite control-flow :in serapeum)
+(in-suite control-flow)
+
+(test case-using
+  (is (eql 'two
+           (case-using #'= (+ 1.0 1.0)
+             ((1) 'one)
+             ((2) 'two)
+             (t 'more))))
+
+  (is (eql 2
+           (case-using #'string= "bar"
+             (("foo") 1)
+             (("bar") 2))))
+
+  (is-true
+   (case-using #'eql 'x
+     (x t)
+     (t nil))))
+
+(test cond-every
+  (is (null (cond-every)))
+  (is (eql (cond-every (t 1) (otherwise 2)) 1))
+  (is (eql (cond-every (otherwise 1)) 1))
+  (is (eql (cond-every (t 1) (nil 2)) 1))
+  (is (eql (let ((x 1)) (cond-every (x) (nil 2))) 1))
+  ;; Tests are evaluated first.
+  (is (eql 3
+           (let ((x 1))
+             (cond-every
+               ((< x 2) (incf x))
+               ((= x 1) (incf x)))
+             x))))
+
+(test bcond
+  (is (= 2
+         (bcond ((assoc 'b '((a 1) (b 2))) => #'cadr)
+                (t nil))))
+  (is (= 2
+         (bcond ((assoc 'b '((a 1) (b 2))) => cons
+                 (cadr cons))
+                (t nil)))))
+
+(test select
+  (is-true
+   (select Pi
+     (pi t)
+     (t nil)))
+  (is-true
+   (select 1
+     (((- 2 1)) t)))
+  (is-true
+   (let ((x 1))
+     (select 1
+       (x t)))))
+
+(test sort-values
+  (is (null (sort-values #'>)))
+  ;; Should this be an error?
+  (is (eql t (sort-values #'> t)))
+  (is (equal '(1 2)
+             (multiple-value-list
+              (sort-values #'< 2 1)))))
+
+(test convert-string-case-to-case
+  (is (= 4)
+      (string-case "x"
+        ("a" 1)
+        ("b" 2)
+        ("c" 3)
+        ("x" 4))))

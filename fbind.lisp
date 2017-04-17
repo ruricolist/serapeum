@@ -46,9 +46,6 @@ it only applies to functions not yet bound.")
   "Is X a gensym'd (uninterned) symbol?"
   (and (symbolp x) (not (symbol-package x))))
 
-(defun check-lambda-list (lambda-list)
-  (parse-ordinary-lambda-list lambda-list))
-
 (defun simple-lambda-list? (lambda-list)
   "A lambda list with no inits."
   (multiple-value-bind (req opt rest keys other-keys aux keyp)

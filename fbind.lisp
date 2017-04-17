@@ -71,20 +71,24 @@ an ftype declaration."
               (`(-> ,args ,ret)
                 (values args ret t)))))))))
 
-(defun build-bind/ftype (var temp decls env)
+(defun build-bind/ftype (fn var decls env)
+  "Return a form, suitable for the bindings of a `flet' or `labels'
+form, that binds a function named FN which calls the function in a
+variable named VAR.
+
+If there is a declared ftype for FN in the decls-env combination, it
+may be used to make calling VAR more efficient by avoiding `apply'."
   (multiple-value-bind (args ret known?)
-      (declared-ftype var decls env)
+      (declared-ftype fn decls env)
     (declare (ignore ret))
     (flet ((give-up ()
-             `(,var (&rest args)
-                    (declare (dynamic-extent args))
-                    (apply ,temp args))))
+             `(,fn (&rest args)
+                   (declare (dynamic-extent args))
+                   (apply ,var args))))
       (cond ((not known?) (give-up))
-            ((notany (lambda (arg)
-                       (member arg lambda-list-keywords))
-                     args)
+            ((null (intersection args lambda-list-keywords))
              (let ((args (make-gensym-list (length args))))
-               `(,var ,args (funcall ,temp ,@args))))
+               `(,fn ,args (funcall ,var ,@args))))
             ;; We only care about fixed args at the moment.
             (t (give-up))))))
 

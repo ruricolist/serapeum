@@ -638,7 +638,7 @@ holds a new sequence which is not EQ to the old."
     (replace (copy-seq seq1) seq2 :start1 start :end1 end)))
 
 (define-setf-expander slice (sequence start &optional end
-                                            &environment env)
+                             &environment env)
   (multiple-value-bind (temps vals stores setter getter)
       (get-setf-expansion sequence env)
     (when (rest stores)
@@ -662,7 +662,7 @@ restores the original order of the sequence.
 
 That is, for any SEQ (without duplicates), it is always true that
 
-     (equal seq (sort (shuffle (copy-seq seq)) (ordering seq)))
+     (equal seq (sort (reshuffle seq) (ordering seq)))
 
 FROM-END controls what to do in case of duplicates. If FROM-END is
 true, the last occurrence of each item is preserved; otherwise, only
@@ -877,6 +877,13 @@ The name is from Arc."
                (let ((bestn (take n (nreverse (heap-extract-all heap :key key :test #'test)))))
                  (make-sequence-like seq n :initial-contents bestn)))))))
 
+(-> reshuffle (sequence) vector)
+(defun reshuffle (seq)
+  "Like `alexandria:shuffle', but non-destructive.
+
+Regardless of the type of SEQ, the return value is always a vector."
+  (shuffle (copy-sequence 'vector seq)))
+
 (defun extrema (seq pred &key (key #'identity) (start 0) end)
   "Like EXTREMUM, but returns both the minimum and the maximum (as two
 values).
@@ -1024,7 +1031,7 @@ Each constraint should be two-element list.
                      (back shoulder)
                      (shoulder neck)
                      (neck head)))
-    (sort (shuffle (mapcar #'car dem-bones))
+    (sort (reshuffle (mapcar #'car dem-bones))
           (toposort dem-bones))
     => (TOE FOOT HEEL ANKLE SHIN KNEE BACK SHOULDER NECK)
 

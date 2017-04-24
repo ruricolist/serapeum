@@ -294,6 +294,7 @@
    #:longest
    #:ordering
    #:bestn
+   #:reshuffle
    #:extrema
    #:nsubseq
    #:slice

@@ -4,8 +4,8 @@
   '(integer #.(- array-dimension-limit) #.array-dimension-limit))
 
 (defconst no-break-space
-  #-abcl #\No-break_space
-  #+abcl (code-char 160))
+  #-(or abcl lispworks) #\No-break_space
+  #+(or abcl lispworks) (code-char 160))
 
 (defconst whitespace
   #.(remove-duplicates
@@ -69,7 +69,7 @@ functions.
              (return-from with-string
                `(with-output-to-string (,var)
                   ,@body))))))
-  
+
   (with-thunk (body var)
     `(call/string #',body ,stream)))
 

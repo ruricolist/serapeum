@@ -36,7 +36,7 @@ a name. I regard missing credits as bugs: please report them.
 
 Serapeum is intended to be portable, but it is only tested where it is
 developed, on [SBCL][] and [Clozure CL][]. Patches for other Lisps are
-welcome, whether bug fixes or implementation-specific optimizations.
+always welcome, whether bug fixes or implementation-specific optimizations.
 
 # Commentary
 

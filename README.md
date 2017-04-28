@@ -52,6 +52,11 @@ print the README as a preamble to their own function reference).
 Most utilities in Serapeum stand alone, but there are some families
 that deserve separate introduction.
 
+- [Dividing sequences](#dividing-sequences)
+- [Binding values in the function namespace](#binding-values-in-the-function-namespace)
+- [Internal definitions](#internal-definitions) and [block compilation](#block-compiling)
+- [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
+
 ## Dividing sequences
 
 All recent functional programming languages share a family of useful
@@ -145,66 +150,6 @@ Serapeum provides `defalias`:
 This is equivalent to `(setf (fdefinition ...))`, but also gives the
 function a compile-time definition so compilers don’t complain about
 its being undefined.
-
-## CLOS
-
-Serapeum includes some utilities for CLOS. These utilities do nothing
-earthshaking, but since the function reference does not include them,
-they should be documented somewhere.
-
-### Method combination: standard with context
-
-Serapeum exports a method combination, `serapeum:standard/context`.
-You may recognize it as the `wrapping-standard` method combination
-due to [Tim Bradshaw](https://github.com/tfeb).
-
-Generic functions defined with `standard/context` behave the same as
-ordinary generic functions, except that they allow an extra
-qualifier, `:context`. This extra qualifier works almost like
-`:around`, except instead of being run in most-specific-first order,
-like methods defined with `:around`, methods defined with `:context`
-are run in most-specific-last order. Furthermore, `:context` methods
-take priority over any other methods, including `:around` methods.
-
-The big idea is that a class can use `:context` methods to make sure
-that any methods defined by subclasses – even `:around` methods – run
-in a certain dynamic context.
-
-### Metaclass: topmost-object-class
-
-In most cases, when I write a metaclass, I want all of the classes
-defined using that metaclass to inherit from a specific class.
-Injecting a topmost class is not difficult to do, but it involves a
-certain amount of boilerplate.
-
-To eliminate that boilerplate, Serapeum exports a metaclass,
-`topmost-object-class`, to use as a base class for your metaclasses.
-When you define a metaclass, all you have to do to ensure that classes
-defined using your metaclass inherit from a specific class is to
-supply the name of the class to inherit from in the definition of the
-metaclass. This is better demonstrated than explained:
-
-``` lisp
-;;; The class to inherit from.
-(defclass my-topmost-object ()
-  ())
-
-;;; The metaclass.
-(defclass my-metaclass (serapeum:topmost-object-class)
-  ()
-  (:default-initargs
-   :topmost-class 'my-topmost-object))
-
-(defclass my-class ()
-  ()
-  (:metaclass my-metaclass))
-
-(typep (make-instance 'my-class) 'my-topmost-object) => t
-```
-
-Note that, since the topmost object is usually a standard class, there
-is a `validate-superclass` method which allows an instance of
-`topmost-object-class` to inherit from a standard class.
 
 ## Internal definitions
 
@@ -300,7 +245,7 @@ Expands into this very different code (simplified for readability):
           
           (fibonacci 100))))
 
-### Example: block compiling
+### Block compiling
 
 The macro `local*` is almost the same as `local`, except that it
 leaves the last form in the body intact. This is useful for obtaining
@@ -405,6 +350,66 @@ respectively, except that they expect, and enforce, the presence of an
 
 There are continuable versions of these macros – `ctypecase-of` and
 `ccase-of`.
+
+## CLOS
+
+Serapeum includes some utilities for CLOS. These utilities do nothing
+earthshaking, but since the function reference does not include them,
+they should be documented somewhere.
+
+### Method combination: standard with context
+
+Serapeum exports a method combination, `serapeum:standard/context`.
+You may recognize it as the `wrapping-standard` method combination
+due to [Tim Bradshaw](https://github.com/tfeb).
+
+Generic functions defined with `standard/context` behave the same as
+ordinary generic functions, except that they allow an extra
+qualifier, `:context`. This extra qualifier works almost like
+`:around`, except instead of being run in most-specific-first order,
+like methods defined with `:around`, methods defined with `:context`
+are run in most-specific-last order. Furthermore, `:context` methods
+take priority over any other methods, including `:around` methods.
+
+The big idea is that a class can use `:context` methods to make sure
+that any methods defined by subclasses – even `:around` methods – run
+in a certain dynamic context.
+
+### Metaclass: topmost-object-class
+
+In most cases, when I write a metaclass, I want all of the classes
+defined using that metaclass to inherit from a specific class.
+Injecting a topmost class is not difficult to do, but it involves a
+certain amount of boilerplate.
+
+To eliminate that boilerplate, Serapeum exports a metaclass,
+`topmost-object-class`, to use as a base class for your metaclasses.
+When you define a metaclass, all you have to do to ensure that classes
+defined using your metaclass inherit from a specific class is to
+supply the name of the class to inherit from in the definition of the
+metaclass. This is better demonstrated than explained:
+
+``` lisp
+;;; The class to inherit from.
+(defclass my-topmost-object ()
+  ())
+
+;;; The metaclass.
+(defclass my-metaclass (serapeum:topmost-object-class)
+  ()
+  (:default-initargs
+   :topmost-class 'my-topmost-object))
+
+(defclass my-class ()
+  ()
+  (:metaclass my-metaclass))
+
+(typep (make-instance 'my-class) 'my-topmost-object) => t
+```
+
+Note that, since the topmost object is usually a standard class, there
+is a `validate-superclass` method which allows an instance of
+`topmost-object-class` to inherit from a standard class.
 
 # Function reference
 

@@ -2,7 +2,9 @@
 
 ;;;# `find-keyword'
 
-(declaim (ftype (function (string-designator) keyword) find-keyword))
+(declaim (ftype (function (string-designator)
+                          (or keyword null))
+                find-keyword))
 (defun find-keyword (string)
   "If STRING has been interned as a keyword, return it.
 

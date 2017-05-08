@@ -3,6 +3,25 @@
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 
+(defun same-test? (ht1 ht2)
+  "Do two hash tables have the same test?"
+  (declare (hash-table ht1 ht2))
+  (let ((test1 (hash-table-test ht1))
+        (test2 (hash-table-test ht2)))
+    (or (eql test1 test2)
+        (eql (ensure-function test1)
+             (ensure-function test2)))))
+
+(defun check-same-test (ht1 ht2)
+  "Check that HT1 and HT2, two hash tables, have the same value for
+`hash-table-test'.
+
+This should work even for \"custom\" hash tables with user-defined
+tests."
+  (unless (same-test? ht1 ht2)
+    (error "Hash tables ~a and ~a have different tests."
+           ht1 ht2)))
+
 (defun copy-hash-table/empty
     (table
      &key (test (hash-table-test table))
@@ -189,7 +208,14 @@ From Zetalisp."
   "Merge TABLE and TABLES, working from left to right.
 The resulting hash table has the same parameters as TABLE.
 
-Clojure's `merge'."
+If the same key is present in two tables, the value from the rightmost
+table is used.
+
+All of the tables being merged must have the same value for
+`hash-table-test'.
+
+Clojure's `merge'.
+"
   (let ((size (max +hash-table-default-size+
                    (reduce #'+ tables
                            :key #'hash-table-count
@@ -201,6 +227,7 @@ Clojure's `merge'."
 
 (defun merge-tables! (table &rest tables)
   (reduce (lambda (x y)
+            (check-same-test x y)
             (maphash
              (lambda (k v)
                (setf (gethash k x) v))

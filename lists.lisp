@@ -83,14 +83,21 @@ From Arc."
           (t `(or ,@(loop for item in items
                           collect `(equal ,x ,item)))))))
 
+(-> memq (t list) list)
 (defun memq (item list)
   "Like (member ... :test #'eq).
 Should only be used for symbols."
-  (declare (list list) (optimize speed))
-  (loop for tail on list
-        if (eq item (car tail))
-          return tail))
+  (declare (optimize (speed 3) (safety 0))
+           (list list))
+  ;; Cf. Richard Fateman, "Code ‘Bumming’ for testing membership.".
+  (tagbody loop
+     (when list
+       (unless (eq item (first list))
+         (setf list (rest list))
+         (go loop)))
+     (return-from memq list)))
 
+(-> delq (t list) list)
 (defun delq (item list)
   "Like (delete ... :test #'eq), but only for lists.
 

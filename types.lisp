@@ -220,16 +220,6 @@ PLACE only once."
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
-(defmacro vref (vec index)
-  "Dummy global binding for vref.
-Inside of a with-type-dispatch form, calls to `vref' may be bound to
-different accessors, such as `char' or `schar', or `bit' or `sbit',
-depending on the type being specialized on.
-
-This is actually not used on SBCL or CMUCL, but may be useful
-elsewhere."
-  `(aref ,vec ,index))
-
 (defparameter *vref-by-type*
   (stable-sort
    '((simple-bit-vector . sbit)
@@ -245,6 +235,18 @@ elsewhere."
   (let ((sym (cdr (assoc type *vref-by-type* :test #'subtypep))))
     (assert (and (symbolp sym) (not (null sym))))
     sym))
+
+(defmacro vref (vec index &environment env)
+  "When used globally, same as `aref'.
+
+Inside of a with-type-dispatch form, calls to `vref' may be bound to
+different accessors, such as `char' or `schar', or `bit' or `sbit',
+depending on the type being specialized on."
+  (if (symbolp vec)
+      (let* ((type (variable-type vec env))
+             (vref (type-vref type)))
+        `(,vref ,vec ,index))
+      `(aref ,vec ,index)))
 
 (defmacro with-vref (type &body body)
   ;; Although this macro is only intended for internal use, package

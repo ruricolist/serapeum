@@ -259,40 +259,57 @@ elsewhere."
              ,@body)))))
 
 (defmacro with-type-dispatch ((&rest types) var &body body)
-  "A macro that emits BODY once for each subtype in SUBTYPES.
+  "A macro for writing fast sequence functions (among other things).
 
-Suppose you are writing a function that takes a string. On the one
-hand, you want the function to be generic, and work with any kind of
-string. On the other hand, you know your Lisp implementation can
-produce more efficient code for certain subtypes of string.
+In the simplest case, this macro produces one copy of BODY for each
+type in TYPES, with the appropriate declarations to induce your Lisp
+to optimize that version of BODY for the appropriate type.
 
-The ideal would be to be able to write the code generically, but still
-have Lisp compile \"fast paths\" for subtypes it can handle more
-efficiently. E.g. `fixnum' instead of `integer', or `(simple-array
-character (*))' instead of `string'.
+Say VAR is a string. With this macro, you can trivially emit optimized
+code for the different kinds of string that VAR might be. And
+then (ideally) instead of getting code that dispatches on the type of
+VAR every time you call `aref', you get code that dispatches on the
+type of VAR once, and then uses the appropriately specialized
+accessors. (But see `with-string-dispatch'.)
 
-You could write code to do this by hand, but there would be pitfalls.
-One is that how a type is divided up can vary between Lisps, resulting
-in spurious warnings. Another is code bloat -- the naive way of
-handling templating, by repeating the same code inline, drastically
-increases the size of the disassembly.
+But that's the simplest case. Using `with-type-dispatch' also provides
+*transparent portability*. It examines TYPES to deduplicate types that
+are not distinct on the current Lisp, or that are shadowed by other
+provided types. And the expansion strategy may differ from Lisp to
+Lisp: ideally, you should not have to pay for good performance on
+Lisps with type inference with pointless code bloat on other Lisps.
 
-The idea of `with-type-dispatch' is to provide a high-level way to ask
-for this kind of compilation. It checks that SUBTYPES are really
-subtypes of TYPE; it telescopes duplicated subtypes; it eliminates the
-default case if the subtypes are exhaustive; and it arranges for each
-actual specialization of BODY.
+There is an additional benefit for vector types. Around each version
+of BODY, the definition of `vref' is shadowed to expand into an
+appropriate accessor. E.g., within a version of BODY where VAR is
+known to be a `simple-string', `vref' expands into `schar'.
+
+Using `vref' instead of `aref' is obviously useful on Lisps that do
+not do type inference, but even on Lisps with type inference it can
+speed compilation times (compiling `aref' is relatively slow on SBCL).
 
 Note that `with-type-dispatch' is intended to be used around
 relatively expensive code, particularly loops. For simpler code, the
-gains from specialized compilation may not justify the overhead."
+gains from specialized compilation may not justify the overhead of the
+initial dispatch and the increased code size.
+
+Note also that `with-type-dispatch' is relatively low level. You may
+want to use one of the other macros in the same family, such as
+`with-subtype-dispatch', `with-string-dispatch', or so forth.
+
+The design and implementation of `with-type-dispatch' is based on a
+few sources. It replaces a similar macro formerly included in
+Serapeum, `with-templated-body'. One possible expansion is based on
+the `string-dispatch' macro used internally in SBCL. But most of the
+credit should go to the paper \"Fast, Maintable, and Portable Sequence
+Functions\", by Irène Durand and Robert Strandh."
   (let ((types (simplify-subtypes types)))
-    ;; The advantage of the CMUCL/SBCL way (I think) is that, if the
+    ;; The advantage of the CMUCL/SBCL way (I hope) is that, if the
     ;; compiler is smart enough, it can decide /not/ to bother
     ;; inlining if the type is such that it cannot do any meaningful
-    ;; specialization.
+    ;; optimization.
     (if (or #+(or cmucl sbcl) t)
-;;; Based on sb-impl::string-dispatch.
+        ;; Cf. sb-impl::string-dispatch.
         (with-unique-names ((fun type-dispatch-fun))
           `(flet ((,fun (,var)
                     ,@body))
@@ -323,11 +340,10 @@ gains from specialized compilation may not justify the overhead."
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)
-  "Same as `with-type-dispatch', but SUBTYPES are required to all be
-subtypes of TYPE.
+  "Like `with-type-dispatch', but SUBTYPES must be subtypes of TYPE.
 
-If SUBTYPES are not exhaustive, an additional clause will be added to
-ensure that all objects of type TYPE are handled."
+Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
+added to ensure that TYPE itself is handled."
   (let* ((types
            (if (subtypes-exhaustive? type subtypes env)
                subtypes
@@ -336,20 +352,22 @@ ensure that all objects of type TYPE are handled."
        ,@body)))
 
 (defmacro with-string-dispatch ((&rest types) var &body body)
-  "Same as `with-type-dispatch', but all of TYPES must be subtypes of
-TYPE."
+  "Like `with-subtype-dispatch' with an overall type of `string'."
   `(with-subtype-dispatch string
-     ;; Always specialize for (simple-array character (*)).
-     ((simple-array character (*))
-      (simple-array base-char (*))
-      ,@types)
-     ,var
+       ;; Always specialize for (simple-array character (*)).
+       ((simple-array character (*))
+        (simple-array base-char (*))
+        ,@types)
+       ,var
      ,@body))
 
 (defmacro with-vector-dispatch ((&rest types) var &body body)
+  "Like `with-subtype-dispatch' with an overall type of `vector'."
   ;; Always specialize for simple vectors.
   `(with-subtype-dispatch vector (simple-vector ,@types) ,var
      ,@body))
+
+;;; Are these worth exporting?
 
 (defmacro with-boolean (var &body body)
   `(if ,var

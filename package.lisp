@@ -24,6 +24,11 @@
    #:assuref
    #:wholenum
    #:tuple
+   #:with-type-dispatch
+   #:vref
+   #:with-subtype-dispatch
+   #:with-string-dispatch
+   #:with-vector-dispatch
    ;; Definitions.
    #:defconst
    #:defsubst

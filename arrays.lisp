@@ -12,7 +12,7 @@ Given an array and a row-major index, return a list of subscripts.
   (reduce (lambda (dim subscripts)
             (nconc (multiple-value-list (truncate (car subscripts) dim))
                    (cdr subscripts)))
-          (cdr (array-dimensions array))
+          (copy-list (cdr (array-dimensions array)))
           :initial-value (list row-major-index)
           :from-end t))
 

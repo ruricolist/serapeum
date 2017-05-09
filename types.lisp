@@ -222,9 +222,9 @@ PLACE only once."
 
 (defmacro vref (vec index)
   "Dummy global binding for vref.
-Inside of a with-types form, calls to `vref' may be bound to different
-accessors, such as `char' or `schar', or `bit' or `sbit', depending on
-the type being specialized on.
+Inside of a with-type-dispatch form, calls to `vref' may be bound to
+different accessors, such as `char' or `schar', or `bit' or `sbit',
+depending on the type being specialized on.
 
 This is actually not used on SBCL or CMUCL, but may be useful
 elsewhere."
@@ -258,7 +258,7 @@ elsewhere."
              (declare #+sbcl (sb-ext:enable-package-locks vref))
              ,@body)))))
 
-(defmacro with-types ((&rest types) var &body body)
+(defmacro with-type-dispatch ((&rest types) var &body body)
   "A macro that emits BODY once for each subtype in SUBTYPES.
 
 Suppose you are writing a function that takes a string. On the one
@@ -277,15 +277,15 @@ in spurious warnings. Another is code bloat -- the naive way of
 handling templating, by repeating the same code inline, drastically
 increases the size of the disassembly.
 
-The idea of `with-types' is to provide a high-level way to ask for
-this kind of compilation. It checks that SUBTYPES are really subtypes
-of TYPE; it telescopes duplicated subtypes; it eliminates the default
-case if the subtypes are exhaustive; and it arranges for each actual
-specialization of BODY.
+The idea of `with-type-dispatch' is to provide a high-level way to ask
+for this kind of compilation. It checks that SUBTYPES are really
+subtypes of TYPE; it telescopes duplicated subtypes; it eliminates the
+default case if the subtypes are exhaustive; and it arranges for each
+actual specialization of BODY.
 
-Note that `with-types' is intended to be used around relatively
-expensive code, particularly loops. For simpler code, the gains from
-specialized compilation may not justify the overhead."
+Note that `with-type-dispatch' is intended to be used around
+relatively expensive code, particularly loops. For simpler code, the
+gains from specialized compilation may not justify the overhead."
   (let ((types (simplify-subtypes types)))
     ;; The advantage of the CMUCL/SBCL way (I think) is that, if the
     ;; compiler is smart enough, it can decide /not/ to bother
@@ -321,31 +321,34 @@ specialized compilation may not justify the overhead."
                        for fn in fns
                        collect `(,type (,fn ,var)))))))))
 
-(defmacro with-subtypes (type (&rest subtypes) var &body body
-                         &environment env)
-  "Same as `with-types', but SUBTYPES are required to all be
-subtypes of TYPE."
+(defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
+                                 &environment env)
+  "Same as `with-type-dispatch', but SUBTYPES are required to all be
+subtypes of TYPE.
+
+If SUBTYPES are not exhaustive, an additional clause will be added to
+ensure that all objects of type TYPE are handled."
   (let* ((types
            (if (subtypes-exhaustive? type subtypes env)
                subtypes
                (append subtypes (list type)))))
-    `(with-types ,types ,var
+    `(with-type-dispatch ,types ,var
        ,@body)))
 
-(defmacro with-string-types ((&rest types) var &body body)
-  "Same as `with-types', but all of TYPES must be subtypes of
+(defmacro with-string-dispatch ((&rest types) var &body body)
+  "Same as `with-type-dispatch', but all of TYPES must be subtypes of
 TYPE."
-  `(with-subtypes string
-       ;; Always specialize for (simple-array character (*)).
-       ((simple-array character (*))
-        (simple-array base-char (*))
-        ,@types)
-       ,var
+  `(with-subtype-dispatch string
+     ;; Always specialize for (simple-array character (*)).
+     ((simple-array character (*))
+      (simple-array base-char (*))
+      ,@types)
+     ,var
      ,@body))
 
-(defmacro with-vector-types ((&rest types) var &body body)
+(defmacro with-vector-dispatch ((&rest types) var &body body)
   ;; Always specialize for simple vectors.
-  `(with-subtypes vector (simple-vector ,@types) ,var
+  `(with-subtype-dispatch vector (simple-vector ,@types) ,var
      ,@body))
 
 (defmacro with-boolean (var &body body)
@@ -354,5 +357,5 @@ TYPE."
        ,@body))
 
 (defmacro with-nullable ((var type) &body body)
-  `(with-types (null ,type) ,var
+  `(with-type-dispatch (null ,type) ,var
      ,@body))

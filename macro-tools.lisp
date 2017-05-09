@@ -214,7 +214,7 @@ form provides generic handling for all types of vectors."
             (declare (ignorable ,vec))
             (with-vref bit-vector
               ,bit-vector-form)))
-         ;; Omitted so we can safely nest within with-vector-types.
+         ;; Omitted so we can safely nest within with-vector-dispatch.
          ;; ((typep ,vec 'simple-vector)
          ;;  (let ((,vec (truly-the simple-vector ,vec)))
          ;;    (declare (ignorable ,vec))

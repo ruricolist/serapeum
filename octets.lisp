@@ -25,9 +25,9 @@
 (defun octets (n &key big-endian)
   "Return N, an integer, as an octet vector.
 Defaults to little-endian order."
-  (with-subtypes integer
-      ((unsigned-byte 32) (unsigned-byte 64) fixnum)
-      n
+  (with-subtype-dispatch integer
+    ((unsigned-byte 32) (unsigned-byte 64) fixnum)
+    n
     (let* ((n-bits (integer-length n))
            (n-bytes (ceiling n-bits 8))
            (vec (make-octet-vector n-bytes)))

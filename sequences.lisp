@@ -77,12 +77,12 @@ part of the arguments to compare, and compares them using TEST."
                 (loop for item in (nthcdr start seq)
                       for i below (- end start)
                       do (fn item))))
-        (with-subtypes vector
-            (simple-bit-vector
-             bit-vector
-             (simple-array character (*))
-             simple-base-string)
-            seq
+        (with-subtype-dispatch vector
+          (simple-bit-vector
+           bit-vector
+           (simple-array character (*))
+           simple-base-string)
+          seq
           (let ((end (or end (length seq))))
             (if from-end
                 (loop for i downfrom (1- end) to start
@@ -437,7 +437,7 @@ From Clojure."
                    :test 'equal)))
       (declare (fixnum total))
       (if (typep seq 'bit-vector)
-          (with-subtypes bit-vector (simple-bit-vector) seq
+          (with-subtype-dispatch bit-vector (simple-bit-vector) seq
             (setf (gethash (key 0) table) (count 0 seq)
                   (gethash (key 1) table) (count 1 seq)
                   total (length seq)))
@@ -1234,8 +1234,8 @@ as long as SEQ is empty.
          (n n)
          (len-out (* len n)))
     (declare (array-index len n len-out))
-    (with-vector-types (bit-vector simple-bit-vector (simple-array character (*)))
-                       vec
+    (with-vector-dispatch (bit-vector simple-bit-vector (simple-array character (*)))
+      vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
           (declare (array-index n offset))

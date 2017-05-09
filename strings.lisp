@@ -81,7 +81,7 @@ replaced by a single space character."
   (if (< (length string) 1)
       string
       (with-output-to-string (s)
-        (with-string-types () string
+        (with-string-dispatch () string
           (write-char (vref string 0) s)
           (loop for i of-type array-length from 0
                 for j of-type array-length from 1
@@ -176,7 +176,7 @@ From Emacs Lisp (where it is simply `upcase-initials')."
 (defun nstring-upcase-initials (string)
   "Destructive version of `string-upcase-initials'."
   (lret ((string (string string)))
-    (with-string-types () string
+    (with-string-dispatch () string
       (when (= (length string) 0)
         (return-from nstring-upcase-initials
           string))
@@ -197,7 +197,7 @@ From Emacs Lisp (where it is simply `upcase-initials')."
   "Every character with case in STRING has the same case.
 Return `:upper' or `:lower' as appropriate."
   (let ((string (string string)))
-    (with-string-types () string
+    (with-string-dispatch () string
       (let ((length (length string)))
         (declare (array-length length))
         (nlet invert ((i 0)
@@ -380,8 +380,8 @@ is to return a string."
   (unless end
     (setf end (length string)))
   (with-string (stream stream)
-    (with-types (function hash-table) table
-      (with-string-types () string
+    (with-type-dispatch (function hash-table) table
+      (with-string-dispatch () string
         (flet ((rep (c)
                  (etypecase table
                    (function (funcall table c))
@@ -568,7 +568,7 @@ like the first argument to `format'."
   (check-type string string)
   (let ((new (simplify-string new))
         (old (simplify-string old)))
-    (with-string-types () string
+    (with-string-dispatch () string
       (cond
         ((not (search old string :start2 start :end2 end))
          string)
@@ -638,7 +638,7 @@ Takes care that the longest suffix is always removed first."
          (string (string string))
          (end (or end (length string)))
          (len (length substring)))
-    (with-string-types () string
+    (with-string-dispatch () string
       (nlet rec ((start start)
                  (hits 0))
         ;; There can't be more hits than characters.

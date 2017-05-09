@@ -147,9 +147,9 @@ float will do."
 Defaults to little-endian."
   (let ((bits (make-array (integer-length int)
                           :element-type 'bit)))
-    (with-subtypes integer
-        ((unsigned-byte 32) (unsigned-byte 64) fixnum)
-        int
+    (with-subtype-dispatch integer
+      ((unsigned-byte 32) (unsigned-byte 64) fixnum)
+      int
       (if big-endian
           (loop for i below (integer-length int)
                 for j downfrom (1- (integer-length int)) to 0
@@ -168,7 +168,7 @@ Defaults to little-endian."
   "Turn a sequence of BITS into an integer.
 Defaults to little-endian."
   (declare (bit-vector bits))
-  (with-types (bit-vector simple-bit-vector) bits
+  (with-type-dispatch (bit-vector simple-bit-vector) bits
     (if big-endian
         (reduce (lambda (x y)
                   (+ (ash x 1) y))

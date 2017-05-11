@@ -8,13 +8,17 @@ Given an array and a row-major index, return a list of subscripts.
 
      (apply #'aref (array-index-row-major i))
      ≡ (array-row-major-aref i)"
-  (declare (array-index row-major-index))
-  (reduce (lambda (dim subscripts)
-            (nconc (multiple-value-list (truncate (car subscripts) dim))
-                   (cdr subscripts)))
-          (copy-list (cdr (array-dimensions array)))
-          :initial-value (list row-major-index)
-          :from-end t))
+  (declare (array-index row-major-index)
+           (optimize (speed 3) (safety 1) (debug 0)))
+  (nlet rec ((subs (list row-major-index))
+             (dims (reverse (rest (array-dimensions array)))))
+    (if (null dims) subs
+        (multiple-value-bind (q r)
+            (truncate (the array-index (car subs))
+                      (the (integer 0 #.array-dimension-limit)
+                           (car dims)))
+          (rec (cons q (rplaca subs r))
+               (cdr dims))))))
 
 ;;; https://groups.google.com/forum/#!original/comp.lang.lisp/JF3M5kA7_vo/g3oW1UuQJ_UJ
 (defun undisplace-array (array)

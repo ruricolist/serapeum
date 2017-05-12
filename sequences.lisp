@@ -12,6 +12,11 @@
 (deftype test-designator ()
   '(or null function-name function))
 
+(deftype signed-array-index ()
+  "A (possibly negated) array index."
+  '#.(let ((limit array-dimension-limit))
+       `(integer (,(- limit)) (,limit))))
+
 (-> canonicalize-key (key-designator) function)
 (defun canonicalize-key (k)
   (etypecase-of key-designator k
@@ -607,16 +612,18 @@ If X and Y are of equal length, return X."
             (if (eql (longer x y) x) y x))
           seqs))
 
-(defun slice-bounds (seq start end)
+(defsubst slice-bounds (len start end)
   "Normalize START and END, which may be negative, to offsets
 acceptable to SUBSEQ."
+  (declare (type signed-array-index start end)
+           (type array-index len))
   (values (if (minusp start)
-              (+ (length seq) start)
+              (+ len start)
               start)
           (if (null end)
               nil
               (if (minusp end)
-                  (+ (length seq) end)
+                  (+ len end)
                   end))))
 
 (defun slice (seq start &optional (end (length seq)))
@@ -628,13 +635,13 @@ Both START and END accept negative bounds.
 Setf of `slice' is like setf of `ldb': afterwards, the place being set
 holds a new sequence which is not EQ to the old."
   (multiple-value-bind (start end)
-      (slice-bounds seq start end)
+      (slice-bounds (length seq) start end)
     (subseq seq start end)))
 
 (defun setslice (seq1 seq2 start &optional end)
   "Helper to `set' a slice non-destructively."
   (multiple-value-bind (start end)
-      (slice-bounds seq1 start end)
+      (slice-bounds (length seq1) start end)
     (replace (copy-seq seq1) seq2 :start1 start :end1 end)))
 
 (define-setf-expander slice (sequence start &optional end

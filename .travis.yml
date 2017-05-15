@@ -5,6 +5,8 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ccl
+    - LISP=allegro
+    - LISP=ecl
 
 install:
   # Install cl-travis
@@ -12,8 +14,8 @@ install:
 
 script:
   - cl -l fiveam -l serapeum -l serapeum/tests
-       -e '(setf fiveam:*debug-on-error* t
-                 fiveam:*debug-on-failure* t)'
+       -e '(setf fiveam:*on-error* :debug
+                 fiveam:*on-failure* :debug)'
        -e '(setf *debugger-hook*
                  (lambda (c h)
                    (declare (ignore c h))

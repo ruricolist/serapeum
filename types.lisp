@@ -178,6 +178,16 @@ PLACE only once."
                    ,temp
                    (setf ,place (require-type-for ,temp ',ts ',place)))))))))
 
+;;; These are helpful for development.
+(progn
+  (defmacro variable-type-in-env (&environment env var)
+    `(values ',(variable-type var env)
+             ;; So it's not unused.
+             ,var))
+
+  (defmacro policy-quality-in-env (&environment env qual)
+    `',(policy-quality qual env)))
+
 (defun simplify-subtypes (subtypes)
   (let* ((unique (remove-duplicated-subtypes subtypes))
          (sorted (sort-subtypes unique))
@@ -260,7 +270,7 @@ depending on the type being specialized on."
              (declare #+sbcl (sb-ext:enable-package-locks vref))
              ,@body)))))
 
-(defmacro with-type-dispatch ((&rest types) var &body body)
+(defmacro with-type-dispatch (&environment env (&rest types) var &body body)
   "A macro for writing fast sequence functions (among other things).
 
 In the simplest case, this macro produces one copy of BODY for each
@@ -290,6 +300,8 @@ Using `vref' instead of `aref' is obviously useful on Lisps that do
 not do type inference, but even on Lisps with type inference it can
 speed compilation times (compiling `aref' is relatively slow on SBCL).
 
+Within `with-type-dispatch', VAR should be regarded as read-only.
+
 Note that `with-type-dispatch' is intended to be used around
 relatively expensive code, particularly loops. For simpler code, the
 gains from specialized compilation may not justify the overhead of the
@@ -306,39 +318,58 @@ the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
   (let ((types (simplify-subtypes types)))
-    ;; The advantage of the CMUCL/SBCL way (I hope) is that, if the
-    ;; compiler is smart enough, it can decide /not/ to bother
-    ;; inlining if the type is such that it cannot do any meaningful
-    ;; optimization.
-    (if (or #+(or cmucl sbcl) t)
-        ;; Cf. sb-impl::string-dispatch.
-        (with-unique-names ((fun type-dispatch-fun))
-          `(flet ((,fun (,var)
-                    ,@body))
-             (declare (inline ,fun))
-             (etypecase ,var
-               ,@(loop for type in types
-                       collect `(,type (,fun (truly-the ,type ,var)))))))
-        ;; The idea here is that the local functions will be
-        ;; lambda-lifted by the Lisp compiler, thus saving space,
-        ;; while any actual closures can be made dynamic-extent.
-        (let* ((fns (make-gensym-list (length types) 'template-fn-))
-               (qfns (append (loop for fn in fns collect `(function ,fn)))))
-          `(flet (,@(loop for fn in fns
-                          for type in types
-                          collect `(,fn (,var)
-                                        (declare (type ,type ,var))
-                                        (with-vref ,type
-                                          ,@body))))
-             (declare (notinline ,@fns))
-             (declare (dynamic-extent ,@qfns))
-             ;; Give Lisp permission to ignore functions if it can
-             ;; infer a type for EXPR.
-             (declare (ignorable ,@qfns))
-             (etypecase ,var
-               ,@(loop for type in types
-                       for fn in fns
-                       collect `(,type (,fn ,var)))))))))
+    (cond ((null types)
+           `(progn ,@body))
+          ;; The advantage of the CMUCL/SBCL way (I hope) is that the
+          ;; compiler can decide /not/ to bother inlining if the type
+          ;; is such that it cannot do any meaningful optimization.
+          ((or #+(or cmucl sbcl) t)
+           ;; Cf. sb-impl::string-dispatch.
+           (with-unique-names ((fun type-dispatch-fun))
+             `(flet ((,fun (,var)
+                       (with-read-only-var (,var)
+                         ,@body)))
+                (declare (inline ,fun))
+                (etypecase ,var
+                  ,@(loop for type in types
+                          collect `(,type (,fun (truly-the ,type ,var))))))))
+          ((or #+ccl t)
+           (multiple-value-bind (speed safety)
+               (let ((speed  (policy-quality 'speed env))
+                     (safety (policy-quality 'safety env)))
+                 (if (and (< safety 3)
+                          (>= speed safety))
+                     (values speed safety)
+                     (let* ((safety (min safety 2))
+                            (speed  (max speed safety)))
+                       (values speed safety))))
+             ;; Necessary for Clozure to trust declarations; see
+             ;; https://trac.clozure.com/ccl/wiki/DeclareOptimize.
+             (assert (and (< safety 3)
+                          (>= speed safety)))
+             `(locally
+                  (declare
+                   (optimize (speed ,speed)
+                             (safety ,safety)))
+                (etypecase ,var
+                  ,@(loop for type in types
+                          collect `(,type
+                                    (locally (declare (type ,type ,var))
+                                      (with-read-only-var (,var)
+                                        ,@body))))))))
+          ;; If you know how to make this work more efficiently on a
+          ;; particular Lisp implementation, feel free to make a pull
+          ;; request, or open an issue.
+          (t
+           `(etypecase ,var
+              ,@(loop for type in types
+                      collect `(,type
+                                ;; Overkill?
+                                (locally (declare (type ,type ,var))
+                                  (let ((,var ,var))
+                                    (declare (type ,type ,var))
+                                    (with-read-only-var (,var)
+                                      ,@body))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)
@@ -372,9 +403,10 @@ added to ensure that TYPE itself is handled."
 ;;; Are these worth exporting?
 
 (defmacro with-boolean (var &body body)
-  `(if ,var
-       ,@body
-       ,@body))
+  `(with-read-only-var (,var)
+     (if ,var
+         ,@body
+         ,@body)))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var

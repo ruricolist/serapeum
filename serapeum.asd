@@ -59,7 +59,7 @@
                (:file "queue"
                 :depends-on ("package" "types"))
                (:file "box"
-                :depends-on ("package" "types"))
+                :depends-on ("package" "types" "definitions"))
                (:file "vectors"
                 :depends-on ("package"))
                (:file "numbers"

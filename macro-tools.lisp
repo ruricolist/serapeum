@@ -182,7 +182,7 @@ directly into Lisp code:
            `(let ((,seq (truly-the list ,seq)))
               (declare (ignorable ,seq))
               ,list-form))
-         (array-form
+         (vector-form
            ;; Create a separate branch for simple vectors.
            `(if (simple-vector-p ,seq)
                 (let ((,seq (truly-the simple-vector ,seq)))
@@ -192,7 +192,7 @@ directly into Lisp code:
                 (let ((,seq (truly-the vector ,seq)))
                   (declare (ignorable ,seq))
                   ,array-form))))
-    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,array-form)
+    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,vector-form)
     ;; Only SBCL and ABCL support extensible sequences right now.
     #+(or sbcl abcl)
     (once-only (seq)
@@ -200,11 +200,15 @@ directly into Lisp code:
            ,list-form
            ,(if other-form
                 `(if (arrayp ,seq)
-                     ,array-form
+                     ,vector-form
                      ,other-form)
-                array-form)))
+                ;; Duplicate the array form so that, hopefully, `elt'
+                ;; will be compiled to `aref', &c.
+                `(if (arrayp ,seq)
+                     ,vector-form
+                     ,other-form))))
     #-(or sbcl abcl ccl)
-    `(if (listp ,seq) ,list-form ,array-form)))
+    `(if (listp ,seq) ,list-form ,vector-form)))
 
 (defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
   "Efficiently dispatch on the type of VEC.

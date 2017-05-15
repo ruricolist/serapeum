@@ -173,6 +173,12 @@ directly into Lisp code:
   "Efficiently dispatch on the type of SEQ."
   (declare (ignorable other-form))
   (let* ((list-form
+           `(with-read-only-var (,seq)
+              ,list-form))
+         (array-form
+           `(with-read-only-var (,seq)
+              ,array-form))
+         (list-form
            `(let ((,seq (truly-the list ,seq)))
               (declare (ignorable ,seq))
               ,list-form))
@@ -351,3 +357,26 @@ Inline keywords are like the keyword arguments to individual cases in
                (otherwise
                 (values (nreverse keywords) body)))))
     (rec nil body)))
+
+(defmacro read-only-var (x &optional (name x))
+  (declare (ignore name))
+  `,x)
+
+(define-setf-expander read-only-var (x &optional (name x))
+  (error "~a is read-only in this environment" name))
+
+(defmacro with-read-only-var ((var) &body body)
+  "Try to make VAR read-only within BODY.
+
+That is, within BODY, VAR is bound as a symbol macro, which expands
+into a macro whose setf expander, in turn, is defined to signal an
+error.
+
+This is not reliable, of course, but it may occasionally save you from
+shooting yourself in the foot by unwittingly using a macro that calls
+`setf' on a variable."
+  (with-gensyms (temp)
+    `(let ((,temp ,var))
+       (declare (ignorable ,temp))
+       (symbol-macrolet ((,var (read-only-var ,temp ,var)))
+         ,@body))))

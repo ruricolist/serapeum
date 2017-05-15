@@ -102,8 +102,18 @@
 
 (test halves
   (is (equal (halves '(x)) '(x)))
+  (is (equal (nth-value 1 (halves '(x) -1)) '(x)))
   (is (equal (multiple-value-list (halves '(x y))) '((x) (y))))
-  (is (equal (multiple-value-list (halves '(x y z))) '((x y) (z)))))
+  (is (equal (multiple-value-list (halves '(x y) -1)) '((x) (y))))
+  (is (equal (multiple-value-list (halves '(x y z))) '((x y) (z))))
+  (is (equal (multiple-value-list (halves '(x y z) -2)) '((x) (y z))))
+
+  (is (equal (halves "") ""))
+  (is (equal (halves "" 1) ""))
+  (is (equal (halves "" -1) ""))
+  (is (equal (halves "x") "x"))
+  (is (equal (nth-value 1 (halves "x" -1)) "x"))
+  (is (equal (nth-value 1 (halves "x" -2)) "x")))
 
 (test deltas
   (is (equal '(4 5 -14 6 1) (deltas '(4 9 -5 1 2))))
@@ -149,3 +159,13 @@
   (is (stringp (repeat-sequence "" (1+ array-dimension-limit))))
   (is (equal "" (repeat-sequence "" (1+ most-positive-fixnum))))
   (is (stringp (repeat-sequence "" (1+ most-positive-fixnum)))))
+
+(test take
+  (is (equal "oo" (take -2 "foo")))
+  (is (equal "fo" (take 2 "foo")))
+  (is (equal "foo" (take -5 "foo"))))
+
+(test drop
+  (is (equal "" (drop -3 "foo")))
+  (is (equal "" (drop -4 "foo")))
+  (is (equal "f" (drop -2 "foo"))))

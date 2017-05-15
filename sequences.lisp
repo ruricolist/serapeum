@@ -707,22 +707,35 @@ are left in no particular order."
   "Return, at most, the first N elements of SEQ, as a *new* sequence
 of the same type as SEQ.
 
-If N is longer than SEQ, SEQ is simply copied."
-  (check-type n array-index)
+If N is longer than SEQ, SEQ is simply copied.
+
+If N is negative, then |N| elements are taken (in their original
+order) from the end of SEQ."
+  (check-type n signed-array-index)
   (seq-dispatch seq
-    (firstn n seq)
-    (subseq seq 0 (min n (length seq)))))
+    (if (minusp n)
+        (last seq (abs n))
+        (firstn n seq))
+    (if (minusp n)
+        (subseq seq (max 0 (+ (length seq) n)))
+        (subseq seq 0 (min n (length seq))))))
 
 (defsubst drop (n seq)
   "Return all but the first N elements of SEQ.
 The sequence returned is a new sequence of the same type as SEQ.
 
 If N is greater than the length of SEQ, returns an empty sequence of
-the same type."
-  (check-type n array-index)
+the same type.
+
+If N is negative, then |N| elements are dropped from the end of SEQ."
+  (check-type n signed-array-index)
   (seq-dispatch seq
-    (nthcdr n seq)
-    (subseq seq (min (length seq) n))))
+    (if (minusp n)
+        (butlast seq (abs n))
+        (nthcdr n seq))
+    (if (minusp n)
+        (subseq seq 0 (max 0 (+ (length seq) n)))
+        (subseq seq (min (length seq) n)))))
 
 (defsubst take-while (pred seq)
   "Return the prefix of SEQ for which PRED returns true."
@@ -915,35 +928,56 @@ values).
         (map-subseq #'update-extrema seq start end))
       (values min max))))
 
+(-> split-at (list array-index) (values list list))
 (defun split-at (list k)
-  (declare (list list))
-  (loop for i below k
-        for (x . right) on list
-        collect x into left
-        finally (return (values left right))))
+  (declare (list list)
+           (optimize speed))
+  (nlet rec ((left '())
+             (right list)
+             (k k))
+    (declare (array-index k))
+    (if (zerop k)
+        (values (nreverse left) right)
+        (rec (cons (car right) left)
+             (cdr right)
+             (1- k)))))
 
-(defsubst halfway-point (seq)
-  (let ((len (length seq)))
-    (declare (type array-index len) (optimize speed))
-    (ceiling len 2)))
-
+(-> halves
+    (sequence &optional (or null signed-array-index))
+    (values sequence sequence))
 (defun halves (seq &optional split)
   "Return, as two values, the first and second halves of SEQ.
 SPLIT designates where to split SEQ; it defaults to half the length,
 but can be specified.
 
-The split is made using `ceiling' rather than `truncate'. This is on
-the theory that, if SEQ is a single-element list, it should be
-returned unchanged."
-  (seq-dispatch seq
-    (if split
-        ;; If we know where to split in advance we only have to
-        ;; traverse the list once.
-        (split-at seq split)
-        (split-at seq (halfway-point seq)))
-    (let ((split (or split (halfway-point seq))))
-      (values (subseq seq 0 split)
-              (subseq seq split)))))
+If SPLIT is not provided, the length is halved using `ceiling' rather
+than `truncate'. This is on the theory that, if SEQ is a
+single-element list, it should be returned unchanged.
+
+If SPLIT is negative, then the split is determined by counting |split|
+elements from the right (or, equivalently, length+split elements from
+the left."
+  (declare ((or null signed-array-index) split))
+  (flet ((halfway-point (seq)
+           (ceiling (length seq) 2)))
+    (seq-dispatch seq
+      (if split
+          (if (minusp split)
+              (split-at seq (max 0 (+ (length seq) split)))
+              ;; If we know where to split in advance we only have to
+              ;; traverse the list once.
+              (split-at seq split))
+          (split-at seq (halfway-point seq)))
+      (let* ((len (length seq))
+             (split (or (and split
+                             (clamp
+                              (if (minusp split)
+                                  (+ len split)
+                                  split)
+                              0 len))
+                        (halfway-point seq))))
+        (values (subseq seq 0 split)
+                (subseq seq split))))))
 
 (defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.

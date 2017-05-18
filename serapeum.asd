@@ -22,71 +22,71 @@
                #:cl-algebraic-data-type)
   ;; Having had to untangle the dependencies once it seems worthwhile
   ;; to be explicit about them, if only to keep them under control.
+  :serial t
   :components ((:file "package")
-               ;; Macros.
-               (:file "macro-tools"
-                :depends-on ("package"))
-               (:file "types"
-                :depends-on ("package"))
-               (:file "definitions"
-                :depends-on ("macro-tools" "iter"))
-               (:file "internal-definitions"
-                :depends-on ("definitions" "clos" "op" "control-flow"))
-               (:file "binding"
-                :depends-on ("macro-tools"))
-               (:file "control-flow"
-                :depends-on ("macro-tools"))
-               (:file "threads"
-                :depends-on ("package"))
-               (:file "iter"
-                :depends-on ("macro-tools"))
-               (:file "conditions"
-                :depends-on ("package"))
-               (:file "op"
-                :depends-on ("package"))
-               (:file "functions"
-                :depends-on ("macro-tools" "types"))
-               (:file "trees"
-                :depends-on ("macro-tools"))
-               (:file "hash-tables"
-                :depends-on ("iter" "types" "control-flow"))
-               (:file "files"
-                :depends-on ("package"))
-               (:file "symbols"
-                :depends-on ("package"))
-               (:file "arrays"
-                :depends-on ("package"))
-               (:file "queue"
-                :depends-on ("package" "types"))
-               (:file "box"
-                :depends-on ("package" "types" "definitions"))
-               (:file "vectors"
-                :depends-on ("package"))
-               (:file "numbers"
-                :depends-on ("macro-tools" "types"))
-               (:file "octets"
-                :depends-on ("types"))
-               (:file "time"
-                :depends-on ("package"))
-               (:file "clos"
-                :depends-on ("package"))
-               (:file "mop"
-                :depends-on ("package"))
-               (:file "hooks"
-                :depends-on ("package"))
-               (:file "fbind"
-                :depends-on ("binding"
-                             "control-flow"))
-               (:file "lists"
-                :depends-on ("definitions"
-                             "types"
-                             "binding"
-                             "fbind"
-                             "iter"
-                             "control-flow"
-                             "queue"))
-               (:file "strings" :depends-on ("lists" "op"))
-               (:file "sequences" :depends-on ("lists"))))
+               ;; The basics: these files can use CL and Alexandria.
+               (:module "level0"
+                :serial nil
+                :pathname ""
+                :components
+                ((:file "macro-tools")
+                 (:file "types")
+                 (:file "definitions"
+                  :depends-on ("macro-tools" "iter"))
+                 (:file "internal-definitions"
+                  :depends-on ("definitions" "clos" "op" "control-flow"))
+                 (:file "binding"
+                  :depends-on ("macro-tools"))
+                 (:file "control-flow"
+                  :depends-on ("macro-tools"))
+                 (:file "threads")
+                 (:file "iter"
+                  :depends-on ("macro-tools"))
+                 (:file "conditions")
+                 (:file "op")
+                 (:file "functions"
+                  :depends-on ("macro-tools" "types"))
+                 (:file "trees"
+                  :depends-on ("macro-tools"))
+                 (:file "hash-tables"
+                  :depends-on ("iter" "types" "control-flow"))
+                 (:file "files")
+                 (:file "symbols")
+                 (:file "arrays")
+                 (:file "queue"
+                  :depends-on ("types"))
+                 (:file "box"
+                  :depends-on ("types" "definitions"))
+                 (:file "vectors")
+                 (:file "numbers"
+                  :depends-on ("macro-tools" "types"))
+                 (:file "octets"
+                  :depends-on ("types"))
+                 (:file "time")
+                 (:file "clos")
+                 (:file "mop")
+                 (:file "hooks")
+                 (:file "fbind"
+                  :depends-on ("binding" "control-flow"))))
+               ;; Level 1 files can use CL, Alexandria, and any
+               ;; Serapeum utilities defined at level 0. Intended for
+               ;; functions on sequences.
+               (:module "level1"
+                :pathname ""
+                :serial nil
+                :components
+                ((:file "lists")
+                 (:file "strings")
+                 (:file "sequences")))
+               ;; Level 2 files can use CL, Alexandria, and the rest
+               ;; of Serapeum. Anything at this level could, in
+               ;; principle, be its own separate library that depends
+               ;; on Serapeum.
+               (:module "level2"
+                :pathname ""
+                :serial nil
+                :components
+                ())))
 
 (asdf:defsystem #:serapeum/tests
     :description "Test suite for Serapeum."

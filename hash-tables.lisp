@@ -1,5 +1,21 @@
 (in-package :serapeum)
 
+(define-do-macro do-hash-table ((key value table &optional return)
+                                &body body)
+  "Iterate over hash table TABLE, in no particular order.
+
+At each iteration, a key from TABLE is bound to KEY, and the value of
+that key in TABLE is bound to VALUE."
+  (with-unique-names (iterator loop found?)
+    `(with-hash-table-iterator (,iterator ,table)
+       ;; Don't shadow the outer block.
+       (loop named ,loop do
+         (multiple-value-bind (,found? ,key ,value)
+             (,iterator)
+           (unless ,found?
+             (return-from ,loop))
+           ,@body)))))
+
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 
@@ -226,13 +242,11 @@ Clojure's `merge'.
             tables))))
 
 (defun merge-tables! (table &rest tables)
-  (reduce (lambda (x y)
-            (check-same-test x y)
-            (maphash
-             (lambda (k v)
-               (setf (gethash k x) v))
-             y)
-            x)
+  (reduce (lambda (ht1 ht2)
+            (check-same-test ht1 ht2)
+            (do-hash-table (k v ht2)
+              (setf (gethash k ht1) v))
+            ht1)
           tables
           :initial-value table))
 
@@ -260,11 +274,10 @@ KEY allows you to transform the keys in the old hash table.
 KEY defaults to `identity'."
   (let ((table2 (copy-hash-table/empty table)))
     (ensuring-functions (key test)
-      (maphash (lambda (k v)
-                 (let ((key (funcall key k)))
-                   (when (funcall test key)
-                     (setf (gethash v table2) key))))
-               table))
+      (do-hash-table (k v table)
+        (let ((key (funcall key k)))
+          (when (funcall test key)
+            (setf (gethash v table2) key)))))
     table2))
 
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)
@@ -405,10 +418,9 @@ specified."
     (when strict-types
       (unless (and (type= key-type t)
                    (type= value-type t))
-        (maphash (lambda (k v)
-                   (check-type* k key-type)
-                   (check-type* v value-type))
-                 hash-table)))
+        (do-hash-table (k v hash-table)
+          (check-type* k key-type)
+          (check-type* v value-type))))
     (assure function
       (~> hash-table
           copy-hash-table

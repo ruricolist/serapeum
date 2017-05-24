@@ -121,6 +121,7 @@
    #:leaf-walk
    #:leaf-map
    ;; Hash tables.
+   #:do-hash-table
    #:pophash
    #:swaphash
    #:dict
@@ -135,6 +136,8 @@
    #:set-hash-table
    #:hash-table-set
    #:hash-table-predicate
+   #:hash-table-function
+   #:make-hash-table-function
    ;; Pathnames.
    #:path-join
    #:write-stream-into-file
@@ -319,9 +322,7 @@
    #:split-sequence-if
    #:split-sequence-if-not
    #:take-while
-   #:drop-while
-   #:hash-table-function
-   #:make-hash-table-function))
+   #:drop-while))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

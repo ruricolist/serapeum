@@ -260,7 +260,7 @@ symbol)."
            (exprs (mapcar #'second bindings))
            (temps (mapcar #'string-gensym vars)))
     `(let ,env
-       ,@(and env-decls (unsplice `(declare ,@env-decls)))
+       ,@(unsplice (and env-decls `(declare ,@env-decls)))
        (let ,(loop for temp in temps
                    for expr in exprs
                    collect `(,temp (ensure-function ,expr)))
@@ -356,7 +356,7 @@ generates another are undefined."
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))
     `(let ,env
-       ,@(when env-decls (unsplice `(declare ,@env-decls)))
+       ,@(unsplice (and env-decls `(declare ,@env-decls)))
        ;; Simple expressions reference functions already defined
        ;; outside of the letrec, so we can handle them with fbind.
        (comment "Simple")

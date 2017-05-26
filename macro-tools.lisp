@@ -66,6 +66,14 @@ in every other macro."
 
 This is useful with ,@ in macros, and with `mapcan'.
 
+E.g., instead of writing:
+
+    `(.... ,@(when flag '((code))))
+
+You can write:
+
+    `(.... ,@(unsplice (when flag '(code))))
+
 From Lparallel."
   (if form
       (list form)

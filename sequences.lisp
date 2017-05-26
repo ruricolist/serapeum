@@ -144,8 +144,8 @@ part of the arguments to compare, and compares them using TEST."
 (defun bucket-front (seq bucket)
   (seq-dispatch seq
     (front bucket)
-    (when (> (length bucket) 0)
-      (vref bucket 0))
+    (and (> (length bucket) 0)
+         (vref bucket 0))
     (bucket-front () bucket)))
 
 (defun nsubseq (seq start &optional end)
@@ -546,13 +546,12 @@ A length designator may be a sequence or an integer."
 A length designator may be a sequence or an integer."
   (nlet rec ((last most-positive-fixnum)
              (seqs seqs))
-    (if (endp seqs)
-        t
+    (if (endp seqs) t
         (destructuring-bind (seq . seqs) seqs
           (etypecase seq
             (array-length
-             (when (> last seq)
-               (rec seq seqs)))
+             (and (> last seq)
+                  (rec seq seqs)))
             (list
              (let ((len
                      ;; Get the length of SEQ, but only up to LAST.
@@ -561,12 +560,12 @@ A length designator may be a sequence or an integer."
                              (incf len)
                              (pop seq)
                            finally (return len))))
-               (when (> last len)
-                 (rec len seqs))))
+               (and (> last len)
+                    (rec len seqs))))
             (sequence
              (let ((len (length seq)))
-               (when (> last len)
-                 (rec len seqs)))))))))
+               (and (> last len)
+                    (rec len seqs)))))))))
 
 (defun length>= (&rest seqs)
   "Is each length-designator in SEQS longer or as long as the next?
@@ -1014,9 +1013,9 @@ From Q."
     (seq-dispatch seq
       (cons (car seq)
             (mapcar fn (cdr seq) seq))
-      (when (> (length seq) 0)
-        (cons (elt seq 0)
-              (map 'list fn (nsubseq seq 1) seq))))))
+      (and (> (length seq) 0)
+           (cons (elt seq 0)
+                 (map 'list fn (nsubseq seq 1) seq))))))
 
 (defcondition inconsistent-graph (error)
   ((constraints :initarg :constraints

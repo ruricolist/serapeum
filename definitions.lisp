@@ -153,8 +153,8 @@ Name from Emacs Lisp."
      (eval-when (:load-toplevel :execute)
        (compile ',alias ,def)
        ,@(unsplice
-          (when docstring
-            `(setf (documentation ',alias 'function) ,docstring))))
+          (and docstring
+               `(setf (documentation ',alias 'function) ,docstring))))
      ',alias))
 
 ;;;# Etc

@@ -68,10 +68,10 @@ From Arc."
 
            (missing-types (partition)
              (multiple-value-bind (exp exp?) (typexpand type env)
-               (when exp?
-                 (set-difference (explode-type exp)
-                                 (explode-type partition)
-                                 :test #'type=))))
+               (and exp?
+                    (set-difference (explode-type exp)
+                                    (explode-type partition)
+                                    :test #'type=))))
 
            (format-missing-types (stream partition)
              (when-let (mt (missing-types partition))

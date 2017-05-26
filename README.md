@@ -34,9 +34,11 @@ from other languages, or from other Lispers. I try to give credit in
 the docstrings, but sometimes I have forgotten where I got an idea or
 a name. I regard missing credits as bugs: please report them.
 
-Serapeum is intended to be portable, but it is only tested where it is
-developed, on [SBCL][] and [Clozure CL][]. Patches for other Lisps are
-always welcome, whether bug fixes or implementation-specific optimizations.
+Serapeum is intended to be portable, but it is principally tested
+where it is developed, on [SBCL][] and [Clozure CL][]. (Automated
+tests are also run on [ECL][] and [Allegro][].) Patches for other
+Lisps are always welcome, whether bug fixes or implementation-specific
+optimizations.
 
 # Commentary
 
@@ -421,3 +423,5 @@ be edited by hand.)
 [Alexandria]: http://common-lisp.net/project/alexandria/
 [SBCL]: http://sbcl.org
 [Clozure CL]: http://clozure.com
+[ECL]: https://common-lisp.net/project/ecl/
+[Allegro]: https://franz.com/products/allegrocl/

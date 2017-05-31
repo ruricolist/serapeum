@@ -6,7 +6,6 @@ env:
     - LISP=sbcl
     - LISP=ccl
     - LISP=allegro
-    - LISP=ecl
 
 matrix:
   allow-failures:

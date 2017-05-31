@@ -333,6 +333,11 @@ Functions\", by Irène Durand and Robert Strandh."
                 (etypecase ,var
                   ,@(loop for type in types
                           collect `(,type (,fun (truly-the ,type ,var))))))))
+          ;; Try to force CCL to trust our declarations. According to
+          ;; <https://trac.clozure.com/ccl/wiki/DeclareOptimize>, that
+          ;; requires safety<3 and speed>=safety. But, if the
+          ;; pre-existing values for safety and speed are acceptable,
+          ;; we don't want to overwrite them.
           ((or #+ccl t)
            (multiple-value-bind (speed safety)
                (let ((speed  (policy-quality 'speed env))
@@ -343,8 +348,6 @@ Functions\", by Irène Durand and Robert Strandh."
                      (let* ((safety (min safety 2))
                             (speed  (max speed safety)))
                        (values speed safety))))
-             ;; Necessary for Clozure to trust declarations; see
-             ;; https://trac.clozure.com/ccl/wiki/DeclareOptimize.
              (assert (and (< safety 3)
                           (>= speed safety)))
              `(locally

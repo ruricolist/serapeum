@@ -370,11 +370,11 @@ Inline keywords are like the keyword arguments to individual cases in
                 (values (nreverse keywords) body)))))
     (rec nil body)))
 
-(defmacro read-only-var (x &optional (name x))
+(defmacro read-only-var (real-var &optional (name real-var))
   (declare (ignore name))
-  `,x)
+  `,real-var)
 
-(define-setf-expander read-only-var (x &optional (name x))
+(define-setf-expander read-only-var (real-var &optional (name real-var))
   (error "~a is read-only in this environment" name))
 
 (defmacro with-read-only-var ((var) &body body)

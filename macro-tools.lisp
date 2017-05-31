@@ -392,3 +392,10 @@ shooting yourself in the foot by unwittingly using a macro that calls
        (declare (ignorable ,temp))
        (symbol-macrolet ((,var (read-only-var ,temp ,var)))
          ,@body))))
+
+(defun expand-read-only-var (var env)
+  (let ((exp (macroexpand-1 (assure symbol var) env)))
+    (ematch exp
+      ((list 'read-only-var storage name)
+       (assert (eql name var))
+       (assure symbol storage)))))

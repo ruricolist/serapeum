@@ -18,6 +18,11 @@
   (is-true
    (case-using #'eql 'x
      (x t)
+     (t nil)))
+
+  (is-true
+   (case-using #'eql nil
+     ((nil) t)
      (t nil))))
 
 (test cond-every

@@ -394,8 +394,10 @@ shooting yourself in the foot by unwittingly using a macro that calls
          ,@body))))
 
 (defun expand-read-only-var (var env)
-  (let ((exp (macroexpand-1 (assure symbol var) env)))
-    (ematch exp
-      ((list 'read-only-var (and storage (type symbol)) name)
-       (assert (eql name var))
-       storage))))
+  (ematch var
+    ((and var (type symbol))
+     (let ((exp (macroexpand-1 var env)))
+       (ematch exp
+         ((list 'read-only-var (and storage (type symbol)) name)
+          (assert (eql name var))
+          storage))))))

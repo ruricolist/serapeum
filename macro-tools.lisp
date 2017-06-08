@@ -396,6 +396,6 @@ shooting yourself in the foot by unwittingly using a macro that calls
 (defun expand-read-only-var (var env)
   (let ((exp (macroexpand-1 (assure symbol var) env)))
     (ematch exp
-      ((list 'read-only-var storage name)
+      ((list 'read-only-var (and storage (type symbol)) name)
        (assert (eql name var))
-       (assure symbol storage)))))
+       storage))))

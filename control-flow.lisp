@@ -347,7 +347,7 @@ Stands for “exhaustive if”."
                (format-econd-tests s tests))))
   (:documentation "A failed ECOND form."))
 
-(defmacro econd (&rest clauses)
+(defmacro econd (&body clauses)
   "Like `cond', but signal an error of type `econd-failure' if no
 clause succeeds."
   (let ((tests (mapcar #'car clauses)))
@@ -377,7 +377,7 @@ Cf. `acond' in Anaphora."
          (progn ,@body)
          (cond-let ,var ,@clauses)))))
 
-(defmacro econd-let (symbol &rest clauses)
+(defmacro econd-let (symbol &body clauses)
   "Like `cond-let' for `econd'."
   `(cond-let ,symbol
      ,@clauses
@@ -423,7 +423,7 @@ From Zetalisp."
                                                `(progn ,@body)))))
                  ,ret))))))
 
-(defmacro bcond (&rest clauses)
+(defmacro bcond (&body clauses)
   "Scheme's extended COND.
 
 This is exactly like COND, except for clauses having the form

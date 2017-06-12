@@ -224,7 +224,8 @@ Note that the otherwise clauses must also be a list:
 to collect KEYPLACE and try again."
   (expand-destructuring-case-of type keyplace body 'ccase-of))
 
-(define-case-macro case-using ((pred keyform) default &body clauses)
+(define-case-macro case-using (pred keyform &body clauses)
+    (:default default)
   "ISLISP's case-using.
 
      (case-using #'eql x ...)
@@ -253,7 +254,8 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
                                     ,@body))
                   (t ,@default)))))))
 
-(define-case-macro string-case (stringform default &body clauses)
+(define-case-macro string-case (stringform &body clauses)
+    (:default default)
   "Efficient `case'-like macro with string keys.
 
 Note that string matching is always case-sensitive.
@@ -272,7 +274,8 @@ This uses Paul Khuong's `string-case' macro internally."
         `(string-case:string-case (,stringform :default ,default)
            ,@clauses))))
 
-(define-case-macro string-ecase (stringform nil &body clauses)
+(define-case-macro string-ecase (stringform &body clauses)
+    ()
   "Efficient `ecase'-like macro with string keys.
 
 Note that string matching is always case-sensitive.

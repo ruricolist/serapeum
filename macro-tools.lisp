@@ -404,35 +404,40 @@ shooting yourself in the foot by unwittingly using a macro that calls
 
 ;;; Macro-writing macro for writing macros like `case'.
 
-(defmacro define-case-macro (name macro-args &body macro-body)
-  "Beware: (NIL) becomes nil.
+(defmacro define-case-macro (name macro-args params &body macro-body)
+  "Write
+
+Beware: (NIL) becomes nil.
 
 The default is just a list of forms.
 "
-  (multiple-value-bind (expr args default clauses)
+  (multiple-value-bind (expr args clauses)
       (ematch macro-args
-        ((list (list* expr args) default '&body clauses)
-         (values expr args default clauses))
-        ((list expr default '&body clauses)
-         (values expr nil default clauses)))
-    (let ((default-sym (or default (gensym))))
-      `(defmacro ,name (,expr ,@args &body ,clauses)
-         (expand-case-macro
-          (lambda (,expr ,default-sym ,clauses)
-            ;; If `default' is defined as `nil', then no default
-            ;; clause is allowed.
-            ,(when (null default)
-               `(when ,default-sym
-                  (error "Default disallowed in ~a" ,clauses)))
-            ,@macro-body)
-          ,expr ,clauses)))))
+        ((list expr '&body clauses)
+         (values expr nil clauses))
+        ((list expr arg '&body clauses)
+         (values expr (list arg) clauses)))
+    (destructuring-bind (&key default
+                              (default-keys '(t otherwise)))
+        params
+      (let ((default-sym (or default (gensym))))
+        `(defmacro ,name (,expr ,@args &body ,clauses)
+           (expand-case-macro
+            (lambda (,expr ,default-sym ,clauses)
+              ;; If `default' is defined as `nil', then no default
+              ;; clause is allowed.
+              ,(when (null default)
+                 `(when ,default-sym
+                    (error "Default disallowed in ~a" ,clauses)))
+              ,@macro-body)
+            ,expr ,clauses :default-keys ',default-keys))))))
 
-(defun clauses+default (clauses)
+(defun clauses+default (clauses &key (default-keys '(t otherwise)))
   (let ((default-clause-tails
           (loop for tail on clauses
                 for clause = (first tail)
                 for key = (first clause)
-                when (member key '(t cl:otherwise))
+                when (member key default-keys :test #'eq)
                   collect tail)))
     (cond ((null default-clause-tails)
            (values clauses nil))
@@ -463,7 +468,7 @@ Otherwise, leave the keylist alone."
         else
           collect clause))
 
-(defun expand-case-macro (cont expr clauses)
+(defun expand-case-macro (cont expr clauses &key (default-keys '(t otherwise)))
   (check-type clauses list)
   (let ((cont
           (lambda (expr-temp default clauses)
@@ -475,7 +480,7 @@ Otherwise, leave the keylist alone."
       ;; Rebind expr.
       `(let ((,expr-temp ,expr))
          ,(multiple-value-bind (clauses default)
-              (clauses+default clauses)
+              (clauses+default clauses :default-keys default-keys)
             (let* ((clauses (simplify-keylists clauses))
                    (keys (mapcar #'first clauses)))
               (if (every #'atom keys)   ;NB Nil could be a key.
@@ -489,7 +494,9 @@ Otherwise, leave the keylist alone."
                   ;; however, switching back to tagbody is
                   ;; straightforward: just swap out
                   ;; `expand-case-macro/flet' for
-                  ;; `expand-case-macro/tagbody'.
+                  ;; `expand-case-macro/tagbody'. (It might even be
+                  ;; worth using different expansions on different
+                  ;; Lisps.)
                   (expand-case-macro/flet cont expr-temp clauses default))))))))
 
 (defun expand-case-macro/common (clauses &key jump)

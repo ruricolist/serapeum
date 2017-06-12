@@ -609,3 +609,8 @@ Otherwise, leave the keylist alone."
             (return-from ,case-block
               ,(funcall cont expr-temp default clauses))
             ,@(apply #'append dests))))))
+
+(defun case-failure (expr keys)
+  (error 'type-error
+         :datum expr
+         :expected-type `(member ,@keys)))

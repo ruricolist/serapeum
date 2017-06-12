@@ -271,21 +271,25 @@ This uses Paul Khuong's `string-case' macro internally."
                 ,@(loop for (key . body) in clauses
                         collect `(,(aref key 0) ,@body))
                 (t ,default)))
-        `(string-case:string-case (,stringform :default ,default)
+        `(string-case:string-case
+             (,stringform
+              :default (progn ,@default))
            ,@clauses))))
 
+(defun string-case-failure (expr keys)
+  (error "~s is not one of ~s"
+         expr
+         keys))
+
 (define-case-macro string-ecase (stringform &body clauses)
-    ()
+    (:error string-case-failure)
   "Efficient `ecase'-like macro with string keys.
 
 Note that string matching is always case-sensitive.
 
 Cf. `string-case'."
   `(string-case ,stringform
-     ,@clauses
-     (t (error "~s is not one of ~s"
-               ,stringform
-               ',(mapcar #'first clauses)))))
+     ,@clauses))
 
 (defmacro eif (test then else)
   "Like `cl:if', but requires two branches.

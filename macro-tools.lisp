@@ -482,7 +482,8 @@ could define it almost trivially using `define-case-macro':
               ,@macro-body)
             ,expr ,clauses
             :default-keys ',default-keys
-            :error ',error))))))
+            :error ',error
+            :macro-name ',name))))))
 
 (defun clauses+default (clauses &key (default-keys '(t otherwise)))
   (let ((default-clause-tails
@@ -520,7 +521,9 @@ Otherwise, leave the keylist alone."
         else
           collect clause))
 
-(defun expand-case-macro (cont expr clauses &key (default-keys '(t otherwise)) error)
+(defun expand-case-macro (cont expr clauses
+                          &key (default-keys '(t otherwise)) error
+                               (macro-name 'custom-case))
   (check-type clauses list)
   (when (eql error t)
     (setf error 'case-failure))
@@ -530,7 +533,8 @@ Otherwise, leave the keylist alone."
             (assert (listp default))
             (assert (listp clauses))
             (funcall cont expr-temp default clauses)))
-        (expr-temp (gensym)))
+        (expr-temp (gensym (format nil "~a-~a"
+                                   macro-name 'key))))
     ;; Rebind expr.
     `(let ((,expr-temp ,expr))
        ,(multiple-value-bind (clauses default)
@@ -559,9 +563,10 @@ Otherwise, leave the keylist alone."
                 ;; `expand-case-macro/tagbody'. (It might even be
                 ;; worth using different expansions on different
                 ;; Lisps.)
-                (expand-case-macro/flet cont expr-temp clauses default)))))))
+                (expand-case-macro/flet cont expr-temp clauses default
+                                        :macro-name macro-name)))))))
 
-(defun expand-case-macro/common (clauses &key jump)
+(defun expand-case-macro/common (clauses &key jump macro-name)
   (check-type jump function)
   (labels ((rec (clauses dest-acc clauses-acc)
              (if (null clauses)
@@ -572,7 +577,7 @@ Otherwise, leave the keylist alone."
                        (rec rest-clauses
                             dest-acc
                             (cons (first clauses) clauses-acc))
-                       (let* ((sym (gensym (string 'case-fn)))
+                       (let* ((sym (gensym (format nil "~a-~a" macro-name 'fn)))
                               (dest (cons sym body))
                               (body (list (funcall jump sym))))
                          (rec rest-clauses
@@ -582,18 +587,19 @@ Otherwise, leave the keylist alone."
                                          clauses-acc))))))))
     (rec clauses nil nil)))
 
-(defun expand-case-macro/flet (cont expr-temp normal-clauses default)
+(defun expand-case-macro/flet (cont expr-temp normal-clauses default &key macro-name)
   (multiple-value-bind (dests clauses)
       (expand-case-macro/common normal-clauses
                                 :jump (lambda (sym)
-                                        `(,sym)))
+                                        `(,sym))
+                                :macro-name macro-name)
     (let ((fns (loop for (sym . body) in dests
                      collect `(,sym () ,@body))))
       `(flet ,fns
          ,(funcall cont expr-temp default clauses)))))
 
-(defun expand-case-macro/tagbody (cont expr-temp normal-clauses default)
-  (let ((case-block (gensym (string 'case-block))))
+(defun expand-case-macro/tagbody (cont expr-temp normal-clauses default &key macro-name)
+  (let ((case-block (gensym (format nil "~a-~a" macro-name 'block))))
     (multiple-value-bind (dests clauses)
         (expand-case-macro/common normal-clauses
                                   :jump (lambda (sym)

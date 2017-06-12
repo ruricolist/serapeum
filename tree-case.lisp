@@ -1,7 +1,8 @@
 (in-package #:serapeum)
 
 ;; http://www.foldr.org/~michaelw/log/programming/lisp/icfp-contest-2006-vm
-(define-case-macro tree-case (keyform default &body cases)
+(define-case-macro tree-case (keyform &body cases)
+    (:default default)
   "A variant of `case' optimized for when every key is an integer."
   (let ((keys (mapcar #'first cases)))
     (dolist (key keys)
@@ -30,6 +31,7 @@
          ,(rec keyform cases)))))
 
 (define-case-macro tree-ecase (keyform nil &body clauses)
+    ()
   "Like `tree-case', but signals an error if KEYFORM does not match
 any of the provided cases."
   `(tree-case ,keyform

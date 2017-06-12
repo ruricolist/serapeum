@@ -224,7 +224,8 @@ Note that the otherwise clauses must also be a list:
 to collect KEYPLACE and try again."
   (expand-destructuring-case-of type keyplace body 'ccase-of))
 
-(defmacro case-using (pred keyform &body clauses)
+(define-case-macro case-using (pred keyform &body clauses)
+    (:default default)
   "ISLISP's case-using.
 
      (case-using #'eql x ...)
@@ -236,93 +237,59 @@ This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause."
   (case (extract-function-name pred)
-    (eql `(case ,keyform ,@clauses))
-    (string= `(string-case ,keyform ,@clauses))
+    (eql
+     `(case ,keyform
+        ,@clauses
+        (otherwise ,default)))
+    (string=
+     (let ((keys (mapcar #'car clauses)))
+       (assert (every #'stringp keys)))
+     `(string-case ,keyform
+        ,@clauses
+        (otherwise ,default)))
     (t (once-only (keyform)
          (rebinding-functions (pred)
-           `(case-using-aux ,pred ,keyform ,@clauses))))))
+           `(cond ,@(loop for (key . body) in clauses
+                          collect `((funcall ,pred ,keyform ',key)
+                                    ,@body))
+                  (t ,@default)))))))
 
-(defmacro case-using-aux (pred keyform &body clauses)
-  (if (not clauses)
-      nil
-      (destructuring-bind ((key . body) . clauses) clauses
-        (if (member key '(t otherwise))
-            `(progn ,@body)
-            `(if (or ,@(mapcar (lambda (key)
-                                 `(funcall ,pred ,keyform ',key))
-                               (ensure-list key)))
-                 (progn ,@body)
-                 (case-using-aux ,pred ,keyform
-                   ,@clauses))))))
-
-(defun expand-string-case (sf default cases)
-  "Expand a string-case macro with a minimum of duplicated code."
-  (once-only (sf)
-    (let* ((key-lists (mapcar #'car cases))
-           (keys (apply #'append key-lists)))
-      (flet ((single (l)
-               (if (listp l)
-                   (null (cdr l))
-                   (= (length l) 1))))
-        (cond
-          ;; Every string is of length 1.
-          ((every #'single keys)
-           `(and (= (length ,sf) 1)
-                 (case (aref ,sf 0)
-                   ,@(loop for (key-list . body) in cases
-                           collect `(,(mapcar (lambda (key)
-                                                (aref key 0))
-                                              key-list)
-                                     ,@body)))))
-          ((every #'single key-lists)
-           ;; Each clause has only one key.
-           `(string-case:string-case (,sf :default ,default)
-              ,@(loop for ((k) . body) in cases
-                      collect (cons k body))))
-          ;; Some clauses have multiple keys.
-          (t
-           (let* ((simple (remove-if-not #'single cases :key #'car))
-                  (complex (set-difference cases simple)))
-             (with-gensyms (block)
-               `(block ,block
-                  ,(let ((tags (make-gensym-list (length complex) (string 'body))))
-                     `(tagbody
-                         (return-from ,block
-                           (string-case:string-case (,sf :default ,default)
-                             ;; Just inline the simple clauses.
-                             ,@(loop for ((key) . body) in simple
-                                     collect `(,key ,@body))
-                             ;; Convert the complex clauses into a
-                             ;; series of simple clauses that jump to
-                             ;; the same body.
-                             ,@(loop for key-lists in (mapcar #'car complex)
-                                     for tag in tags
-                                     append (loop for k in key-lists
-                                                  collect `(,k (go ,tag))))))
-                         ;; The tags to jump to.
-                         ,@(loop for tag in tags
-                                 for body in (mapcar #'cdr complex)
-                                 append `(,tag (return-from ,block (progn ,@body)))))))))))))))
-
-(defmacro string-case (stringform &body cases)
+(define-case-macro string-case (stringform &body clauses)
+    (:default default)
   "Efficient `case'-like macro with string keys.
 
-This uses Paul Khuong's `string-case' macro internally."
-  (multiple-value-bind (cases default)
-      (normalize-cases cases)
-    (expand-string-case stringform `(progn ,@default) cases)))
+Note that string matching is always case-sensitive.
 
-(defmacro string-ecase (stringform &body cases)
+This uses Paul Khuong's `string-case' macro internally."
+  (let ((keys (mapcar #'first clauses)))
+    (if (every (lambda (key)
+                 (and (stringp key)
+                      (= (length key) 1)))
+               keys)
+        `(and (= (length ,stringform) 1)
+              (case (aref ,stringform 0)
+                ,@(loop for (key . body) in clauses
+                        collect `(,(aref key 0) ,@body))
+                (t ,default)))
+        `(string-case:string-case
+             (,stringform
+              :default (progn ,@default))
+           ,@clauses))))
+
+(defun string-case-failure (expr keys)
+  (error "~s is not one of ~s"
+         expr
+         keys))
+
+(define-case-macro string-ecase (stringform &body clauses)
+    (:error string-case-failure)
   "Efficient `ecase'-like macro with string keys.
 
+Note that string matching is always case-sensitive.
+
 Cf. `string-case'."
-  (let* ((cases (normalize-cases cases :allow-default nil))
-         (keys (mappend (compose #'ensure-list #'car) cases)))
-    (once-only (stringform)
-      (expand-string-case stringform
-                          `(error "~s is not one of ~s"
-                                  ,stringform ',keys)
-                          cases))))
+  `(string-case ,stringform
+     ,@clauses))
 
 (defmacro eif (test then else)
   "Like `cl:if', but requires two branches.

@@ -480,8 +480,11 @@ could define it almost trivially using `define-case-macro':
                            (default (and error (gensym)))
                            (default-keys '(t otherwise)))
         params
-      (let ((default-sym (or default (gensym))))
+      (let ((default-sym (or default (gensym)))
+            (docstring (and (stringp (first macro-body))
+                            (pop macro-body))))
         `(defmacro ,name (,expr ,@other-args &body ,clauses)
+           ,@(unsplice docstring)
            (expand-case-macro
             (lambda (,expr ,default-sym ,clauses)
               (declare (ignorable ,default-sym))

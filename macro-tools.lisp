@@ -569,7 +569,10 @@ Otherwise, leave the keylist alone."
 
 (defun expand-case-macro/common (clauses &key jump macro-name)
   (check-type jump function)
-  (labels ((rec (clauses dest-acc clauses-acc)
+  (check-type macro-name symbol)
+  (labels ((gen-fn-sym ()
+             (gensym (concatenate 'string (string macro-name) "-" #.(string 'fn))))
+           (rec (clauses dest-acc clauses-acc)
              (if (null clauses)
                  (values (reverse dest-acc)
                          (reverse clauses-acc))
@@ -578,7 +581,7 @@ Otherwise, leave the keylist alone."
                        (rec rest-clauses
                             dest-acc
                             (cons (first clauses) clauses-acc))
-                       (let* ((sym (gensym (format nil "~a-~a" macro-name 'fn)))
+                       (let* ((sym (gen-fn-sym))
                               (dest (cons sym body))
                               (body (list (funcall jump sym))))
                          (rec rest-clauses

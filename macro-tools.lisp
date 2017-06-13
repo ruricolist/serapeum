@@ -454,6 +454,12 @@ default clause is discarded.
 If no binding is specified for the default clause, then no default
 clause is allowed.
 
+One thing you do still have to consider is the handling of duplicated
+keys. The macro defined by `define-case-macro' will reject case sets
+that contains duplicate keys under `eql', but depending on the
+semantics of your macro, you may need to check for duplicates under a
+looser definition of equality.
+
 As a final example, if the `case' macro did not already exist, you
 could define it almost trivially using `define-case-macro':
 
@@ -555,6 +561,9 @@ Otherwise, leave the keylist alone."
                                     (list `(,(random-elt default-keys)
                                              (,error ,expr-temp ',flat-keys)))))
                        clauses)))
+            (when (< (length (remove-duplicates flat-keys))
+                     (length flat-keys))
+              (error "Duplicated keys in ~s" keys))
             (if (every #'atom keys)     ;NB Nil could be a key.
                 ;; Easy case. No lists of keys; do nothing special.
                 (funcall cont expr-temp default clauses)

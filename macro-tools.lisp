@@ -541,13 +541,14 @@ Otherwise, leave the keylist alone."
             (clauses+default clauses :default-keys default-keys)
           (let* ((clauses (simplify-keylists clauses))
                  (keys (mapcar #'first clauses))
+                 (flat-keys (mappend #'ensure-list keys))
                  (clauses
                    (or (and error
                             (or default-keys
                                 (error "Cannot add an error clause without a default key."))
                             (append clauses
                                     (list `(,(random-elt default-keys)
-                                             (,error ,expr-temp ',keys)))))
+                                             (,error ,expr-temp ',flat-keys)))))
                        clauses)))
             (if (every #'atom keys)     ;NB Nil could be a key.
                 ;; Easy case. No lists of keys; do nothing special.

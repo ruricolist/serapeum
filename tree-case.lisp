@@ -1,5 +1,9 @@
 (in-package #:serapeum)
 
+;;; TODO See
+;;; https://www.nextmovesoftware.com/technology/SwitchOptimization.pdf
+;;; for ideas on further optimization strategies.
+
 ;; http://www.foldr.org/~michaelw/log/programming/lisp/icfp-contest-2006-vm
 (define-case-macro tree-case (keyform &body cases)
     (:default default)

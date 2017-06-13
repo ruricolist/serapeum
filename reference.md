@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (28 files, 269 functions)
+# Function Listing For SERAPEUM (29 files, 270 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -28,6 +28,7 @@
 - [Lists](#lists)
 - [Strings](#strings)
 - [Sequences](#sequences)
+- [Tree Case](#tree-case)
 
 ## Macro Tools
 
@@ -296,19 +297,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L374)
+[View source](types.lisp#L377)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L387)
+[View source](types.lisp#L390)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L397)
+[View source](types.lisp#L400)
 
 ## Definitions
 
@@ -825,41 +826,45 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 
 [View source](control-flow.lisp#L227)
 
-### `(string-case stringform &body cases)`
+### `(string-case stringform &body clauses)`
 
 Efficient `case`-like macro with string keys.
 
+Note that string matching is always case-sensitive.
+
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L307)
+[View source](control-flow.lisp#L257)
 
-### `(string-ecase stringform &body cases)`
+### `(string-ecase stringform &body clauses)`
 
 Efficient `ecase`-like macro with string keys.
 
+Note that string matching is always case-sensitive.
+
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L315)
+[View source](control-flow.lisp#L284)
 
 ### `(eif test then else)`
 
 Like `cl:if`, but requires two branches.
 Stands for “exhaustive if”.
 
-[View source](control-flow.lisp#L327)
+[View source](control-flow.lisp#L294)
 
 ### `(eif-let binds then else)`
 
 Like `alexandria:if-let`, but requires two branches.
 
-[View source](control-flow.lisp#L332)
+[View source](control-flow.lisp#L299)
 
-### `(econd &rest clauses)`
+### `(econd &body clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L350)
+[View source](control-flow.lisp#L317)
 
 ### `(cond-let var &body clauses)`
 
@@ -871,13 +876,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L359)
+[View source](control-flow.lisp#L326)
 
-### `(econd-let symbol &rest clauses)`
+### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L380)
+[View source](control-flow.lisp#L347)
 
 ### `(cond-every &body clauses)`
 
@@ -895,9 +900,9 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L393)
+[View source](control-flow.lisp#L360)
 
-### `(bcond &rest clauses)`
+### `(bcond &body clauses)`
 
 Scheme's extended COND.
 
@@ -922,19 +927,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L426)
+[View source](control-flow.lisp#L393)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...))
 
-[View source](control-flow.lisp#L479)
+[View source](control-flow.lisp#L446)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...))
 
-[View source](control-flow.lisp#L485)
+[View source](control-flow.lisp#L452)
 
 ### `(comment &body body)`
 
@@ -946,13 +951,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L491)
+[View source](control-flow.lisp#L458)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L501)
+[View source](control-flow.lisp#L468)
 
 ### `(nix place)`
 
@@ -961,7 +966,7 @@ Set PLACE to nil and return the old value of PLACE.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L505)
+[View source](control-flow.lisp#L472)
 
 ### `(ensure place &body newval)`
 
@@ -975,14 +980,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L520)
+[View source](control-flow.lisp#L487)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L552)
+[View source](control-flow.lisp#L519)
 
 ### `(~> needle &rest holes)`
 
@@ -996,14 +1001,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L619)
+[View source](control-flow.lisp#L586)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L633)
+[View source](control-flow.lisp#L600)
 
 ### `(nest &rest things)`
 
@@ -1035,7 +1040,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L640)
+[View source](control-flow.lisp#L607)
 
 ### `(select keyform &body clauses)`
 
@@ -1055,7 +1060,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L674)
+[View source](control-flow.lisp#L641)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1065,7 +1070,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L693)
+[View source](control-flow.lisp#L660)
 
 ### `(sort-values pred &rest values)`
 
@@ -1077,7 +1082,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L816)
+[View source](control-flow.lisp#L783)
 
 ## Threads
 
@@ -2986,13 +2991,6 @@ Return the prefix of SEQ for which PRED returns true.
 
 [View source](sequences.lisp#L739)
 
-### `(drop-while pred seq)`
-
-Return the largest possible suffix of SEQ for which PRED returns
-false when called on the first element.
-
-[View source](sequences.lisp#L745)
-
 ### `(bestn n seq pred &key key memo)`
 
 Partial sorting.
@@ -3185,4 +3183,21 @@ as long as SEQ is empty.
 
 
 [View source](sequences.lisp#L1223)
+
+## Tree Case
+
+### `(tree-case keyform &body cases)`
+
+A variant of `case` optimized for when every key is an integer.
+
+Comparison is done using `eql`.
+
+[View source](tree-case.lisp#L8)
+
+### `(tree-ecase keyform &body clauses)`
+
+Like `tree-case`, but signals an error if KEYFORM does not match
+any of the provided cases.
+
+[View source](tree-case.lisp#L34)
 

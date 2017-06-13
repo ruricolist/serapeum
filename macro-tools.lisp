@@ -404,6 +404,11 @@ shooting yourself in the foot by unwittingly using a macro that calls
 
 ;;; Macro-writing macro for writing macros like `case'.
 
+;;; TODO Would it be worthwhile to look for clause bodies that are
+;;; "the same", and merge them together? Or should we expect that any
+;;; reasonable Common Lisp compiler will already do that? SBCL
+;;; doesn't. But what would be the right predicate?
+
 (defmacro define-case-macro (name macro-args params &body macro-body)
   "Define a macro like `case'.
 

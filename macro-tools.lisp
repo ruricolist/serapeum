@@ -404,6 +404,11 @@ shooting yourself in the foot by unwittingly using a macro that calls
 
 ;;; Macro-writing macro for writing macros like `case'.
 
+;;; TODO Would it be worthwhile to look for clause bodies that are
+;;; "the same", and merge them together? Or should we expect that any
+;;; reasonable Common Lisp compiler will already do that? SBCL
+;;; doesn't. But what would be the right predicate?
+
 (defmacro define-case-macro (name macro-args params &body macro-body)
   "Define a macro like `case'.
 
@@ -449,6 +454,12 @@ default clause is discarded.
 If no binding is specified for the default clause, then no default
 clause is allowed.
 
+One thing you do still have to consider is the handling of duplicated
+keys. The macro defined by `define-case-macro' will reject case sets
+that contains duplicate keys under `eql', but depending on the
+semantics of your macro, you may need to check for duplicates under a
+looser definition of equality.
+
 As a final example, if the `case' macro did not already exist, you
 could define it almost trivially using `define-case-macro':
 
@@ -482,7 +493,8 @@ could define it almost trivially using `define-case-macro':
               ,@macro-body)
             ,expr ,clauses
             :default-keys ',default-keys
-            :error ',error))))))
+            :error ',error
+            :macro-name ',name))))))
 
 (defun clauses+default (clauses &key (default-keys '(t otherwise)))
   (let ((default-clause-tails
@@ -520,7 +532,9 @@ Otherwise, leave the keylist alone."
         else
           collect clause))
 
-(defun expand-case-macro (cont expr clauses &key (default-keys '(t otherwise)) error)
+(defun expand-case-macro (cont expr clauses
+                          &key (default-keys '(t otherwise)) error
+                               (macro-name 'custom-case))
   (check-type clauses list)
   (when (eql error t)
     (setf error 'case-failure))
@@ -530,21 +544,26 @@ Otherwise, leave the keylist alone."
             (assert (listp default))
             (assert (listp clauses))
             (funcall cont expr-temp default clauses)))
-        (expr-temp (gensym)))
+        (expr-temp (gensym (format nil "~a-~a"
+                                   macro-name 'key))))
     ;; Rebind expr.
     `(let ((,expr-temp ,expr))
        ,(multiple-value-bind (clauses default)
             (clauses+default clauses :default-keys default-keys)
           (let* ((clauses (simplify-keylists clauses))
                  (keys (mapcar #'first clauses))
+                 (flat-keys (mappend #'ensure-list keys))
                  (clauses
                    (or (and error
                             (or default-keys
                                 (error "Cannot add an error clause without a default key."))
                             (append clauses
                                     (list `(,(random-elt default-keys)
-                                             (,error ,expr-temp ',keys)))))
+                                             (,error ,expr-temp ',flat-keys)))))
                        clauses)))
+            (when (< (length (remove-duplicates flat-keys))
+                     (length flat-keys))
+              (error "Duplicated keys in ~s" keys))
             (if (every #'atom keys)     ;NB Nil could be a key.
                 ;; Easy case. No lists of keys; do nothing special.
                 (funcall cont expr-temp default clauses)
@@ -559,11 +578,15 @@ Otherwise, leave the keylist alone."
                 ;; `expand-case-macro/tagbody'. (It might even be
                 ;; worth using different expansions on different
                 ;; Lisps.)
-                (expand-case-macro/flet cont expr-temp clauses default)))))))
+                (expand-case-macro/flet cont expr-temp clauses default
+                                        :macro-name macro-name)))))))
 
-(defun expand-case-macro/common (clauses &key jump)
+(defun expand-case-macro/common (clauses &key jump macro-name)
   (check-type jump function)
-  (labels ((rec (clauses dest-acc clauses-acc)
+  (check-type macro-name symbol)
+  (labels ((gen-fn-sym ()
+             (gensym (concatenate 'string (string macro-name) "-" #.(string 'fn))))
+           (rec (clauses dest-acc clauses-acc)
              (if (null clauses)
                  (values (reverse dest-acc)
                          (reverse clauses-acc))
@@ -572,7 +595,7 @@ Otherwise, leave the keylist alone."
                        (rec rest-clauses
                             dest-acc
                             (cons (first clauses) clauses-acc))
-                       (let* ((sym (gensym (string 'case-fn)))
+                       (let* ((sym (gen-fn-sym))
                               (dest (cons sym body))
                               (body (list (funcall jump sym))))
                          (rec rest-clauses
@@ -582,18 +605,19 @@ Otherwise, leave the keylist alone."
                                          clauses-acc))))))))
     (rec clauses nil nil)))
 
-(defun expand-case-macro/flet (cont expr-temp normal-clauses default)
+(defun expand-case-macro/flet (cont expr-temp normal-clauses default &key macro-name)
   (multiple-value-bind (dests clauses)
       (expand-case-macro/common normal-clauses
                                 :jump (lambda (sym)
-                                        `(,sym)))
+                                        `(,sym))
+                                :macro-name macro-name)
     (let ((fns (loop for (sym . body) in dests
                      collect `(,sym () ,@body))))
       `(flet ,fns
          ,(funcall cont expr-temp default clauses)))))
 
-(defun expand-case-macro/tagbody (cont expr-temp normal-clauses default)
-  (let ((case-block (gensym (string 'case-block))))
+(defun expand-case-macro/tagbody (cont expr-temp normal-clauses default &key macro-name)
+  (let ((case-block (gensym (format nil "~a-~a" macro-name 'block))))
     (multiple-value-bind (dests clauses)
         (expand-case-macro/common normal-clauses
                                   :jump (lambda (sym)
@@ -603,3 +627,8 @@ Otherwise, leave the keylist alone."
             (return-from ,case-block
               ,(funcall cont expr-temp default clauses))
             ,@(apply #'append dests))))))
+
+(defun case-failure (expr keys)
+  (error 'type-error
+         :datum expr
+         :expected-type `(member ,@keys)))

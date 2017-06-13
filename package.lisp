@@ -322,7 +322,8 @@
    #:split-sequence-if
    #:split-sequence-if-not
    #:take-while
-   #:drop-while))
+   #:tree-case
+   #:tree-ecase))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

@@ -18,6 +18,7 @@
    #:callf #:callf2
    #:define-do-macro
    #:define-post-modify-macro
+   #:define-case-macro
    ;; Types.
    #:->
    #:assure
@@ -324,7 +325,9 @@
    #:take-while
    #:drop-while
    #:tree-case
-   #:tree-ecase))
+   #:tree-ecase
+   #:char-case
+   #:char-ecase))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

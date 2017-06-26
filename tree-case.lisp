@@ -37,3 +37,53 @@ Comparison is done using `eql'."
 any of the provided cases."
   `(tree-case ,keyform
      ,@clauses))
+
+(defun expand-char-case-keys (clauses)
+  (loop for (key/s . body) in clauses
+        if (stringp key/s)
+          collect (cons (coerce key/s 'list) body)
+        else collect (cons key/s body)))
+
+(defun min-char-type (chars &optional env)
+  "Given a sequence of characters, attempt to return the most specific
+subtype of `character' that can contain those characters."
+  (assert (every #'characterp chars))
+  (let* ((type `(or ,@(map 'list #'type-of (nub chars))))
+         (type (upgraded-array-element-type type env)))
+    (if (subtypep type 'character)
+        type
+        'character)))
+
+(defmacro char-case (keyform &body clauses)
+  "Like `case', but specifically for characters.
+Expands into `tree-case'.
+
+As an extension to the generalized `case' syntax, the keys of a clause
+can be specified as a literal string.
+
+    (defun vowel? (c)
+      (char-case c
+        (\"aeiouy\" t)))"
+  `(char-case-1 ,keyform
+     ,@(expand-char-case-keys clauses)))
+
+(defmacro char-ecase (keyform &body clauses)
+  "Like `ecase', but specifically for characters.
+Expands into `tree-case'."
+  `(char-ecase-1 ,keyform
+     ,@(expand-char-case-keys clauses)))
+
+(define-case-macro char-case-1 (keyform &body clauses)
+    (:default default)
+  (let* ((chars (mapcar #'car clauses))
+         (type (min-char-type chars)))
+    `(and (typep ,keyform ',type)
+          (tree-case ,keyform
+            ,@(loop for (char . body) in clauses
+                    collect `(,(char-code char) ,@body))
+            (otherwise ,default)))))
+
+(define-case-macro char-ecase-1 (keyform &body clauses)
+    (:error t)
+  `(char-case ,keyform
+     ,@clauses))

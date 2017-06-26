@@ -78,7 +78,7 @@ Expands into `tree-case'."
   (let* ((chars (mapcar #'car clauses))
          (type (min-char-type chars)))
     `(and (typep ,keyform ',type)
-          (tree-case ,keyform
+          (tree-case (char-code ,keyform)
             ,@(loop for (char . body) in clauses
                     collect `(,(char-code char) ,@body))
             (otherwise ,default)))))

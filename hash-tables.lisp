@@ -96,16 +96,14 @@ Roughly equivalent to `(merge-tables DICT (dict args...))'."
 Like `dict', but the keys and values are implicitly quoted."
   (apply #'dict keys-and-values))
 
-(defun href (table &rest keys)
+(defloop href (table &rest keys)
   "A concise way of doings lookups in (potentially nested) hash tables.
 
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y"
-  (nlet href ((table table)
-              (keys keys))
-    (cond ((endp keys) table)
-          ((single keys) (gethash (car keys) table))
-          (t (href (gethash (car keys) table) (cdr keys))))))
+  (cond ((endp keys) table)
+        ((single keys) (gethash (car keys) table))
+        (t (apply #'href (gethash (car keys) table) (cdr keys)))))
 
 (defun href-default (default table &rest keys)
   "Like `href', with a default.
@@ -145,16 +143,12 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
 (define-compiler-macro (setf href) (value table &rest keys)
   `(setf ,(expand-href table keys) ,value))
 
-(defun @ (table key &rest keys)
+(defun @ (table &rest keys)
   "A concise way of doings lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y "
-    (nlet rec ((table table)
-               (keys (cons key keys)))
-      (if (single keys)
-          (gethash (car keys) table)
-          (rec (gethash (car keys) table) (cdr keys)))))
+  (apply #'href table keys))
 
 (defun (setf @) (value table key &rest keys)
   (nlet rec ((table table)

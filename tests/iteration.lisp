@@ -12,6 +12,19 @@
                        (if (= i 0)
                            (nreverse acc)
                            (rec (1- i) (cons (lambda () i) acc))))))))
+
+(test defloop-scope
+  "Make sure variables in defloop can be closed over."
+  (local
+    (defloop rec (i &optional acc)
+      (if (= i 0)
+          (nreverse acc)
+          (rec (1- i) (cons (lambda () i) acc))))
+
+    (is (equal '(3 2 1)
+               (mapcar 'funcall
+                       (rec 3))))))
+
 (test collecting
   (is (equal '(0 1 2 3 4)
              (collecting

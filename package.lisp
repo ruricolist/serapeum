@@ -43,6 +43,7 @@
    #:local
    #:local*
    #:block-compile
+   #:defloop
    ;; Binding.
    #:receive
    #:letrec

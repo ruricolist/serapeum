@@ -635,3 +635,18 @@ Otherwise, leave the keylist alone."
   (error 'type-error
          :datum expr
          :expected-type `(member ,@keys)))
+
+(defun lambda-list-vars (lambda-list)
+  "Return a list of the variables bound in LAMBDA-LIST, an ordinary
+lambda list."
+  (multiple-value-bind (req opt rest keys allow-other-keys? aux keyp)
+      (parse-ordinary-lambda-list lambda-list)
+    (declare (ignore allow-other-keys? keyp))
+    (remove nil
+            (append req
+                    (mapcar #'first opt)
+                    (mapcar #'third opt)
+                    (list rest)
+                    (mapcar (compose #'first #'rest #'first) keys)
+                    (mapcar #'third keys)
+                    (mapcar #'first aux)))))

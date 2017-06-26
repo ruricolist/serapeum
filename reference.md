@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (29 files, 270 functions)
+# Function Listing For SERAPEUM (29 files, 275 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -189,6 +189,70 @@ Using `define-do-macro` takes care of all of this for you.
 Like `define-modify-macro`, but arranges to return the original value.
 
 [View source](macro-tools.lisp#L326)
+
+### `(define-case-macro name macro-args params &body macro-body)`
+
+Define a macro like `case`.
+
+A case-like macro is one that supports the following syntax:
+
+- A list of keys is treated as matching any key in the list.
+- An empty list matches nothing.
+- The atoms T or `otherwise` introduce a default clause.
+- There can only be one default clause.
+- The default clause must come last.
+- Any atom besides the empty list, T, or `otherwise` matches itself.
+
+As a consequence of the above, to match against the empty list, T, or
+`otherwise`, they must be wrapped in a list.
+
+    (case x
+      ((nil) "Matched nil.")
+      ((t) "Matched t.")
+      ((otherwise) "Matched `otherwise`.")
+      (otherwise "Didn't match anything."))
+
+A macro defined using `define-case-macro` can ignore all of the above.
+It receives three arguments: the expression, already protected against
+multiple evaluation; a normalized list of clauses; and, optionally, a
+default clause.
+
+The clauses are normalized as a list of `(key . body)', where each key
+is an atom. (That includes nil, T, and `otherwise`.) Nonetheless, each
+body passed to the macro will only appear once in the expansion; there
+will be no duplicated code.
+
+The body of the default clause is passed separately,
+bound to the value of the `:default` keyword in PARAMS.
+
+    (define-case-macro my-case (expr &body clauses)
+        (:default default)
+      ....)
+
+Note that in this case, `default` will be bound to the clause's body
+-- a list of forms -- and not to the whole clause. The key of the
+default clause is discarded.
+
+If no binding is specified for the default clause, then no default
+clause is allowed.
+
+One thing you do still have to consider is the handling of duplicated
+keys. The macro defined by `define-case-macro` will reject case sets
+that contains duplicate keys under `eql`, but depending on the
+semantics of your macro, you may need to check for duplicates under a
+looser definition of equality.
+
+As a final example, if the `case` macro did not already exist, you
+could define it almost trivially using `define-case-macro`:
+
+    (define-case-macro my-case (expr &body clause)
+        (:default default)
+      `(cond
+         ,@(loop for (key . body) in clauses
+                 collect `((eql ,expr ,key) ,@body))
+         (t ,@body)))
+
+[View source](macro-tools.lisp#L412)
 
 ## Types
 
@@ -1131,6 +1195,13 @@ are being evaluated, and it is safe to close over the arguments.
 
 [View source](iter.lisp#L22)
 
+### `(defloop name args &body body)`
+
+Define a function, ensuring proper tail recursion.
+This is entirely equivalent to `defun` over `nlet`.
+
+[View source](iter.lisp#L77)
+
 ### `(with-collector (collector) &body body)`
 
 Within BODY, bind COLLECTOR to a function of one argument that
@@ -1142,14 +1213,14 @@ To see the collection so far, call COLLECTOR with no arguments.
 Note that this version COLLECTOR to a closure, not a macro: you can
 pass the collector around or return it like any other function.
 
-[View source](iter.lisp#L101)
+[View source](iter.lisp#L111)
 
 ### `(collecting &body body)`
 
 Like `with-collector`, with the collector bound to the result of
 interning `collect` in the current package.
 
-[View source](iter.lisp#L124)
+[View source](iter.lisp#L134)
 
 ### `(with-collectors (&rest collectors) &body body)`
 
@@ -1162,7 +1233,7 @@ Returns the final value of each collector as multiple values.
        (z 3))
      => '(1) '(2) '(3)
 
-[View source](iter.lisp#L131)
+[View source](iter.lisp#L141)
 
 ### `(summing &body body)`
 
@@ -1175,7 +1246,7 @@ To see the running sum, call `sum` with no arguments.
 
 Return the total.
 
-[View source](iter.lisp#L156)
+[View source](iter.lisp#L166)
 
 ## Conditions
 
@@ -1463,10 +1534,7 @@ Like `dict`, but the keys and values are implicitly quoted.
 
 ### `(href table &rest keys)`
 
-A concise way of doings lookups in (potentially nested) hash tables.
-
-    (href (dict :x 1) :x) => x
-    (href (dict :x (dict :y 2)) :x :y)  => y
+NO DOCS!
 
 [View source](hash-tables.lisp#L99)
 
@@ -1475,16 +1543,16 @@ A concise way of doings lookups in (potentially nested) hash tables.
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L110)
+[View source](hash-tables.lisp#L108)
 
-### `(@ table key &rest keys)`
+### `(@ table &rest keys)`
 
 A concise way of doings lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y 
 
-[View source](hash-tables.lisp#L148)
+[View source](hash-tables.lisp#L146)
 
 ### `(pophash key hash-table)`
 
@@ -1494,7 +1562,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L177)
+[View source](hash-tables.lisp#L171)
 
 ### `(swaphash key value hash-table)`
 
@@ -1504,7 +1572,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L188)
+[View source](hash-tables.lisp#L182)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -1514,14 +1582,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L198)
+[View source](hash-tables.lisp#L192)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L212)
+[View source](hash-tables.lisp#L206)
 
 ### `(merge-tables table &rest tables)`
 
@@ -1537,7 +1605,7 @@ All of the tables being merged must have the same value for
 Clojure`s `merge`.
 
 
-[View source](hash-tables.lisp#L223)
+[View source](hash-tables.lisp#L217)
 
 ### `(flip-hash-table table &key test key)`
 
@@ -1563,7 +1631,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L253)
+[View source](hash-tables.lisp#L247)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -1577,7 +1645,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L283)
+[View source](hash-tables.lisp#L277)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -1586,7 +1654,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L315)
+[View source](hash-tables.lisp#L309)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -1594,7 +1662,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L326)
+[View source](hash-tables.lisp#L320)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -1625,7 +1693,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L336)
+[View source](hash-tables.lisp#L330)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -1633,7 +1701,7 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L432)
+[View source](hash-tables.lisp#L426)
 
 ## Files
 
@@ -2569,27 +2637,27 @@ From Arc.
 
 [View source](strings.lisp#L405)
 
-### `(string^= prefix string &key start1 end1 start2 end2)`
-
-Is PREFIX a prefix of STRING?
-
-[View source](strings.lisp#L445)
-
 ### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
 [View source](strings.lisp#L445)
 
-### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
+### `(string^= prefix string &key start1 end1 start2 end2)`
 
-Like `string$=`, but case-insensitive.
+Is PREFIX a prefix of STRING?
 
-[View source](strings.lisp#L465)
+[View source](strings.lisp#L445)
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
 Is SUFFIX a suffix of STRING?
+
+[View source](strings.lisp#L465)
+
+### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
+
+Like `string$=`, but case-insensitive.
 
 [View source](strings.lisp#L465)
 
@@ -2991,6 +3059,13 @@ Return the prefix of SEQ for which PRED returns true.
 
 [View source](sequences.lisp#L739)
 
+### `(drop-while pred seq)`
+
+Return the largest possible suffix of SEQ for which PRED returns
+false when called on the first element.
+
+[View source](sequences.lisp#L745)
+
 ### `(bestn n seq pred &key key memo)`
 
 Partial sorting.
@@ -3200,4 +3275,25 @@ Like `tree-case`, but signals an error if KEYFORM does not match
 any of the provided cases.
 
 [View source](tree-case.lisp#L34)
+
+### `(char-case keyform &body clauses)`
+
+Like `case`, but specifically for characters.
+Expands into `tree-case`.
+
+As an extension to the generalized `case` syntax, the keys of a clause
+can be specified as a literal string.
+
+    (defun vowel? (c)
+      (char-case c
+        ("aeiouy" t)))
+
+[View source](tree-case.lisp#L57)
+
+### `(char-ecase keyform &body clauses)`
+
+Like `ecase`, but specifically for characters.
+Expands into `tree-case`.
+
+[View source](tree-case.lisp#L70)
 

@@ -81,7 +81,7 @@ Expands into `tree-case'."
           (tree-case (char-code ,keyform)
             ,@(loop for (char . body) in clauses
                     collect `(,(char-code char) ,@body))
-            (otherwise ,default)))))
+            (otherwise ,@default)))))
 
 (define-case-macro char-ecase-1 (keyform &body clauses)
     (:error t)

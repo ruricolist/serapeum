@@ -631,8 +631,12 @@ Otherwise, leave the keylist alone."
               ,(funcall cont expr-temp default clauses))
             ,@(apply #'append dests))))))
 
+(define-condition case-failure (type-error)
+  ()
+  (:documentation "A subtype of type-error specifically for case failures."))
+
 (defun case-failure (expr keys)
-  (error 'type-error
+  (error 'case-failure
          :datum expr
          :expected-type `(member ,@keys)))
 

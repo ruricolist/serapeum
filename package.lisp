@@ -18,6 +18,7 @@
    #:callf #:callf2
    #:define-do-macro
    #:define-post-modify-macro
+   #:case-failure
    #:define-case-macro
    ;; Types.
    #:->

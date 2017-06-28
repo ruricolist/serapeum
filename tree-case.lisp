@@ -63,8 +63,10 @@ can be specified as a literal string.
 
     (defun vowel? (c)
       (char-case c
-        (\"aeiouy\" t)))"
-  `(char-case-1 ,keyform
+        (\"aeiouy\" t)))
+
+Signals an error if KEYFORM does not evaluate to a character."
+  `(char-case-1 (assure character ,keyform)
      ,@(expand-char-case-keys clauses)))
 
 (defmacro char-ecase (keyform &body clauses)

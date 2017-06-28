@@ -52,3 +52,26 @@
   (is (eql #\a
            (char-case #\a
              ("abcd" #\a)))))
+
+(test char-ecase
+  (signals case-failure
+    (char-ecase #\a))
+  (is (eql #\a
+           (char-ecase #\a
+             (#\a #\a))))
+  (signals case-failure
+    (char-ecase #\a
+      (#\b #\b)))
+  (is (eql #\a
+           (char-ecase #\a
+             ((#\a #\b #\c) #\a))))
+  (is (eql #\a
+           (char-ecase #\a
+             ("abcd" #\a)))))
+
+(test char-case-error
+  (signals type-error
+    (char-case 2))
+
+  (signals type-error
+    (char-ecase 2)))

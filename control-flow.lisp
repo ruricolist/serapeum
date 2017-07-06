@@ -657,22 +657,18 @@ From Zetalisp."
   `(selector ,keyform eql
      ,@clauses))
 
-(defmacro selector (keyform fn &body clauses)
+(define-case-macro selector (keyform fn &body clauses)
+    (:default default)
   "Like `select', but compare using FN.
 
 Note that (unlike `case-using'), FN is not evaluated.
 
 From Zetalisp."
-  `(select-aux ,keyform cond ,fn ,@clauses))
-
-(defmacro select-aux (keyform cond fn &body clauses)
-  (once-only (keyform)
-    `(,cond
-       ,@(loop for (test . body) in clauses
-               collect (if (atom test)
-                           `((,fn ,keyform ,test) ,@body)
-                           `((or ,@(mapcar (lambda (x) `(,fn ,keyform ,x)) test))
-                             ,@body))))))
+  `(cond
+     ,@(loop for (test . body) in clauses
+             collect `((,fn ,keyform ,test)
+                       ,@body))
+     (t ,@default)))
 
 (def sorting-networks
   '((2

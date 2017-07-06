@@ -54,21 +54,15 @@ The term \"train\" is from J."
 ;;; but the binary case can be handled more efficiently, and I have
 ;;; not seen any other uses for it.
 
-(defun flip (f)
+(define-train flip (f)
   "Flip around the arguments of a binary function.
 
 That is, given a binary function, return another, equivalent function
 that takes its two arguments in the opposite order.
 
 From Haskell."
-  (let ((f (ensure-function f)))
-    (lambda (x y)
-      (funcall f y x))))
-
-(define-compiler-macro flip (fn)
-  (rebinding-functions (fn)
-    `(lambda (x y)
-       (funcall ,fn y x))))
+  `(lambda (x y)
+     (funcall ,f y x)))
 
 (defun nth-arg (n)
   "Return a function that returns only its NTH argument, ignoring all others.

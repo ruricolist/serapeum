@@ -916,7 +916,9 @@ But uses a selection algorithm for better performance than either."
              (key  (ensure-function key))
              (pred (if (eql key #'identity)
                        pred
-                       (fork pred key key))))
+                       (fbind (key pred)
+                         (lambda (x y)
+                           (pred (key x) (key y)))))))
         (quickselect seq n pred))))
 
 (-> quickselect (vector array-index function) t)

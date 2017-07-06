@@ -101,6 +101,7 @@
   (is (= 1 (nth-best 1 (shuffle (iota 1000)) #'<)))
   (is (= 2 (nth-best 2 (shuffle (iota 1000)) #'<)))
   (is (= 5 (nth-best 5 (shuffle (iota 1000)) #'<)))
+  (is (= 998 (nth-best 1 (shuffle (iota 1000)) #'< :key #'-)))
   (signals error
     (nth-best 1 () #'<))
   (signals error

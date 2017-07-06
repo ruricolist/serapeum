@@ -28,6 +28,28 @@
   (once-only (x)
     `(lambda (y) (equal ,x y))))
 
+(defmacro define-train (name args &body body)
+  "Define a function that takes only a fixed number of functions as arguments and returns another functions.
+
+Also define a compiler macro that inlines the resulting lambda
+expression, so compilers can eliminate it.
+
+The term \"train\" is from J."
+  (multiple-value-bind (body decls docstring)
+      (parse-body body :documentation t)
+    `(progn
+       (define-compiler-macro ,name ,args
+         ,@decls
+         (rebinding-functions ,args
+           ,@body))
+       (defun ,name ,args
+         ,@(unsplice docstring)
+         (macrolet ((,name ,args
+                      ,@decls
+                      (rebinding-functions ,args
+                        ,@body)))
+           (,name ,@args))))))
+
 ;;; It would of course be possible to define `flip' to be variadic,
 ;;; but the binary case can be handled more efficiently, and I have
 ;;; not seen any other uses for it.
@@ -224,3 +246,48 @@ propagate the current value of `*standard-output*':
             (multiple-value-prog1
                 (apply fn args)
               (map-into values #'symbol-value symbols)))))))
+
+;;; See http://www.jsoftware.com/papers/fork.htm.
+
+(define-train hook (f g)
+  "Monadic hook.
+From J.
+
+AKA Schoenfinkel's S combinator."
+  `(lambda (y)
+     (funcall ,f y (funcall ,g y))))
+
+(define-train fork (g f h)
+  "Monadic fork.
+From J."
+  `(lambda (y)
+     (funcall ,g
+              (funcall ,f y)
+              (funcall ,h y))))
+
+(define-train hook2 (f g)
+  "Dyadic hook.
+From J."
+  `(lambda (x y)
+     (funcall ,f x
+              (funcall ,g y))))
+
+(define-train fork2 (g f h)
+  "Dyadic fork.
+From J."
+  `(lambda (x y)
+     (funcall ,g
+              (funcall ,f x y)
+              (funcall ,h x y))))
+
+(define-train capped-fork (g f h)
+  "J's capped fork (monadic)."
+  f                                     ;Ignore f.
+  `(lambda (y)
+     (funcall ,g (funcall ,h y))))
+
+(define-train capped-fork2 (g f h)
+  "J's capped fork (dyadic)."
+  f                                     ;Ignore f.
+  `(lambda (x y)
+     (funcall ,g (funcall ,h x y))))

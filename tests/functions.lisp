@@ -29,3 +29,25 @@
    (let ((x 1))
      (declare (special x))
      (dynamic-closure '(x) (lambda () (symbol-value 'x))))))
+
+(test hook
+  (is (null (funcall (serapeum::hook #'= #'floor) 2.1)))
+  (is (funcall (serapeum::hook #'= #'floor) 3)))
+
+(test fork
+  (let ((sample (iota 100)))
+    (is (= (mean sample)
+           (funcall (serapeum::fork #'/
+                                    (curry #'reduce #'+)
+                                    #'length)
+                    sample)))))
+
+(test hook2
+  (is (= 3.25
+         (funcall (serapeum::hook2 #'+ (op (/ _ 60)))
+                  3 15))))
+
+(test fork2
+  (is (equal '(11 9)
+             (funcall (serapeum::fork2 #'list #'+ #'-)
+                      10 1))))

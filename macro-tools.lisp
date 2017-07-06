@@ -639,6 +639,7 @@ Otherwise, leave the keylist alone."
   (:documentation "A subtype of type-error specifically for case failures."))
 
 (defun case-failure (expr keys)
+  "Signal an error of type `case-failure'."
   (error 'case-failure
          :datum expr
          :expected-type `(member ,@keys)))

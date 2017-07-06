@@ -924,6 +924,7 @@ But uses a selection algorithm for better performance than either."
   "Hoare's quickselect, as implemented by Wirth (\"FIND\"), with
   refinements by V. Zabrodsky (\"MODIFIND\")."
   (declare (optimize (debug 0) (safety 1)))
+  (assert (< k (length a)))
   (fbind (lt)
     (with-vector-dispatch () a
       (loop with n = (length a)

@@ -200,6 +200,14 @@ Defaults to little-endian."
 
 LOW and HIGH are automatically swapped if HIGH is less than LOW.
 
+Note that the value of LOW+HIGH may be greater than the range that can
+be represented as a number in CL. E.g., you can generate a random double float with
+
+    (random-in-range most-negative-double-float most-positive-double-float)
+
+even though (+ most-negative-double-float most-positive-double-float)
+would cause a floating-point overflow.
+
 From Zetalisp."
   (when (> low high)
     (rotatef low high))

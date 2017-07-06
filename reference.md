@@ -1985,6 +1985,14 @@ Random number in the range [low,high).
 
 LOW and HIGH are automatically swapped if HIGH is less than LOW.
 
+Note that the value of LOW+HIGH may be greater than the range that can
+be represented as a number in CL. E.g., you can generate a random double float with
+
+    (random-in-range most-negative-double-float most-positive-double-float)
+
+even though (+ most-negative-double-float most-positive-double-float)
+would cause a floating-point overflow.
+
 From Zetalisp.
 
 [View source](numbers.lisp#L198)
@@ -3107,7 +3115,7 @@ Like `alexandria:shuffle`, but non-destructive.
 
 Regardless of the type of SEQ, the return value is always a vector.
 
-[View source](sequences.lisp#L947)
+[View source](sequences.lisp#L950)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3117,7 +3125,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L953)
+[View source](sequences.lisp#L956)
 
 ### `(halves seq &optional split)`
 
@@ -3133,14 +3141,14 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L994)
+[View source](sequences.lisp#L997)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1028)
+[View source](sequences.lisp#L1031)
 
 ### `(deltas seq &optional fn)`
 
@@ -3160,14 +3168,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1043)
+[View source](sequences.lisp#L1046)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1067)
+[View source](sequences.lisp#L1070)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3197,14 +3205,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1104)
+[View source](sequences.lisp#L1107)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1162)
+[View source](sequences.lisp#L1165)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3248,14 +3256,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1191)
+[View source](sequences.lisp#L1194)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1233)
+[View source](sequences.lisp#L1236)
 
 ### `(repeat-sequence seq n)`
 
@@ -3279,7 +3287,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1270)
+[View source](sequences.lisp#L1273)
 
 ## Tree Case
 

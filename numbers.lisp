@@ -208,11 +208,19 @@ From Zetalisp."
            :operation 'random-in-range
            :operands (list low high)))
   (if (and (minusp low) (plusp high))
-      ;; We do it this way lest low+high exceed the possible size of a
-      ;; float. E.g. (random-in-range most-negative-double-float
-      ;; most-positive-double-float) should work.
-      (+ (- (random (abs low)))
-         (random high))
+      ;; Arrange for float contagion if LOW and HIGH are of different
+      ;; precisions. E.g. (random-in-range most-negative-single-float
+      ;; most-positive-double-float) should return the same range of
+      ;; results as (random-in-range (coerce
+      ;; most-negative-single-float 'double-float)
+      ;; most-positive-double-float).
+      (let ((low (+ low (* 0 high)))
+            (high (+ high (* 0 low))))
+        ;; We do it this way lest low+high exceed the possible size of a
+        ;; float. E.g. (random-in-range most-negative-double-float
+        ;; most-positive-double-float) should work.
+        (+ (- (random (abs low)))
+           (random high)))
       (let ((range (- high low)))
         (+ low (random range)))))
 

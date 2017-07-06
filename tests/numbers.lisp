@@ -32,4 +32,23 @@
 
   (signals error
     (locally (declare (notinline random-in-range))
-      (random-in-range 1 1))))
+      (random-in-range 1 1)))
+
+  (multiple-value-bind (results1 results2)
+      (let* ((rs1 (make-random-state nil))
+             (rs2 (make-random-state rs1))
+             (n 10)
+             (results1 (let ((*random-state* rs1))
+                         (loop repeat n
+                               collect
+                               (random-in-range
+                                most-negative-single-float
+                                most-positive-double-float))))
+             (results2 (let ((*random-state* rs2))
+                         (loop repeat n
+                               collect
+                               (random-in-range
+                                (coerce most-negative-single-float 'double-float)
+                                most-positive-double-float)))))
+        (values results1 results2))
+    (is (every #'= results1 results2))))

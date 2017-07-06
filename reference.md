@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (29 files, 275 functions)
+# Function Listing For SERAPEUM (29 files, 277 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -253,6 +253,12 @@ could define it almost trivially using `define-case-macro`:
          (t ,@body)))
 
 [View source](macro-tools.lisp#L412)
+
+### `(case-failure expr keys)`
+
+Signal an error of type `case-failure`.
+
+[View source](macro-tools.lisp#L641)
 
 ## Types
 
@@ -1146,7 +1152,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L783)
+[View source](control-flow.lisp#L779)
 
 ## Threads
 
@@ -1331,7 +1337,7 @@ that takes its two arguments in the opposite order.
 
 From Haskell.
 
-[View source](functions.lisp#L35)
+[View source](functions.lisp#L57)
 
 ### `(nth-arg n)`
 
@@ -1349,7 +1355,7 @@ define it thus:
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))
 
-[View source](functions.lisp#L51)
+[View source](functions.lisp#L67)
 
 ### `(distinct &key key test)`
 
@@ -1368,7 +1374,7 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
-[View source](functions.lisp#L76)
+[View source](functions.lisp#L92)
 
 ### `(throttle fn wait &key synchronized memoized)`
 
@@ -1384,7 +1390,7 @@ to get a version with a lock.
 You can pass MEMOIZED if you want the function to remember values
 between calls.
 
-[View source](functions.lisp#L102)
+[View source](functions.lisp#L118)
 
 ### `(juxt &rest fns)`
 
@@ -1403,7 +1409,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-[View source](functions.lisp#L166)
+[View source](functions.lisp#L182)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -1428,7 +1434,7 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-[View source](functions.lisp#L196)
+[View source](functions.lisp#L212)
 
 ## Trees
 
@@ -3079,13 +3085,29 @@ The name is from Arc.
 
 [View source](sequences.lisp#L850)
 
+### `(nth-best n seq pred &key key)`
+
+Return the Nth-best element of SEQ under PRED.
+
+Equivalent to
+
+    (elt (sort (copy-seq seq) pred) n)
+
+Or even
+
+    (elt (bestn (1+ n) seq pred) n)
+
+But uses a selection algorithm for better performance than either.
+
+[View source](sequences.lisp#L899)
+
 ### `(reshuffle seq)`
 
 Like `alexandria:shuffle`, but non-destructive.
 
 Regardless of the type of SEQ, the return value is always a vector.
 
-[View source](sequences.lisp#L900)
+[View source](sequences.lisp#L947)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3095,7 +3117,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L906)
+[View source](sequences.lisp#L953)
 
 ### `(halves seq &optional split)`
 
@@ -3111,14 +3133,14 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L947)
+[View source](sequences.lisp#L994)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L981)
+[View source](sequences.lisp#L1028)
 
 ### `(deltas seq &optional fn)`
 
@@ -3138,14 +3160,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L996)
+[View source](sequences.lisp#L1043)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1020)
+[View source](sequences.lisp#L1067)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3175,14 +3197,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1057)
+[View source](sequences.lisp#L1104)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1115)
+[View source](sequences.lisp#L1162)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3226,14 +3248,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1144)
+[View source](sequences.lisp#L1191)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1186)
+[View source](sequences.lisp#L1233)
 
 ### `(repeat-sequence seq n)`
 
@@ -3257,7 +3279,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1223)
+[View source](sequences.lisp#L1270)
 
 ## Tree Case
 
@@ -3288,12 +3310,14 @@ can be specified as a literal string.
       (char-case c
         ("aeiouy" t)))
 
-[View source](tree-case.lisp#L57)
+Signals an error if KEYFORM does not evaluate to a character.
+
+[View source](tree-case.lisp#L47)
 
 ### `(char-ecase keyform &body clauses)`
 
 Like `ecase`, but specifically for characters.
 Expands into `tree-case`.
 
-[View source](tree-case.lisp#L70)
+[View source](tree-case.lisp#L62)
 

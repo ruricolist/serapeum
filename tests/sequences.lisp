@@ -96,9 +96,22 @@
      (equal (firstn 20 (sort (copy-list list) #'string> :key #'princ-to-string))
             (bestn 20 list #'string> :key #'princ-to-string)))))
 
+(test nth-best
+  (is (= 0 (nth-best 0 (shuffle (iota 1000)) #'<)))
+  (is (= 1 (nth-best 1 (shuffle (iota 1000)) #'<)))
+  (is (= 2 (nth-best 2 (shuffle (iota 1000)) #'<)))
+  (is (= 5 (nth-best 5 (shuffle (iota 1000)) #'<)))
+  (signals error
+    (nth-best 1 () #'<))
+  (signals error
+    (nth-best 10000 (shuffle (iota 1000)) #'<))
+  (signals error
+    (nth-best -1 (shuffle (iota 1000)) #'<))
+  (signals error
+    (nth-best 1001 (shuffle (iota 1000)) #'<)))
+
 (test extrema
   (is (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5))))
-
 
 (test halves
   (is (equal (halves '(x)) '(x)))

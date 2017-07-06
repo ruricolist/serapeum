@@ -530,7 +530,10 @@ Otherwise, leave the keylist alone."
         for (keylist . body) = clause
         if (null keylist)
           do (progn)
-        else if (and (listp keylist) (null (rest keylist)))
+        else if (and (listp keylist)
+                     (null (rest keylist))
+                     ;; Protect the key if the key is itself a list.
+                     (atom (first keylist)))
                collect (cons (first keylist) body)
         else
           collect clause))

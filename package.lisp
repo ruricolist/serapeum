@@ -305,6 +305,7 @@
    #:longest
    #:ordering
    #:bestn
+   #:nth-best
    #:reshuffle
    #:extrema
    #:nsubseq

@@ -896,6 +896,53 @@ The name is from Arc."
                (let ((bestn (take n (nreverse (heap-extract-all heap :key key :test #'test)))))
                  (make-sequence-like seq n :initial-contents bestn)))))))
 
+(defun nth-best (n seq pred &key (key #'identity))
+  "Return the Nth-best element of SEQ under PRED.
+
+Equivalent to
+
+    (elt (sort (copy-seq seq) pred) n)
+
+Or even
+
+    (elt (bestn (1+ n) seq pred) n)
+
+But uses a selection algorithm for better performance than either."
+  (check-type n array-index)
+  (if (zerop n)
+      (extremum seq pred :key key)
+      (let* ((seq  (copy-sequence 'vector seq))
+             (pred (ensure-function pred))
+             (key  (ensure-function key))
+             (pred (if (eql key #'identity)
+                       pred
+                       (fork pred key key))))
+        (quickselect seq n pred))))
+
+(-> quickselect (vector array-index function) t)
+(defun quickselect (a k lt)
+  "Hoare's quickselect, as implemented by Wirth (\"FIND\"), with
+  refinements by V. Zabrodsky (\"MODIFIND\")."
+  (declare (optimize (debug 0) (safety 1)))
+  (fbind (lt)
+    (with-vector-dispatch () a
+      (loop with n = (length a)
+            with l of-type array-index = 0
+            with r of-type array-index = (1- n)
+            for x = (vref a k)
+            for i = l
+            for j = r
+            while (< l r) do
+              (loop until (or (< j k) (< k i))
+                    do (loop while (lt (vref a i) x) do (incf i))
+                       (loop while (lt x (vref a j)) do (decf j))
+                       (rotatef (vref a i) (vref a j))
+                       (incf i)
+                       (decf j))
+              (when (< j k) (setf l i))
+              (when (< k i) (setf r j))
+            finally (return (vref a k))))))
+
 (-> reshuffle (sequence) vector)
 (defun reshuffle (seq)
   "Like `alexandria:shuffle', but non-destructive.

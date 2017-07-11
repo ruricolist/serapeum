@@ -87,7 +87,7 @@ From Arc."
 (defun memq (item list)
   "Like (member ... :test #'eq).
 Should only be used for symbols."
-  (declare (optimize (speed 3) (safety 0))
+  (declare (optimize (speed 3) (safety 0) (debug 0))
            (list list))
   ;; Cf. Richard Fateman, "Code ‘Bumming’ for testing membership.".
   (tagbody loop

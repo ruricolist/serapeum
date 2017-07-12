@@ -296,7 +296,7 @@ Cf. `string-case'."
 Stands for “exhaustive if”."
   `(if ,test ,then ,else))
 
-(defmacro eif-let (binds then else)
+(defmacro eif-let (binds &body (then else))
   "Like `alexandria:if-let', but requires two branches."
   `(if-let ,binds ,then ,else))
 

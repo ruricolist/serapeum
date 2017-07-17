@@ -291,13 +291,19 @@ Cf. `string-case'."
   `(string-case ,stringform
      ,@clauses))
 
-(defmacro eif (test then else)
-  "Like `cl:if', but requires two branches.
+(defmacro eif (&whole whole test then &optional (else nil else?))
+  "Like `cl:if', but expects two branches.
 Stands for “exhaustive if”."
+  (unless else?
+    (warn "Missing else-branch in eif form:~%~a"
+          whole))
   `(if ,test ,then ,else))
 
-(defmacro eif-let (binds &body (then else))
-  "Like `alexandria:if-let', but requires two branches."
+(defmacro eif-let (&whole whole binds &body (then &optional (else nil else?)))
+  "Like `alexandria:if-let', but expects two branches."
+  (unless else?
+    (warn "Missing else-branch in eif-let form:~%~a"
+          whole))
   `(if-let ,binds ,then ,else))
 
 (defun format-econd-tests (stream tests)

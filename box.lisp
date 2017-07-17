@@ -23,17 +23,6 @@ recognize boxes using a type or predicate."
 (setf (documentation 'box 'function)
       "Box a value.")
 
-(defmethod print-object ((self box) stream)
-  (print-unreadable-object (self stream :type t :identity t)
-    (format stream "~a" (unbox self))))
-
-(defmethod make-load-form ((self box) &optional env)
-  (declare (ignore env))
-  (values `(box)
-          `(setf (unbox ',self) ,(unbox self))))
-
-(declaim (inline unbox (setf unbox)))
-
 (defsubst unbox (x)
   "The value in the box X."
   (box-value x))
@@ -49,3 +38,12 @@ recognize boxes using a type or predicate."
 
 (define-compiler-macro (setf unbox) (value x)
   `(setf (box-value ,x) ,value))
+
+(defmethod print-object ((self box) stream)
+  (print-unreadable-object (self stream :type t :identity t)
+    (format stream "~a" (unbox self))))
+
+(defmethod make-load-form ((self box) &optional env)
+  (declare (ignore env))
+  (values `(box)
+          `(setf (unbox ',self) ,(unbox self))))

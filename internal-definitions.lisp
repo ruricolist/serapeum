@@ -317,6 +317,17 @@ them sane initialization values."
           if (constantp expr)
             collect `(,var ,expr)
           else collect `(,var ,(wrap-expr self expr))))
+  (:method wrap-fn-bindings (self bindings)
+    (loop for (var args . body) in bindings
+          collect (multiple-value-bind (body decls docstring)
+                      (parse-body body :documentation t)
+                    `(,var ,args
+                           ,@decls
+                           ,docstring
+                           ,(wrap-expr
+                             self
+                             `(progn
+                                ,@body))))))
   (:method step-expansion (self form)
     (multiple-value-bind (exp exp?)
         (expand-in-env-1 self form env)
@@ -487,7 +498,7 @@ them sane initialization values."
             bindings &body body)
            (let ((*subenv* (augment/funs bindings)))
              (multiple-value-bind (body decls) (parse-body body)
-               `(,(car form) ,bindings
+               `(,(car form) ,(wrap-fn-bindings self bindings)
                  ,@decls
                  ,(expand-body self body)))))
 

@@ -289,6 +289,34 @@
              (symbol-macrolet ((x 1))
                (let ((x x))
                  x))))))
+
+(test symbol-macrolet-over-flet
+  (is (eql 2
+           (local
+             (symbol-macrolet ((x 1))
+               (flet ((x (y)
+                        (declare (number x))
+                        "Add x and y."
+                        (+ x y)))
+                 (x 1)))))))
+
+(test symbol-macrolet-over-labels
+  (is (eql 2
+           (local
+             (symbol-macrolet ((x 1))
+               (labels ((x (y)
+                          (declare (number x))
+                          "Add x and y."
+                          (+ x y)))
+                 (x 1)))))))
+
+(test symbol-macrolet-over-labels
+  (is (eql 1
+           (local
+             (symbol-macrolet ((x 1))
+               (labels ((x () x))
+                 (x)))))))
+
 (test defstruct-read-only
   (is (equal '(defstruct (foo (:copier nil))
                (bar (required-argument 'bar) :read-only t))

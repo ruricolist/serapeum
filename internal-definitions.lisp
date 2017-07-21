@@ -492,9 +492,17 @@ them sane initialization values."
                  ,(expand-body self body)))))
 
           ;; VARIABLE BINDING FORMS.
-          (((let let*)
-            bindings &body body)
-           ;; TODO Should be put the wrapped bindings in the subenv?
+          ((let bindings &body body)
+           ;; NB Expand the bindings before you augment the env.
+           (let* ((bindings (wrap-bindings self bindings))
+                  (*subenv* (augment/vars bindings)))
+             (multiple-value-bind (body decls) (parse-body body)
+               `(,(car form) ,bindings
+                 ,@decls
+                 ,(expand-body self body)))))
+
+          ((let* bindings &body body)
+           ;; NB Augment the env before you wrap the bindings.
            (let* ((*subenv* (augment/vars bindings))
                   (bindings (wrap-bindings self bindings)))
              (multiple-value-bind (body decls) (parse-body body)

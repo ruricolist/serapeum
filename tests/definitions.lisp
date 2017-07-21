@@ -283,6 +283,12 @@
            (def x y))
          x))))
 
+(test symbol-macrolet-over-let
+  (is (eql 1
+           (local
+             (symbol-macrolet ((x 1))
+               (let ((x x))
+                 x))))))
 (test defstruct-read-only
   (is (equal '(defstruct (foo (:copier nil))
                (bar (required-argument 'bar) :read-only t))

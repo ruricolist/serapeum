@@ -310,13 +310,6 @@
                           (+ x y)))
                  (x 1)))))))
 
-(test symbol-macrolet-over-labels
-  (is (eql 1
-           (local
-             (symbol-macrolet ((x 1))
-               (labels ((x () x))
-                 (x)))))))
-
 (test defstruct-read-only
   (is (equal '(defstruct (foo (:copier nil))
                (bar (required-argument 'bar) :read-only t))

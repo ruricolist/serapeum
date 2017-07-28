@@ -3,6 +3,8 @@
 ;; Ensure TCO when possible.
 (declaim (optimize (speed 3) (debug 1)))
 
+(declaim (inline reuse-cons))
+
 (defun reuse-cons (x y x-y)
   "If X and Y are the car and cdr of X-Y, return X-Y.
 
@@ -66,10 +68,12 @@ case SUBTREE will be used as the value of the subtree."
   "Call FUN on each leaf of TREE."
   (declare (optimize speed (debug 1)))
   (let ((fun (ensure-function fun)))
-    (cond ((atom tree)
-           (funcall fun tree))
-          (t (leaf-walk fun (car tree))
-             (leaf-walk fun (cdr tree)))))
+    (labels ((leaf-walk (fun tree)
+               (cond ((atom tree)
+                      (funcall fun tree))
+                     (t (leaf-walk fun (car tree))
+                        (leaf-walk fun (cdr tree))))))
+      (leaf-walk fun tree)))
   (values))
 
 ;;; https://code.google.com/p/sparser/source/browse/trunk/util/util.lisp?spec=svn737&r=737
@@ -77,11 +81,12 @@ case SUBTREE will be used as the value of the subtree."
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
   (let ((fn (ensure-function fn)))
-    (map-tree (lambda (x)
-                (if (listp x)
-                    x
-                    (funcall fn x)))
-              tree)))
+    (flet ((map-fn (x)
+             (if (listp x)
+                 x
+                 (funcall fn x))))
+      (declare (dynamic-extent #'map-fn))
+      (map-tree #'map-fn tree))))
 
 (defun occurs-if (test tree &key (key #'identity))
   "Is there a node (leaf or cons) in TREE that satisfies TEST?"
@@ -111,8 +116,14 @@ Return a new tree possibly sharing structure with TREE."
 (defun occurs (leaf tree &key (key #'identity) (test #'eql))
   "Is LEAF present in TREE?"
   (nth-value 1
-    (occurs-if (curry test leaf) tree :key key)))
+    (ensuring-functions (test)
+      (flet ((test (x) (funcall test leaf x)))
+        (declare (dynamic-extent #'test))
+        (occurs-if #'test tree :key key)))))
 
 (defun prune (leaf tree &key (key #'identity) (test #'eql))
   "Remove LEAF from TREE wherever it occurs."
-  (prune-if (curry test leaf) tree :key key))
+  (ensuring-functions (test)
+    (flet ((test (x) (funcall test leaf x)))
+      (declare (dynamic-extent #'test))
+      (prune-if #'test tree :key key))))

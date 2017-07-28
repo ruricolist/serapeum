@@ -310,6 +310,16 @@
                           (+ x y)))
                  (x 1)))))))
 
+(test blocks-introduce-lexical-contours
+  (is-true (occurs "foo"
+                   (macroexpand
+                    '(local (block block
+                              (progn "foo")
+                              (progn
+                                (with-simple-restart (abort "Abort"))
+                                "bar"))))
+                   :test #'equal)))
+
 (test defstruct-read-only
   (is (equal '(defstruct (foo (:copier nil))
                (bar (required-argument 'bar) :read-only t))

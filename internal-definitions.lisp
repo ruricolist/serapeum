@@ -138,6 +138,14 @@ them sane initialization values."
   (:method ((env null))
     nil))
 
+(defgeneric .blocks (env)
+  (:method ((env null))
+    nil))
+
+(defgeneric .tags (env)
+  (:method ((env null))
+    nil))
+
 (defun expand-binding (bind)
   (if (listp bind)
       (if (rest bind)
@@ -149,39 +157,66 @@ them sane initialization values."
   (mapcar #'expand-binding bindings))
 
 (defclass subenv ()
-  ((vars :initarg :vars :reader .vars)
-   (funs :initarg :funs :reader .funs))
+  ((vars :type list :initarg :vars :reader .vars)
+   (funs :type list :initarg :funs :reader .funs)
+   (blocks :type list :initarg :blocks :reader .blocks)
+   (tags :type list :initarg :tags :reader .tags))
   (:default-initargs
    :vars nil
-   :funs nil)
+   :funs nil
+   :blocks nil
+   :tags nil)
   (:documentation "Minimal lexical environment."))
+
+(defun copy-subenv (subenv
+                    &key (vars (.vars subenv))
+                         (funs (.funs subenv))
+                         (blocks (.blocks subenv))
+                         (tags (.tags subenv)))
+  (make 'subenv
+        :vars vars
+        :funs funs
+        :blocks blocks
+        :tags tags))
 
 (defun augment/vars (binds &optional (subenv *subenv*))
   (let ((vars (mapcar (op (apply #'var (expand-binding _))) binds)))
-    (make 'subenv
-          :vars (append vars (.vars subenv))
-          :funs (.funs subenv))))
+    (copy-subenv subenv
+                 :vars (append vars (.vars subenv)))))
 
 (defun augment/symbol-macros (symbol-macros &optional (subenv *subenv*))
-  (make 'subenv
-        :vars (append (mapcar (op (apply #'symbol-macro _)) symbol-macros)
-                      (.vars subenv))
-        :funs (.funs subenv)))
+  (copy-subenv subenv
+               :vars (append (mapcar (op (apply #'symbol-macro _)) symbol-macros)
+                             (.vars subenv))))
+
+(defun augment/block (block &optional (subenv *subenv*))
+  (copy-subenv subenv
+               :blocks (cons block (.blocks subenv))))
+
+(defun augment/tags (tags &optional (subenv *subenv*))
+  (copy-subenv subenv
+               :tags (append tags (.tags subenv))))
+
+(defun tagbody-tag? (form)
+  (typep form '(or symbol integer)))
+
+(defun extract-tagbody-tags (body)
+  ;; It's not documented in CLHS, but SBCL and CCL agree that a tag
+  ;; must be a symbol or an integer.
+  (filter #'tagbody-tag? body))
 
 (defun augment/funs (funs &optional (subenv *subenv*))
-  (make 'subenv
-        :vars (.vars subenv)
-        :funs (append (mapcar (lambda (spec)
-                                (fun (first spec) (rest spec)))
-                              funs)
-                      (.funs subenv))))
+  (copy-subenv subenv
+               :funs (append (mapcar (lambda (spec)
+                                       (fun (first spec) (rest spec)))
+                                     funs)
+                             (.funs subenv))))
 
 ;;; Of course this isn't used at the moment.
 (defun augment/macros (macros &optional (subenv *subenv*))
-  (make 'subenv
-        :vars (.vars subenv)
-        :funs (append (mapcar (op (apply #'macro _)) macros)
-                      (.funs subenv))))
+  (copy-subenv subenv
+               :funs (append (mapcar (op (apply #'macro _)) macros)
+                             (.funs subenv))))
 
 (defun visible-of-type (type subenv)
   (let* ((vars (.vars subenv))
@@ -273,6 +308,8 @@ them sane initialization values."
                                   forms)))
                     (throw 'local
                       (append wrapper (list `(local ,@body)))))))))))
+  (:method splice-forms (self spliced-forms)
+    (invoke-restart 'splice spliced-forms))
   (:method eject-macro (self name wrapper)
     (invoke-restart 'eject-macro name wrapper))
   (:method expand-body (self body)
@@ -459,7 +496,7 @@ them sane initialization values."
                (expand-partially self (first body))
                (if *subenv*
                    `(progn ,@(mapcar (op (expand-partially self _)) body))
-                   (invoke-restart 'splice body))))
+                   (splice-forms self body))))
 
           (((prog1 multiple-value-prog1) f &body body)
            `(,(car form) ,(expand-partially self f)
@@ -483,7 +520,8 @@ them sane initialization values."
                 ,(expand-body self body))))
 
           ((block name &body body)
-           `(block ,name ,(expand-body self body)))
+           (let ((*subenv* (augment/block name)))
+             `(block ,name ,(expand-body self body))))
 
           ((progv vars expr &body body)
            ;; Is this really the right way to handle progv? Should we

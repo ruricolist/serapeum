@@ -88,42 +88,46 @@
                 :components
                 ((:file "tree-case")))))
 
-(asdf:defsystem #:serapeum/tests
+(asdf:defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
-  :depends-on (#:serapeum
-               #:fiveam)
+  :depends-on ("serapeum" "fiveam")
   :perform (asdf:test-op (o c) (uiop:symbol-call :serapeum.tests :run-tests))
   :pathname "tests/"
+  :serial t
   :components ((:file "package")
                (:file "tests"        :depends-on ("package"))
-               (:file "macro-tools"  :depends-on ("tests"))
-               (:file "types"        :depends-on ("tests"))
-               (:file "definitions"  :depends-on ("tests"))
-               (:file "binding"      :depends-on ("tests"))
-               (:file "control-flow" :depends-on ("tests"))
-               (:file "threads"      :depends-on ("tests"))
-               (:file "iteration"    :depends-on ("tests"))
-               (:file "conditions"   :depends-on ("tests"))
-               (:file "op"           :depends-on ("tests"))
-               (:file "functions"    :depends-on ("tests"))
-               (:file "trees"        :depends-on ("tests"))
-               (:file "hash-tables"  :depends-on ("tests"))
-               (:file "files"        :depends-on ("tests"))
-               (:file "symbols"      :depends-on ("tests"))
-               (:file "arrays"       :depends-on ("tests"))
-               (:file "queue"        :depends-on ("tests"))
-               (:file "box"          :depends-on ("tests"))
-               (:file "vectors"      :depends-on ("tests"))
-               (:file "numbers"      :depends-on ("tests"))
-               (:file "octets"       :depends-on ("tests"))
-               (:file "time"         :depends-on ("tests"))
-               (:file "clos"         :depends-on ("tests"))
-               (:file "hooks"        :depends-on ("tests"))
-               (:file "fbind"        :depends-on ("tests"))
-               (:file "lists"        :depends-on ("tests"))
-               (:file "strings"      :depends-on ("tests"))
-               (:file "sequences"    :depends-on ("tests"))
-               (:file "tree-case"    :depends-on ("tests"))
-               (:file "quicklisp"    :depends-on ("tests"))))
+               (:module "test suites"
+                :pathname ""
+                :serial nil
+                :components
+                ((:file "macro-tools")
+                 (:file "types")
+                 (:file "definitions")
+                 (:file "binding")
+                 (:file "control-flow")
+                 (:file "threads")
+                 (:file "iteration")
+                 (:file "conditions")
+                 (:file "op")
+                 (:file "functions")
+                 (:file "trees")
+                 (:file "hash-tables")
+                 (:file "files")
+                 (:file "symbols")
+                 (:file "arrays")
+                 (:file "queue")
+                 (:file "box")
+                 (:file "vectors")
+                 (:file "numbers")
+                 (:file "octets")
+                 (:file "time")
+                 (:file "clos")
+                 (:file "hooks")
+                 (:file "fbind")
+                 (:file "lists")
+                 (:file "strings")
+                 (:file "sequences")
+                 (:file "tree-case")
+                 (:file "quicklisp")))))

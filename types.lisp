@@ -260,7 +260,37 @@ depending on the type being specialized on."
              (declare #+sbcl (sb-ext:enable-package-locks vref))
              ,@body)))))
 
-(defmacro with-type-dispatch (&environment env (&rest types) var &body body)
+(defmacro with-type-declarations-trusted (&environment env (&key) &body body)
+  ;; The way to do this in SBCL and CMUCL is to use truly-the.
+  (cond
+    ((or #+ccl t)
+     ;; Try to force CCL to trust our declarations. According to
+     ;; <https://trac.clozure.com/ccl/wiki/DeclareOptimize>, that
+     ;; requires safety<3 and speed>=safety. But, if the
+     ;; pre-existing values for safety and speed are acceptable,
+     ;; we don't want to overwrite them.
+     (multiple-value-bind (speed safety)
+         (let ((speed  (policy-quality 'speed env))
+               (safety (policy-quality 'safety env)))
+           (if (and (< safety 3)
+                    (>= speed safety))
+               (values speed safety)
+               (let* ((safety (min safety 2))
+                      (speed  (max speed safety)))
+                 (values speed safety))))
+       (assert (and (< safety 3)
+                    (>= speed safety)))
+       `(locally
+            (declare
+             (optimize (speed ,speed)
+                       (safety ,safety)))
+          ,@body)))
+    ;; If you know how to make a particular Lisp trust type
+    ;; declarations, feel free to make a pull request, or open an
+    ;; issue.
+    (t `(progn ,@body))))
+
+(defmacro with-type-dispatch ((&rest types) var &body body)
   "A macro for writing fast sequence functions (among other things).
 
 In the simplest case, this macro produces one copy of BODY for each
@@ -323,46 +353,25 @@ Functions\", by Irène Durand and Robert Strandh."
                 (etypecase ,var
                   ,@(loop for type in types
                           collect `(,type (,fun (truly-the ,type ,var))))))))
-          ;; Try to force CCL to trust our declarations. According to
-          ;; <https://trac.clozure.com/ccl/wiki/DeclareOptimize>, that
-          ;; requires safety<3 and speed>=safety. But, if the
-          ;; pre-existing values for safety and speed are acceptable,
-          ;; we don't want to overwrite them.
           ((or #+ccl t)
-           (multiple-value-bind (speed safety)
-               (let ((speed  (policy-quality 'speed env))
-                     (safety (policy-quality 'safety env)))
-                 (if (and (< safety 3)
-                          (>= speed safety))
-                     (values speed safety)
-                     (let* ((safety (min safety 2))
-                            (speed  (max speed safety)))
-                       (values speed safety))))
-             (assert (and (< safety 3)
-                          (>= speed safety)))
-             `(locally
-                  (declare
-                   (optimize (speed ,speed)
-                             (safety ,safety)))
-                (etypecase ,var
-                  ,@(loop for type in types
-                          collect `(,type
-                                    (locally (declare (type ,type ,var))
-                                      (with-read-only-var (,var)
-                                        ,@body))))))))
-          ;; If you know how to make this work more efficiently on a
-          ;; particular Lisp implementation, feel free to make a pull
-          ;; request, or open an issue.
-          (t
-           `(etypecase ,var
-              ,@(loop for type in types
-                      collect `(,type
-                                ;; Overkill?
-                                (locally (declare (type ,type ,var))
-                                  (let ((,var ,var))
-                                    (declare (type ,type ,var))
+           `(with-type-declarations-trusted ()
+              (etypecase ,var
+                ,@(loop for type in types
+                        collect `(,type
+                                  (locally (declare (type ,type ,var))
                                     (with-read-only-var (,var)
-                                      ,@body))))))))))
+                                      ,@body)))))))
+          (t
+           `(with-type-declarations-trusted ()
+              (etypecase ,var
+                ,@(loop for type in types
+                        collect `(,type
+                                  ;; Overkill?
+                                  (locally (declare (type ,type ,var))
+                                    (let ((,var ,var))
+                                      (declare (type ,type ,var))
+                                      (with-read-only-var (,var)
+                                        ,@body)))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)

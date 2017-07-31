@@ -107,10 +107,14 @@ may be used to make calling VAR more efficient by avoiding `apply'."
   (cond ((null bindings) nil)
         ((symbolp bindings)
          `((,bindings ,bindings)))
-        (t (loop for binding in bindings
-                 if (symbolp binding)
-                   collect `(,binding ,binding)
-                 else collect binding))))
+        (t (let ((bindings
+                   (loop for binding in bindings
+                         if (symbolp binding)
+                           collect `(,binding ,binding)
+                         else collect binding)))
+             ;; Ensure bindings are of the correct length.
+             (loop for (name expr) in bindings
+                   collect (list name expr))))))
 
 ;;; TODO Handle let*, mvbind?
 (defun let-over-lambda (form)

@@ -287,7 +287,6 @@ STRICT determines whether to check that the list actually is a set.
 The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)"
-  (check-type test ok-hash-table-test)
   (let* ((hash-table-args
            (remove-from-plist hash-table-args
                               :key :strict))

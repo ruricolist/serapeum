@@ -26,19 +26,9 @@ The same shortcut works for keywords.
           :from-end t
           :initial-value 'null))
 
-(deftype ok-hash-table-test ()
-  '(and (or symbol function)
-    (satisfies hash-table-test-p)))
-
 (deftype -> (args values)
   "The type of a function from ARGS to VALUES."
   `(function ,args ,values))
-
-(defun hash-table-test-p (x)
-  (etypecase x
-    (symbol (member x '(eq eql equal equalp)))
-    (function (member x (load-time-value
-                         (list #'eq #'eql #'equal #'equalp))))))
 
 (defmacro -> (function args values)
   "Declaim the ftype of FUNCTION from ARGS to VALUES.

@@ -105,7 +105,6 @@ This has many uses, for example:
 
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))"
-  (check-type test ok-hash-table-test)
   (let ((dict (make-hash-table :test test))
         (key (ensure-function key)))
     (lambda (arg)

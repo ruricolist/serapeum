@@ -243,6 +243,45 @@ analyze it into an environment, declarations, and a lambda."
             (nreverse binds)
             (nreverse lambdas))))
 
+(defmacro %fbind (bindings &body body)
+  "Simplified version of `fbind' that bindings the function as a local
+macro.
+
+This can only be used when it is known for sure that BODY does not
+refer to any of the fbindings by their function-quoted name.
+
+Ideally, we would use this instead of a full `fbind' when possible,
+but that would require a full code walker to examine the body for
+function quotes (or the ability to shadow `function').
+
+Note that this may still expand into an `flet' if any of the
+expressions being fbound can be expanded into a `lambda' form."
+  (mvlet* ((bindings (expand-fbindings bindings))
+           (env env-decls bindings lambdas
+            (analyze-fbinds bindings))
+           (temps (make-gensym-list (length bindings)))
+           (names (mapcar #'first bindings))
+           (exprs (mapcar #'second bindings))
+           (body decls (parse-body body)))
+    (when (partition-declarations
+           (loop for name in names
+                 collect `(function ,name))
+           decls)
+      (error "Cannot use %fbind with declarations."))
+    `(let ,env
+       ,@(unsplice (and env-decls `(declare ,@env-decls)))
+       (let ,(loop for temp in temps
+                   for expr in exprs
+                   collect `(,temp (ensure-function ,expr)))
+         ,@(unsplice (and temps `(declare (function ,@temps))))
+         (flet (,@(loop for (name lambda) in lambdas
+                        collect `(,name ,@(rest lambda))))
+           (macrolet ,(loop for temp in temps
+                            for name in names
+                            collect `(,name (&rest args)
+                                            (list* 'funcall ',temp args)))
+             ,@body))))))
+
 (defmacro fbind (bindings &body body &environment *env*)
   "Binds values in the function namespace.
 

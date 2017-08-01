@@ -40,11 +40,28 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                            (start2 0)
                            (end2 nil))
   "Like `string=' for any vector."
-  (declare (vector v1 v2))
-  (let ((end1 (or end1 (length v1)))
-        (end2 (or end2 (length v2))))
-    (and (= (- end1 start1)
-            (- end2 start2))
-         (loop for i from start1 below end1
-               for j from start2 below end2
-               always (funcall test (aref v1 i) (aref v2 j))))))
+  (declare (vector v1 v2)
+           ((or array-index null)
+            end1 end2)
+           (array-index start1 start2)
+           (optimize (safety 0) (debug 0)))
+  (with-test-fn (test)
+    (with-vector-dispatch #1=((simple-array (unsigned-byte 8) (*))
+                              (simple-array (unsigned-byte 16) (*))
+                              (simple-array (unsigned-byte 32) (*))
+                              (simple-array (unsigned-byte 64) (*))
+                              (simple-array fixnum (*)))
+      v1
+      (with-vector-dispatch #1# v2
+        (let* ((len1 (length v1))
+               (len2 (length v2))
+               (end1 (or end1 len1))
+               (end2 (or end2 len2)))
+          (assert (<= 0 start1 end1 len1))
+          (assert (<= 0 start2 end2 len2))
+          (and (= (- end1 start1)
+                  (- end2 start2))
+               (loop for i of-type array-index from start1 below end1
+                     for j of-type array-index from start2 below end2
+                     always (test (aref v1 i) (aref v2 j)))))))))
+

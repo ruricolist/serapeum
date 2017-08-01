@@ -295,7 +295,6 @@
            (local
              (symbol-macrolet ((x 1))
                (flet ((x (y)
-                        (declare (number x))
                         "Add x and y."
                         (+ x y)))
                  (x 1)))))))

@@ -190,8 +190,7 @@ Uses `replace' internally."
                        &key count from-end (start 0) end
                             (key #'identity))
   "Helper for FILTER."
-  (fbind (pred (key (canonicalize-key key)))
-    (declare (dynamic-extent #'pred #'key))
+  (%fbind (pred (key (canonicalize-key key)))
     (cond
       ;; Simple cases.
       ((= count 0) (make-sequence-like seq 0))
@@ -313,7 +312,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (fbind ((key (canonicalize-key key)))
+  (%fbind ((key (canonicalize-key key)))
     (let ((buckets (loop for nil in preds collect (make-bucket seq)))
           (extra (make-bucket seq)))
       (do-subseq (item seq nil :start start :end end)
@@ -339,7 +338,7 @@ You can think of `assort' as being akin to `remove-duplicates':
 
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
-  (fbind ((key (canonicalize-key key)) test)
+  (%fbind ((key (canonicalize-key key)) test)
     (let ((groups (queue)))
       (do-subseq (item seq nil :start start :end end)
         (if-let ((group
@@ -435,7 +434,7 @@ The arguments START, END, and KEY are as for `reduce'.
 As a second value, return the length of SEQ.
 
 From Clojure."
-  (fbind ((key (canonicalize-key key)))
+  (%fbind ((key (canonicalize-key key)))
     (let ((total 0)
           ;; Using multiple-value-call lets us specify defaults while
           ;; still ensuring the caller can override them.
@@ -473,7 +472,7 @@ From APL and descendants."
       (if initial-value?
           (values seq (list initial-value))
           (values (nsubseq seq 1) (list (elt seq 0))))
-    (fbind (fn (key (canonicalize-key key)))
+    (%fbind (fn (key (canonicalize-key key)))
       (nreverse
        (reduce (lambda (acc x)
                  (cons (fn x (key (car acc))) acc))
@@ -685,7 +684,7 @@ UNORDERED-TO-END controls where to sort items that are not present in
 the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order."
-  (fbind ((key (canonicalize-key key)))
+  (%fbind ((key (canonicalize-key key)))
     (let ((table (make-hash-table :test test))
           (i -1))
       (map nil
@@ -756,7 +755,7 @@ false when called on the first element."
 (defun bisect-left (vec item pred &key key)
   "Return the index in VEC to insert ITEM and keep VEC sorted."
   (declare ((simple-array * (*)) vec))
-  (fbind (pred key)
+  (%fbind (pred key)
     (let ((start 0)
           (end (length vec)))
       (declare (array-length start end))
@@ -813,7 +812,7 @@ false when called on the first element."
 
 (defun heap-insert (heap new-item &key (key #'identity) (test #'>=))
   (declare (function key test) (heap heap))
-  (fbind (key (ge test))
+  (%fbind (key (ge test))
     (vector-push-extend nil heap)
     (loop for i = (1- (length heap)) then parent-i
           for parent-i = (heap-parent i)
@@ -862,7 +861,7 @@ The name is from Arc."
   (declare (array-length n))
   (setf key (canonicalize-key key))
   (cond (memo
-         (fbind (key)
+         (%fbind (key)
            ;; Can't just copy SEQ, because it may not allow conses as
            ;; elements (e.g. octet vectors).
            (let* ((temp (map 'vector (op (cons (key _1) _1)) seq))
@@ -880,8 +879,8 @@ The name is from Arc."
                              :initial-contents (list (extremum seq pred :key key))))
         ((length<= seq n)
          (sort (copy-seq seq) pred :key key))
-        (t (fbind ((key key)
-                   (test (complement pred)))
+        (t (%fbind ((key key)
+                    (test (complement pred)))
              (let ((heap (make-heap n))
                    (i 0))
                (declare (array heap) (array-length i))
@@ -917,11 +916,7 @@ But uses a selection algorithm for better performance than either."
       (let* ((seq  (copy-sequence 'vector seq))
              (pred (ensure-function pred))
              (key  (ensure-function key))
-             (pred (if (eql key #'identity)
-                       pred
-                       (fbind (key pred)
-                         (lambda (x y)
-                           (pred (key x) (key y)))))))
+             (pred (key-test key pred)))
         (quickselect seq n pred))))
 
 (-> quickselect (vector array-index function) t)
@@ -930,7 +925,7 @@ But uses a selection algorithm for better performance than either."
   refinements by V. Zabrodsky (\"MODIFIND\")."
   (declare (optimize (debug 0) (safety 1)))
   (assert (< k (length a)))
-  (fbind (lt)
+  (%fbind (lt)
     (with-vector-dispatch () a
       (loop with n = (length a)
             with l of-type array-index = 0
@@ -962,8 +957,8 @@ values).
 
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0"
-  (fbind ((key (canonicalize-key key))
-          pred)
+  (%fbind ((key (canonicalize-key key))
+           pred)
     (let (min max kmin kmax (init t))
       (flet ((update-extrema (x)
                (if init
@@ -1034,7 +1029,7 @@ the left."
 (defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access)."
-  (fbind ((key (canonicalize-key key)))
+  (%fbind ((key (canonicalize-key key)))
     (map-into seq
               #'cdr
               ;; Vectors sort faster.

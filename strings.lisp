@@ -32,8 +32,7 @@ are considered whitespace."
 
 (defun call/string (fn stream)
   "Resolve STREAM like `format' and call FN with the result."
-  (fbind (fn)
-    (declare (dynamic-extent #'fn))
+  (%fbind (fn)
     (etypecase stream
       ((eql t) (fn *standard-output*))
       ((eql nil)

@@ -43,11 +43,14 @@
 (defun key-test (key test &optional test-not)
   "Return a function of two arguments which uses KEY to extract the
 part of the arguments to compare, and compares them using TEST."
-  (declare (optimize (speed 3) (safety 1) (debug 0)))
-  (fbind ((key (canonicalize-key key))
-          (test (canonicalize-test test test-not)))
-    (lambda (x y)
-      (test (key x) (key y)))))
+  (declare (optimize (safety 1) (debug 0)))
+  (let ((key (canonicalize-key key))
+        (test (canonicalize-test test test-not)))
+    (if (eql key #'identity) test
+        (%fbind key
+          (with-test-fn (test)
+            (lambda (x y)
+              (test (key x) (key y))))))))
 
 (defun make-sequence-like (seq len &rest args &key initial-element
                                                    (initial-contents nil ic?))

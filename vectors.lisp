@@ -63,5 +63,5 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                   (- end2 start2))
                (loop for i of-type array-index from start1 below end1
                      for j of-type array-index from start2 below end2
-                     always (test (aref v1 i) (aref v2 j)))))))))
+                     always (test (vref v1 i) (vref v2 j)))))))))
 

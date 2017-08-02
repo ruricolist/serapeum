@@ -112,7 +112,14 @@ From Scheme (SRFI-8)."
                 ,expr)))))
 
 (defun simple-binding-p (binding)
-  (= (length binding) 2))
+  (or (atom binding)
+      (= (length binding) 2)))
+
+(defun canonicalize-bindings (bindings)
+  (loop for binding in bindings
+        if (atom binding)
+          collect (list binding nil)
+        else collect binding))
 
 ;;;# `mvlet'
 
@@ -146,7 +153,8 @@ Note that declarations work just like `let*'."
          `(let* ,bindings ,@body))
         (t (multiple-value-bind (body decls)
                (parse-body body)
-             (let* ((mvbinds (member-if-not #'simple-binding-p bindings))
+             (let* ((bindings (canonicalize-bindings bindings))
+                    (mvbinds (member-if-not #'simple-binding-p bindings))
                     (simple-binds (ldiff bindings mvbinds)))
                (if simple-binds
                    (multiple-value-bind (local other)
@@ -182,13 +190,15 @@ Note that declarations work just like `let*'."
   (cond ((null bindings)
          `(locally ,@body))
         ((null (rest bindings))
-         (let ((b (first bindings)))
+         (let* ((bindings (canonicalize-bindings bindings))
+                (b (first bindings)))
            `(multiple-value-bind ,(butlast b) ,(lastcar b)
               ,@body)))
         ((every #'simple-binding-p bindings)
          `(let ,bindings
             ,@body))
-        (t (let* ((binds
+        (t (let* ((bindings (canonicalize-bindings bindings))
+                  (binds
                     (mapcar #'butlast bindings))
                   (exprs
                     (mapcar #'lastcar bindings))

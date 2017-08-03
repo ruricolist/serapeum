@@ -487,6 +487,14 @@ From Haskell."
   (declare (ignore start end key))
   (apply #'remove-duplicates seq :from-end t :test test args))
 
+;;; This isn't really necessary, but it stops SBCL from issuing
+;;; spurious warnings.
+(define-compiler-macro nub (seq &rest args &key (test '#'equal))
+  `(remove-duplicates ,seq
+                      :from-end t
+                      :test ,test
+                      ,@args))
+
 (defun gcp (seqs &key (test #'eql))
   "The greatest common prefix of SEQS.
 

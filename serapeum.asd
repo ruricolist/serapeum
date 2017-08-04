@@ -86,7 +86,8 @@
                 :pathname ""
                 :serial nil
                 :components
-                ((:file "tree-case")))))
+                ((:file "internal-definitions")
+                 (:file "tree-case")))))
 
 (asdf:defsystem "serapeum/tests"
   :description "Test suite for Serapeum."

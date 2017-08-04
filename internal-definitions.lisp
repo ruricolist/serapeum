@@ -82,7 +82,7 @@ DECLS."
                  ((type=? type 'string) "")
                  ((type=? type 'pathname) 'uiop:*nil-pathname*)
                  ((type=? type 'function) '#'identity)
-                 ;; TODO More character types? E.g. base-char on SBCL?
+                 ((type=? type 'standard-char) #\a)
                  ((type=? type 'character) (code-char 0)))))
            (binds-out (binds-in decls binds-out)
              (if (endp binds-in)

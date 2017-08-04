@@ -8,6 +8,11 @@
 
 (defvar *subenv*)
 
+(defstruct-read-only (unbound
+                      (:constructor unbound (var)))
+  "Placeholder for an unbound variable."
+  (var :type symbol))
+
 (defmacro without-internal-definitions (&body body)
   `(progn ,@body))
 
@@ -45,8 +50,13 @@ DECLS."
            (initialization-value (var decls)
              (let ((type (var-decls-type var decls)))
                (cond
-                 ;; Needless; this is the default behavior.
-                 #+ () ((type=? type 'boolean) nil)
+                 ((type=? type 't)
+                  ;; Generate a placeholder, saving the name of the
+                  ;; var for debugging purposes. Note that the
+                  ;; placeholder is inserted directly into the code,
+                  ;; so there is no run-time consing.
+                  (unbound var))
+                 ((type=? type 'boolean) nil)
                  ((or (type=? type 'bit)
                       (type=? type 'fixnum)
                       (type=? type 'array-index)
@@ -60,8 +70,7 @@ DECLS."
                  ((type=? type '(complex single-float)) #C(0f0 0f0))
                  ((type=? type '(complex double-float)) #C(0d0 0d0))
                  ((type=? type '(complex float)) #C(0.0 0.0))
-                 ;; Strings aren't immutable.
-                 #+ () ((type=? type 'string) (make-string 0))
+                 ((type=? type 'string) "")
                  ((type=? type 'pathname) 'uiop:*nil-pathname*)
                  ((type=? type 'function) '#'identity)
                  ;; TODO More character types? E.g. base-char on SBCL?
@@ -76,14 +85,12 @@ DECLS."
                                   decls
                                   (cons var binds-out))
                        (let* ((init (initialization-value var decls))
-                              (bind (if init `(,var ,init) var)))
+                              (bind `(,var ,init)))
                          (binds-out binds-in
                                     decls
                                     (cons bind binds-out))))))))
     ;; Shortcut: no declarations, just return the bindings.
-    (if (null decls)
-        binds-in
-        (binds-out binds-in decls '()))))
+    (binds-out binds-in decls '())))
 
 (defmacro let-initialized (bindings &body body &environment env)
   "Like LET, but if any of BINDINGS are uninitialized, try to give

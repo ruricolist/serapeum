@@ -45,23 +45,35 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
             end1 end2)
            (array-index start1 start2)
            (optimize (safety 0) (debug 0)))
-  (with-test-fn (test)
-    (with-vector-dispatch #1=((simple-array (unsigned-byte 8) (*))
-                              (simple-array (unsigned-byte 16) (*))
-                              (simple-array (unsigned-byte 32) (*))
-                              (simple-array (unsigned-byte 64) (*))
-                              (simple-array fixnum (*)))
-      v1
-      (with-vector-dispatch #1# v2
-        (let* ((len1 (length v1))
-               (len2 (length v2))
-               (end1 (or end1 len1))
-               (end2 (or end2 len2)))
-          (assert (<= 0 start1 end1 len1))
-          (assert (<= 0 start2 end2 len2))
-          (and (= (- end1 start1)
-                  (- end2 start2))
-               (loop for i of-type array-index from start1 below end1
-                     for j of-type array-index from start2 below end2
-                     always (test (vref v1 i) (vref v2 j)))))))))
-
+  ;; TODO bit vectors.
+  (cond ((and (stringp v1) (stringp v2)
+              (or (eql test #'eql)
+                  (eql test #'char=)))
+         (string= v1 v2 :start1 start2 :end1 end1 :start2 start2 :end2 end2))
+        (t
+         (with-test-fn (test)
+           (with-vector-dispatch #1=((simple-array (unsigned-byte 8) (*))
+                                     ;; Need to raise inline-expansion-limit?
+                                     ;; (simple-array (signed-byte 8) (*))
+                                     (simple-array (unsigned-byte 16) (*))
+                                     ;; (simple-array (signed-byte 16) (*))
+                                     ;; (simple-array (unsigned-byte 32) (*))
+                                     ;; (simple-array (signed-byte 32) (*))
+                                     ;; (simple-array (unsigned-byte 64) (*))
+                                     ;; (simple-array (signed-byte 64) (*))
+                                     (simple-array fixnum (*))
+                                     (simple-array single-float (*))
+                                     (simple-array double-float (*)))
+             v1
+             (with-vector-dispatch #1# v2
+               (let* ((len1 (length v1))
+                      (len2 (length v2))
+                      (end1 (or end1 len1))
+                      (end2 (or end2 len2)))
+                 (assert (<= 0 start1 end1 len1))
+                 (assert (<= 0 start2 end2 len2))
+                 (and (= (- end1 start1)
+                         (- end2 start2))
+                      (loop for i of-type array-index from start1 below end1
+                            for j of-type array-index from start2 below end2
+                            always (test (vref v1 i) (vref v2 j)))))))))))

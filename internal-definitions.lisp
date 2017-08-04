@@ -14,7 +14,7 @@
   (var :type symbol))
 
 (defmethod make-load-form ((self unbound) &optional env)
-  (make-load-form-saving-slots unbound
+  (make-load-form-saving-slots self
                                :slot-names '(var)
                                :environment env))
 

@@ -13,6 +13,11 @@
   "Placeholder for an unbound variable."
   (var :type symbol))
 
+(defmethod make-load-form ((self unbound) &optional env)
+  (make-load-form-saving-slots unbound
+                               :slot-names '(var)
+                               :environment env))
+
 (defmacro without-internal-definitions (&body body)
   `(progn ,@body))
 

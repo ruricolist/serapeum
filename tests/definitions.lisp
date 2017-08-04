@@ -4,89 +4,89 @@
 (in-suite definitions)
 
 (test internal-definitions
-  (is (eql 2
-           (local
-             (def x 1)
-             (def y (1+ x))
-             y)))
+      (is (eql 2
+               (local
+                 (def x 1)
+                 (def y (1+ x))
+                 y)))
 
-  (is (eql 3
-           (local
-             (defun adder (y)
-               (+ x y))
-             (def x 2)
-             (adder 1))))
+      (is (eql 3
+               (local
+                 (defun adder (y)
+                   (+ x y))
+                 (def x 2)
+                 (adder 1))))
 
-  (is (eql 3
-           (funcall
-            (local
-              (defun adder (y)
-                (+ x y))
-              (def x 2)
-              #'adder)
-            1)))
+      (is (eql 3
+               (funcall
+                (local
+                  (defun adder (y)
+                    (+ x y))
+                  (def x 2)
+                  #'adder)
+                1)))
 
-  (is (eql 'plus
-           (local
-             (plus 2 2)
-             (defun plus (x y)
-               (+ x y)))))
+      (is (eql 'plus
+               (local
+                 (plus 2 2)
+                 (defun plus (x y)
+                   (+ x y)))))
 
-  (is (null
-       (let ((y 2))
-         (local
-           ;; Check that we don't hoist the constant binding of X.
-           (def ret nil)
-           (setq ret x)
-           (def x y)
-           (def x 1)
-           ret))))
+      (is (not (eql 1
+                    (let ((y 2))
+                      (local
+                        ;; Check that we don't hoist the constant binding of X.
+                        (def ret nil)
+                        (setq ret x)
+                        (def x y)
+                        (def x 1)
+                        ret)))))
 
-  ;; Closures in vars.
-  (is (eql 4
-           (funcall
-            (local
-              (def adder (lambda (x) (+ x y)))
-              (def y 2)
-              adder)
-            2)))
+      ;; Closures in vars.
+      (is (eql 4
+               (funcall
+                (local
+                  (def adder (lambda (x) (+ x y)))
+                  (def y 2)
+                  adder)
+                2)))
 
-  (is (eql 1
-           (local
-             (let ((x 1))
-               (defun fn ()
-                 x))
-             (fn))))
+      (is (eql 1
+               (local
+                 (let ((x 1))
+                   (defun fn ()
+                     x))
+                 (fn))))
 
-  (is (eql 1
-           (local
-             (let* ((x 1))
-               (defun fn ()
-                 (values x)))
-             (fn))))
+      (is (eql 1
+               (local
+                 (let* ((x 1))
+                   (defun fn ()
+                     (values x)))
+                 (fn))))
 
-  (is (eql 1
-           (local
-             (multiple-value-bind (x) (values 1)
-               (defun fn ()
-                 x))
-             (fn))))
+      (is (eql 1
+               (local
+                 (multiple-value-bind (x) (values 1)
+                   (defun fn ()
+                     x))
+                 (fn))))
 
-  (is (eql 4
-           (local
-             (defconst x (+ 2 2))
-             x)))
+      (is (eql 4
+               (local
+                 (defconst x (+ 2 2))
+                 x)))
 
-  (is (eql 2
-           (local
-             (let* ((x 1)
-                    (y 1))
-               (+ x y)))))
+      (is (eql 2
+               (local
+                 (let* ((x 1)
+                        (y 1))
+                   (+ x y)))))
 
-  (is (equal '(1 2 3)
-             (local
-               (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
-                 (list x y z))))))
+      (is (equal '(1 2 3)
+                 (local
+                   (destructuring-bind (&key x y z) '(:x 1 :y 2 :z 3)
+                     (list x y z))))))
 
 (test let-over-def
   (is (eql 3

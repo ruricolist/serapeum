@@ -57,19 +57,28 @@ DECLS."
                   ;; so there is no run-time consing.
                   (unbound var))
                  ((type=? type 'boolean) nil)
+
+                 ;; Why all this attention to numeric types? One of
+                 ;; the things internal definitions are useful for is
+                 ;; porting numeric code from languages like C or
+                 ;; Fortran. By using appropriate initialization
+                 ;; values we help SBCL take advantage of those
+                 ;; declarations.
                  ((or (type=? type 'bit)
                       (type=? type 'fixnum)
                       (type=? type 'array-index)
                       (type=? type 'array-length)
-                      (subtypep type 'unsigned-byte env))
+                      (subtypep type 'unsigned-byte env)
+                      (subtypep type 'signed-byte env))
                   0)
-                 ((type=? type '(complex integer)) #C(0 0))
                  ((type=? type 'single-float) 0f0)
                  ((type=? type 'double-float) 0d0)
                  ((type=? type 'float) 0.0)
+                 ((type=? type '(complex integer)) #C(0 0))
                  ((type=? type '(complex single-float)) #C(0f0 0f0))
                  ((type=? type '(complex double-float)) #C(0d0 0d0))
                  ((type=? type '(complex float)) #C(0.0 0.0))
+
                  ((type=? type 'string) "")
                  ((type=? type 'pathname) 'uiop:*nil-pathname*)
                  ((type=? type 'function) '#'identity)

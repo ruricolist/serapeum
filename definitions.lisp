@@ -142,20 +142,21 @@ Like (setf (fdefinition ALIAS) DEF), but with a place to put
 documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp."
-  `(progn
-     ;; Give the function a temporary definition at compile time so
-     ;; the compiler doesn't complain about its being undefined.
-     (declaim (notinline ,alias))
-     (eval-when (:compile-toplevel)
-       (unless (fboundp ',alias)
+  (with-unique-names (temp)
+    `(progn
+       (declaim (notinline ,alias))
+       (let ((,temp (ensure-function ,def)))
+         (declare (type function ,temp))
+         ;; Give the function a temporary definition at compile time
+         ;; so the compiler doesn't complain about its being
+         ;; undefined.
          (defun ,alias (&rest args)
-           (declare (ignore args)))))
-     (eval-when (:load-toplevel :execute)
-       (compile ',alias ,def)
-       ,@(unsplice
-          (and docstring
-               `(setf (documentation ',alias 'function) ,docstring))))
-     ',alias))
+           (apply ,temp args))
+         (setf (fdefinition ',alias) ,temp)
+         ,@(unsplice
+            (and docstring
+                 `(setf (documentation ',alias 'function) ,docstring))))
+       ',alias)))
 
 ;;;# Etc
 

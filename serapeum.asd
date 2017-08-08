@@ -33,8 +33,6 @@
                  (:file "types")
                  (:file "definitions"
                   :depends-on ("macro-tools" "iter"))
-                 (:file "internal-definitions"
-                  :depends-on ("definitions" "clos" "op" "control-flow"))
                  (:file "binding"
                   :depends-on ("macro-tools"))
                  (:file "control-flow"

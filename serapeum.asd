@@ -106,6 +106,7 @@
                 ((:file "macro-tools")
                  (:file "types")
                  (:file "definitions")
+                 (:file "internal-definitions")
                  (:file "binding")
                  (:file "control-flow")
                  (:file "threads")

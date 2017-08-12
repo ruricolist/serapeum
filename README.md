@@ -81,7 +81,7 @@ called `runs`:
     (runs '(head tail head head tail))
     => '((head) (tail) (head head) (tail))
 
-The function that returns a sequence in *batches* of a certain size is
+The function that returns a sequence in *batches* of a certain maximum size is
 called `batches`:
 
     (batches (iota 11) 2)
@@ -350,7 +350,7 @@ account.
 respectively, except that they expect, and enforce, the presence of an
 `otherwise` clause.
 
-There are continuable versions of these macros – `ctypecase-of` and
+There are also continuable versions of these macros – `ctypecase-of` and
 `ccase-of`.
 
 ## CLOS
@@ -389,7 +389,7 @@ To eliminate that boilerplate, Serapeum exports a metaclass,
 When you define a metaclass, all you have to do to ensure that classes
 defined using your metaclass inherit from a specific class is to
 supply the name of the class to inherit from in the definition of the
-metaclass. This is better demonstrated than explained:
+metaclass. This is much better demonstrated than explained:
 
 ``` lisp
 ;;; The class to inherit from.

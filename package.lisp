@@ -340,7 +340,8 @@
    #:tree-case
    #:tree-ecase
    #:char-case
-   #:char-ecase))
+   #:char-ecase
+   #:range))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

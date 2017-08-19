@@ -17,6 +17,9 @@
   '#.(let ((limit array-dimension-limit))
        `(integer (,(- limit)) (,limit))))
 
+(defsubst sequence? (x)
+  (typep x 'sequence))
+
 (-> canonicalize-key (key-designator) function)
 (defun canonicalize-key (k)
   (etypecase-of key-designator k
@@ -86,11 +89,11 @@ part of the arguments to compare, and compares them using TEST."
                       for i below (- end start)
                       do (fn item))))
         (with-subtype-dispatch vector
-          (simple-bit-vector
-           bit-vector
-           (simple-array character (*))
-           simple-base-string)
-          seq
+            (simple-bit-vector
+             bit-vector
+             (simple-array character (*))
+             simple-base-string)
+            seq
           (let ((end (or end (length seq))))
             (if from-end
                 (loop for i downfrom (1- end) to start
@@ -241,7 +244,7 @@ The place designed by the first argument is set to th result of
 calling FILTER with PRED, the place, and ARGS.")
 
 (defun keep (item seq &rest args &key (test #'eql) from-end key count
-             &allow-other-keys)
+                                      &allow-other-keys)
   "Almost, but not quite, an alias for `remove` with `:test-not` instead of `:test`.
 
 The difference is the handling of COUNT. For keep, COUNT is the number of items to keep, not remove.
@@ -431,7 +434,7 @@ The arguments START, END, and KEY are as for `reduce'.
                            acc)))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
-                    &allow-other-keys)
+                                                   &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
@@ -1334,12 +1337,12 @@ as long as SEQ is empty.
       vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
-          (declare (array-index n offset))
-          (if (zerop n)
-              out
-              (progn
-                (replace out vec :start1 offset)
-                (rec (1- n) (+ offset len)))))))))
+              (declare (array-index n offset))
+              (if (zerop n)
+                  out
+                  (progn
+                    (replace out vec :start1 offset)
+                    (rec (1- n) (+ offset len)))))))))
 
 (labels ((%seq= (x y)
            (or (equal x y)

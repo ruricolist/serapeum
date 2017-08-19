@@ -19,10 +19,10 @@
   (is (not (single #(t t)))))
 
 (test filter-with-count
-  (is (equal '(0 2 4 6 8) (filter #'evenp (iota 100) :count 5)))
-  (is (equalp #(0 2 4 6 8) (filter #'evenp (coerce (iota 100) 'vector) :count 5)))
+  (is (equal '(0 2 4 6 8) (filter #'evenp (range 100) :count 5)))
+  (is (equalp #(0 2 4 6 8) (filter #'evenp (coerce (range 100) 'vector) :count 5)))
   (is (equal '(90 92 94 96 98)
-             (filter #'evenp (iota 100) :count 5 :from-end t))))
+             (filter #'evenp (range 100) :count 5 :from-end t))))
 
 (test keep-with-count
   (is (equal '((a 1) (a 2))
@@ -37,10 +37,10 @@
              '((1 3 5 7 9) (0 2 4 6 8)))))
 
 (test assort
-  (is (equal (assort (iota 10)
-                     :key (lambda (x)
-                            (mod x 3)))
-             '((0 3 6 9) (1 4 7) (2 5 8))))
+  (is (sequal (assort (range 10)
+                      :key (lambda (x)
+                             (mod x 3)))
+              '((0 3 6 9) (1 4 7) (2 5 8))))
 
   (is (equal (assort "How Now Brown Cow" :key #'upper-case-p)
              '("HNBC" "ow ow rown ow"))))
@@ -81,9 +81,9 @@
 (test ordering
   (for-all ((list (an-iota 1000)))
     (let ((list (shuffle list)))
-      (is (equal list
-                 (sort (shuffle (copy-list list))
-                       (ordering list)))))))
+      (is (vector= list
+                   (sort (reshuffle list)
+                         (ordering list)))))))
 
 (test bestn
   (for-all ((list (a-list-of 1000 (lambda () (random 1000)))))
@@ -97,19 +97,19 @@
             (bestn 20 list #'string> :key #'princ-to-string)))))
 
 (test nth-best
-  (is (= 0 (nth-best 0 (shuffle (iota 1000)) #'<)))
-  (is (= 1 (nth-best 1 (shuffle (iota 1000)) #'<)))
-  (is (= 2 (nth-best 2 (shuffle (iota 1000)) #'<)))
-  (is (= 5 (nth-best 5 (shuffle (iota 1000)) #'<)))
-  (is (= 998 (nth-best 1 (shuffle (iota 1000)) #'< :key #'-)))
+  (is (= 0 (nth-best 0 (shuffle (range 1000)) #'<)))
+  (is (= 1 (nth-best 1 (shuffle (range 1000)) #'<)))
+  (is (= 2 (nth-best 2 (shuffle (range 1000)) #'<)))
+  (is (= 5 (nth-best 5 (shuffle (range 1000)) #'<)))
+  (is (= 998 (nth-best 1 (shuffle (range 1000)) #'< :key #'-)))
   (signals error
     (nth-best 1 () #'<))
   (signals error
-    (nth-best 10000 (shuffle (iota 1000)) #'<))
+    (nth-best 10000 (shuffle (range 1000)) #'<))
   (signals error
-    (nth-best -1 (shuffle (iota 1000)) #'<))
+    (nth-best -1 (shuffle (range 1000)) #'<))
   (signals error
-    (nth-best 1001 (shuffle (iota 1000)) #'<)))
+    (nth-best 1001 (shuffle (range 1000)) #'<)))
 
 (test extrema
   (is (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5))))
@@ -149,13 +149,13 @@
               (mvfold (lambda (min max item)
                         (values (min item min)
                                 (max item max)))
-                      (iota 10) 0 0))
+                      (range 10) 0 0))
              '(0 9)))
   (is (equal (multiple-value-list
               (mvfold (lambda (item min max)
                         (values (min item min)
                                 (max item max)))
-                      (iota 10) 0 0))
+                      (range 10) 0 0))
              '(0 9))))
 
 (test repeat-sequence

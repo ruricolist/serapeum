@@ -17,7 +17,7 @@
   ;; Positional and rest.
   (is (equal (apply (op (list _ _*)) 1 '(2 3)) '(1 2 3)))
   ;; Flip
-  (is (eql 4 (find '(4) (iota 10) :test (op (member _2 _1)))))
+  (is (eql 4 (find '(4) (range 10) :test (op (member _2 _1)))))
   ;; nth-arg
   (is (equal '(4 5 6) (mapcar (op _2) '(1 2 3) '(4 5 6))))
   ;; Sparse argument lists.

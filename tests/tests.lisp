@@ -21,7 +21,7 @@
 
 (defun an-iota (n)
   (lambda ()
-    (iota n)))
+    (range n)))
 
 (defun a-list-of (len fn)
   (lambda ()

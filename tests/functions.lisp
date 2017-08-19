@@ -35,7 +35,7 @@
   (is (funcall (serapeum::hook #'= #'floor) 3)))
 
 (test fork
-  (let ((sample (iota 100)))
+  (let ((sample (range 100)))
     (is (= (mean sample)
            (funcall (serapeum::fork #'/
                                     (curry #'reduce #'+)

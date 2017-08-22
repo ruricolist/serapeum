@@ -1332,3 +1332,36 @@ as long as SEQ is empty.
               (progn
                 (replace out vec :start1 offset)
                 (rec (1- n) (+ offset len)))))))))
+
+(labels ((%seq= (x y)
+           (or (equal x y)
+               (and (typep x 'sequence)
+                    (typep y 'sequence)
+                    (length= x y)
+                    (every #'%seq= x y)))))
+
+  (-> seq=/2 (t t) boolean)
+  (defun seq=/2 (x y)
+    (%seq= x y))
+
+  (-> seq= (&rest t) boolean)
+  (defun seq= (&rest xs)
+    "Like `equal', but recursively compare sequences element-by-element.
+
+Two elements X and Y are `seq=' if they are `equal', or if they are
+both sequences of the same length and their elements are all `seq='."
+    (declare (dynamic-extent xs))
+    (match xs
+      ((list) t)
+      ((list _) t)
+      (otherwise
+       (loop for x in xs
+             for y in (rest xs)
+             always (%seq= x y))))))
+
+(define-compiler-macro seq= (&whole call &rest xs)
+  (match xs
+    ((list) t)
+    ((list x) `(progn ,x t))
+    ((list x y) `(seq=/2 ,x ,y))
+    (otherwise call)))

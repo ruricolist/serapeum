@@ -327,6 +327,7 @@
    #:split-sequence-if-not
    #:take-while
    #:drop-while
+   #:seq=
    #:tree-case
    #:tree-ecase
    #:char-case

@@ -183,3 +183,18 @@
   (is (equal "" (drop -3 "foo")))
   (is (equal "" (drop -4 "foo")))
   (is (equal "f" (drop -2 "foo"))))
+
+(test seq=
+  (is (seq= '() ""))
+  (is (seq= #() ""))
+  (is (seq= #() '()))
+  (is (seq= '(1) #(1)))
+  (is (seq= "" ""))
+  (is (not (seq= "" "xyz")))
+  (is (seq= "xyz" "xyz"))
+  (is (not (seq= "xyz" "XYZ")))
+  (is (not (seq= '(1) #())))
+  (is (not (seq= '() #(1))))
+  (is (seq= '("xyz") #((#\x #\y #\z))))
+  (is (not (seq= '("xyza") #((#\x #\y #\z)))))
+  (is (not (seq= '("xyz") #((#\x #\y #\z #\a))))))

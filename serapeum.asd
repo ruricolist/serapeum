@@ -55,7 +55,6 @@
                   :depends-on ("types"))
                  (:file "box"
                   :depends-on ("types" "definitions"))
-                 (:file "vectors")
                  (:file "numbers"
                   :depends-on ("macro-tools" "types"))
                  (:file "octets"
@@ -75,6 +74,7 @@
                 :components
                 ((:file "lists")
                  (:file "strings")
+                 (:file "vectors")
                  (:file "sequences")))
                ;; Level 2 files can use CL, Alexandria, and the rest
                ;; of Serapeum. Anything at this level could, in

@@ -431,3 +431,24 @@ added to ensure that TYPE itself is handled."
          (t (let ((,test (ensure-function ,test)))
               (macrolet ((,test (x y) (list 'funcall ',test x y)))
                 ,@body)))))
+
+(declaim (ftype (function (t) boolean) bool))
+(declaim (inline bool))
+(defun bool (x)
+  "Coerce X to a boolean.
+That is, if X is null, return `nil'; otherwise return `t'.
+
+Based on an idea by Eric Naggum."
+  (not (null x)))
+
+(define-compiler-macro bool (x)
+  #+(or sbcl cmucl)
+  (with-unique-names (result)
+    ;; For SBCL at least, this is sufficent to eliminate the call to
+    ;; `bool' if X is known to evaluate to a boolean.
+    `(let ((,result ,x))
+       (if (typep ,result 'boolean)
+           ,result
+           (if ,x t nil))))
+  #-(or sbcl cmucl)
+  `(not (null ,x)))

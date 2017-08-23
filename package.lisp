@@ -31,6 +31,7 @@
    #:with-subtype-dispatch
    #:with-string-dispatch
    #:with-vector-dispatch
+   #:bool
    ;; Definitions.
    #:defconst
    #:defsubst

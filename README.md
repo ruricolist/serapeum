@@ -17,12 +17,11 @@ copy-pasted versions of the same utilities across a dozen systems.
 And, though Serapeum is justified even if only I ever use it, the best
 way to ensure its quality is to write it as if for general use.
 
-Serapeum is conservative: it contains only utilities I actually use,
-and which have survived refactoring. But it is less conservative than
-Alexandria. Alexandria limits itself to utilities with a Common Lisp
-pedigree. Serapeum casts a wider net: other dialects of Lisp, and
-other languages in the functional and array families, have been
-drafted.
+Serapeum is conservative: its goal is to fill in gaps in Common Lisp,
+not to redesign it. But it is less conservative than Alexandria.
+Alexandria limits itself to utilities with a Common Lisp pedigree.
+Serapeum casts a wider net: other dialects of Lisp, and other
+languages in the functional and array families, have been drafted.
 
 Alexandria is self-contained. It exists in splendid isolation, without
 depending on, or even acknowledging, other libraries. Serapeum tries

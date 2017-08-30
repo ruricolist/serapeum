@@ -187,18 +187,37 @@ PLACE only once."
 (defun remove-duplicated-subtypes (subtypes)
   (remove-duplicates subtypes :test #'type=))
 
-(defun proper-subtypep (subtype type)
-  (and (subtypep subtype type)
-       (not (subtypep type subtype))))
+(-> supertypep (t t &optional t) (values boolean boolean))
+(defun supertypep (supertype type &optional env)
+  "Is SUPERTYPE a supertype of TYPE?
+That is, is TYPE a subtype of SUPERTYPE?"
+  (subtypep type supertype env))
+
+(-> proper-subtype-p (t t &optional t) (values boolean boolean))
+(defun proper-subtype-p (subtype type &optional env)
+  "Is SUBTYPE a proper subtype of TYPE?
+
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?"
+  (multiple-value-bind (subtype? valid1)
+      (subtypep subtype type env)
+    (if (not subtype?)
+        (values nil valid1)
+        (multiple-value-bind (same? valid2)
+            (subtypep type subtype env)
+          (if (not same?)
+              ;; The second value is always true when the first value
+              ;; is true.
+              (values t t)
+              (values nil (and valid1 valid2)))))))
 
 (defun sort-subtypes (subtypes)
-  (let ((sorted (stable-sort subtypes #'proper-subtypep)))
+  (let ((sorted (stable-sort subtypes #'proper-subtype-p)))
     (prog1 sorted
       ;; Subtypes must always precede supertypes.
       (assert
        (loop for (type1 . rest) on sorted
              never (loop for type2 in rest
-                           thereis (proper-subtypep type2 type1)))))))
+                           thereis (proper-subtype-p type2 type1)))))))
 
 (defun remove-shadowed-subtypes (subtypes)
   (assert (equal subtypes (sort-subtypes subtypes)))
@@ -228,7 +247,7 @@ PLACE only once."
      (simple-string . schar)
      (simple-vector . svref)
      (t . aref))
-   #'proper-subtypep
+   #'proper-subtype-p
    :key #'car))
 
 (defun type-vref (type)

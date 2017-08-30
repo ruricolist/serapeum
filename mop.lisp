@@ -1,6 +1,8 @@
 (defpackage #:serapeum/mop
   (:use #:c2cl #:alexandria)
-  (:import-from #:serapeum #:standard/context #:topmost-object-class)
+  (:import-from #:serapeum
+    #:standard/context #:topmost-object-class
+    #:supertypep)
   #+sb-package-locks (:implement :serapeum :serapeum/mop))
 
 (in-package :serapeum/mop)
@@ -37,9 +39,6 @@
           around-form))))
 
 
-
-(defun supertypep (x y)
-  (subtypep y x))
 
 (defclass topmost-object-class (standard-class)
   ((topmost-class

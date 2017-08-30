@@ -21,6 +21,8 @@
    #:case-failure
    #:define-case-macro
    ;; Types.
+   #:supertypep
+   #:proper-subtype-p
    #:->
    #:assure
    #:assuref

@@ -17,3 +17,9 @@
 (test proper-subtype-p
   (is (proper-subtype-p 'integer 'rational))
   (is (not (proper-subtype-p 'integer 'integer))))
+
+(test true
+  (is (true t))
+  (is (not (true nil)))
+  ;; NB The read base doesn't matter; 0 (or 1) is always a digit char.
+  (is (eql t (true (digit-char-p #\0)))))

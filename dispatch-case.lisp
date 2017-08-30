@@ -71,6 +71,16 @@ fallthrough)."
               (clauses-out `(,types (,sym)))))))))
 
 (defmacro dispatch-case (types-and-exprs &body clauses)
+  "A more legible alternative to nested `etypecase-of' forms.
+
+But what does it mean? Using `dispatch-case' lets you dispatch on the
+types of multiple objects, with a compile-time check that all of the
+different possible permutations has been covered.
+
+Although any nested `etypecase-of' form can be rewritten as a
+`dispatch-case' macro simply by raising the nested clauses, redundant
+clauses in the nested forms can sometimes be omitted by providing
+appropriate fallthrough forms to `dispatch-case'."
   `(dispatch-case-let
        ,(loop for (type expr) in types-and-exprs
               for var = (string-gensym 'temp)
@@ -78,6 +88,13 @@ fallthrough)."
      ,@clauses))
 
 (defmacro dispatch-case-let (bindings &body clauses &environment env)
+  "Like `dispatch-case', but establish new bindings for each expression.
+
+The bindings in a `dispatch-case-let' form are provided as a list
+of `((variable type) expression)' forms. It may be helpful to think of
+this as analogous to both `defmethod' (where the `(variable type)'
+notation is used in the lambda list) and `let' (which has an obvious
+macro-expansion in terms of `lambda')."
   (multiple-value-bind (vars types exprs)
       ;; Split the bindings and types.
       (with-collectors (vars-out types-out exprs-out)

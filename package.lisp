@@ -69,6 +69,8 @@
    #:ecase-of
    #:ctypecase-of
    #:ccase-of
+   #:dispatch-case
+   #:dispatch-case-let
    #:destructuring-case-of
    #:destructuring-ccase-of
    #:destructuring-ecase-of

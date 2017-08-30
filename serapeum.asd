@@ -61,7 +61,6 @@
                   :depends-on ("types"))
                  (:file "time")
                  (:file "clos")
-                 (:file "mop")
                  (:file "hooks")
                  (:file "fbind"
                   :depends-on ("binding" "control-flow"))))
@@ -84,7 +83,8 @@
                 :pathname ""
                 :serial nil
                 :components
-                ((:file "internal-definitions")
+                ((:file "mop")
+                 (:file "internal-definitions")
                  (:file "tree-case")))))
 
 (asdf:defsystem "serapeum/tests"

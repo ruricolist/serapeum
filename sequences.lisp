@@ -1111,7 +1111,8 @@ Cf. `toposort'.")
                       from-end unordered-to-end)
   "Turn CONSTRAINTS into a predicate for use with SORT.
 
-Each constraint should be two-element list.
+Each constraint should be two-element list, where the first element of
+the list should come before the second element of the list.
 
     (def dem-bones '((toe foot)
                      (foot heel)

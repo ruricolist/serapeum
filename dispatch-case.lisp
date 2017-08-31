@@ -73,9 +73,12 @@ shadowed by previous clauses."
 
 (defun hoist-clause-bodies (clauses env)
   "Hoist the bodies of the clauses into separate functions.
-This is needed because the same body may be spliced into the
+This is needed because the same clause may be spliced into the
 dispatch-case form in several places (in order to implement
-fallthrough)."
+fallthrough).
+
+Returns two values: a list of function definitions (suitable as the
+first argument to `flet') and a list of clauses."
   (with-collectors (fns-out clauses-out)
     (dolist (clause clauses)
       (destructuring-bind (types . body) clause
@@ -128,12 +131,13 @@ macro-expansion in terms of `lambda')."
     (multiple-value-bind (fns clauses)
         (hoist-clause-bodies clauses env)
       `(let ,(mapcar #'list vars exprs)
-         (flet (,@fns)
+         (flet ,fns
            (dispatch-case/nobindings ,(mapcar #'list vars types)
              ,@clauses))))))
 
 (defmacro dispatch-case/nobindings (vars-and-types &body clauses
                                     &environment env)
+  (setf clauses (sort-clauses clauses env))
   (multiple-value-bind (vars types)
       ;; (values (mapcar #'first vars-and-types)
       ;;         (mapcar #'second vars-and-types))

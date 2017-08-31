@@ -487,6 +487,9 @@ From Haskell."
   (declare (ignore start end key))
   (apply #'remove-duplicates seq :from-end t :test test args))
 
+(define-compiler-macro nub (seq &rest args &key (test '#'equal) &allow-other-keys)
+  `(remove-duplicates ,seq :from-end t :test ,test ,@args))
+
 (defun gcp (seqs &key (test #'eql))
   "The greatest common prefix of SEQS.
 

@@ -89,19 +89,87 @@ first argument to `flet') and a list of clauses."
               (fns-out `(,sym () ,@body))
               (clauses-out `(,types (,sym)))))))))
 
-(defmacro dispatch-case (types-and-exprs &body clauses)
-  "A more legible alternative to nested `etypecase-of' forms.
+(defmacro dispatch-case ((&rest exprs-and-types) &body clauses)
+  "Dispatch on the types of multiple expressions, exhaustively.
 
-But what does it mean? Using `dispatch-case' lets you dispatch on the
-types of multiple objects, with a compile-time check that all of the
-different possible permutations has been covered.
+Say you are working on a project where you need to handle timestamps
+represented both as universal times, and as instances of
+`local-time:timestamp'. You start by defining the appropriate types:
 
-Although any nested `etypecase-of' form can be rewritten as a
-`dispatch-case' macro simply by raising the nested clauses, redundant
-clauses in the nested forms can sometimes be omitted by providing
-appropriate fallthrough forms to `dispatch-case'."
+    (defpackage :dispatch-case-example
+      (:use :cl :alexandria :serapeum :local-time)
+      (:shadow :time))
+    (in-package :dispatch-case-example)
+
+    (deftype universal-time ()
+      '(integer 0 *))
+
+    (deftype time ()
+      '(or universal-time timestamp))
+
+Now you want to write a `time=' function that works on universal
+times, timestamps, and any combination thereof.
+
+You can do this using `etypecase-of':
+
+    (defun time= (t1 t2)
+      (etypecase-of time t1
+        (universal-time
+         (etypecase-of time t2
+           (universal-time
+            (= t1 t2))
+           (timestamp
+            (= t1 (timestamp-to-universal t2)))))
+        (timestamp
+         (etypecase-of time t2
+           (universal-time
+            (time= t2 t1))
+           (timestamp
+            (timestamp= t1 t2))))))
+
+This has the advantage of efficiency and exhaustiveness checking, but
+the serious disadvantage of being hard to read.
+
+Alternately, you could do it with `defgeneric':
+
+    (defgeneric time= (t1 t2)
+      (:method ((t1 integer) (t2 integer))
+        (= t1 t2))
+      (:method ((t1 timestamp) (t2 timestamp))
+        (timestamp= t1 t2))
+      (:method ((t1 integer) (t2 timestamp))
+        (= t1 (timestamp-to-universal t2)))
+      (:method ((t1 timestamp) (t2 integer))
+        (time= t2 t1)))
+
+This is easy to read, but it has three disadvantages. (1) There is no
+exhaustiveness checking. If, at some point in the future, you want to
+add another representation of time to your project, the compiler will
+not object if you forget to update `time='. (2) You cannot use the
+`universal-time' type you just defined; it is a type, not a class, so
+you cannot specialize methods on it. (3) You are paying a run-time
+price for extensibility -- the inherent overhead of a generic function
+-- when extensibility is not what you want.
+
+Using `dispatch-case' instead gives you the readability of
+`defgeneric' with the efficiency and safety of `etypecase-of'.
+
+    (defun time= (t1 t2)
+      (dispatch-case ((time t1)
+                      (time t2))
+        ((universal-time universal-time)
+         (= t1 t2))
+        ((timestamp timestamp)
+         (timestamp= t1 t2))
+        ((universal-time timestamp)
+         (= t1 (timestamp-to-universal t2)))
+        ((timestamp universal-time)
+         (time= t2 t1))))
+
+Note that -- unlike `etypecase', but like `defgeneric' -- the order in
+which the clauses are defined does not matter."
   `(dispatch-case-let
-       ,(loop for (type expr) in types-and-exprs
+       ,(loop for (expr type) in exprs-and-types
               for var = (string-gensym 'temp)
               collect `((,var ,type) ,expr))
      ,@clauses))

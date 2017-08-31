@@ -56,7 +56,6 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
     (return-from vector=
       (string= v1 v2 :start1 start2 :end1 end1 :start2 start2 :end2 end2)))
   ;; Handle bit vectors specially.
-  ;; TODO handle start and end args.
   (when (and (bit-vector-p v1)
              (bit-vector-p v2)
              (or (eql test #'eq)

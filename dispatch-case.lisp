@@ -79,6 +79,7 @@ fallthrough).
 
 Returns two values: a list of function definitions (suitable as the
 first argument to `flet') and a list of clauses."
+  ;; TODO Should this be a tagbody instead?
   (with-collectors (fns-out clauses-out)
     (dolist (clause clauses)
       (destructuring-bind (types . body) clause
@@ -211,10 +212,14 @@ of `lambda')."
                (exprs-out expr))))))
     (multiple-value-bind (fns clauses)
         (hoist-clause-bodies clauses env)
-      `(let ,(mapcar #'list vars exprs)
-         (flet ,fns
-           (dispatch-case/nobindings ,(mapcar #'list vars types)
-             ,@clauses))))))
+      (let ((function-names (mapcar #'first fns)))
+        `(let ,(mapcar #'list vars exprs)
+           (flet ,fns
+             (declare
+              (dynamic-extent
+               ,@(mapcar (op `#',_) function-names)))
+             (dispatch-case/nobindings ,(mapcar #'list vars types)
+               ,@clauses)))))))
 
 (defmacro dispatch-case/nobindings (vars-and-types &body clauses
                                     &environment env)

@@ -45,6 +45,7 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
             end1 end2)
            (array-index start1 start2)
            (optimize (safety 0) (debug 0)))
+  (setf test (ensure-function test))
   ;; The easy case.
   (when (eql v1 v2)
     (return-from vector= t))

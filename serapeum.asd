@@ -96,7 +96,8 @@
   :pathname "tests/"
   :serial t
   :components ((:file "package")
-               (:file "tests"        :depends-on ("package"))
+               (:file "tests"
+                :depends-on ("package"))
                (:module "test suites"
                 :pathname ""
                 :serial nil

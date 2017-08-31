@@ -806,3 +806,57 @@ But with less consing, and potentially faster."
            (if (<= (length values) 8)
                `(sort-values/network ,gpred ,@values)
                `(sort-values/temp-vector ,gpred ,@values)))))))
+
+(defun expand-variadic-equality (binary variadic args)
+  (match args
+    (() t)
+    ((list x) `(progn ,x t))
+    ((list x y) `(,binary ,x ,y))
+    ;; It might be worth special-casing the three-argument case; of
+    ;; all the variadic cases it is likely to be the most common by
+    ;; far.
+    ((list x y z)
+     (once-only (x y z)
+       `(and (,binary ,x ,y)
+             (,binary ,y ,z))))
+    (otherwise
+     ;; Remember that we need to evaluate all of the arguments,
+     ;; always, and in left-to-right order.
+     (let ((temps (make-gensym-list (length args))))
+       (destructuring-bind (x y . zs) temps
+         `(let ,(mapcar #'list temps args)
+            (and (,binary ,x ,y)
+                 (,variadic ,y ,@zs))))))))
+
+(defmacro define-variadic-equality (variadic binary)
+  `(progn
+     (defun ,variadic (&rest xs)
+       ,(format nil "Variadic version of `~a'.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `~:*~a'.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `~:*~a'.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand."
+                binary)
+       (match xs
+         (() t)
+         ((list _) t)
+         ((list x y) (,binary x y))
+         (otherwise (every #',binary xs (rest xs)))))
+     (define-compiler-macro ,variadic (&rest xs)
+       (expand-variadic-equality ',binary ',variadic xs))))
+
+(define-variadic-equality eq* eq)
+
+(define-variadic-equality eql* eql)
+
+(define-variadic-equality equal* equal)
+
+(define-variadic-equality equalp* equalp)

@@ -98,6 +98,7 @@
    #:cond-every
    #:nest
    #:sort-values
+   #:eq* #:eql* #:equal* #:equalp*
    ;; Threads.
    #:synchronized
    #:monitor

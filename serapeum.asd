@@ -83,7 +83,8 @@
                 :components
                 ((:file "mop")
                  (:file "internal-definitions")
-                 (:file "tree-case")))))
+                 (:file "tree-case")
+                 (:file "dispatch-case")))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
@@ -129,4 +130,5 @@
                  (:file "strings")
                  (:file "sequences")
                  (:file "tree-case")
+                 (:file "dispatch-case")
                  (:file "quicklisp")))))

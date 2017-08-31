@@ -147,6 +147,7 @@
    #:hash-table-predicate
    #:hash-table-function
    #:make-hash-table-function
+   #:delete-from-hash-table
    ;; Pathnames.
    #:path-join
    #:write-stream-into-file

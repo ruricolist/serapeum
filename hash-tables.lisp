@@ -289,12 +289,14 @@ values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)"
   (let* ((hash-table-args
            (remove-from-plist hash-table-args
-                              :key :strict))
+                              :key :test :strict))
          ;; Use multiple-value-call so the provided arguments override
          ;; the defaults.
          (table (multiple-value-call #'make-hash-table
                   (values-list hash-table-args)
-                  :size (length set))))
+                  :test test
+                  :size (length set)
+                  :key key)))
     (ensuring-functions (key)
       (if (not strict)
           (dolist (item set)
@@ -367,11 +369,6 @@ specified."
                    (if value?
                        (setf (gethash key ht) value)
                        (gethash key ht)))))
-           (wrap-read-only (fun)
-             (if read-only
-                 (lambda (key)
-                   (funcall fun key))
-                 fun))
            (wrap-strict (fun)
              (if (not strict) fun
                  (if read-only
@@ -429,3 +426,10 @@ ARGS can be args to `hash-table-function' or args to
   (apply #'hash-table-function
          (apply #'make-hash-table :allow-other-keys t args)
          :allow-other-keys t args))
+
+(defun delete-from-hash-table (table &rest keys)
+  "Return TABLE with KEYS removed (as with `remhash').
+Cf. `delete-from-plist' in Alexandria."
+  (prog1 table
+    (dolist (key keys)
+      (remhash key table))))

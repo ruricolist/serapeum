@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (29 files, 278 functions)
+# Function Listing For SERAPEUM (29 files, 285 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -299,6 +299,21 @@ PLACE only once.
 
 [View source](types.lisp#L159)
 
+### `(supertypep supertype type &optional env)`
+
+Is SUPERTYPE a supertype of TYPE?
+That is, is TYPE a subtype of SUPERTYPE?
+
+[View source](types.lisp#L191)
+
+### `(proper-subtype-p subtype type &optional env)`
+
+Is SUBTYPE a proper subtype of TYPE?
+
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
+
+[View source](types.lisp#L197)
+
 ### `(vref vec index)`
 
 When used globally, same as `aref`.
@@ -307,7 +322,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L239)
+[View source](types.lisp#L258)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -358,7 +373,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L293)
+[View source](types.lisp#L312)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -367,19 +382,28 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L376)
+[View source](types.lisp#L395)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L389)
+[View source](types.lisp#L408)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L399)
+[View source](types.lisp#L418)
+
+### `(true x)`
+
+Coerce X to a boolean.
+That is, if X is null, return `nil`; otherwise return `t`.
+
+Based on an idea by Eric Naggum.
+
+[View source](types.lisp#L456)
 
 ## Definitions
 
@@ -1016,6 +1040,78 @@ Equivalent to
 But with less consing, and potentially faster.
 
 [View source](control-flow.lisp#L785)
+
+### `(eq* &rest xs)`
+
+Variadic version of `EQ`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `EQ`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `EQ`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L856)
+
+### `(eql* &rest xs)`
+
+Variadic version of `EQL`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `EQL`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `EQL`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L858)
+
+### `(equal* &rest xs)`
+
+Variadic version of `EQUAL`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `EQUAL`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `EQUAL`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L860)
+
+### `(equalp* &rest xs)`
+
+Variadic version of `EQUALP`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `EQUALP`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `EQUALP`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L862)
 
 ## Threads
 
@@ -2811,7 +2907,7 @@ The greatest common prefix of SEQS.
 
 If there is no common prefix, return NIL.
 
-[View source](sequences.lisp#L490)
+[View source](sequences.lisp#L493)
 
 ### `(gcs seqs &key test)`
 
@@ -2819,7 +2915,7 @@ The greatest common suffix of SEQS.
 
 If there is no common suffix, return NIL.
 
-[View source](sequences.lisp#L507)
+[View source](sequences.lisp#L510)
 
 ### `(of-length length)`
 
@@ -2829,35 +2925,35 @@ length LENGTH.
     (funcall (of-length 3) '(1 2 3)) => t
     (funcall (of-length 1) '(1 2 3)) => nil
 
-[View source](sequences.lisp#L525)
+[View source](sequences.lisp#L528)
 
 ### `(length< &rest seqs)`
 
 Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L540)
+[View source](sequences.lisp#L543)
 
 ### `(length> &rest seqs)`
 
 Is each length-designator in SEQS longer than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L546)
+[View source](sequences.lisp#L549)
 
 ### `(length>= &rest seqs)`
 
 Is each length-designator in SEQS longer or as long as the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L572)
+[View source](sequences.lisp#L575)
 
 ### `(length<= &rest seqs)`
 
 Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L577)
+[View source](sequences.lisp#L580)
 
 ### `(longer x y)`
 
@@ -2865,13 +2961,13 @@ Return the longer of X and Y.
 
 If X and Y are of equal length, return X.
 
-[View source](sequences.lisp#L582)
+[View source](sequences.lisp#L585)
 
 ### `(longest seqs)`
 
 Return the longest seq in SEQS.
 
-[View source](sequences.lisp#L606)
+[View source](sequences.lisp#L609)
 
 ### `(slice seq start &optional end)`
 
@@ -2883,7 +2979,7 @@ Both START and END accept negative bounds.
 Setf of `slice` is like setf of `ldb`: afterwards, the place being set
 holds a new sequence which is not EQ to the old.
 
-[View source](sequences.lisp#L630)
+[View source](sequences.lisp#L633)
 
 ### `(ordering seq &key unordered-to-end from-end test key)`
 
@@ -2907,7 +3003,7 @@ the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order.
 
-[View source](sequences.lisp#L664)
+[View source](sequences.lisp#L667)
 
 ### `(take n seq)`
 
@@ -2919,7 +3015,7 @@ If N is longer than SEQ, SEQ is simply copied.
 If N is negative, then |N| elements are taken (in their original
 order) from the end of SEQ.
 
-[View source](sequences.lisp#L707)
+[View source](sequences.lisp#L710)
 
 ### `(drop n seq)`
 
@@ -2931,20 +3027,20 @@ the same type.
 
 If N is negative, then |N| elements are dropped from the end of SEQ.
 
-[View source](sequences.lisp#L724)
+[View source](sequences.lisp#L727)
 
 ### `(take-while pred seq)`
 
 Return the prefix of SEQ for which PRED returns true.
 
-[View source](sequences.lisp#L741)
+[View source](sequences.lisp#L744)
 
 ### `(drop-while pred seq)`
 
 Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element.
 
-[View source](sequences.lisp#L747)
+[View source](sequences.lisp#L750)
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -2957,7 +3053,7 @@ only ever called once per element.
 
 The name is from Arc.
 
-[View source](sequences.lisp#L852)
+[View source](sequences.lisp#L855)
 
 ### `(nth-best n seq pred &key key)`
 
@@ -2973,7 +3069,7 @@ Or even
 
 But uses a selection algorithm for better performance than either.
 
-[View source](sequences.lisp#L901)
+[View source](sequences.lisp#L904)
 
 ### `(reshuffle seq)`
 
@@ -2981,7 +3077,7 @@ Like `alexandria:shuffle`, but non-destructive.
 
 Regardless of the type of SEQ, the return value is always a vector.
 
-[View source](sequences.lisp#L948)
+[View source](sequences.lisp#L951)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -2991,7 +3087,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L954)
+[View source](sequences.lisp#L957)
 
 ### `(halves seq &optional split)`
 
@@ -3007,14 +3103,14 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L995)
+[View source](sequences.lisp#L998)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1029)
+[View source](sequences.lisp#L1032)
 
 ### `(deltas seq &optional fn)`
 
@@ -3034,20 +3130,21 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1044)
+[View source](sequences.lisp#L1047)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1068)
+[View source](sequences.lisp#L1071)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
 Turn CONSTRAINTS into a predicate for use with SORT.
 
-Each constraint should be two-element list.
+Each constraint should be two-element list, where the first element of
+the list should come before the second element of the list.
 
     (def dem-bones '((toe foot)
                      (foot heel)
@@ -3071,14 +3168,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1105)
+[View source](sequences.lisp#L1108)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1163)
+[View source](sequences.lisp#L1167)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3122,14 +3219,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1192)
+[View source](sequences.lisp#L1196)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1234)
+[View source](sequences.lisp#L1238)
 
 ### `(repeat-sequence seq n)`
 
@@ -3153,7 +3250,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1271)
+[View source](sequences.lisp#L1275)
 
 ### `(seq= &rest xs)`
 
@@ -3162,7 +3259,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1336)
+[View source](sequences.lisp#L1340)
 
 ## Internal Definitions
 

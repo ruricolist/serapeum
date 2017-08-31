@@ -106,7 +106,7 @@ appropriate fallthrough forms to `dispatch-case'."
               collect `((,var ,type) ,expr))
      ,@clauses))
 
-(defmacro dispatch-case-let (bindings &body clauses &environment env)
+(defmacro dispatch-case-let ((&rest bindings) &body clauses &environment env)
   "Like `dispatch-case', but establish new bindings for each expression.
 
 The bindings in a `dispatch-case-let' form are provided as a list

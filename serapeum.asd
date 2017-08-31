@@ -1,27 +1,25 @@
 ;;;; serapeum.asd
 
-(asdf:defsystem #:serapeum
+(defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
-  :in-order-to ((asdf:test-op (asdf:test-op #:serapeum/tests)))
-  :depends-on (#:alexandria
-               #:trivia
-               #:trivia.quasiquote
-               #:uiop
-               #:split-sequence
-               #:string-case
-               #:parse-number
-               #:trivial-garbage
-               #:bordeaux-threads
-               #:named-readtables
-               #:fare-quasiquote-extras
-               #:parse-declarations-1.0
-               #:introspect-environment
-               #:global-vars
-               #:cl-algebraic-data-type)
-  ;; Having had to untangle the dependencies once it seems worthwhile
-  ;; to be explicit about them, if only to keep them under control.
+  :in-order-to ((test-op (test-op "serapeum/tests")))
+  :depends-on ("alexandria"
+               "trivia"
+               "trivia.quasiquote"
+               "uiop"
+               "split-sequence"
+               "string-case"
+               "parse-number"
+               "trivial-garbage"
+               "bordeaux-threads"
+               "named-readtables"
+               "fare-quasiquote-extras"
+               "parse-declarations-1.0"
+               "introspect-environment"
+               "global-vars"
+               "cl-algebraic-data-type")
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.
@@ -87,12 +85,12 @@
                  (:file "internal-definitions")
                  (:file "tree-case")))))
 
-(asdf:defsystem "serapeum/tests"
+(defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :depends-on ("serapeum" "fiveam" "local-time")
-  :perform (asdf:test-op (o c) (uiop:symbol-call :serapeum.tests :run-tests))
+  :perform (test-op (o c) (symbol-call :serapeum.tests :run-tests))
   :pathname "tests/"
   :serial t
   :components ((:file "package")

@@ -85,10 +85,11 @@ of clauses rewritten to jump to the tags."
         (if (constantp `(progn ,@body) env)
             ;; The body is constant, no need to hoist.
             (clauses-out
-             `(return-from ,block
-                clause))
+             `(,types
+               (return-from ,block
+                 (progn ,@body))))
             (let ((tag (string-gensym 'tag)))
-              (tags-out tag `(return-from ,block ,@body))
+              (tags-out tag `(return-from ,block (progn ,@body)))
               (clauses-out `(,types (go ,tag)))))))))
 
 (defmacro dispatch-case ((&rest exprs-and-types) &body clauses)
@@ -217,8 +218,6 @@ is equivalent to
       (dispatch-case ((x string)
                       (y string))
         ...))
-
-
 
 It may be helpful to think of this as a cross between
 `defmethod' (where the (variable type) notation is used in the lambda

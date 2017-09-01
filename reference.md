@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (29 files, 285 functions)
+# Function Listing For SERAPEUM (30 files, 288 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -29,6 +29,7 @@
 - [Sequences](#sequences)
 - [Internal Definitions](#internal-definitions)
 - [Tree Case](#tree-case)
+- [Dispatch Case](#dispatch-case)
 
 ## Macro Tools
 
@@ -1622,7 +1623,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L308)
+[View source](hash-tables.lisp#L310)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -1630,7 +1631,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L319)
+[View source](hash-tables.lisp#L321)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -1661,7 +1662,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L329)
+[View source](hash-tables.lisp#L331)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -1669,7 +1670,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L425)
+[View source](hash-tables.lisp#L422)
+
+### `(delete-from-hash-table table &rest keys)`
+
+Return TABLE with KEYS removed (as with `remhash`).
+Cf. `delete-from-plist` in Alexandria.
+
+[View source](hash-tables.lisp#L430)
 
 ## Files
 
@@ -3437,4 +3445,141 @@ Like `ecase`, but specifically for characters.
 Expands into `tree-case`.
 
 [View source](tree-case.lisp#L62)
+
+## Dispatch Case
+
+### `(dispatch-case (&rest exprs-and-types) &body clauses)`
+
+Dispatch on the types of multiple expressions, exhaustively.
+
+Say you are working on a project where you need to handle timestamps
+represented both as universal times, and as instances of
+`local-time:timestamp`. You start by defining the appropriate types:
+
+    (defpackage :dispatch-case-example
+      (:use :cl :alexandria :serapeum :local-time)
+      (:shadow :time))
+    (in-package :dispatch-case-example)
+
+    (deftype universal-time ()
+      '(integer 0 *))
+
+    (deftype time ()
+      '(or universal-time timestamp))
+
+Now you want to write a `time=` function that works on universal
+times, timestamps, and any combination thereof.
+
+You can do this using `etypecase-of`:
+
+    (defun time= (t1 t2)
+      (etypecase-of time t1
+        (universal-time
+         (etypecase-of time t2
+           (universal-time
+            (= t1 t2))
+           (timestamp
+            (= t1 (timestamp-to-universal t2)))))
+        (timestamp
+         (etypecase-of time t2
+           (universal-time
+            (time= t2 t1))
+           (timestamp
+            (timestamp= t1 t2))))))
+
+This has the advantage of efficiency and exhaustiveness checking, but
+the serious disadvantage of being hard to read: to understand what
+each branch matches, you have to backtrack to the enclosing branch.
+This is bad enough when the nesting is only two layers deep.
+
+Alternately, you could do it with `defgeneric`:
+
+    (defgeneric time= (t1 t2)
+      (:method ((t1 integer) (t2 integer))
+        (= t1 t2))
+      (:method ((t1 timestamp) (t2 timestamp))
+        (timestamp= t1 t2))
+      (:method ((t1 integer) (t2 timestamp))
+        (= t1 (timestamp-to-universal t2)))
+      (:method ((t1 timestamp) (t2 integer))
+        (time= t2 t1)))
+
+This is easy to read, but it has three disadvantages. (1) There is no
+exhaustiveness checking. If, at some point in the future, you want to
+add another representation of time to your project, the compiler will
+not warn you if you forget to update `time=`. (This is bad enough with
+only two objects to dispatch on, but with three or more it gets
+rapidly easier to miss a case.) (2) You cannot use the
+`universal-time` type you just defined; it is a type, not a class, so
+you cannot specialize methods on it. (3) You are paying a run-time
+price for extensibility -- the inherent overhead of a generic function
+-- when extensibility is not what you want.
+
+Using `dispatch-case` instead gives you the readability of
+`defgeneric` with the efficiency and safety of `etypecase-of`.
+
+    (defun time= (t1 t2)
+      (dispatch-case ((time t1)
+                      (time t2))
+        ((universal-time universal-time)
+         (= t1 t2))
+        ((timestamp timestamp)
+         (timestamp= t1 t2))
+        ((universal-time timestamp)
+         (= t1 (timestamp-to-universal t2)))
+        ((timestamp universal-time)
+         (time= t2 t1))))
+
+The syntax of `dispatch-case` is much closer to `defgeneric` than it
+is to `etypecase`. The order in which clauses are defined does not
+matter, and you can define fallthrough clauses in the same way you
+would define fallthrough methods in `defgeneric`.
+
+Suppose you wanted to write a `time=` function like the one above, but
+always convert times to timestamps before comparing them. You could
+write that using `dispatch-case` like so:
+
+    (defun time= (x y)
+      (dispatch-case ((x time)
+                      (y time))
+        ((time universal-time)
+         (time= x (universal-to-timestamp y)))
+        ((universal-time time)
+         (time= (universal-to-timestamp x) y))
+        ((timestamp timestamp)
+         (timestamp= x y))))
+
+Note that this requires only three clauses, where writing it out using
+nested `etypecase-of` forms would require four clauses. This is a
+small gain; but with more subtypes to dispatch on, or more objects,
+such fallthrough clauses become more useful.
+
+[View source](dispatch-case.lisp#L94)
+
+### `(dispatch-case-let (&rest bindings) &body clauses)`
+
+Like `dispatch-case`, but establish new bindings for each expression.
+
+For example,
+
+    (dispatch-case-let (((x string) (expr1))
+                        ((y string) (expr2)))
+      ...)
+
+is equivalent to
+
+    (let ((x (expr1))
+          (y (expr2)))
+      (dispatch-case ((x string)
+                      (y string))
+        ...))
+
+
+
+It may be helpful to think of this as a cross between
+`defmethod` (where the (variable type) notation is used in the lambda
+list) and `let` (which has an obvious macro-expansion in terms of
+`lambda`).
+
+[View source](dispatch-case.lisp#L204)
 

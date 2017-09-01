@@ -52,6 +52,16 @@
     ((timestamp universal-time)
      (time=/dc t2 t1))))
 
+(defun time=/dc/rec (x y)
+  (dispatch-case ((x time)
+                  (y time))
+    ((time universal-time)
+     (time=/dc/rec x (universal-to-timestamp y)))
+    ((universal-time time)
+     (time=/dc/rec (universal-to-timestamp x) y))
+    ((timestamp timestamp)
+     (timestamp= x y))))
+
 (5am:test dispatch-case
   (let* ((now/ut (get-universal-time))
          (then/ut 0)
@@ -63,5 +73,6 @@
         (equal*
          (mapcar #'time=/nested perm (rest perm))
          (mapcar #'time=/generic perm (rest perm))
-         (mapcar #'time=/dc perm (rest perm)))))
+         (mapcar #'time=/dc perm (rest perm))
+         (mapcar #'time=/dc/rec perm (rest perm)))))
      (list now/ut then/ut then/ts now/ts))))

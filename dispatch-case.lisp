@@ -175,7 +175,7 @@ Using `dispatch-case' instead gives you the readability of
 The syntax of `dispatch-case' is much closer to `defgeneric' than it
 is to `etypecase'. The order in which clauses are defined does not
 matter, and you can define fallthrough clauses in the same way you
-would define fallthrough methods in generic.
+would define fallthrough methods in `defgeneric'.
 
 Suppose you wanted to write a `time=' function like the one above, but
 always convert times to timestamps before comparing them. You could
@@ -218,10 +218,12 @@ is equivalent to
                       (y string))
         ...))
 
-It may be helpful to think of this as analogous to both
-`defmethod' (where the `(variable type)' notation is used in the
-lambda list) and `let' (which has an obvious macro-expansion in terms
-of `lambda')."
+
+
+It may be helpful to think of this as a cross between
+`defmethod' (where the (variable type) notation is used in the lambda
+list) and `let' (which has an obvious macro-expansion in terms of
+`lambda')."
   (multiple-value-bind (vars types exprs)
       ;; Split the bindings and types.
       (with-collectors (vars-out types-out exprs-out)

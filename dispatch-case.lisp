@@ -129,7 +129,9 @@ You can do this using `etypecase-of':
             (timestamp= t1 t2))))))
 
 This has the advantage of efficiency and exhaustiveness checking, but
-the serious disadvantage of being hard to read.
+the serious disadvantage of being hard to read: to understand what
+each branch matches, you have to backtrack to the enclosing branch.
+This is bad enough when the nesting is only two layers deep.
 
 Alternately, you could do it with `defgeneric':
 
@@ -146,7 +148,9 @@ Alternately, you could do it with `defgeneric':
 This is easy to read, but it has three disadvantages. (1) There is no
 exhaustiveness checking. If, at some point in the future, you want to
 add another representation of time to your project, the compiler will
-not object if you forget to update `time='. (2) You cannot use the
+not warn you if you forget to update `time='. (This is bad enough with
+only two objects to dispatch on, but with three or more it gets
+rapidly easier to miss a case.) (2) You cannot use the
 `universal-time' type you just defined; it is a type, not a class, so
 you cannot specialize methods on it. (3) You are paying a run-time
 price for extensibility -- the inherent overhead of a generic function
@@ -167,8 +171,29 @@ Using `dispatch-case' instead gives you the readability of
         ((timestamp universal-time)
          (time= t2 t1))))
 
-Note that -- unlike `etypecase', but like `defgeneric' -- the order in
-which the clauses are defined does not matter."
+The syntax of `dispatch-case' is much closer to `defgeneric' than it
+is to `etypecase'. The order in which clauses are defined does not
+matter, and you can define fallthrough clauses in the same way you
+would define fallthrough methods in generic.
+
+Suppose you wanted to write a `time=' function like the one above, but
+always convert times to timestamps before comparing them. You could
+write that using `dispatch-case' like so:
+
+    (defun time= (x y)
+      (dispatch-case ((x time)
+                      (y time))
+        ((time universal-time)
+         (time= x (universal-to-timestamp y)))
+        ((universal-time time)
+         (time= (universal-to-timestamp x) y))
+        ((timestamp timestamp)
+         (time= x y))))
+
+Note that this requires only three clauses, where writing it out using
+nested `etypecase-of' forms would require four clauses. This is a
+small gain; but with more subtypes to dispatch on, or more objects,
+such fallthrough clauses become more useful."
   `(dispatch-case-let
        ,(loop for (expr type) in exprs-and-types
               for var = (string-gensym 'temp)

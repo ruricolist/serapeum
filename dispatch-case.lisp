@@ -71,24 +71,25 @@ shadowed by previous clauses."
                      more-branches
                      :initial-value nil)))))
 
-(defun hoist-clause-bodies (clauses env)
-  "Hoist the bodies of the clauses into separate functions.
+(defun hoist-clause-bodies (block clauses env)
+  "Hoist the bodies of the clauses into tags.
 This is needed because the same clause may be spliced into the
 dispatch-case form in several places (in order to implement
 fallthrough).
 
-Returns two values: a list of function definitions (suitable as the
-first argument to `flet') and a list of clauses."
-  ;; TODO Should this be a tagbody instead?
-  (with-collectors (fns-out clauses-out)
+Returns two values: a list of alternating tags and forms, and a list
+of clauses rewritten to jump to the tags."
+  (with-collectors (tags-out clauses-out)
     (dolist (clause clauses)
       (destructuring-bind (types . body) clause
         (if (constantp `(progn ,@body) env)
             ;; The body is constant, no need to hoist.
-            (clauses-out clause)
-            (let ((sym (string-gensym 'clause-body)))
-              (fns-out `(,sym () ,@body))
-              (clauses-out `(,types (,sym)))))))))
+            (clauses-out
+             `(return-from ,block
+                clause))
+            (let ((tag (string-gensym 'tag)))
+              (tags-out tag `(return-from ,block ,@body))
+              (clauses-out `(,types (go ,tag)))))))))
 
 (defmacro dispatch-case ((&rest exprs-and-types) &body clauses)
   "Dispatch on the types of multiple expressions, exhaustively.
@@ -235,16 +236,15 @@ of `lambda')."
                (vars-out var)
                (types-out type)
                (exprs-out expr))))))
-    (multiple-value-bind (fns clauses)
-        (hoist-clause-bodies clauses env)
-      (let ((function-names (mapcar #'first fns)))
+    (with-unique-names (block)
+      (multiple-value-bind (tags clauses)
+          (hoist-clause-bodies block clauses env)
         `(let ,(mapcar #'list vars exprs)
-           (flet ,fns
-             (declare
-              (dynamic-extent
-               ,@(mapcar (op `#',_) function-names)))
-             (dispatch-case/nobindings ,(mapcar #'list vars types)
-               ,@clauses)))))))
+           (block ,block
+             (tagbody
+                (dispatch-case/nobindings ,(mapcar #'list vars types)
+                  ,@clauses)
+                ,@tags)))))))
 
 (defmacro dispatch-case/nobindings (vars-and-types &body clauses
                                     &environment env)

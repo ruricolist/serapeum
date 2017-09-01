@@ -189,7 +189,7 @@ write that using `dispatch-case' like so:
         ((universal-time time)
          (time= (universal-to-timestamp x) y))
         ((timestamp timestamp)
-         (time= x y))))
+         (timestamp= x y))))
 
 Note that this requires only three clauses, where writing it out using
 nested `etypecase-of' forms would require four clauses. This is a

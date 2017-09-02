@@ -35,35 +35,37 @@
   (defalias x4 #'x))
 
 (test defstruct-read-only
-  (is (equal '(defstruct (foo (:copier nil))
-               (bar (required-argument 'bar) :read-only t))
-             (macroexpand-1
-              '(defstruct-read-only foo
-                bar))))
-
-  (is (equal '(defstruct (foo (:copier nil))
-               "A struct."
-               (bar (required-argument 'bar) :read-only t))
-             (macroexpand-1
-              '(defstruct-read-only foo
-                "A struct."
-                bar))))
-
-  (is (equal '(defstruct (foo (:copier nil))
-               (bar nil :read-only t))
-             (handler-bind ((warning #'muffle-warning))
+  (let ((opts
+          '((:copier nil) (:include serapeum::%read-only-struct))))
+    (is (equal `(defstruct (foo ,@opts)
+                  (bar (required-argument 'bar) :read-only t))
                (macroexpand-1
                 '(defstruct-read-only foo
-                  (bar nil :read-only nil))))))
+                  bar))))
 
-  (is (equal '(defstruct (foo (:copier nil))
-               "A struct."
-               (bar nil :read-only t))
-             (handler-bind ((warning #'muffle-warning))
+    (is (equal `(defstruct (foo ,@opts)
+                  "A struct."
+                  (bar (required-argument 'bar) :read-only t))
                (macroexpand-1
                 '(defstruct-read-only foo
                   "A struct."
-                  (bar nil :read-only nil))))))
+                  bar))))
+
+    (is (equal `(defstruct (foo ,@opts)
+                  (bar nil :read-only t))
+               (handler-bind ((warning #'muffle-warning))
+                 (macroexpand-1
+                  '(defstruct-read-only foo
+                    (bar nil :read-only nil))))))
+
+    (is (equal `(defstruct (foo ,@opts)
+                  "A struct."
+                  (bar nil :read-only t))
+               (handler-bind ((warning #'muffle-warning))
+                 (macroexpand-1
+                  '(defstruct-read-only foo
+                    "A struct."
+                    (bar nil :read-only nil)))))))
 
   (signals error
     (macroexpand-1 '(defstruct-read-only (foo (:include bar)))))

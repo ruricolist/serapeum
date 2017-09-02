@@ -182,6 +182,48 @@ Lisp."
      ,slots
      ,@options))
 
+(defstruct
+    (%read-only-struct
+     (:constructor nil)                 ;Abstract.
+     (:copier nil)
+     (:predicate nil))
+  "Abstract base class for read-only structures.")
+
+(defun read-only-include-clause (clause)
+  "Rewrite CLAUSE, an include clause, for use with a read-only
+structure."
+  (ematch clause
+    ((list)
+     `(:include %read-only-struct))
+    ((list* :include type slot-redefs)
+     `(:include ,type
+                ,@(mapcar #'read-only-slotdef slot-redefs)))))
+
+(defun read-only-slotdef (slot)
+  "Rewrite SLOT, a structure slot definition, to be read-only.
+Note that if SLOT is of an odd length, then it is treated as being
+without an initialization form, and a default initialization form that
+raises an error is supplied."
+  (let ((slot (ensure-list slot)))
+    (multiple-value-bind (name initform args)
+        (if (oddp (length slot))
+            ;; Name (1) + keyword arguments (2n) = 2n+1.
+            (destructuring-bind (name . args) slot
+              (values name `(required-argument ',name) args))
+            ;; Name (1) + initform (1) + keyword arguments (2n) = 2n+2.
+            (destructuring-bind (name initform . args) slot
+              (values name initform args)))
+      (destructuring-bind (&key (read-only t read-only-supplied?) &allow-other-keys) args
+        (declare (ignore read-only))
+        (when read-only-supplied?
+          (simple-style-warning "Redundant read-only declaration in slot definition ~s"
+                                slot))
+        (let ((args (remove-from-plist args :read-only)))
+          `(,name
+            ,initform
+            :read-only t
+            ,@args))))))
+
 (defmacro defstruct-read-only (name-and-opts &body slots)
   "Easily define a defstruct with no mutable slots.
 
@@ -192,8 +234,8 @@ make it immutable simply by switching out `defstruct' for
 
 There are only a few syntactic differences:
 
-1. To prevent accidentally inheriting mutable slots,
-   `defstruct-read-only' does not allow inheritance.
+1. A structure defined using `defstruct-read-only' may only inherit
+   from other structures defined using `defstruct-read-only'.
 
 2. The `:type' option may not be used.
 
@@ -212,38 +254,27 @@ structure does not make sense."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
-        (when-let (clause (find :include opts :key #'car-safe))
-          (error "Read-only struct ~a cannot use inheritance: ~s."
-                 name clause))
         (when (find :copier opts :key #'ensure-car)
           (error "Read only struct ~a does not need a copier."
                  name))
         (when-let (clause (find :type opts :key #'car-safe))
           (error "Read-only structs may not use the ~s option: ~a"
                  :type clause))
-        `(defstruct (,name (:copier nil) ,@opts)
-           ,@(unsplice docstring)
-           ,@(collecting
-               (dolist (slot slots)
-                 (let ((slot (ensure-list slot)))
-                   (multiple-value-bind (name initform args)
-                       (if (oddp (length slot))
-                           ;; Name (1) + keyword arguments (2n) = 2n+1.
-                           (destructuring-bind (name . args) slot
-                             (values name `(required-argument ',name) args))
-                           ;; Name (1) + initform (1) + keyword arguments (2n) = 2n+2.
-                           (destructuring-bind (name initform . args) slot
-                             (values name initform args)))
-                     (destructuring-bind (&key (read-only t read-only-supplied?) &allow-other-keys) args
-                       (declare (ignore read-only))
-                       (when read-only-supplied?
-                         (simple-style-warning "Redundant read-only declaration in slot definition ~s"
-                                               slot))
-                       (let ((args (remove-from-plist args :read-only)))
-                         (collect `(,name
-                                    ,initform
-                                    :read-only t
-                                    ,@args)))))))))))))
+        (multiple-value-bind (include-clause opts)
+            (if-let (clause (find :include opts :key #'car-safe))
+              (let ((super (second clause)))
+                (if (subtypep super '%read-only-struct)
+                    (values clause
+                            (remove clause opts))
+                    (error "Included type ~a is not read-only.
+Read-only structs can only inherit from other read-only structs."
+                           super)))
+              (values nil opts))
+          `(defstruct (,name (:copier nil)
+                             ,@opts
+                             ,(read-only-include-clause include-clause))
+             ,@(unsplice docstring)
+             ,@(mapcar #'read-only-slotdef slots)))))))
 
 (defmacro defvar-unbound (var &body (docstring))
   "Define VAR as if by `defvar' with no init form, and set DOCSTRING

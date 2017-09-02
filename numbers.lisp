@@ -233,7 +233,8 @@ From Zetalisp."
         (+ low (random range)))))
 
 (define-compiler-macro random-in-range (&whole call low high)
-  "When LOW and HIGH are both numbers, wrap the call in a "
+  "When LOW and HIGH are both constants, declare the type of the
+result."
   (when (constantp low)
     (setf low (eval low)))
   (when (constantp high)

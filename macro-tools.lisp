@@ -57,6 +57,16 @@ The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
 in every other macro."
   (gensym (string x)))
 
+;;; These are more consistent with `with-unique-names'.
+
+(defun unique-name (x)
+  "Alias for `string-gensym'."
+  (string-gensym x))
+
+(defun make-unique-name-list (length &optional (x 'g))
+  "Alias for `alexandria:make-gensym-list'."
+  (make-gensym-list length (string x)))
+
 ;;;## `unsplice'
 ;;; Found this gem in the code for Lparallel.
 

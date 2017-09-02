@@ -11,6 +11,8 @@
    ;; Macro tools.
    #:unsplice
    #:string-gensym
+   #:unique-name
+   #:unique-name-list
    #:with-thunk
    #:expand-macro
    #:expand-macro-recursively

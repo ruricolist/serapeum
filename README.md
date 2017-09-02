@@ -200,6 +200,14 @@ and `labels`.
                                   
 At the top level, this expands into an example of “let over defun” (gensyms elided for readability):
 
+    ;; This source form
+    (defmemo fibonacci (n)
+        (if (<= n 1)
+            1
+            (+ (fibonacci (- n 1))
+               (fibonacci (- n 2)))))
+               
+    ;; Expands into...
     (let ((memo-table (make-hash-table :test 'equal)))
       (defun fibonacci (&rest args)
         (multiple-value-bind (result result?)

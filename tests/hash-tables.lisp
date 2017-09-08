@@ -60,3 +60,10 @@
     (is (= 1 (ht :x)))
     (signals type-error
       (ht :y 2.0))))
+
+(test set-hash-table
+  (is
+   (= 3 (hash-table-count
+         (set-hash-table '(x y z)))))
+  (signals error
+    (set-hash-table '(x x y z))))

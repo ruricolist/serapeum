@@ -21,7 +21,7 @@
 (defun canonicalize-key (k)
   (etypecase-of key-designator k
     (null #'identity)
-    (function-name (ensure-function k))
+    (function-name (fdefinition k))
     (function k)))
 
 (-> canonicalize-test (test-designator &optional test-designator)
@@ -30,7 +30,7 @@
   (flet ((canonicalize (test)
            (etypecase-of test-designator test
              (null #'eql)
-             (function-name (ensure-function test))
+             (function-name (fdefinition test))
              (function test))))
     (cond ((and test test-not)
            (error "Cannot supply both ~s and ~s to a sequence function" 'test 'test-not))
@@ -190,19 +190,20 @@ Uses `replace' internally."
                        &key count from-end (start 0) end
                             (key #'identity))
   "Helper for FILTER."
-  (%fbind (pred (key (canonicalize-key key)))
-    (cond
-      ;; Simple cases.
-      ((= count 0) (make-sequence-like seq 0))
-      ((> count (length seq)) (apply #'filter pred seq :count nil args))
-      (t (let ((ret (make-bucket seq)))
-           (do-subseq (item seq nil :start start :end end :from-end from-end)
-             (when (pred (key item))
-               (bucket-push seq item ret)
-               (when (zerop (decf count))
-                 (return))))
-           (let ((seq2 (bucket-seq seq ret)))
-             (if from-end (nreverse seq2) seq2)))))))
+  (cond
+    ;; Simple cases.
+    ((= count 0) (make-sequence-like seq 0))
+    ((> count (length seq)) (apply #'filter pred seq :count nil args))
+    (t (%fbind (pred)
+         (with-key-fn (key)
+           (let ((ret (make-bucket seq)))
+             (do-subseq (item seq nil :start start :end end :from-end from-end)
+               (when (pred (key item))
+                 (bucket-push seq item ret)
+                 (when (zerop (decf count))
+                   (return))))
+             (let ((seq2 (bucket-seq seq ret)))
+               (if from-end (nreverse seq2) seq2))))))))
 
 (defun filter (pred seq &rest args &key count &allow-other-keys)
   "Almost, but not quite, an alias for `remove-if-not'.
@@ -312,7 +313,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (%fbind ((key (canonicalize-key key)))
+  (with-key-fn (key)
     (let ((buckets (loop for nil in preds collect (make-bucket seq)))
           (extra (make-bucket seq)))
       (do-subseq (item seq nil :start start :end end)
@@ -338,20 +339,21 @@ You can think of `assort' as being akin to `remove-duplicates':
 
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
-  (%fbind ((key (canonicalize-key key)) test)
-    (let ((groups (queue)))
-      (do-subseq (item seq nil :start start :end end)
-        (if-let ((group
-                  (let ((kitem (key item)))
-                    (find-if
-                     (lambda (group)
-                       (test kitem (key (bucket-front seq group))))
-                     (qlist groups)))))
-          (bucket-push seq item group)
-          (enq (make-bucket seq item) groups)))
-      (mapcar-into (lambda (bucket)
-                     (bucket-seq seq bucket))
-                   (qlist groups)))))
+  (%fbind (test)
+    (with-key-fn (key)
+      (let ((groups (queue)))
+        (do-subseq (item seq nil :start start :end end)
+          (if-let ((group
+                    (let ((kitem (key item)))
+                      (find-if
+                       (lambda (group)
+                         (test kitem (key (bucket-front seq group))))
+                       (qlist groups)))))
+            (bucket-push seq item group)
+            (enq (make-bucket seq item) groups)))
+        (mapcar-into (lambda (bucket)
+                       (bucket-seq seq bucket))
+                     (qlist groups))))))
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
@@ -434,15 +436,15 @@ The arguments START, END, and KEY are as for `reduce'.
 As a second value, return the length of SEQ.
 
 From Clojure."
-  (%fbind ((key (canonicalize-key key)))
-    (let ((total 0)
-          ;; Using multiple-value-call lets us specify defaults while
-          ;; still ensuring the caller can override them.
-          (table (multiple-value-call #'make-hash-table
-                   (values-list (remove-from-plist hash-table-args :key))
-                   :size (values (floor (length seq) 2))
-                   :test 'equal)))
-      (declare (fixnum total))
+  (let ((total 0)
+        ;; Using multiple-value-call lets us specify defaults while
+        ;; still ensuring the caller can override them.
+        (table (multiple-value-call #'make-hash-table
+                 (values-list (remove-from-plist hash-table-args :key))
+                 :size (values (floor (length seq) 2))
+                 :test 'equal)))
+    (declare (fixnum total))
+    (with-key-fn (key)
       (if (typep seq 'bit-vector)
           (with-subtype-dispatch bit-vector (simple-bit-vector) seq
             (setf (gethash (key 0) table) (count 0 seq)
@@ -452,8 +454,8 @@ From Clojure."
                (lambda (elt)
                  (incf total)
                  (incf (gethash (key elt) table 0)))
-               seq))
-      (values table total))))
+               seq)))
+    (values table total)))
 
 (defun scan (fn seq &key (key #'identity) (initial-value nil initial-value?))
   "A version of `reduce' that shows its work.
@@ -472,12 +474,14 @@ From APL and descendants."
       (if initial-value?
           (values seq (list initial-value))
           (values (nsubseq seq 1) (list (elt seq 0))))
-    (%fbind (fn (key (canonicalize-key key)))
-      (nreverse
-       (reduce (lambda (acc x)
-                 (cons (fn x (key (car acc))) acc))
-               seq
-               :initial-value initial-value)))))
+    (%fbind (fn)
+      (with-key-fn (key)
+        (nreverse
+         (with-key-fn (key)
+           (reduce (lambda (acc x)
+                     (cons (fn x (key (car acc))) acc))
+                   seq
+                   :initial-value initial-value)))))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.
@@ -687,7 +691,7 @@ UNORDERED-TO-END controls where to sort items that are not present in
 the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order."
-  (%fbind ((key (canonicalize-key key)))
+  (with-key-fn (key)
     (let ((table (make-hash-table :test test))
           (i -1))
       (map nil
@@ -960,23 +964,23 @@ values).
 
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0"
-  (%fbind ((key (canonicalize-key key))
-           pred)
-    (let (min max kmin kmax (init t))
-      (flet ((update-extrema (x)
-               (if init
-                   (setf min x max x
-                         kmin (key x)
-                         kmax kmin
-                         init nil)
-                   (let ((kx (key x)))
-                     (cond ((pred kx kmin)
-                            (setf kmin kx min x))
-                           ((pred kmax kx)
-                            (setf kmax kx max x)))))))
-        (declare (dynamic-extent #'update-extrema))
-        (map-subseq #'update-extrema seq start end))
-      (values min max))))
+  (%fbind (pred)
+    (with-key-fn (key)
+      (let (min max kmin kmax (init t))
+        (flet ((update-extrema (x)
+                 (if init
+                     (setf min x max x
+                           kmin (key x)
+                           kmax kmin
+                           init nil)
+                     (let ((kx (key x)))
+                       (cond ((pred kx kmin)
+                              (setf kmin kx min x))
+                             ((pred kmax kx)
+                              (setf kmax kx max x)))))))
+          (declare (dynamic-extent #'update-extrema))
+          (map-subseq #'update-extrema seq start end))
+        (values min max)))))
 
 (-> split-at (list array-index) (values list list))
 (defun split-at (list k)
@@ -1032,7 +1036,7 @@ the left."
 (defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access)."
-  (%fbind ((key (canonicalize-key key)))
+  (with-key-fn (key)
     (map-into seq
               #'cdr
               ;; Vectors sort faster.

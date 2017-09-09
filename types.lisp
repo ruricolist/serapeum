@@ -434,6 +434,7 @@ added to ensure that TYPE itself is handled."
      ,@body))
 
 (defmacro with-test-fn ((test) &body body)
+  "Specialize BODY on the most common test functions."
   (check-type test symbol)
   `(cond ((eql ,test #'eq)
           (macrolet ((,test (x y) `(eq ,x ,y)))
@@ -449,6 +450,16 @@ added to ensure that TYPE itself is handled."
          ;;    ,@body))
          (t (let ((,test (ensure-function ,test)))
               (macrolet ((,test (x y) (list 'funcall ',test x y)))
+                ,@body)))))
+
+(defmacro with-key-fn ((key) &body body)
+  "Specialize BODY on the most common key functions."
+  (check-type key symbol)
+  `(let ((,key (canonicalize-key ,key)))
+     (cond ((eql ,key #'identity)
+            (macrolet ((,key (x) x))
+              ,@body))
+           (t (macrolet ((,key (x) (list 'funcall ',key x)))
                 ,@body)))))
 
 (declaim (ftype (function (t) boolean) true))

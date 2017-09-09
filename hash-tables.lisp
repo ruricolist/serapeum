@@ -296,7 +296,7 @@ values. That is, each element of SET is stored as if by
                   (values-list hash-table-args)
                   :test test
                   :size (length set))))
-    (ensuring-functions (key)
+    (with-key-fn (key)
       (if (not strict)
           (dolist (item set)
             (setf (gethash (funcall key item) table) item))

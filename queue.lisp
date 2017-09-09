@@ -9,7 +9,8 @@
 
 (declaim (inline make-queue queuep))
 
-(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons)))))
+(defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
+                  (:predicate queuep))
   "Basic cons queues, with an implementation based on PAIP and the
 original Norvig & Waters paper, an an API mostly borrowed from Arc.
 
@@ -50,10 +51,6 @@ justifying making *collectors* (queues) first-class."
   (cons nil :type cons :read-only t))
 
 (declaim-freeze-type queue)
-
-(defun queuep (x)
-  "Is X a queue?"
-  (queue-p x))
 
 (defmethod print-object ((queue queue) stream)
   (if (and *print-readably* *read-eval*)

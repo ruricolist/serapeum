@@ -331,7 +331,6 @@
    #:mvfold
    #:mvfoldr
    #:repeat-sequence
-   #:sequal
    #:split-sequence
    #:split-sequence-if
    #:split-sequence-if-not

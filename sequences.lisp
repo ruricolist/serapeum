@@ -78,34 +78,34 @@ part of the arguments to compare, and compares them using TEST."
     ;; Use macrolet instead of fbind to minimize code size.
     (macrolet ((fn (&rest args) `(funcall fn ,@args)))
       (seq-dispatch seq
-        (if (null end)
-            (if from-end
-                (list-map-from-end/bordeaux fn seq :start start)
-                (dolist (item (nthcdr start seq))
-                  (fn item)))
-            (if from-end
-                (list-map-from-end/bordeaux fn seq :start start :end end)
-                (loop for item in (nthcdr start seq)
-                      for i below (- end start)
-                      do (fn item))))
-        (with-subtype-dispatch vector
-            (simple-bit-vector
-             bit-vector
-             (simple-array character (*))
-             simple-base-string)
-            seq
-          (let ((end (or end (length seq))))
-            (if from-end
-                (loop for i downfrom (1- end) to start
-                      do (fn (vref seq i)))
-                (loop for i from start below end
-                      do (fn (vref seq i))))))
-        (let ((end (or end (length seq))))
-          (if from-end
-              (loop for i downfrom (1- end) to start
-                    do (fn (elt seq i)))
-              (loop for i from start below end
-                    do (fn (elt seq i)))))))))
+                    (if (null end)
+                        (if from-end
+                            (list-map-from-end/bordeaux fn seq :start start)
+                            (dolist (item (nthcdr start seq))
+                              (fn item)))
+                        (if from-end
+                            (list-map-from-end/bordeaux fn seq :start start :end end)
+                            (loop for item in (nthcdr start seq)
+                                  for i below (- end start)
+                                  do (fn item))))
+                    (with-subtype-dispatch vector
+                      (simple-bit-vector
+                       bit-vector
+                       (simple-array character (*))
+                       simple-base-string)
+                      seq
+                      (let ((end (or end (length seq))))
+                        (if from-end
+                            (loop for i downfrom (1- end) to start
+                                  do (fn (vref seq i)))
+                            (loop for i from start below end
+                                  do (fn (vref seq i))))))
+                    (let ((end (or end (length seq))))
+                      (if from-end
+                          (loop for i downfrom (1- end) to start
+                                do (fn (elt seq i)))
+                          (loop for i from start below end
+                                do (fn (elt seq i)))))))))
 (declaim (notinline map-subseq))
 
 (define-do-macro do-subseq ((var seq &optional return &key start end from-end) &body body)

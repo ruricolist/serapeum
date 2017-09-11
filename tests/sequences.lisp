@@ -37,10 +37,10 @@
              '((1 3 5 7 9) (0 2 4 6 8)))))
 
 (test assort
-  (is (sequal (assort (range 10)
-                      :key (lambda (x)
-                             (mod x 3)))
-              '((0 3 6 9) (1 4 7) (2 5 8))))
+  (is (seq= (assort (range 10)
+                    :key (lambda (x)
+                           (mod x 3)))
+            '((0 3 6 9) (1 4 7) (2 5 8))))
 
   (is (equal (assort "How Now Brown Cow" :key #'upper-case-p)
              '("HNBC" "ow ow rown ow"))))

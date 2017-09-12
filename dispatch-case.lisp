@@ -196,11 +196,13 @@ Note that this requires only three clauses, where writing it out using
 nested `etypecase-of' forms would require four clauses. This is a
 small gain; but with more subtypes to dispatch on, or more objects,
 such fallthrough clauses become more useful."
-  `(dispatch-case-let
-       ,(loop for (expr type) in exprs-and-types
-              for var = (string-gensym 'temp)
-              collect `((,var ,type) ,expr))
-     ,@clauses))
+  (let ((*gensym-counter* 0))
+    `(dispatch-case-let
+         ,(loop for (expr type) in exprs-and-types
+                for i from 0
+                for var = (string-gensym 'arg)
+                collect `((,var ,type) ,expr))
+       ,@clauses)))
 
 (defmacro dispatch-case-let ((&rest bindings) &body clauses &environment env)
   "Like `dispatch-case', but establish new bindings for each expression.

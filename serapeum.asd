@@ -84,7 +84,8 @@
                 ((:file "mop")
                  (:file "internal-definitions")
                  (:file "tree-case")
-                 (:file "dispatch-case")))))
+                 (:file "dispatch-case")
+                 (:file "range" :depends-on ("dispatch-case"))))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
@@ -131,4 +132,5 @@
                  (:file "sequences")
                  (:file "tree-case")
                  (:file "dispatch-case")
+                 (:file "range")
                  (:file "quicklisp")))))

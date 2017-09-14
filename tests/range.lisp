@@ -12,11 +12,11 @@
 
 (test empty-range
   (test-range (range 0 0) #())
-  (test-range (range 0) #())
-  (test-range (range 1 0) #()))
+  (test-range (range 0) #()))
 
 (test bit-range
-  (test-range (range 0 1) #(0)))
+  (test-range (range 0 1) #(0))
+  (test-range (range 1 0) #(1)))
 
 (test integer-range
   (test-range (range 10)
@@ -67,9 +67,11 @@
   (test-range (range 0 8/10 1/10)
               #(0 1/10 1/5 3/10 2/5 1/2 3/5 7/10))
 
-  (test-range (range 0 0.8d0 0.1d0)
-              #(0 0.1d0 0.2d0 0.30000000000000004d0 0.4d0 0.5d0 0.6d0 0.7d0 0.7999999999999999d0))
+  (is (length= (range 0 8/10 1/10)
+               (range 0 0.8d0 0.1d0)))
 
-  (is (= (length (range 0.4d0 0.6d0 0.2d0)) 1))
+  (is (length= (range 0.4d0 0.6d0 0.2d0)
+               (range 4/10 6/10 2/10)))
 
-  (is (= (length (range 0.4s0 0.8s0 0.2s0)) 2)))
+  (is (length= (range 0.4s0 0.8s0 0.2s0)
+               (range 4/10 8/10 2/10))))

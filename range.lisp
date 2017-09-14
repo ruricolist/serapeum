@@ -3,11 +3,6 @@
 ;;; For SBCL, at least, inlining the functions is enough to make the
 ;;; element type of the vector constant when the args are constant.
 
-(in-package #:serapeum)
-
-;;; For SBCL, at least, inlining the functions is enough to make the
-;;; element type of the vector constant when the args are constant.
-
 (defsubst count-range/1 (end)
   (declare (type array-index end))
   (if (= end 0) #()
@@ -70,7 +65,7 @@ Useful mostly for generating test data."
   (declare (type array-index start))
   (declare (type (or null array-index) start end))
   (assert (not (zerop step)))
-  (cond ((and end-supplied? step-supplied?)
+  (cond (step-supplied?
          (count-range/3 start end step))
         (end-supplied?
          (count-range/2 start end))
@@ -79,13 +74,15 @@ Useful mostly for generating test data."
 
 (define-compiler-macro count-range (start &optional
                                           (end nil end-supplied?)
-                                          (by nil by-supplied?))
-  (cond ((and end-supplied? by-supplied?)
-         `(count-range/3 ,start ,end ,by))
-        (end-supplied?
-         `(urange/2 ,start ,end))
-        (t
-         `(count-range/1 ,start))))
+                                          (by nil by-supplied?)
+                                          &environment env)
+  (let ((by (eval-constant by env)))
+    (cond ((and by-supplied? (not (eql 1 by)))
+           `(count-range/3 ,start ,end ,by))
+          (end-supplied?
+           `(count-range/2 ,start ,end))
+          (t
+           `(count-range/1 ,start)))))
 
 (-> simple-range (real real real) (vector rational))
 (defun simple-range (start end step)
@@ -101,77 +98,133 @@ Useful mostly for generating test data."
         (loop for n from start below end by step do
           (vector-push-extend n vect)))))
 
+(-> integer-range (integer integer integer) vector)
+(defun integer-range (start stop step)
+  (mvlet* ((low high
+            (sort-values #'< start stop))
+           (in-order? (eql low start))
+           (element-type
+            (if in-order?
+                `(integer ,low (,high))
+                `(integer (,low) ,high)))
+           (len (abs (floor (abs (- high low))
+                            (abs step))))
+           (vect (make-array len :element-type element-type)))
+    (if in-order?
+        (loop for i from 0
+              for n from low below high by step
+              do (setf (aref vect i) n))
+        (loop for i from 0
+              for n downfrom high above low by (abs step)
+              do (setf (aref vect i) n)))
+    vect))
+
 (progn
   (defmacro define-real-range (name &body (&key type))
     `(progn
        (-> ,name (,type ,type ,type) (vector ,type))
        (defun ,name (start stop step)
          (declare (type ,type start stop step))
-         (lret ((vect (make-array 10
-                                  :adjustable t
-                                  :fill-pointer 0
-                                  :element-type ',type)))
-           (loop for n of-type ,type from start below stop by step
-                 do (vector-push-extend n vect))))))
+         ;; Real ranges are filled by multiplying the step, rather by
+         ;; adding it, because, for floating point numbers, if the
+         ;; starting point is sufficiently large, and the step is
+         ;; sufficiently small, then the result may be identical to
+         ;; the starting point.
+         (lret* ((len (max 1 (abs (floor (/ (- stop start) step)))))
+                 (vect (make-array len :element-type ',type)))
+           (loop for i from 0 below len
+                 for n = (+ start (* step i))
+                 do (setf (aref vect i) n))))))
 
   (define-real-range real-range
     :type real)
+
+  (define-real-range short-float-range
+    :type short-float)
 
   (define-real-range single-float-range
     :type single-float)
 
   (define-real-range double-float-range
-    :type double-float))
+    :type double-float)
+
+  (define-real-range long-float-range
+    :type long-float))
+
+(defsubst frange (start stop step)
+  "Perform floating-point contagion on START, STOP, and STEP, and call
+`range' on the results."
+  (apply #'range (float-precision-contagion start stop step)))
 
 (defun range (start &optional (stop 0 stop?) (step 1))
-  (declare (optimize (debug 0) (safety 1)))
+  (declare (optimize (debug 0) (safety 1))
+           #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note)
+           (notinline count-range/1 count-range/2 count-range/3))
   (multiple-value-bind (start stop)
       (if stop?
           (values start stop)
           (values 0 start))
     (dispatch-case ((start real) (stop real) (step real))
       ((non-negative-integer non-negative-integer non-negative-integer)
-       (locally (declare (notinline count-range/3))
-         (count-range/3 start stop step)))
-      ((ratio ratio ratio)
+       (if (<= start stop)
+           (count-range/3 start stop step)
+           (integer-range start stop step)))
+
+      ((integer integer integer)
+       (integer-range start stop step))
+
+      ((ratio rational rational)
        (real-range start stop step))
+      ((rational ratio rational)
+       (real-range start stop step))
+      ((rational rational ratio)
+       (real-range start stop step))
+
       ((single-float single-float single-float)
        (single-float-range start stop step))
       ((double-float double-float double-float)
        (double-float-range start stop step))
+      ((short-float short-float short-float)
+       (short-float-range start stop step))
+      ((long-float long-float long-float)
+       (long-float-range start stop step))
+      ;; Mixtures of different kinds of floats.
       ((float float float)
        ;; Do float contagion in advance.
-       (let ((zero
-               (+ (* 0 start)
-                  (* 0 stop)
-                  (* 0 step))))
-         (range (+ zero start)
-                (+ stop stop)
-                (+ zero step))))
+       (frange start stop step))
 
       ;; Ensure correct contagion for mixtures of rationals and
-      ;; floats.
+      ;; floats. Coerce to double floats to start with, so we don't needlessly
+      ;; lose precision.
       ((rational float float)
-       (range (float start 0l0)
-              stop
-              step))
+       (frange start stop step))
       ((rational float rational)
-       (range (float start stop)
-              stop
-              (float step stop)))
+       (frange start stop step))
       ((rational rational float)
-       (range (float start step)
-              (float stop step)
-              step))
+       (frange start stop step))
       ((float float rational)
-       (range start
-              stop
-              (float step 0l0)))
+       (frange start stop step))
       ((float rational float)
-       (range start
-              (float stop 0l0)
-              step))
+       (frange start stop step))
       ((float rational rational)
-       (range start
-              (float stop start)
-              (float step start))))))
+       (frange start stop step)))))
+
+(define-compiler-macro range
+    (&whole call
+            start &optional (stop 0 stop?) (step 1 step?)
+            &environment env)
+  (let ((start (eval-constant start env))
+        (stop  (eval-constant stop  env))
+        (step  (eval-constant step  env)))
+    (or
+     ;; Expand directly into count-range when possible.
+     (and (typep start 'array-index)
+          (if (not stop?)
+              `(count-range ,start)
+              (and (typep stop 'array-index)
+                   (<= start stop)
+                   (if (not step?)
+                       `(count-range ,start ,stop)
+                       (and (typep step 'array-index)
+                            `(count-range ,start ,stop ,step))))))
+     call)))

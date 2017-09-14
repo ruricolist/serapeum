@@ -199,6 +199,7 @@
    #:growf
    #:random-in-range
    #:float-precision-contagion
+   #:range
    ;; Octets.
    #:octet
    #:octet-vector
@@ -342,8 +343,7 @@
    #:tree-case
    #:tree-ecase
    #:char-case
-   #:char-ecase
-   #:range))
+   #:char-ecase))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

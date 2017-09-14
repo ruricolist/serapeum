@@ -16,8 +16,10 @@
   "If S is a gensym, chop the numbers off the end.
 This saves needless updates to the documentation."
   (if (symbolp s)
-      (intern (ppcre:regex-replace "\\d{2,}$" (string s) "")
-              (symbol-package s))
+      (let ((name (ppcre:regex-replace "\\d{2,}$" (string s) "")))
+        (if-let (p (symbol-package s))
+          (intern name p)
+          (make-symbol name)))
       s))
 
 (defun arglist (s)

@@ -25,6 +25,7 @@
    ;; Types.
    #:supertypep
    #:proper-subtype-p
+   #:proper-supertype-p
    #:->
    #:assure
    #:assuref

@@ -198,6 +198,13 @@ That is, is TYPE a subtype of SUPERTYPE?"
   "Is SUBTYPE a proper subtype of TYPE?
 
 This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?"
+  ;; You might expect this would be as simple as
+
+  ;; (and (subtypep subtype type)
+  ;;      (not (subtypep type subtype)))
+
+  ;; but the implementation must be more complicated to give a
+  ;; meaningful answer for the second value: "are you sure?".
   (multiple-value-bind (subtype? valid1)
       (subtypep subtype type env)
     (if (not subtype?)
@@ -209,6 +216,14 @@ This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?"
               ;; is true.
               (values t t)
               (values nil (and valid1 valid2)))))))
+
+(-> proper-supertype-p (t t &optional t) (values boolean boolean))
+(defun proper-supertype-p (supertype type &optional env)
+  "Is SUPERTYPE a proper supertype of TYPE?
+
+That is, is it true that every value of TYPE is also of type
+SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
+  (proper-subtype-p type supertype env))
 
 (defun sort-subtypes (subtypes)
   (let ((sorted (stable-sort subtypes #'proper-subtype-p)))

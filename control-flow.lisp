@@ -795,7 +795,7 @@ But with less consing, and potentially faster."
     `(let ((,gpred (ensure-function ,pred)))
        (declare (ignorable ,gpred)
                 (function ,gpred)
-                (optimize speed (safety 1) (debug 0) (compilation-speed 0)))
+                (optimize (safety 1) (debug 0) (compilation-speed 0)))
        ,(match values
           ((list) `(values))
           ((list x) `(values ,x))

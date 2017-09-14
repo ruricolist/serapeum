@@ -69,6 +69,7 @@ case SUBTREE will be used as the value of the subtree."
   (declare (optimize speed (debug 1)))
   (let ((fun (ensure-function fun)))
     (labels ((leaf-walk (fun tree)
+               (declare (function fun))
                (cond ((atom tree)
                       (funcall fun tree))
                      (t (leaf-walk fun (car tree))

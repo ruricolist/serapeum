@@ -11,6 +11,11 @@
              (safety 0)
              (compilation-speed 0))))
 
+;;; The spec says that rational and float are disjoint subtypes of
+;;; real, but it does not say they are exhaustive.
+(deftype real* ()
+  '(or rational float))
+
 (defun range-error (start stop step)
   (error 'arithmetic-error
          :operands (list start stop step)
@@ -192,7 +197,7 @@ STOP by STEP."
                  do (setf (aref vect i) n))))))
 
   (define-real-range real-range
-    :type real)
+    :type real*)
 
   (define-real-range short-float-range
     :type short-float)
@@ -230,7 +235,7 @@ With one argument, return all the steps in the interval [0,end)."
           (values start stop)
           (values 0 start))
     (check-range start stop step)
-    (dispatch-case ((start real) (stop real) (step real))
+    (dispatch-case ((start real*) (stop real*) (step real*))
       ((array-index array-index non-negative-integer)
        (if (<= start stop)
            (count-range/3 start stop step)

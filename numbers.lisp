@@ -270,3 +270,18 @@ result."
                              (truly-the ,type
                                (random-in-range ,low ,high))))))))))
       call))
+
+(defun float-precision-contagion (&rest ns)
+  "Perform numeric contagion on the elements of NS.
+
+That is, if any element of NS is a float, then every number in NS will
+be returned as \"a float of the largest format among all the
+floating-point arguments to the function\".
+
+This does nothing but numeric contagion: the number of arguments
+returned is the same as the number of arguments given."
+  (declare (dynamic-extent ns))
+  (let* ((zeros (mapcar (op (* _ 0)) ns))
+         (zero (apply #'+ zeros)))
+    (mapcar (op (+ _ zero))
+            ns)))

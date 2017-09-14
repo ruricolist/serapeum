@@ -197,6 +197,7 @@
    #:shrinkf
    #:growf
    #:random-in-range
+   #:float-precision-contagion
    ;; Octets.
    #:octet
    #:octet-vector

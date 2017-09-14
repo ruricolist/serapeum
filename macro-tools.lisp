@@ -668,3 +668,12 @@ lambda list."
                     (mapcar (compose #'first #'rest #'first) keys)
                     (mapcar #'third keys)
                     (mapcar #'first aux)))))
+
+;;; TODO Worth exporting?
+(defun eval-constant (form &optional env)
+  (if (constantp form)
+      (eval form)
+      (let ((form (expand-macro-recursively form env)))
+        (if (constantp form)
+            (eval form)
+            form))))

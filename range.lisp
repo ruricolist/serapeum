@@ -1,70 +1,100 @@
 (in-package #:serapeum)
 
+;;; A possibly over-engineered `range' function. Why is it worth all
+;;; the fuss? It's used extensively in Serapeum's test suite. The
+;;; faster `range' runs, and the less pressure it puts on the garbage
+;;; collector, the faster the test suite runs.
+
+(defconst no-bounds-checks
+  '(declare (optimize
+             (debug 0)
+             (safety 0)
+             (compilation-speed 0))))
+
+(defun range-error (start stop step)
+  (error 'arithmetic-error
+         :operands (list start stop step)
+         :operation 'range))
+
+(declaim (inline check-range))
+(defun check-range (start stop step)
+  (let ((in-order? (<= start stop)))
+    (when (or (zerop step)
+              (eif in-order? (minusp step) (plusp step)))
+      (RANGE-ERROR start stop step))))
+(declaim (notinline check-range))
+
+(defmacro check-range/inline (start stop step)
+  `(locally (declare (inline check-range))
+     (check-range ,start ,stop ,step)))
+
 ;;; For SBCL, at least, inlining the functions is enough to make the
 ;;; element type of the vector constant when the args are constant.
 
 (defsubst count-range/1 (end)
+  #.no-bounds-checks
   (declare (type array-index end))
+  (check-range/inline 0 end 1)
   (if (= end 0) #()
       (lret* ((type `(integer 0 (,end)))
               (vector (make-array end :element-type type
                                       :initial-element 0)))
-        (nlet rec ((i 0))
+        (nlet lp ((i 0))
           (declare (type array-index i))
           (if (= i end) vector
               (progn
                 (setf (aref vector i) i)
-                (rec (1+ i))))))))
+                (lp (1+ i))))))))
 
 (defsubst count-range/2 (start end)
+  #.no-bounds-checks
   (declare (type array-index start end))
+  (check-range/inline start end 1)
   (lret* ((type `(integer ,start (,end)))
           (len (- end start))
           (vector (make-array len :element-type type)))
-    (nlet rec ((i 0)
-               (n start))
+    (nlet lp ((i 0)
+              (n start))
       (declare (type array-index i n))
       (if (= i len) vector
           (progn
             (setf (aref vector i) n)
-            (rec (1+ i)
-                 (1+ n)))))))
+            (lp (1+ i)
+                (1+ n)))))))
 
 (defsubst count-range/3 (start end step)
+  #.no-bounds-checks
   (declare (type array-index start end step))
+  (check-range/inline start end step)
   (cond ((= start end) #())
         ((< start end)
          (lret* ((type `(integer ,start (,end)))
                  (len (ceiling (- end start) step))
                  (vector (make-array len :element-type type
                                          :initial-element start)))
-           (nlet rec ((i 0)
-                      (n start))
+           (nlet lp ((i 0)
+                     (n start))
              (declare (type array-index i n))
              (if (= i len) vector
                  (progn
                    (setf (aref vector i) n)
-                   (rec (1+ i)
-                        (+ n step)))))))
-        (t (error 'arithmetic-error
-                  :operands (list start end step)
-                  :operation 'range))))
+                   (lp (1+ i)
+                       (+ n step)))))))
+        (t (range-error start end step))))
 
 (defsubst count-range (start &optional (end nil end-supplied?)
                                        (step 1 step-supplied?))
-  "Return a vector of integers.
+  "Return a vector of ascending positive integers.
 
 With one argument, return all the integers in the interval [0,end).
 
 With two arguments, return all the integers in the interval [start,end).
 
 With three arguments, return the integers in the interval [start,end)
-whose difference from START is evenly divisible by STEP.
-
-Useful mostly for generating test data."
+whose difference from START is evenly divisible by STEP."
   (declare (type array-index start))
   (declare (type (or null array-index) start end))
-  (assert (not (zerop step)))
+  (check-range/inline start end step)
   (cond (step-supplied?
          (count-range/3 start end step))
         (end-supplied?
@@ -84,22 +114,9 @@ Useful mostly for generating test data."
           (t
            `(count-range/1 ,start)))))
 
-(-> simple-range (real real real) (vector rational))
-(defun simple-range (start end step)
-  (lret ((vect (make-array 10
-                           :adjustable t
-                           :fill-pointer 0)))
-    (if (< end start)
-        (progn
-          (assert (minusp step))
-          (let ((step (abs step)))
-            (loop for n downfrom start above end by step do
-              (vector-push-extend n vect))))
-        (loop for n from start below end by step do
-          (vector-push-extend n vect)))))
-
-(-> integer-range (integer integer integer) vector)
-(defun integer-range (start stop step)
+(defun int-range-shape (start stop step)
+  "Return the length and element type for a range vector from START to
+STOP by STEP."
   (mvlet* ((low high
             (sort-values #'< start stop))
            (in-order? (eql low start))
@@ -107,17 +124,55 @@ Useful mostly for generating test data."
             (if in-order?
                 `(integer ,low (,high))
                 `(integer (,low) ,high)))
-           (len (abs (floor (abs (- high low))
-                            (abs step))))
-           (vect (make-array len :element-type element-type)))
-    (if in-order?
-        (loop for i from 0
-              for n from low below high by step
-              do (setf (aref vect i) n))
-        (loop for i from 0
-              for n downfrom high above low by (abs step)
-              do (setf (aref vect i) n)))
+           (len (abs (truncate (- high low) step))))
+    (values len element-type)))
+
+(defmacro with-int-vector ((var vect) &body body)
+  `(let ((,var ,vect))
+     (with-type-dispatch
+         ((simple-array bit                (*))
+          (simple-array (unsigned-byte 2)  (*))
+          (simple-array (unsigned-byte 4)  (*))
+          (simple-array (unsigned-byte 7)  (*))
+          (simple-array (signed-byte 8)    (*))
+          (simple-array (unsigned-byte 8)  (*))
+          (simple-array (signed-byte 16)   (*))
+          (simple-array (unsigned-byte 16) (*))
+          (simple-array (signed-byte 32)   (*))
+          (simple-array (unsigned-byte 32) (*))
+          (simple-array fixnum             (*))
+          (simple-array integer            (*)))
+         ,var
+       ,@body)))
+
+(-> fill-int-range! (vector integer integer integer) vector)
+(defun fill-int-range! (vect start stop step)
+  #.no-bounds-checks
+  (let ((in-order? (<= start stop)))
+    #+sbcl (declare (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+    (with-int-vector (vect vect)
+      (with-boolean in-order?
+        (nlet lp ((i 0)
+                  (n start))
+          (if (if in-order?
+                  (>= n stop)
+                  (<= n stop))
+              vect
+              (progn
+                (setf (vref vect i) n)
+                (lp (1+ i) (+ n step)))))))
     vect))
+
+(defun prepare-int-range (start stop step)
+  (multiple-value-bind (len element-type)
+      (int-range-shape start stop step)
+    (make-array len :element-type element-type)))
+
+(-> integer-range (integer integer integer) vector)
+(defun integer-range (start stop step)
+  (check-range start stop step)
+  (lret ((vect (prepare-int-range start stop step)))
+    (fill-int-range! vect start stop step)))
 
 (progn
   (defmacro define-real-range (name &body (&key type))
@@ -157,6 +212,16 @@ Useful mostly for generating test data."
   (apply #'range (float-precision-contagion start stop step)))
 
 (defun range (start &optional (stop 0 stop?) (step 1))
+  "Return a vector of real numbers, starting from START.
+
+With three arguments, return the integers in the interval [start,end)
+whose difference from START is divisible by STEP.
+
+STEP defaults to 1.
+
+With two arguments, return all the steps in the interval [start,end).
+
+With one argument, return all the steps in the interval [0,end)."
   (declare (optimize (debug 0) (safety 1))
            #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note)
            (notinline count-range/1 count-range/2 count-range/3))
@@ -164,11 +229,15 @@ Useful mostly for generating test data."
       (if stop?
           (values start stop)
           (values 0 start))
+    (check-range start stop step)
     (dispatch-case ((start real) (stop real) (step real))
-      ((non-negative-integer non-negative-integer non-negative-integer)
+      ((array-index array-index non-negative-integer)
        (if (<= start stop)
            (count-range/3 start stop step)
            (integer-range start stop step)))
+
+      ((non-negative-integer non-negative-integer non-negative-integer)
+       (integer-range start stop step))
 
       ((integer integer integer)
        (integer-range start stop step))
@@ -227,4 +296,16 @@ Useful mostly for generating test data."
                        `(count-range ,start ,stop)
                        (and (typep step 'array-index)
                             `(count-range ,start ,stop ,step))))))
+     ;; Expand directly into an integer range when possible.
+     (and (typep start 'integer)
+          (typep stop 'integer)
+          (typep step 'integer)
+          (progn
+            (check-range start stop step)
+            (with-unique-names (vect)
+              (multiple-value-bind (len element-type)
+                  (int-range-shape start stop step)
+                `(lret ((,vect (make-array ,len :element-type ',element-type)))
+                   (fill-int-range! ,vect ,start ,stop ,step))))))
+
      call)))

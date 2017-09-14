@@ -16,7 +16,9 @@
 
 (test bit-range
   (test-range (range 0 1) #(0))
-  (test-range (range 1 0) #(1)))
+  (test-range (range 1 0 -1) #(1))
+  (signals error
+    (eval '(range 1 0 1))))
 
 (test integer-range
   (test-range (range 10)
@@ -50,9 +52,15 @@
   (test-range (range -5 5)
               #(-5 -4 -3 -2 -1 0 1 2 3 4))
 
+  (signals error
+    (eval '(range -5 5 -1)))
+
   (test-range (range -100 100 10)
               #(-100 -90 -80 -70 -60 -50 -40 -30 -20 -10
                 0 10 20 30 40 50 60 70 80 90))
+
+  (signals error
+    (eval '(range -100 100 -10)))
 
   (test-range (range 100 0 -10)
               #(100 90 80 70 60 50 40 30 20 10))

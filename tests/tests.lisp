@@ -3,6 +3,14 @@
 (def-suite serapeum)
 (in-suite serapeum)
 
+(defmacro test (name &body body)
+  `(5am:test ,name
+     (locally
+         (declare #+sbcl (sb-ext:muffle-conditions
+                          style-warning
+                          sb-ext:compiler-note))
+       ,@body)))
+
 (defun run-tests ()
   (5am:run! 'serapeum))
 

@@ -3614,10 +3614,20 @@ list) and `let` (which has an obvious macro-expansion in terms of
 
 ### `(range start &optional stop step)`
 
-Return a vector of real numbers, starting from START.
+Return a (possibly specialized) vector of real numbers, starting from START.
 
 With three arguments, return the integers in the interval [start,end)
 whose difference from START is divisible by STEP.
+
+START, STOP, and STEP can be any real number, except that if STOP is
+greater than START, STEP must be positive, and if START is greater
+than STOP, STEP must be negative.
+
+The vector returned has the smallest element type that can represent
+numbers in the given range. E.g. the range [0,256) will usually be
+represented by a vector of octets, while the range [-10.0,10.0) will
+be represented by a vector of single floats. The exact representation,
+however, depends on your Lisp implementation.
 
 STEP defaults to 1.
 

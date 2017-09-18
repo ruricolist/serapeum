@@ -278,8 +278,7 @@ With one argument, return all the steps in the interval [0,end)."
        (frange start stop step))
 
       ;; Ensure correct contagion for mixtures of rationals and
-      ;; floats. Coerce to double floats to start with, so we don't needlessly
-      ;; lose precision.
+      ;; floats.
       ((rational float float)
        (frange start stop step))
       ((rational float rational)

@@ -7,14 +7,16 @@
 At each iteration, a key from TABLE is bound to KEY, and the value of
 that key in TABLE is bound to VALUE."
   (with-unique-names (iterator loop found?)
-    `(with-hash-table-iterator (,iterator ,table)
-       ;; Don't shadow the outer block.
-       (loop named ,loop do
-         (multiple-value-bind (,found? ,key ,value)
-             (,iterator)
-           (unless ,found?
-             (return-from ,loop))
-           ,@body)))))
+    (multiple-value-bind (body decls) (parse-body body)
+      `(with-hash-table-iterator (,iterator ,table)
+         ;; Don't shadow the outer block.
+         (loop named ,loop do
+           (multiple-value-bind (,found? ,key ,value)
+               (,iterator)
+             ,@decls
+             (unless ,found?
+               (return-from ,loop))
+             ,@body))))))
 
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))

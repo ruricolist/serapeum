@@ -224,7 +224,8 @@ raises an error is supplied."
             :read-only t
             ,@args))))))
 
-(defmacro defstruct-read-only (name-and-opts &body slots)
+(defmacro defstruct-read-only (name-and-opts &body slots
+                               &environment env)
   "Easily define a defstruct with no mutable slots.
 
 The syntax of `defstruct-read-only' is as close as possible to that of
@@ -263,7 +264,7 @@ structure does not make sense."
         (multiple-value-bind (include-clause opts)
             (if-let (clause (find :include opts :key #'car-safe))
               (let ((super (second clause)))
-                (if (subtypep super '%read-only-struct)
+                (if (subtypep super '%read-only-struct env)
                     (values clause
                             (remove clause opts))
                     (error "Included type ~a is not read-only.

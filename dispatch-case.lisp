@@ -264,7 +264,7 @@ list) and `let' (which has an obvious macro-expansion in terms of
     ;; Avoid multiple evaluation.
     (assert (every #'symbolp vars))
     ;; Check that the clauses are valid.
-    (loop for (types . body) in clauses
+    (loop for (types . nil) in clauses
           do (assert (length= types vars)))
     (ematch vars-and-types
       ((list) nil)

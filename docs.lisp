@@ -107,6 +107,14 @@ This saves needless updates to the documentation."
                (loop for (file . defs) in data do
                  (let (*print-pretty*) ;Keep long arg lists from overflowing.
                    (format stream "~&## ~a~2%" (pathname-title file)))
+                 (let ((intro-file
+                         (merge-pathnames
+                          (make-pathname :type "md")
+                          file)))
+                   (when (uiop:file-exists-p intro-file)
+                     (with-input-from-file (in intro-file :element-type 'character)
+                       (copy-stream in stream))
+                     (format stream "~2%")))
                  ;; Each definition.
                  (dolist (def defs)
                    (let* ((docs

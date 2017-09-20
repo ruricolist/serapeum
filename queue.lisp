@@ -1,8 +1,5 @@
 (in-package #:serapeum)
 
-;;; Norvig-style queues, but wrapped in objects so they don't overflow
-;;; the printer, and with a more concise, Arc-inspired API.
-
 (defun make-queue-cons ()
   (let ((q (cons nil nil)))
     (setf (car q) q)))

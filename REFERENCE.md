@@ -530,8 +530,8 @@ make it immutable simply by switching out `defstruct` for
 
 There are only a few syntactic differences:
 
-1. A structure defined using `defstruct-read-only` may only inherit
-   from other structures defined using `defstruct-read-only`.
+1. To prevent accidentally inheriting mutable slots,
+   `defstruct-read-only` does not allow inheritance.
 
 2. The `:type` option may not be used.
 
@@ -548,7 +548,7 @@ There are only a few syntactic differences:
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense.
 
-[View source](definitions.lisp#L227)
+[View source](definitions.lisp#L244)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -557,7 +557,7 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L279)
+[View source](definitions.lisp#L293)
 
 ## Binding
 
@@ -1265,6 +1265,19 @@ When RESTART is active, invoke it with VALUES.
 
 ## Op
 
+This differs from [the original][GOO] in expecting an extra layer of
+parentheses. I find it easier to put the extra parentheses in than to
+remember to leave them out. Doing it this way also lets completion
+work.
+
+Of course, the extra parentheses make it longer, but the point of
+positional lambdas isn't to save typing: it's to save the mental
+effort of giving things *names* when all we are interested in is the
+*shape* of the code.
+
+[GOO]: http://people.csail.mit.edu/jrb/goo/manual.46/goomanual_15.html#17
+
+
 ### `(op &body body)`
 
 GOO's simple macro for positional lambdas.
@@ -1300,7 +1313,7 @@ placeholder. It is not necessary to use APPLY.
 
      (apply (op (+ _*)) '(1 2 3 4)) => 10
 
-[View source](op.lisp#L17)
+[View source](op.lisp#L5)
 
 ## Functions
 
@@ -1498,21 +1511,21 @@ understood as the test.
      (gethash "string" (dict "string" t)) => t
      (gethash "string" (dict 'eq "string" t)) => nil
 
-[View source](hash-tables.lisp#L53)
+[View source](hash-tables.lisp#L55)
 
 ### `(dict* dict &rest args)`
 
 Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'.
 
-[View source](hash-tables.lisp#L87)
+[View source](hash-tables.lisp#L89)
 
 ### `(dictq &rest keys-and-values)`
 
 A literal hash table.
 Like `dict`, but the keys and values are implicitly quoted.
 
-[View source](hash-tables.lisp#L94)
+[View source](hash-tables.lisp#L96)
 
 ### `(href table &rest keys)`
 
@@ -1521,14 +1534,14 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y
 
-[View source](hash-tables.lisp#L99)
+[View source](hash-tables.lisp#L101)
 
 ### `(href-default default table &rest keys)`
 
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L108)
+[View source](hash-tables.lisp#L110)
 
 ### `(@ table &rest keys)`
 
@@ -1537,7 +1550,7 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y 
 
-[View source](hash-tables.lisp#L146)
+[View source](hash-tables.lisp#L148)
 
 ### `(pophash key hash-table)`
 
@@ -1547,7 +1560,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L171)
+[View source](hash-tables.lisp#L173)
 
 ### `(swaphash key value hash-table)`
 
@@ -1557,7 +1570,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L182)
+[View source](hash-tables.lisp#L184)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -1567,14 +1580,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L192)
+[View source](hash-tables.lisp#L194)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L206)
+[View source](hash-tables.lisp#L208)
 
 ### `(merge-tables table &rest tables)`
 
@@ -1590,7 +1603,7 @@ All of the tables being merged must have the same value for
 Clojure`s `merge`.
 
 
-[View source](hash-tables.lisp#L217)
+[View source](hash-tables.lisp#L219)
 
 ### `(flip-hash-table table &key test key)`
 
@@ -1616,7 +1629,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L247)
+[View source](hash-tables.lisp#L249)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -1630,7 +1643,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L277)
+[View source](hash-tables.lisp#L279)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -1639,7 +1652,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L309)
+[View source](hash-tables.lisp#L311)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -1647,7 +1660,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L320)
+[View source](hash-tables.lisp#L322)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -1678,7 +1691,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L330)
+[View source](hash-tables.lisp#L332)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -1686,14 +1699,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L421)
+[View source](hash-tables.lisp#L423)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L429)
+[View source](hash-tables.lisp#L431)
 
 ## Files
 
@@ -1747,13 +1760,13 @@ If STRING has been interned as a keyword, return it.
 Like `make-keyword`, but preferable in most cases, because it doesn't
 intern a keyword -- which is usually both unnecessary and unwise.
 
-[View source](symbols.lisp#L8)
+[View source](symbols.lisp#L9)
 
 ### `(bound-value s &optional default)`
 
 If S is bound, return (values s t). Otherwise, return DEFAULT and nil.
 
-[View source](symbols.lisp#L25)
+[View source](symbols.lisp#L26)
 
 ## Arrays
 
@@ -1780,66 +1793,70 @@ Borrowed from Erik Naggum.
 
 ## Queue
 
+Norvig-style queues, but wrapped in objects so they don't overflow the
+printer, and with a more concise, Arc-inspired API.
+
+
 ### `(queuep g)`
 
 NO DOCS!
 
-[View source](queue.lisp#L12)
+[View source](queue.lisp#L9)
 
 ### `(queue &rest initial-contents)`
 
 Build a new queue with INITIAL-CONTENTS.
 
-[View source](queue.lisp#L68)
+[View source](queue.lisp#L65)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
-[View source](queue.lisp#L74)
+[View source](queue.lisp#L71)
 
 ### `(qlen queue)`
 
 The number of items in QUEUE.
 
-[View source](queue.lisp#L88)
+[View source](queue.lisp#L85)
 
 ### `(qlist queue)`
 
 A list of the items in QUEUE.
 
-[View source](queue.lisp#L93)
+[View source](queue.lisp#L90)
 
 ### `(enq item queue)`
 
 Insert ITEM at the end of QUEUE.
 
-[View source](queue.lisp#L97)
+[View source](queue.lisp#L94)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
-[View source](queue.lisp#L106)
+[View source](queue.lisp#L103)
 
 ### `(front queue)`
 
 The first element in QUEUE.
 
-[View source](queue.lisp#L118)
+[View source](queue.lisp#L115)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
-[View source](queue.lisp#L122)
+[View source](queue.lisp#L119)
 
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L126)
+[View source](queue.lisp#L123)
 
 ## Box
 
@@ -3612,6 +3629,14 @@ list) and `let` (which has an obvious macro-expansion in terms of
 
 ## Range
 
+A possibly over-engineered `range` function. Why is it worth all the
+fuss? It's used extensively in Serapeum's test suite. The faster
+`range` runs, and the less pressure it puts on the garbage collector,
+the faster the test suite runs.
+
+[range]: https://docs.python.org/2/library/functions.html#range
+
+
 ### `(range start &optional stop step)`
 
 Return a (possibly specialized) vector of real numbers, starting from START.
@@ -3635,5 +3660,5 @@ With two arguments, return all the steps in the interval [start,end).
 
 With one argument, return all the steps in the interval [0,end).
 
-[View source](range.lisp#L219)
+[View source](range.lisp#L214)
 

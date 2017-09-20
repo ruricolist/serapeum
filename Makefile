@@ -1,12 +1,14 @@
 asdf='(asdf:test-system :serapeum)'
 
+source_files = $(wildcard *.lisp)
+
 all: REFERENCE.md
 
-REFERENCE.md: $(wildcard *.lisp)
-	ccl --load docs.lisp
+%.html: %.md
+	pandoc $< -o $@
 
-REFERENCE.html: REFERENCE.md
-	markdown $< > $@
+REFERENCE.md: $(source_files) $(wildcard $(source_files:.lisp=.md))
+	ccl --load docs.lisp
 
 .PHONY: test
 test:

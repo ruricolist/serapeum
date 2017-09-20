@@ -196,6 +196,13 @@ structure."
     ((list)
      `(:include %read-only-struct))
     ((list* :include type slot-redefs)
+     ;; Do we need to specify that the slots are read-only? No, since
+     ;; we can only inherit from read-only structures, and the
+     ;; specification says that read-only slots cannot be redefined as
+     ;; mutable by their heirs. However, we still need to process the
+     ;; slots, so we can support skipping the initform to supply a
+     ;; `:type' option (which, of course, must be a subtype of the
+     ;; slot's type in the parent).
      `(:include ,type
                 ,@(mapcar #'read-only-slotdef slot-redefs)))))
 
@@ -224,8 +231,17 @@ raises an error is supplied."
             :read-only t
             ,@args))))))
 
-(defmacro defstruct-read-only (name-and-opts &body slots
-                               &environment env)
+;;; Why not allow `defstruct-read-only' to use inheritance? I would
+;;; like to, but I haven't figured out yet how to make it work
+;;; reliably. The point of `defstruct-read-only' is that when you see
+;;; it you know *for sure* that the instances are immutable -- that
+;;; all the slots are read-only. But where there is inheritance, there
+;;; are no guarantees. Even if we could check that the class being
+;;; inherited from has only read-only slots at the time the initial
+;;; definition, there is nothing to prevent the superclass from being
+;;; redefined in the future.
+
+(defmacro defstruct-read-only (name-and-opts &body slots)
   "Easily define a defstruct with no mutable slots.
 
 The syntax of `defstruct-read-only' is as close as possible to that of
@@ -235,8 +251,8 @@ make it immutable simply by switching out `defstruct' for
 
 There are only a few syntactic differences:
 
-1. A structure defined using `defstruct-read-only' may only inherit
-   from other structures defined using `defstruct-read-only'.
+1. To prevent accidentally inheriting mutable slots,
+   `defstruct-read-only' does not allow inheritance.
 
 2. The `:type' option may not be used.
 
@@ -255,6 +271,9 @@ structure does not make sense."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
+        (when-let (clause (find :include opts :key #'car-safe))
+          (error "Read-only struct ~a cannot use inheritance: ~s."
+                 name clause))
         (when (find :copier opts :key #'ensure-car)
           (error "Read only struct ~a does not need a copier."
                  name))
@@ -263,13 +282,7 @@ structure does not make sense."
                  :type clause))
         (multiple-value-bind (include-clause opts)
             (if-let (clause (find :include opts :key #'car-safe))
-              (let ((super (second clause)))
-                (if (subtypep super '%read-only-struct env)
-                    (values clause
-                            (remove clause opts))
-                    (error "Included type ~a is not read-only.
-Read-only structs can only inherit from other read-only structs."
-                           super)))
+              (values clause (remove clause opts))
               (values nil opts))
           `(defstruct (,name (:copier nil)
                              ,@opts

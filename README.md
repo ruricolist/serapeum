@@ -1,3 +1,21 @@
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Commentary](#commentary)
+    - [Dividing sequences](#dividing-sequences)
+    - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
+    - [Internal definitions](#internal-definitions)
+        - [Example: macros that expand into top-level definitions](#example-macros-that-expand-into-top-level-definitions)
+        - [Block compiling](#block-compiling)
+    - [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
+    - [CLOS](#clos)
+        - [Method combination: standard with context](#method-combination-standard-with-context)
+        - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
+- [Function reference](#function-reference)
+
+<!-- markdown-toc end -->
+    
 # Overview
 
 [![Build Status](https://travis-ci.org/TBRSS/serapeum.svg?branch=master)](https://travis-ci.org/TBRSS/serapeum)

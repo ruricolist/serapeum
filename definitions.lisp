@@ -267,7 +267,12 @@ There are only a few syntactic differences:
     ≡ (my-slot (required-argument 'my-slot) :read-only t :type string)
 
 The idea here is simply that an unbound slot in an immutable data
-structure does not make sense."
+structure does not make sense.
+
+`defstruct-read-only' is designed to be as close to the syntax of
+`defstruct' as possible. This allows for easy refactoring. For
+immutable data structures in new code, however, you might prefer to
+use `defconstructor' when they do not require initialization."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
@@ -299,3 +304,83 @@ I believe the name comes from Edi Weitz."
      (defvar ,var)
      (setf (documentation ',var 'variable) ,docstring)
      ',var))
+
+(defgeneric constructor= (x y)
+  (:method (x y)
+    (equal x y)))
+
+(defun print-constructor (object stream &rest fields)
+  (declare (dynamic-extent fields))
+  (when *print-escape*
+    (write-string "#." stream))
+  (write-char #\( stream)
+  (prin1 (type-of object) stream)
+  (dolist (field fields)
+    (write-char #\Space stream)
+    (prin1 (funcall field object) stream))
+  (write-char #\) stream))
+
+(defmacro defconstructor (class &body slots)
+  (let* ((docstring
+           (and (stringp (first slots))
+                (pop slots)))
+         (slots
+           (loop for slot in slots
+                 collect (ematch slot
+                           ((and _ (type symbol))
+                            (list slot t))
+                           ((list (and _ (type symbol)) _)
+                            slot))))
+         (constructor class)
+         (slot-names (mapcar #'first slots))
+         (conc-name
+           (symbolicate class '-))
+         (readers
+           (mapcar (curry #'symbolicate conc-name)
+                   slot-names))
+         (copier-name (symbolicate 'copy- class)))
+    `(progn
+       ;; Make sure the constructor is inlined. This is necessary on
+       ;; SBCL to allow instances to be stack-allocated.
+       (declaim (inline ,constructor))
+
+       ;; Actually define the type.
+       (defstruct-read-only (,class
+                             (:constructor ,constructor ,slot-names)
+                             (:conc-name ,conc-name)
+                             (:predicate nil)
+                             (:print-function
+                              (lambda (object stream depth)
+                                (declare (ignore depth))
+                                (print-constructor object stream
+                                                   ,@(loop for reader in readers
+                                                           collect `(function ,reader))))))
+         ,@(unsplice docstring)
+         ,@(loop for (slot-name slot-type) in slots
+                 collect `(,slot-name :type ,slot-type)))
+
+       ;; Freeze the type when possible.
+       (declaim-freeze-type ,class)
+
+       ;; Define the copier.
+       (defun ,copier-name
+           (,class &key
+                     ,@(loop for (slot-name nil) in slots
+                             for reader in readers
+                             collect `(,slot-name (,reader ,class))))
+         (,class ,@slot-names))
+
+       ;; Define a comparison method.
+       (defmethod constructor= ((o1 ,class) (o2 ,class))
+         (and ,@(loop for reader in readers
+                      collect `(constructor= (,reader o1)
+                                             (,reader o2)))))
+
+       (trivia:defpattern ,class ,slot-names
+         (list
+          'and
+          (list 'type ',class)
+          ,@(loop for reader in readers
+                  for name in slot-names
+                  collect `(list 'trivia:access '',reader ,name))))
+       ',class)))

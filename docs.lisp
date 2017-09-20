@@ -143,7 +143,7 @@ This saves needless updates to the documentation."
 (defun update-function-reference ()
   (render-function-reference-as-markdown
    :serapeum
-   :stream (asdf:system-relative-pathname :serapeum "reference.md")))
+   :stream (asdf:system-relative-pathname :serapeum "REFERENCE.md")))
 
 (update-function-reference)
 (uiop:quit)

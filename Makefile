@@ -1,11 +1,11 @@
 asdf='(asdf:test-system :serapeum)'
 
-all: reference.md
+all: REFERENCE.md
 
-reference.md: $(wildcard *.lisp)
+REFERENCE.md: $(wildcard *.lisp)
 	ccl --load docs.lisp
 
-reference.html: reference.md
+REFERENCE.html: REFERENCE.md
 	markdown $< > $@
 
 .PHONY: test
@@ -14,4 +14,4 @@ test:
 	sbcl --non-interactive --eval $(asdf)
 
 .PHONY: docs
-docs: reference.md
+docs: REFERENCE.md

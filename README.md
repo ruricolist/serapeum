@@ -422,7 +422,7 @@ is a `validate-superclass` method which allows an instance of
 
 # Function reference
 
-The complete reference is in a [separate file](reference.md).
+The complete reference is in a [separate file](REFERENCE.md).
 
 (Note that the reference is generated from docstrings, and should not
 be edited by hand.)

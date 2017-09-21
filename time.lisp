@@ -66,5 +66,6 @@ Has a compiler macro."
             always (constantp arg env))
       `(load-time-value
         (locally (declare (notinline interval))
-          (interval ,@args)))
+          (interval ,@args))
+        t)
       call))

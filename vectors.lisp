@@ -53,17 +53,13 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
   ;; Defer to string= when possible.
   (when (and (stringp v1)
              (stringp v2)
-             (or (eql test #'eql)
-                 (eql test #'equal)
-                 (eql test #'char=)))
+             (select test ((#'eql #'equal #'char=) t)))
     (return-from vector=
       (string= v1 v2 :start1 start2 :end1 end1 :start2 start2 :end2 end2)))
   ;; Handle bit vectors specially.
   (when (and (bit-vector-p v1)
              (bit-vector-p v2)
-             (or (eql test #'eq)
-                 (eql test #'eql)
-                 (eql test #'=)))
+             (select test ((#'eq #'eql #'=) t)))
     (return-from vector=
       (let* ((end1 (or end1 (length v1)))
              (end2 (or end2 (length v2)))

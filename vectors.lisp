@@ -1,5 +1,6 @@
 (in-package #:serapeum)
 
+(-> vect (&rest t) (vector t *))
 (defun vect (&rest initial-contents)
   "Succinct constructor for adjustable vectors with fill pointers.
 

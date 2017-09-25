@@ -20,20 +20,17 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                 :initial-contents initial-contents)))
 
 (define-compiler-macro vect (&rest inits)
-  (if (null inits)
-      `(make-array 0
-                   :element-type t
-                   :adjustable t
-                   :fill-pointer 0)
-      (let ((len (length inits)))
-        (with-gensyms (tmp)
-          `(let ((,tmp (list ,@inits)))
-             (declare (dynamic-extent ,tmp))
-             (make-array ,len
-                         :element-type t
-                         :adjustable t
-                         :fill-pointer ,len
-                         :initial-contents ,tmp))))))
+  (let ((len (length inits)))
+    `(make-array ,len
+                 :element-type t
+                 :adjustable t
+                 :fill-pointer ,len
+                 :initial-contents
+                 ;; NB We use to stack-allocate the list of inits, but
+                 ;; that could result in junk in the vector; see issue
+                 ;; #14. Note that, SBCL does not actually allocate
+                 ;; the list below; see array-tran.lisp.
+                 (list ,@inits))))
 
 (defun vector= (v1 v2 &key (test #'eql)
                            (start1 0)

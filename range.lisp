@@ -106,7 +106,7 @@ whose difference from START is evenly divisible by STEP."
                                           (end nil end-supplied?)
                                           (by nil by-supplied?)
                                           &environment env)
-  (let ((by (eval-constant by env)))
+  (let ((by (eval-if-constant by env)))
     (cond ((and by-supplied? (not (eql 1 by)))
            `(count-range/3 ,start ,end ,by))
           (end-supplied?
@@ -291,9 +291,9 @@ With one argument, return all the steps in the interval [0,end)."
     (&whole call
             start &optional (stop 0 stop?) (step 1 step?)
             &environment env)
-  (let ((start (eval-constant start env))
-        (stop  (eval-constant stop  env))
-        (step  (eval-constant step  env)))
+  (let ((start (eval-if-constant start env))
+        (stop  (eval-if-constant stop  env))
+        (step  (eval-if-constant step  env)))
     (or
      ;; Expand directly into count-range when possible.
      (and (typep start 'array-index)

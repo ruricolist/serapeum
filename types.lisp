@@ -439,10 +439,12 @@ added to ensure that TYPE itself is handled."
 ;;; Are these worth exporting?
 
 (defmacro with-boolean (var &body body)
-  `(with-read-only-var (,var)
-     (if ,var
-         ,@body
-         ,@body)))
+  (multiple-value-bind (body decls) (parse-body body)
+    `(with-read-only-var (,var)
+       ,@decls
+       (if ,var
+           ,@body
+           ,@body))))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var

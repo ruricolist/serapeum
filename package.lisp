@@ -22,6 +22,7 @@
    #:define-post-modify-macro
    #:case-failure
    #:define-case-macro
+   #:eval-if-constant
    ;; Types.
    #:supertypep
    #:proper-subtype-p

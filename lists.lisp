@@ -169,12 +169,12 @@ But the actual implementation is more efficient.
                             collect `(values-list ,var)))))
           ,@lists)))))
 
-(defsubst assocdr (item alist &rest args)
+(defsubst assocdr (item alist &rest args &key &allow-other-keys)
   "Like (cdr (assoc ...))"
   (let ((found (apply #'assoc item alist args)))
     (values (cdr found) found)))
 
-(defsubst assocadr (item alist &rest args)
+(defsubst assocadr (item alist &rest args &key &allow-other-keys)
   "Like `assocdr' for alists of proper lists.
 
      (assocdr 'x '((x 1))) => '(1)
@@ -182,7 +182,7 @@ But the actual implementation is more efficient.
   (let ((found (apply #'assoc item alist args)))
     (values (cadr found) found)))
 
-(defsubst rassocar (item alist &rest args)
+(defsubst rassocar (item alist &rest args &key &allow-other-keys)
   "Like (car (rassoc ...))"
   (let ((found (apply #'rassoc item alist args)))
     (values (car found) found)))

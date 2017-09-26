@@ -404,37 +404,65 @@ The arguments START, END, and KEY are as for `reduce'.
                       (collect (subseq seq start pos))
                       (runs pos))))))))))
 
-(defun batches (seq n &key (start 0) end)
+(defun batches (seq n &key (start 0) end even)
   "Return SEQ in batches of N elements.
 
     (batches (iota 11) 2)
-    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))"
+    => ((0 1) (2 3) (4 5) (6 7) (8 9) (10))
+
+If EVEN is non-nil, then SEQ must be evenly divisible into batches of
+size N, with no leftovers."
+  #+sbcl (declare (sb-ext:muffle-conditions sb-ext:code-deletion-note))
   (check-type n (integer 0 *))
-  (seq-dispatch seq
-    (let ((seq (nthcdr start seq)))
-      (if (null end)
-          (loop while seq
-                collect (loop for i below n
+  (check-type start (integer 0 *))
+  (flet ((uneven ()
+           (error "A ~@[sub~*~]sequence of length ~a cannot be evenly divided into batches of size ~a."
+                  end
+                  (- (or end (length seq)) start)
+                  n)))
+    (declare (dynamic-extent #'uneven))
+    (flet ((check-bounds-even (start end)
+             (when even
+               (unless (zerop (rem (- end start) n))
+                 (uneven)))))
+      (declare (inline check-bounds-even))
+      (with-boolean even
+        (seq-dispatch seq
+          (let ((seq (nthcdr start seq)))
+            (if (null end)
+                (loop while seq
+                      collect (loop for i below n
+                                    for (elt . rest) on seq
+                                    collect elt
+                                    finally (setf seq rest)
+                                            (when even
+                                              (unless (= i n)
+                                                (uneven)))))
+                (progn
+                  (check-bounds-even start end)
+                  (loop while seq
+                        for i from start below end by n
+                        collect
+                        (loop with m = (min n (- end i))
+                              for i below m
                               for (elt . rest) on seq
                               collect elt
-                              finally (setf seq rest)))
-          (loop while seq
-                for i from start below end by n
-                collect (loop for i below (min n (- end i))
-                              for (elt . rest) on seq
-                              collect elt
-                              finally (setf seq rest)))))
-    (let ((end (or end (length seq))))
-      (nlet batches ((i start)
-                     (acc '()))
-        (if (>= i end)
-            (nreverse acc)
-            (batches (+ i n)
-                     (cons (subseq seq i (min (+ i n) end))
-                           acc)))))))
+                              finally (setf seq rest)
+                                      (when even
+                                        (unless (= i m)
+                                          (uneven))))))))
+          (let ((end (or end (length seq))))
+            (check-bounds-even start end)
+            (nlet batches ((i start)
+                           (acc '()))
+              (if (>= i end)
+                  (nreverse acc)
+                  (batches (+ i n)
+                           (cons (subseq seq i (min (+ i n) end))
+                                 acc))))))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
-                                                   &allow-other-keys)
+                    &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 

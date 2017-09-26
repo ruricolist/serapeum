@@ -55,6 +55,20 @@
   (is (equal '("a") (batches "abc" 2 :end 1)))
   (is (equal '((a)) (batches '(a b c) 2 :end 1))))
 
+(test batches-even
+  (signals error
+    (batches '(a b c d e) 2 :even t))
+  (signals error
+    (batches "abcde" 2 :even t))
+
+  (signals error
+    (batches "abc" 2 :end 1 :even t))
+  (is (equal '("ab") (batches "abc" 2 :end 2 :even t)))
+
+  (signals error
+    (batches '(a b c) 2 :end 1 :even t))
+  (is (equal '((a b)) (batches '(a b c) 2 :end 2 :even t))))
+
 (test gcp
   (is (equal (gcp '("miss" "molly")) "m")))
 

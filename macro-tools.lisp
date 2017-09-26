@@ -669,11 +669,16 @@ lambda list."
                     (mapcar #'third keys)
                     (mapcar #'first aux)))))
 
-;;; TODO Worth exporting?
-(defun eval-constant (form &optional env)
+(defun eval-if-constant (form &optional env)
+  "Try to reduce FORM to a constant, using ENV.
+If FORM cannot be reduced, return it unaltered.
+
+This is equivalent to testing if FORM is constant, then evaluting it,
+except that FORM is macro-expands FORM in ENV (taking compiler macros
+into account) before doing the test."
   (if (constantp form)
       (eval form)
-      (let ((form (expand-macro-recursively form env)))
-        (if (constantp form)
-            (eval form)
+      (let ((exp (expand-macro-recursively form env)))
+        (if (constantp exp)
+            (eval exp)
             form))))

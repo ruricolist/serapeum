@@ -269,10 +269,9 @@ There are only a few syntactic differences:
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense.
 
-`defstruct-read-only' is designed to be as close to the syntax of
-`defstruct' as possible. This allows for easy refactoring. For
-immutable data structures in new code, however, you might prefer to
-use `defconstructor' when they do not require initialization."
+`defstruct-read-only' is designed to stay as close to the syntax of
+`defstruct' as possible. The idea is to make it easy to flag data as
+immutable, whether in your own code or in code you are refactoring."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)

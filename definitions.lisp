@@ -344,16 +344,17 @@ I believe the name comes from Edi Weitz."
        (declaim (inline ,constructor))
 
        ;; Actually define the type.
-       (defstruct-read-only (,class
-                             (:constructor ,constructor ,slot-names)
-                             (:conc-name ,conc-name)
-                             (:predicate nil)
-                             (:print-function
-                              (lambda (object stream depth)
-                                (declare (ignore depth))
-                                (print-constructor object stream
-                                                   ,@(loop for reader in readers
-                                                           collect `(function ,reader))))))
+       (defstruct-read-only
+           (,class
+            (:constructor ,constructor ,slot-names)
+            (:conc-name ,conc-name)
+            (:predicate nil)
+            (:print-function
+             (lambda (object stream depth)
+               (declare (ignore depth))
+               (print-constructor object stream
+                                  ,@(loop for reader in readers
+                                          collect `(function ,reader))))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))

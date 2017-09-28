@@ -304,9 +304,17 @@ I believe the name comes from Edi Weitz."
      (setf (documentation ',var 'variable) ,docstring)
      ',var))
 
+;;; TODO Is this worth exporting?
 (defgeneric constructor= (x y)
   (:method (x y)
     (equal x y)))
+
+;;; How about this?
+(defgeneric constructor-ref (x idx)
+  (:method (x (idx integer))
+    (error "Illegal index for ~a" x)))
+
+(defgeneric constructor-len (x))
 
 (defun print-constructor (object stream &rest fields)
   (declare (dynamic-extent fields))
@@ -370,11 +378,19 @@ I believe the name comes from Edi Weitz."
                              collect `(,slot-name (,reader ,class))))
          (,class ,@slot-names))
 
+       (defmethod constructor-len ((x ,class))
+         ,(length readers))
+
        ;; Define a comparison method.
        (defmethod constructor= ((o1 ,class) (o2 ,class))
          (and ,@(loop for reader in readers
                       collect `(constructor= (,reader o1)
                                              (,reader o2)))))
+
+       ,@(loop for i from 0
+               for reader in readers
+               collect `(defmethod constructor-ref ((x ,class) (idx (eql ,i)))
+                          (,reader x)))
 
        (trivia:defpattern ,class ,slot-names
          (list

@@ -320,25 +320,33 @@ I believe the name comes from Edi Weitz."
 
 (defun print-constructor (object stream &rest fields)
   (declare (dynamic-extent fields))
-  (let ((fields
-          (loop for field in fields
-                collect (funcall field object))))
-    ;; "If `*read-eval*' is false and `*print-readably*' is true, any
-    ;; method for `print-object' that would output a reference to the
-    ;; `#.' reader macro either outputs something different or signals
-    ;; an error of type `print-not-readable'."
-    (when *print-readably*
-      (if *read-eval*
-          (write-string "#." stream)
-          (error 'print-not-readable
-                 :stream stream
-                 :object object)))
-    (write-char #\( stream)
-    (prin1 (type-of object) stream)
-    (dolist (field fields)
-      (write-char #\Space stream)
-      (prin1 field stream))
-    (write-char #\) stream)))
+  (let* ((fields
+           (loop for field in fields
+                 collect (funcall field object)))
+         (prefix
+           ;; "If `*read-eval*' is false and `*print-readably*' is
+           ;; true, any method for `print-object' that would output a
+           ;; reference to the `#.' reader macro either outputs
+           ;; something different or signals an error of type
+           ;; `print-not-readable'."
+           (if *print-readably*
+               (if *read-eval*
+                   "#.("
+                   (error 'print-not-readable
+                          :stream stream
+                          :object object))
+               "("))
+         (list (cons (type-of object) fields)))
+    (declare (dynamic-extent fields list))
+    (pprint-logical-block (stream
+                           list
+                           :prefix prefix
+                           :suffix ")")
+      (prin1 (pprint-pop) stream)
+      (loop (pprint-exit-if-list-exhausted)
+            (write-char #\Space stream)
+            (pprint-newline :linear stream)
+            (prin1 (pprint-pop) stream)))))
 
 (defmacro defconstructor (type-name &body slots)
   "If you want something more flexible, use `defstruct-read-only'.

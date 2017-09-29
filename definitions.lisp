@@ -338,6 +338,16 @@ I believe the name comes from Edi Weitz."
 
 Without initialization.
 
+Convenient copier.
+
+    (defun birthday (person)
+      (copy-person person :age (1+ (person-age person))))
+
+    (birthday *)
+    => #.(PERSON \"Common Lisp\" 34)
+
+Load form.
+
 Printer.
 
     (defconstructor person
@@ -346,14 +356,6 @@ Printer.
 
     (person \"Common Lisp\" 33)
     => #.(PERSON \"Common Lisp\" 33)
-
-Convenient copier.
-
-    (defun birthday (person)
-      (copy-person person :age (1+ (person-age person))))
-
-    (birthday *)
-    => #.(PERSON \"Common Lisp\" 34)
 
 Pattern matching.
 
@@ -415,6 +417,13 @@ from `cl-algebraic-data-type'."
          ,(fmt "Copy ~:@(~a~), optionally overriding ~
 some or all of its slots." type-name)
          (,type-name ,@slot-names))
+
+       ;; Define a load form.
+       (defmethod make-load-form ((self ,type-name) &optional env)
+         (declare (ignore env))
+         (list ',type-name
+               ,@(loop for reader in readers
+                       collect `(,reader self))))
 
        (defmethod constructor-len ((x ,type-name))
          ,(length readers))

@@ -320,6 +320,10 @@ I believe the name comes from Edi Weitz."
 
 (defun print-constructor (object stream &rest fields)
   (declare (dynamic-extent fields))
+  ;; "If `*read-eval*' is false and `*print-readably*' is true, any method for
+  ;; `print-object' that would output a reference to the `#.' reader macro
+  ;; either outputs something different or signals an error of type
+  ;; `print-not-readable'."
   (when *print-escape*
     (write-string "#." stream))
   (write-char #\( stream)

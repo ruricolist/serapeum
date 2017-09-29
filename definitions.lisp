@@ -320,18 +320,25 @@ I believe the name comes from Edi Weitz."
 
 (defun print-constructor (object stream &rest fields)
   (declare (dynamic-extent fields))
-  ;; "If `*read-eval*' is false and `*print-readably*' is true, any method for
-  ;; `print-object' that would output a reference to the `#.' reader macro
-  ;; either outputs something different or signals an error of type
-  ;; `print-not-readable'."
-  (when *print-escape*
-    (write-string "#." stream))
-  (write-char #\( stream)
-  (prin1 (type-of object) stream)
-  (dolist (field fields)
-    (write-char #\Space stream)
-    (prin1 (funcall field object) stream))
-  (write-char #\) stream))
+  (let ((fields
+          (loop for field in fields
+                collect (funcall field object))))
+    ;; "If `*read-eval*' is false and `*print-readably*' is true, any
+    ;; method for `print-object' that would output a reference to the
+    ;; `#.' reader macro either outputs something different or signals
+    ;; an error of type `print-not-readable'."
+    (when *print-readably*
+      (if *read-eval*
+          (write-string "#." stream)
+          (error 'print-not-readable
+                 :stream stream
+                 :object object)))
+    (write-char #\( stream)
+    (prin1 (type-of object) stream)
+    (dolist (field fields)
+      (write-char #\Space stream)
+      (prin1 field stream))
+    (write-char #\) stream)))
 
 (defmacro defconstructor (type-name &body slots)
   "If you want something more flexible, use `defstruct-read-only'.
@@ -356,6 +363,9 @@ Printer.
 
     (person \"Common Lisp\" 33)
     => #.(PERSON \"Common Lisp\" 33)
+
+You might think a structure is always readable, but that's not
+necessarily true when you provide constructor arguments.
 
 Pattern matching.
 

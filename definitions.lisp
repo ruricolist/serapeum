@@ -329,7 +329,36 @@ I believe the name comes from Edi Weitz."
     (prin1 (funcall field object) stream))
   (write-char #\) stream))
 
-(defmacro defconstructor (class &body slots)
+(defmacro defconstructor (type-name &body slots)
+  "If you want something more flexible, use `defstruct-read-only'.
+
+Without initialization.
+
+Printer.
+
+    (defconstructor person
+      (name string)
+      (age (integer 0 1000)))
+
+    (person \"Common Lisp\" 33)
+    => #.(PERSON \"Common Lisp\" 33)
+
+Convenient copier.
+
+    (defun birthday (person)
+      (copy-person person :age (1+ (person-age person))))
+
+    (birthday *)
+    => #.(PERSON \"Common Lisp\" 34)
+
+Pattern matching.
+
+`defconstructor' is implemented on top of `defstruct-read-only', so it
+shares the limitations of `defstruct-read-only'. In particular it
+cannot use inheritance.
+
+Based on the \"case class\" feature in Scala, with some implementation tricks
+from `cl-algebraic-data-type'."
   (let* ((docstring
            (and (stringp (first slots))
                 (pop slots)))
@@ -340,14 +369,14 @@ I believe the name comes from Edi Weitz."
                             (list slot t))
                            ((list (and _ (type symbol)) _)
                             slot))))
-         (constructor class)
+         (constructor type-name)
          (slot-names (mapcar #'first slots))
          (conc-name
-           (symbolicate class '-))
+           (symbolicate type-name '-))
          (readers
            (mapcar (curry #'symbolicate conc-name)
                    slot-names))
-         (copier-name (symbolicate 'copy- class)))
+         (copier-name (symbolicate 'copy- type-name)))
     `(progn
        ;; Make sure the constructor is inlined. This is necessary on
        ;; SBCL to allow instances to be stack-allocated.
@@ -355,7 +384,7 @@ I believe the name comes from Edi Weitz."
 
        ;; Actually define the type.
        (defstruct-read-only
-           (,class
+           (,type-name
             (:constructor ,constructor ,slot-names)
             (:conc-name ,conc-name)
             (:predicate nil)
@@ -370,35 +399,38 @@ I believe the name comes from Edi Weitz."
                  collect `(,slot-name :type ,slot-type)))
 
        ;; Freeze the type when possible.
-       (declaim-freeze-type ,class)
+       (declaim-freeze-type ,type-name)
 
        ;; Define the copier.
+       (declaim (inline ,copier-name))
        (defun ,copier-name
-           (,class &key
-                     ,@(loop for (slot-name nil) in slots
-                             for reader in readers
-                             collect `(,slot-name (,reader ,class))))
-         (,class ,@slot-names))
+           (,type-name &key
+                         ,@(loop for (slot-name nil) in slots
+                                 for reader in readers
+                                 collect `(,slot-name (,reader ,type-name))))
+         ,(fmt "Copy ~:@(~a~), optionally overriding ~
+some or all of its slots." type-name)
+         (,type-name ,@slot-names))
 
-       (defmethod constructor-len ((x ,class))
+       (defmethod constructor-len ((x ,type-name))
          ,(length readers))
 
        ;; Define a comparison method.
-       (defmethod constructor= ((o1 ,class) (o2 ,class))
+       (defmethod constructor= ((o1 ,type-name) (o2 ,type-name))
          (and ,@(loop for reader in readers
                       collect `(constructor= (,reader o1)
                                              (,reader o2)))))
 
        ,@(loop for i from 0
                for reader in readers
-               collect `(defmethod constructor-ref ((x ,class) (idx (eql ,i)))
+               collect `(defmethod constructor-ref ((x ,type-name) (idx (eql ,i)))
                           (,reader x)))
 
-       (trivia:defpattern ,class ,slot-names
+       (trivia:defpattern ,type-name ,slot-names
          (list
           'and
-          (list 'type ',class)
+          (list 'type ',type-name)
           ,@(loop for reader in readers
                   for name in slot-names
                   collect `(list 'trivia:access '',reader ,name))))
-       ',class)))
+       ',type-name)))

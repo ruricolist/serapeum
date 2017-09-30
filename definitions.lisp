@@ -365,6 +365,11 @@ I believe the name comes from Edi Weitz."
             (pprint-newline :linear stream)
             (prin1 (pprint-pop) stream)))))
 
+;;; NB If you ever figure out how to safely support inheritance in
+;;; read-only structs, you should *still* not allow constructors to
+;;; inherit from one another. Cf. Scala, where they forbid case class
+;;; inheritance for good reasons.
+
 (defmacro defconstructor (type-name &body slots)
   "Succintly define immutable data types.
 

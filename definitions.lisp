@@ -272,8 +272,8 @@ structure does not make sense.
 `defstruct-read-only' is designed to stay as close to the syntax of
 `defstruct' as possible. The idea is to make it easy to flag data as
 immutable, whether in your own code or in code you are refactoring. In
-your own code, however, you may sometimes prefer `defconstructor',
-which is designed to facilitate working with immutable data."
+new code, however, you may sometimes prefer `defconstructor', which is
+designed to facilitate working with immutable data."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
@@ -307,22 +307,35 @@ I believe the name comes from Edi Weitz."
      ',var))
 
 ;;; TODO Is this worth exporting?
-(defgeneric constructor= (x y)
+(defun constructor= (x y)
+  (or (equal x y)
+      (%constructor= x y)))
+
+(defgeneric %constructor= (x y)
   (:method (x y)
     (equal x y)))
 
-;;; How about this?
-(defgeneric constructor-ref (x idx)
+;;; How about these?
+(defun constructor-ref (x idx)
+  (check-type idx array-index)
+  (%constructor-ref x idx))
+
+(defgeneric %constructor-ref (x idx)
   (:method (x (idx integer))
     (error "Illegal index for ~a" x)))
 
-(defgeneric constructor-len (x))
+(defun constructor-len (x)
+  (assure array-length
+    (%constructor-len x)))
 
-(defun print-constructor (object stream &rest fields)
-  (declare (dynamic-extent fields))
-  (let* ((fields
-           (loop for field in fields
-                 collect (funcall field object)))
+(defgeneric %constructor-len (x))
+
+(defun constructor-fields (object)
+  (loop for i below (constructor-len object)
+        collect (constructor-ref object i)))
+
+(defun print-constructor (object stream)
+  (let* ((fields (constructor-fields object))
          (prefix
            ;; "If `*read-eval*' is false and `*print-readably*' is
            ;; true, any method for `print-object' that would output a
@@ -337,7 +350,6 @@ I believe the name comes from Edi Weitz."
                           :object object))
                "("))
          (list (cons (type-of object) fields)))
-    (declare (dynamic-extent fields list))
     (pprint-logical-block (stream
                            list
                            :prefix prefix
@@ -432,10 +444,11 @@ classes, with some implementation tricks from
          (slots
            (loop for slot in slots
                  collect (ematch slot
-                           ((and _ (type symbol))
-                            (list slot t))
-                           ((list (and _ (type symbol)) _)
-                            slot))))
+                           ((and slot-name (type symbol))
+                            (list slot-name t))
+                           ((list (and slot-name (type symbol))
+                                  type)
+                            (list slot-name type)))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
          (conc-name
@@ -458,9 +471,7 @@ classes, with some implementation tricks from
             (:print-function
              (lambda (object stream depth)
                (declare (ignore depth))
-               (print-constructor object stream
-                                  ,@(loop for reader in readers
-                                          collect `(function ,reader))))))
+               (print-constructor object stream))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))
@@ -486,19 +497,21 @@ some or all of its slots." type-name)
                ,@(loop for reader in readers
                        collect `(,reader self))))
 
-       (defmethod constructor-len ((x ,type-name))
+       (defmethod %constructor-len ((x ,type-name))
          ,(length readers))
 
        ;; Define a comparison method.
-       (defmethod constructor= ((o1 ,type-name) (o2 ,type-name))
+       (defmethod %constructor= ((o1 ,type-name) (o2 ,type-name))
          (and ,@(loop for reader in readers
                       collect `(constructor= (,reader o1)
                                              (,reader o2)))))
 
-       ,@(loop for i from 0
-               for reader in readers
-               collect `(defmethod constructor-ref ((x ,type-name) (idx (eql ,i)))
-                          (,reader x)))
+       (defmethod %constructor-ref ((x ,type-name) idx)
+         (case idx
+           ,@(loop for i from 0
+                   for reader in readers
+                   collect `(,i (,reader x)))
+           (t (call-next-method))))
 
        (trivia:defpattern ,type-name ,slot-names
          (list

@@ -375,6 +375,7 @@ With `defconstructor', you get:
 - a flexible copier that lets you override some or all slots
 - the ability to print readably
 - an implicit load form
+- implicity sealed (when supported)
 
 The copier might be the best part.
 
@@ -441,6 +442,12 @@ Note that the arguments to the pattern are optional:
     (trivia:match (person \"Common Lisp\" 33)
       ((person name) name))
     => \"Common Lisp\"
+
+While it is possible to inherit from a type defined with
+`defconstructor' (this is Lisp, I can't stop you), it's a bad idea. In
+particular, on Lisps which support it, a type defined with
+`defconstructor' is declared to be frozen (sealed), so your new
+subtype may not be recognized in type tests.
 
 Because `defconstructor' is implemented on top of
 `defstruct-read-only', it shares the limitations of

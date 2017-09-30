@@ -36,7 +36,9 @@
 
 (test defstruct-read-only
   (let ((opts
-          '((:copier nil) (:include serapeum::%read-only-struct))))
+          '((:copier nil)
+            #+(or sbcl cmucl) (:pure t)
+            (:include serapeum::%read-only-struct))))
     (is (equal `(defstruct (foo ,@opts)
                   (bar (required-argument 'bar) :read-only t))
                (macroexpand-1

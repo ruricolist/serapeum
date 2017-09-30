@@ -436,6 +436,12 @@ symmetrical pattern for destructuring that type.
        (list name age)))
     => (\"Common Lisp\" 33)
 
+Note that the arguments to the pattern are optional:
+
+    (trivia:match (person \"Common Lisp\" 33)
+      ((person name) name))
+    => \"Common Lisp\"
+
 Because `defconstructor' is implemented on top of
 `defstruct-read-only', it shares the limitations of
 `defstruct-read-only'. In particular it cannot use inheritance.
@@ -518,7 +524,7 @@ some or all of its slots." type-name)
                    collect `(,i (,reader x)))
            (t (call-next-method))))
 
-       (trivia:defpattern ,type-name ,slot-names
+       (trivia:defpattern ,type-name (&optional ,@slot-names)
          (list
           'and
           (list 'type ',type-name)

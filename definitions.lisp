@@ -269,6 +269,9 @@ There are only a few syntactic differences:
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense.
 
+On Lisps that support it, the structure is also marked as \"pure\":
+that is, instances may be moved into read-only memory.
+
 `defstruct-read-only' is designed to stay as close to the syntax of
 `defstruct' as possible. The idea is to make it easy to flag data as
 immutable, whether in your own code or in code you are refactoring. In
@@ -291,6 +294,8 @@ designed to facilitate working with immutable data."
               (values clause (remove clause opts))
               (values nil opts))
           `(defstruct (,name (:copier nil)
+                             ;; Mark as OK to save in pure memory.
+                             #+(or sbcl cmucl) (:pure t)
                              ,@opts
                              ,(read-only-include-clause include-clause))
              ,@(unsplice docstring)

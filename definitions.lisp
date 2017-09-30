@@ -349,40 +349,83 @@ I believe the name comes from Edi Weitz."
             (prin1 (pprint-pop) stream)))))
 
 (defmacro defconstructor (type-name &body slots)
-  "If you want something more flexible, use `defstruct-read-only'.
+  "Succintly define immutable data types.
 
-Without initialization.
+With `defconstructor', you get:
 
-Convenient copier.
+- immutability
+- a BOA constructor
+- a flexible copier that lets you override some or all slots
+- the ability to print readably
+- an implicit load form
 
-    (defun birthday (person)
-      (copy-person person :age (1+ (person-age person))))
+The copier might be the best part.
 
-    (birthday *)
-    => #.(PERSON \"Common Lisp\" 34)
+In return for these conveniences, you give up almost all control. The
+only choices `defconstructor' leaves you are the name of the type and
+the names and types of the slots. If you want immutability data, but
+need something more more flexible, consider `defstruct-read-only'.
 
-Load form.
+The structure defined by `defconstructor' has only one constructor,
+which takes its arguments as required arguments (a BOA constructor).
+Thus, `defconstructor' is only appropriate for data structures that
+require no initialization.
 
-Printer.
+While the constructor is BOA, the copier takes keyword arguments,
+allowing you to override the values of a selection of the slots of the
+structure being copied, while retaining the values of the others.
 
     (defconstructor person
       (name string)
       (age (integer 0 1000)))
 
+    (defun birthday (person)
+      (copy-person person :age (1+ (person-age person))))
+
+    (birthday *)
+    => (PERSON \"Common Lisp\" 34)
+
+Obviously the copier becomes more useful the more slots the
+constructor has.
+
+The printed representation of an instance resembles its constructor:
+
+    (person \"Common Lisp\" 33)
+    => (PERSON \"Common Lisp\" 33)
+
+When `*print-readably*' is true, the printed representation is
+readable:
+
     (person \"Common Lisp\" 33)
     => #.(PERSON \"Common Lisp\" 33)
 
-You might think a structure is always readable, but that's not
-necessarily true when you provide constructor arguments.
+\(Why override how a structure is normally printed? Structure types
+are not necessarily readable unless they have a default \(`make-X')
+constructor. Since the type defined by `defconstructor' has only one
+constructor, we have to take over to make sure it re-readable.)
 
-Pattern matching.
+Besides being re-readable, the type is also externalizable, with a
+method for `make-load-form':
 
-`defconstructor' is implemented on top of `defstruct-read-only', so it
-shares the limitations of `defstruct-read-only'. In particular it
-cannot use inheritance.
+    (make-load-form (person \"Common Lisp\" 33))
+    => (PERSON \"Common Lisp\" 33)
 
-Based on the \"case class\" feature in Scala, with some implementation tricks
-from `cl-algebraic-data-type'."
+Users of [Trivia]\(https://github.com/guicho271828/trivia) get an
+extra benefit: defining a type with `defconstructor' also defines a
+symmetrical pattern for destructuring that type.
+
+    (trivia:match (person \"Common Lisp\" 33)
+      ((person name age)
+       (list name age)))
+    => (\"Common Lisp\" 33)
+
+Because `defconstructor' is implemented on top of
+`defstruct-read-only', it shares the limitations of
+`defstruct-read-only'. In particular it cannot use inheritance.
+
+The design of `defconstructor' is mostly inspired by Scala's case
+classes, with some implementation tricks from
+`cl-algebraic-data-type'."
   (let* ((docstring
            (and (stringp (first slots))
                 (pop slots)))

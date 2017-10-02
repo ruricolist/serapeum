@@ -359,28 +359,17 @@ I believe the name comes from Edi Weitz."
 ;;; inheritance for good reasons.
 
 (defmacro defconstructor (type-name &body slots)
-  "Succintly define immutable data types.
-
-With `defconstructor', you get:
-
-- immutability
-- a BOA constructor
-- a flexible copier that lets you override some or all slots
-- the ability to print readably
-- an implicit load form
-- implicity sealed (when supported)
-
-The copier might be the best part.
-
-In return for these conveniences, you give up almost all control. The
-only choices `defconstructor' leaves you are the name of the type and
-the names and types of the slots. If you want immutability data, but
-need something more more flexible, consider `defstruct-read-only'.
+  "A variant of `defstruct' for modeling immutable data.
 
 The structure defined by `defconstructor' has only one constructor,
 which takes its arguments as required arguments (a BOA constructor).
 Thus, `defconstructor' is only appropriate for data structures that
 require no initialization.
+
+The printed representation of an instance resembles its constructor:
+
+    (person \"Common Lisp\" 33)
+    => (PERSON \"Common Lisp\" 33)
 
 While the constructor is BOA, the copier takes keyword arguments,
 allowing you to override the values of a selection of the slots of the
@@ -393,16 +382,10 @@ structure being copied, while retaining the values of the others.
     (defun birthday (person)
       (copy-person person :age (1+ (person-age person))))
 
-    (birthday *)
+    (birthday (person \"Common Lisp\" 33))
     => (PERSON \"Common Lisp\" 34)
 
-Obviously the copier becomes more useful the more slots the
-constructor has.
-
-The printed representation of an instance resembles its constructor:
-
-    (person \"Common Lisp\" 33)
-    => (PERSON \"Common Lisp\" 33)
+Obviously the copier becomes more useful the more slots the type has.
 
 When `*print-readably*' is true, the printed representation is
 readable:
@@ -421,9 +404,9 @@ method for `make-load-form':
     (make-load-form (person \"Common Lisp\" 33))
     => (PERSON \"Common Lisp\" 33)
 
-Users of [Trivia]\(https://github.com/guicho271828/trivia) get an
-extra benefit: defining a type with `defconstructor' also defines a
-symmetrical pattern for destructuring that type.
+Users of Trivia get an extra benefit: defining a type with
+`defconstructor' also defines a symmetrical pattern for destructuring
+that type.
 
     (trivia:match (person \"Common Lisp\" 33)
       ((person name age)
@@ -446,9 +429,10 @@ Because `defconstructor' is implemented on top of
 `defstruct-read-only', it shares the limitations of
 `defstruct-read-only'. In particular it cannot use inheritance.
 
-The design of `defconstructor' is mostly inspired by Scala's case
-classes, with some implementation tricks from
-`cl-algebraic-data-type'."
+The design of `defconstructor' is mostly inspired by Scala's [case
+classes](https://docs.scala-lang.org/tour/case-classes.html), with
+some implementation tricks from `cl-algebraic-data-type'."
+  (check-type type-name symbol)
   (let* ((docstring
            (and (stringp (first slots))
                 (pop slots)))

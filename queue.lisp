@@ -130,3 +130,12 @@ Return the queue."
     (setf (car q)
           (last (setf (cdr (car q)) list))))
   queue)
+
+(defun qappend (queue list)
+  "Append the elements of LIST onto the end of QUEUE.
+Return the queue."
+  (if list
+      ;; It's probably faster to just copy LIST once and concatenate
+      ;; it than to access the queue for each element.
+      (qconc queue (copy-list list))
+      queue))

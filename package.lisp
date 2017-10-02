@@ -173,6 +173,7 @@
    #:qlen
    #:qlist
    #:qconc
+   #:qappend
    #:queue-empty-p
    #:clear-queue
    ;; Boxes.

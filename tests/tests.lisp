@@ -19,8 +19,8 @@
     (run-tests)))
 
 (defun debug-test (test)
-  (let ((5am:*debug-on-error* t)
-        (5am:*debug-on-failure* t))
+  (let ((5am:*on-error* :debug)
+        (5am:*on-failure* :debug))
     (run! test)))
 
 (defun a-fixnum ()

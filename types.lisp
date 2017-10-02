@@ -38,8 +38,11 @@ The same shortcut works for keywords.
   `(declaim (ftype (-> ,args ,values) ,function)))
 
 (defmacro declaim-freeze-type (type)
-  "Declare that TYPE is not going to change, for the benefit of Lisps
-  that understand such declarations."
+  "Declare that TYPE is not going to change.
+
+On Lisps that understand it, this is roughly equivalent to \"sealing\"
+a type in an OOP language: a promise that the type will never have any
+new subtypes, so tests for the type can be open-coded."
   (declare (ignorable type))
   #+sbcl  `(declaim (sb-ext:freeze-type ,type))
   #+cmucl `(declaim (ext:freeze-type ,type)))

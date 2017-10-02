@@ -267,7 +267,16 @@ There are only a few syntactic differences:
     ≡ (my-slot (required-argument 'my-slot) :read-only t :type string)
 
 The idea here is simply that an unbound slot in an immutable data
-structure does not make sense."
+structure does not make sense.
+
+On Lisps that support it, the structure is also marked as \"pure\":
+that is, instances may be moved into read-only memory.
+
+`defstruct-read-only' is designed to stay as close to the syntax of
+`defstruct' as possible. The idea is to make it easy to flag data as
+immutable, whether in your own code or in code you are refactoring. In
+new code, however, you may sometimes prefer `defconstructor', which is
+designed to facilitate working with immutable data."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
@@ -285,6 +294,8 @@ structure does not make sense."
               (values clause (remove clause opts))
               (values nil opts))
           `(defstruct (,name (:copier nil)
+                             ;; Mark as OK to save in pure memory.
+                             #+(or sbcl cmucl) (:pure t)
                              ,@opts
                              ,(read-only-include-clause include-clause))
              ,@(unsplice docstring)
@@ -299,3 +310,205 @@ I believe the name comes from Edi Weitz."
      (defvar ,var)
      (setf (documentation ',var 'variable) ,docstring)
      ',var))
+
+;;; TODO Is constructor= worth exporting? Or would that be too
+;;; aggressive?
+
+;;; It is arguably good style, when defining a generic function for
+;;; extensibility, not to call that generic function internally.
+;;; Instead, you call a wrapper function which, in turn, calls the
+;;; generic function. That way you can always be sure of the ultimate
+;;; dynamic environment the generic function will run in.
+
+(defun constructor= (x y)
+  (or (equal x y)
+      (%constructor= x y)))
+
+(defgeneric %constructor= (x y)
+  (:method (x y)
+    (equal x y)))
+
+(defun print-constructor (object stream fields)
+  (let* ((prefix
+           ;; "If `*read-eval*' is false and `*print-readably*' is
+           ;; true, any method for `print-object' that would output a
+           ;; reference to the `#.' reader macro either outputs
+           ;; something different or signals an error of type
+           ;; `print-not-readable'."
+           (if *print-readably*
+               (if *read-eval*
+                   "#.("
+                   (error 'print-not-readable
+                          :stream stream
+                          :object object))
+               "("))
+         (list (cons (type-of object) fields)))
+    (pprint-logical-block (stream
+                           list
+                           :prefix prefix
+                           :suffix ")")
+      (prin1 (pprint-pop) stream)
+      (loop (pprint-exit-if-list-exhausted)
+            (write-char #\Space stream)
+            (pprint-newline :linear stream)
+            (prin1 (pprint-pop) stream)))))
+
+;;; NB If you ever figure out how to safely support inheritance in
+;;; read-only structs, you should *still* not allow constructors to
+;;; inherit from one another. Cf. Scala, where they forbid case class
+;;; inheritance for good reasons.
+
+(defmacro defconstructor (type-name &body slots)
+  "A variant of `defstruct' for modeling immutable data.
+
+The structure defined by `defconstructor' has only one constructor,
+which takes its arguments as required arguments (a BOA constructor).
+Thus, `defconstructor' is only appropriate for data structures that
+require no initialization.
+
+The printed representation of an instance resembles its constructor:
+
+    (person \"Common Lisp\" 33)
+    => (PERSON \"Common Lisp\" 33)
+
+While the constructor is BOA, the copier takes keyword arguments,
+allowing you to override the values of a selection of the slots of the
+structure being copied, while retaining the values of the others.
+
+    (defconstructor person
+      (name string)
+      (age (integer 0 1000)))
+
+    (defun birthday (person)
+      (copy-person person :age (1+ (person-age person))))
+
+    (birthday (person \"Common Lisp\" 33))
+    => (PERSON \"Common Lisp\" 34)
+
+Obviously the copier becomes more useful the more slots the type has.
+
+When `*print-readably*' is true, the printed representation is
+readable:
+
+    (person \"Common Lisp\" 33)
+    => #.(PERSON \"Common Lisp\" 33)
+
+\(Why override how a structure is normally printed? Structure types
+are not necessarily readable unless they have a default \(`make-X')
+constructor. Since the type defined by `defconstructor' has only one
+constructor, we have to take over to make sure it re-readable.)
+
+Besides being re-readable, the type is also externalizable, with a
+method for `make-load-form':
+
+    (make-load-form (person \"Common Lisp\" 33))
+    => (PERSON \"Common Lisp\" 33)
+
+Users of Trivia get an extra benefit: defining a type with
+`defconstructor' also defines a symmetrical pattern for destructuring
+that type.
+
+    (trivia:match (person \"Common Lisp\" 33)
+      ((person name age)
+       (list name age)))
+    => (\"Common Lisp\" 33)
+
+Note that the arguments to the pattern are optional:
+
+    (trivia:match (person \"Common Lisp\" 33)
+      ((person name) name))
+    => \"Common Lisp\"
+
+While it is possible to inherit from a type defined with
+`defconstructor' (this is Lisp, I can't stop you), it's a bad idea. In
+particular, on Lisps which support it, a type defined with
+`defconstructor' is declared to be frozen (sealed), so your new
+subtype may not be recognized in type tests.
+
+Because `defconstructor' is implemented on top of
+`defstruct-read-only', it shares the limitations of
+`defstruct-read-only'. In particular it cannot use inheritance.
+
+The design of `defconstructor' is mostly inspired by Scala's [case
+classes](https://docs.scala-lang.org/tour/case-classes.html), with
+some implementation tricks from `cl-algebraic-data-type'."
+  (check-type type-name symbol)
+  (let* ((docstring
+           (and (stringp (first slots))
+                (pop slots)))
+         (slots
+           (loop for slot in slots
+                 collect (ematch slot
+                           ((and slot-name (type symbol))
+                            (list slot-name t))
+                           ((list (and slot-name (type symbol))
+                                  type)
+                            (list slot-name type)))))
+         (constructor type-name)
+         (slot-names (mapcar #'first slots))
+         (conc-name
+           (symbolicate type-name '-))
+         (readers
+           (mapcar (curry #'symbolicate conc-name)
+                   slot-names))
+         (copier-name (symbolicate 'copy- type-name)))
+    `(progn
+       ;; Make sure the constructor is inlined. This is necessary on
+       ;; SBCL to allow instances to be stack-allocated.
+       (declaim (inline ,constructor))
+
+       ;; Actually define the type.
+       (defstruct-read-only
+           (,type-name
+            (:constructor ,constructor ,slot-names)
+            (:conc-name ,conc-name)
+            (:predicate nil)
+            (:print-function
+             (lambda (object stream depth)
+               (declare (ignore depth))
+               ,(with-unique-names (fields)
+                  `(let ((,fields
+                           (list
+                            ,@(loop for reader in readers
+                                    collect `(,reader object)))))
+                     (declare (dynamic-extent ,fields))
+                     (print-constructor object stream ,fields))))))
+         ,@(unsplice docstring)
+         ,@(loop for (slot-name slot-type) in slots
+                 collect `(,slot-name :type ,slot-type)))
+
+       ;; Freeze the type when possible.
+       (declaim-freeze-type ,type-name)
+
+       ;; Define the copier.
+       (declaim (inline ,copier-name))
+       (defun ,copier-name
+           (,type-name &key
+                         ,@(loop for (slot-name nil) in slots
+                                 for reader in readers
+                                 collect `(,slot-name (,reader ,type-name))))
+         ,(fmt "Copy ~:@(~a~), optionally overriding ~
+some or all of its slots." type-name)
+         (,type-name ,@slot-names))
+
+       ;; Define a load form.
+       (defmethod make-load-form ((self ,type-name) &optional env)
+         (declare (ignore env))
+         (list ',type-name
+               ,@(loop for reader in readers
+                       collect `(,reader self))))
+
+       ;; Define a comparison method.
+       (defmethod %constructor= ((o1 ,type-name) (o2 ,type-name))
+         (and ,@(loop for reader in readers
+                      collect `(constructor= (,reader o1)
+                                             (,reader o2)))))
+
+       (trivia:defpattern ,type-name (&optional ,@slot-names)
+         (list
+          'and
+          (list 'type ',type-name)
+          ,@(loop for reader in readers
+                  for name in slot-names
+                  collect `(list 'trivia:access '',reader ,name))))
+       ',type-name)))

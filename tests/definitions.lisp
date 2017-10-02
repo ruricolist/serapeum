@@ -36,7 +36,9 @@
 
 (test defstruct-read-only
   (let ((opts
-          '((:copier nil) (:include serapeum::%read-only-struct))))
+          '((:copier nil)
+            #+(or sbcl cmucl) (:pure t)
+            (:include serapeum::%read-only-struct))))
     (is (equal `(defstruct (foo ,@opts)
                   (bar (required-argument 'bar) :read-only t))
                (macroexpand-1
@@ -72,3 +74,24 @@
 
   (signals error
     (macroexpand-1 '(defstruct-read-only (foo (:copier copy-foo))))))
+
+(defconstructor person
+  (name string)
+  (age (integer 0 1000)))
+
+(test defconstructor
+  (let ((person (person #1="Common Lisp" #2=33)))
+    (is (= 34
+           (person-age
+            (copy-person person
+                         :age (1+ (person-age person))))))
+    (is (equal '(person #1# #2#)
+               (make-load-form person)))
+    (is (equal
+         '(#1# #2#)
+         (trivia:match (person #1# #2#)
+           ((person name age) (list name age)))))
+    (is (equal
+         #1#
+         (trivia:match (person #1# #2#)
+           ((person name) name))))))

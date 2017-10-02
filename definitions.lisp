@@ -311,7 +311,15 @@ I believe the name comes from Edi Weitz."
      (setf (documentation ',var 'variable) ,docstring)
      ',var))
 
-;;; TODO Is this worth exporting?
+;;; TODO Is constructor= worth exporting? Or would that be too
+;;; aggressive?
+
+;;; It is arguably good style, when defining a generic function for
+;;; extensibility, not to call that generic function internally.
+;;; Instead, you call a wrapper function which, in turn, calls the
+;;; generic function. That way you can always be sure of the ultimate
+;;; dynamic environment the generic function will run in.
+
 (defun constructor= (x y)
   (or (equal x y)
       (%constructor= x y)))

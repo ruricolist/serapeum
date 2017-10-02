@@ -328,28 +328,8 @@ I believe the name comes from Edi Weitz."
   (:method (x y)
     (equal x y)))
 
-;;; How about these?
-(defun constructor-ref (x idx)
-  (check-type idx array-index)
-  (%constructor-ref x idx))
-
-(defgeneric %constructor-ref (x idx)
-  (:method (x (idx integer))
-    (error "Illegal index for ~a" x)))
-
-(defun constructor-len (x)
-  (assure array-length
-    (%constructor-len x)))
-
-(defgeneric %constructor-len (x))
-
-(defun constructor-fields (object)
-  (loop for i below (constructor-len object)
-        collect (constructor-ref object i)))
-
-(defun print-constructor (object stream)
-  (let* ((fields (constructor-fields object))
-         (prefix
+(defun print-constructor (object stream fields)
+  (let* ((prefix
            ;; "If `*read-eval*' is false and `*print-readably*' is
            ;; true, any method for `print-object' that would output a
            ;; reference to the `#.' reader macro either outputs
@@ -502,7 +482,13 @@ classes, with some implementation tricks from
             (:print-function
              (lambda (object stream depth)
                (declare (ignore depth))
-               (print-constructor object stream))))
+               ,(with-unique-names (fields)
+                  `(let ((,fields
+                           (list
+                            ,@(loop for reader in readers
+                                    collect `(,reader object)))))
+                     (declare (dynamic-extent ,fields))
+                     (print-constructor object stream ,fields))))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))
@@ -528,21 +514,11 @@ some or all of its slots." type-name)
                ,@(loop for reader in readers
                        collect `(,reader self))))
 
-       (defmethod %constructor-len ((x ,type-name))
-         ,(length readers))
-
        ;; Define a comparison method.
        (defmethod %constructor= ((o1 ,type-name) (o2 ,type-name))
          (and ,@(loop for reader in readers
                       collect `(constructor= (,reader o1)
                                              (,reader o2)))))
-
-       (defmethod %constructor-ref ((x ,type-name) idx)
-         (case idx
-           ,@(loop for i from 0
-                   for reader in readers
-                   collect `(,i (,reader x)))
-           (t (call-next-method))))
 
        (trivia:defpattern ,type-name (&optional ,@slot-names)
          (list

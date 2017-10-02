@@ -94,4 +94,8 @@
     (is (equal
          #1#
          (trivia:match (person #1# #2#)
-           ((person name) name))))))
+           ((person name) name))))
+
+    (is (equal
+         "(PERSON \"Common Lisp\" 33)"
+         (princ-to-string person)))))

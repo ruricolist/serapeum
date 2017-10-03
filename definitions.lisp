@@ -142,21 +142,32 @@ Like (setf (fdefinition ALIAS) DEF), but with a place to put
 documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp."
-  (with-unique-names (temp)
-    `(progn
-       (declaim (notinline ,alias))
-       (let ((,temp (ensure-function ,def)))
-         (declare (type function ,temp))
-         ;; Give the function a temporary definition at compile time
-         ;; so the compiler doesn't complain about its being
-         ;; undefined.
-         (defun ,alias (&rest args)
-           (apply ,temp args))
-         (setf (fdefinition ',alias) ,temp)
-         ,@(unsplice
-            (and docstring
-                 `(setf (documentation ',alias 'function) ,docstring))))
-       ',alias)))
+  `(progn
+     (declaim (notinline ,alias))
+     ,(multiple-value-bind (env decls lambda)
+          (let-over-lambda def)
+        ;; If we can expand DEF into a lambda (possibly with some
+        ;; variable bindings around it) then splice that lambda in
+        ;; directly as the body of the function. (This is the same
+        ;; function we use to resolve lambdas in `fbind'.)
+        (if lambda
+            (ematch lambda
+              ((list* (and _ (eql 'lambda)) args body)
+               `(let ,env
+                  (declare ,@decls)
+                  (defun ,alias ,args ,@body))))
+            (with-unique-names (temp)
+              `(let ((,temp (ensure-function ,def)))
+                 (declare (type function ,temp))
+                 ;; Give the function a temporary definition at
+                 ;; compile time so the compiler doesn't complain
+                 ;; about its being undefined.
+                 (defun ,alias (&rest args)
+                   (apply ,temp args))
+                 (setf (fdefinition ',alias) ,temp)
+                 ,@(unsplice
+                    (and docstring
+                         `(setf (documentation ',alias 'function) ,docstring)))))))))
 
 ;;;# Etc
 

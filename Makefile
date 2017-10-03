@@ -13,13 +13,13 @@ REFERENCE.md: $(source_files) $(wildcard $(source_files:.lisp=.md))
 .PHONY: test-sbcl test-ccl test-ecl test
 
 test-sbcl:
-	stdbuf -oL sbcl --non-interactive --eval $(asdf)
+	sbcl --non-interactive --eval $(asdf) 2>&1 | sed -e 's/^/[SBCL] /'
 
 test-ccl:
-	stdbuf -oL ccl --batch --eval $(asdf) << /dev/null
+	ccl --batch --eval $(asdf) << /dev/null 2>&1 | sed -e 's/^/ [CCL] /'
 
 test-ecl:
-	stdbuf -oL ecl -eval $(asdf) << /dev/null
+	ecl -eval $(asdf) << /dev/null 2>&1 | sed -e 's/^/ [ECL] /'
 
 test: test-sbcl test-ccl test-ecl
 

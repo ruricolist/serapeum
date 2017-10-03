@@ -339,30 +339,24 @@ I believe the name comes from Edi Weitz."
   (:method (x y)
     (equal x y)))
 
-(defun print-constructor (object stream fields)
-  (let* ((prefix
-           ;; "If `*read-eval*' is false and `*print-readably*' is
-           ;; true, any method for `print-object' that would output a
-           ;; reference to the `#.' reader macro either outputs
-           ;; something different or signals an error of type
-           ;; `print-not-readable'."
-           (if *print-readably*
-               (if *read-eval*
-                   "#.("
-                   (error 'print-not-readable
-                          :stream stream
-                          :object object))
-               "("))
-         (list (cons (type-of object) fields)))
-    (pprint-logical-block (stream
-                           list
-                           :prefix prefix
-                           :suffix ")")
-      (prin1 (pprint-pop) stream)
-      (loop (pprint-exit-if-list-exhausted)
-            (write-char #\Space stream)
-            (pprint-newline :linear stream)
-            (prin1 (pprint-pop) stream)))))
+(defun read-eval-prefix (object stream)
+  ;; "If `*read-eval*' is false and `*print-readably*' is
+  ;; true, any method for `print-object' that would output a
+  ;; reference to the `#.' reader macro either outputs
+  ;; something different or signals an error of type
+  ;; `print-not-readable'."
+  (if *print-readably*
+      (if *read-eval*
+          "#."
+          (error 'print-not-readable
+                 :stream stream
+                 :object object))
+      ""))
+
+(defun print-constructor (object stream)
+  (format stream "~a~s"
+          (read-eval-prefix object stream)
+          (make-load-form object)))
 
 ;;; NB If you ever figure out how to safely support inheritance in
 ;;; read-only structs, you should *still* not allow constructors to
@@ -477,13 +471,7 @@ some implementation tricks from `cl-algebraic-data-type'."
             (:print-function
              (lambda (object stream depth)
                (declare (ignore depth))
-               ,(with-unique-names (fields)
-                  `(let ((,fields
-                           (list
-                            ,@(loop for reader in readers
-                                    collect `(,reader object)))))
-                     (declare (dynamic-extent ,fields))
-                     (print-constructor object stream ,fields))))))
+               (print-constructor object stream))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))

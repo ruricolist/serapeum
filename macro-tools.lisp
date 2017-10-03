@@ -311,12 +311,14 @@ Using `define-do-macro' takes care of all of this for you.
   (let* ((opts (member '&optional (car binds)))
          (ret-var (cadr opts))
          ;; Handle both (key value table) and ((key value) table).
-         (vars (flatten (ldiff (car binds) opts)))
+         (iter-vars (flatten (butlast (ldiff (car binds) opts))))
          (body-var (cadr (member '&body (cdr binds)))))
     (unless ret-var
       (error "No binding for return form in ~s" (car binds)))
     (unless body-var
       (error "No binding for body in ~s" binds))
+    (unless iter-vars
+      (error "No iteration vars in ~s" binds))
     (multiple-value-bind (body decls doc) (parse-body body :documentation t)
       `(defmacro ,name ,binds
          ,@(unsplice doc)
@@ -329,8 +331,8 @@ Using `define-do-macro' takes care of all of this for you.
              `(block nil
                 ,,@body
                 ,(when ,ret-var
-                   `(let (,,@vars)
-                      (declare (ignorable ,,@vars))
+                   `(let (,,@iter-vars)
+                      (declare (ignorable ,,@iter-vars))
                       ,,ret-var)))))))))
 
 (defmacro define-post-modify-macro (name lambda-list function &optional documentation)

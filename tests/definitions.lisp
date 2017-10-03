@@ -34,6 +34,30 @@
 (labels ((x () 'x))
   (defalias x4 #'x))
 
+(define-do-macro %do-each ((var seq &optional ret) &body body)
+  `(map nil (lambda (,var) ,@body) ,seq))
+
+(define-do-macro %do-hash (((key var) hash-table &optional ret) &body body)
+  `(maphash (lambda (,key ,var) ,@body) ,hash-table))
+
+(test define-do-macro
+  (local
+    (let ((seq #(1 2 3 4 5)))
+      (seq= seq
+            (collecting
+              (%do-each (x seq nil) (collect x)))))
+
+    (let ((hash (dict :x 1 :y 2 :z 3)))
+      (is (set-equal '(1 2 3)
+                     (collecting
+                       (%do-hash ((key var) hash)
+                         (declare (ignore key))
+                         (collect var)))))
+
+      (is (eql 'done
+               (%do-hash ((key var) hash 'done)
+                 (declare (ignore key var))))))))
+
 (test defstruct-read-only
   (let ((opts
           '((:copier nil)

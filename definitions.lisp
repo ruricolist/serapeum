@@ -353,10 +353,15 @@ I believe the name comes from Edi Weitz."
                  :object object))
       ""))
 
-(defun print-constructor (object stream)
-  (format stream "~a~s"
-          (read-eval-prefix object stream)
-          (make-load-form object)))
+(defun print-constructor (object stream fields)
+  (write-string (read-eval-prefix object stream) stream)
+  (write-char #\( stream)
+  (prin1 (type-of object) stream)
+  (dolist (field fields)
+    (write-char #\Space stream)
+    (prin1 field stream))
+  (write-char #\) stream)
+  (values))
 
 ;;; NB If you ever figure out how to safely support inheritance in
 ;;; read-only structs, you should *still* not allow constructors to
@@ -471,7 +476,13 @@ some implementation tricks from `cl-algebraic-data-type'."
             (:print-function
              (lambda (object stream depth)
                (declare (ignore depth))
-               (print-constructor object stream))))
+               ,(with-unique-names (fields)
+                  `(let ((,fields
+                           (list
+                            ,@(loop for reader in readers
+                                    collect `(,reader object)))))
+                     (declare (dynamic-extent ,fields))
+                     (print-constructor object stream ,fields))))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))

@@ -982,12 +982,28 @@ But uses a selection algorithm for better performance than either."
               (when (< k i) (setf r j))
             finally (return (vref a k))))))
 
-(-> reshuffle (sequence) vector)
-(defun reshuffle (seq)
+(-> reshuffle (sequence) (simple-array * (*)))
+(defun reshuffle (seq &key (element-type t element-type-supplied?))
   "Like `alexandria:shuffle', but non-destructive.
 
-Regardless of the type of SEQ, the return value is always a vector."
-  (shuffle (copy-sequence 'vector seq)))
+Regardless of the type of SEQ, the return value is always a vector.
+
+If ELEMENT-TYPE is provided, this is the element type to use."
+  (shuffle
+   (if element-type-supplied?
+       (copy-sequence `(simple-array ,element-type (*)) seq)
+       (copy-sequence '(simple-array * (*)) seq))))
+
+(define-compiler-macro reshuffle (&whole call seq &key (element-type t element-type-supplied?)
+                                         &environment env)
+  (if (not element-type-supplied?) call
+      (let ((constant-type (eval-if-constant element-type env)))
+        (if (or (constantp constant-type)
+                (not (eq constant-type element-type)))
+            `(locally (declare (notinline reshuffle))
+               (the (simple-array ,element-type (*))
+                    (reshuffle ,seq :element-type ',element-type)))
+            call))))
 
 (defun extrema (seq pred &key (key #'identity) (start 0) end)
   "Like EXTREMUM, but returns both the minimum and the maximum (as two

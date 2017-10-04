@@ -145,6 +145,7 @@ documentation and some niceties to placate the compiler.
 Name from Emacs Lisp."
   `(progn
      (declaim (notinline ,alias))
+     (declaim (ftype (function (&rest t) (values &rest t)) ,alias))
      ,(multiple-value-bind (env decls lambda)
           (let-over-lambda def env)
         ;; If we can expand DEF into a lambda (possibly with some
@@ -154,9 +155,11 @@ Name from Emacs Lisp."
         (if lambda
             (ematch lambda
               ((list* (and _ (eql 'lambda)) args body)
-               `(let ,env
-                  (declare ,@decls)
-                  (defun ,alias ,args ,@body))))
+               (with-unique-names (rest)
+                 `(let ,env
+                    (declare ,@decls)
+                    (defun ,alias (&rest ,rest)
+                      (apply (lambda ,args ,@body) ,rest))))))
             (with-unique-names (temp)
               `(let ((,temp (ensure-function ,def)))
                  (declare (type function ,temp))

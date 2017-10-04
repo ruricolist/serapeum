@@ -488,22 +488,29 @@ some implementation tricks from `cl-algebraic-data-type'."
                                  collect `(,slot-name (,reader ,type-name))))
          ,(fmt "Copy ~:@(~a~), optionally overriding ~
 some or all of its slots." type-name)
+         (declare (ignorable ,type-name))
          (,type-name ,@slot-names))
 
        ;; Define a load form.
        (defmethod make-load-form ((self ,type-name) &optional env)
          (declare (ignore env))
+         (declare (ignorable self))
          (list ',type-name
                ,@(loop for reader in readers
                        collect `(,reader self))))
 
        ;; Define a comparison method.
        (defmethod %constructor= ((o1 ,type-name) (o2 ,type-name))
-         (and ,@(loop for reader in readers
-                      collect `(constructor= (,reader o1)
-                                             (,reader o2)))))
+         ,(if readers
+              `(and ,@(loop for reader in readers
+                            collect `(constructor= (,reader o1)
+                                                   (,reader o2))))
+              t))
 
-       (trivia:defpattern ,type-name (&optional ,@slot-names)
+       (trivia:defpattern ,type-name
+           ,(if slot-names
+                `(&optional ,@slot-names)
+                ())
          (list
           'and
           (list 'type ',type-name)

@@ -93,11 +93,16 @@
   (is (equal "r" (slice "bar" -1))))
 
 (test ordering
-  (for-all ((list (an-iota 1000)))
-    (let ((list (shuffle list)))
-      (is (vector= list
-                   (sort (reshuffle list)
-                         (ordering list)))))))
+  (for-all ((vec (an-iota 1000)))
+    (let ((vec (shuffle vec)))
+      (is (vector= vec
+                   (sort (reshuffle vec)
+                         (ordering vec)))))))
+
+(test reshuffle
+  (let ((list (coerce (range 256) 'list)))
+    (is (typep (reshuffle list :element-type '(unsigned-byte 8))
+               '(simple-array (unsigned-byte 8) (*))))))
 
 (test bestn
   (for-all ((list (a-list-of 1000 (lambda () (random 1000)))))

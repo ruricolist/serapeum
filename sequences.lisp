@@ -982,7 +982,7 @@ But uses a selection algorithm for better performance than either."
               (when (< k i) (setf r j))
             finally (return (vref a k))))))
 
-(-> reshuffle (sequence) (simple-array * (*)))
+(-> reshuffle (sequence &key (:element-type t)) (simple-array * (*)))
 (defun reshuffle (seq &key (element-type t element-type-supplied?))
   "Like `alexandria:shuffle', but non-destructive.
 
@@ -997,9 +997,9 @@ If ELEMENT-TYPE is provided, this is the element type to use."
 (define-compiler-macro reshuffle (&whole call seq &key (element-type t element-type-supplied?)
                                          &environment env)
   (if (not element-type-supplied?) call
-      (let ((constant-type (eval-if-constant element-type env)))
-        (if (or (constantp constant-type)
-                (not (eq constant-type element-type)))
+      (multiple-value-bind (element-type constant?)
+          (eval-if-constant element-type env)
+        (if constant?
             `(locally (declare (notinline reshuffle))
                (the (simple-array ,element-type (*))
                     (reshuffle ,seq :element-type ',element-type)))

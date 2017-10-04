@@ -133,7 +133,8 @@ From Emacs and other ancient Lisps."
 ;;; In Emacs `defalias' is really just `fset': both the name and the
 ;;; value are evaluated. Here we only evaluate the value.
 
-(defmacro defalias (alias &body (def &optional docstring))
+(defmacro defalias (alias &body (def &optional docstring)
+                    &environment env)
   "Define a value as a top-level function.
 
      (defalias string-gensym (compose #'gensym #'string))
@@ -145,7 +146,7 @@ Name from Emacs Lisp."
   `(progn
      (declaim (notinline ,alias))
      ,(multiple-value-bind (env decls lambda)
-          (let-over-lambda def)
+          (let-over-lambda def env)
         ;; If we can expand DEF into a lambda (possibly with some
         ;; variable bindings around it) then splice that lambda in
         ;; directly as the body of the function. (This is the same

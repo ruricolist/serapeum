@@ -21,7 +21,7 @@
 ;;; When rebinding non-gensyms, analyze the lambda lists and elide the
 ;;; inner lambda when possible.
 
-(defvar *env* nil
+(defvar *lexenv* nil
   "The environment of the macro being expanded.")
 
 (define-condition letrec-restriction-violation (error)
@@ -97,7 +97,7 @@ may be used to make calling VAR more efficient by avoiding `apply'."
   (flet ((partn (defs decls)
            (let ((fns (loop for (name . nil) in defs
                             collect `(function ,name))))
-             (partition-declarations fns decls *env*))))
+             (partition-declarations fns decls *lexenv*))))
     (mvlet* ((simple decls (partn simple decls))
              (complex decls (partn complex decls))
              (lambda decls (partn lambda decls)))
@@ -117,7 +117,7 @@ may be used to make calling VAR more efficient by avoiding `apply'."
                    collect (list name expr))))))
 
 ;;; TODO Handle let*, mvbind?
-(defun let-over-lambda (form)
+(defun let-over-lambda (form lexenv)
   "Expand form, using `expand-macro'. If the result is a simple let-over-lambda,
 analyze it into an environment, declarations, and a lambda."
   (match form
@@ -168,7 +168,7 @@ analyze it into an environment, declarations, and a lambda."
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
     (`(let* (,binding) ,@body)
-      (let-over-lambda `(let ,binding ,@body)))
+      (let-over-lambda `(let ,binding ,@body) lexenv))
     ;; let-over-lambda.
     (`(let ,(and bindings (type list)) ,@body)
       (multiple-value-bind (forms decls)
@@ -176,55 +176,55 @@ analyze it into an environment, declarations, and a lambda."
         (match forms
           (`(,(or `(lambda ,args ,@body)
                   `(function (lambda ,args ,@body))))
-           (if (every #'gensym? (mapcar #'ensure-car bindings))
-               ;; If all the bindings are gensyms, don't worry about
-               ;; shadowing or duplicates.
-               (values bindings
-                       (remove 'optimize
-                               (mappend #'cdr decls)
-                               :key #'car)
-                       `(lambda ,args ,@body))
-               ;; Otherwise, we have to rebind some variables.
-               (multiple-value-bind (bindings rebindings)
-                   (let ((binds '())
-                         (rebinds '()))
-                     (loop for binding in bindings
-                           for (var init) = (if (listp binding)
-                                                binding
-                                                (list binding nil))
-                           if (gensym? var)
-                             do (push (list var init) binds)
-                           else do (let ((temp (string-gensym var)))
-                                     (push `(,temp ,init) binds)
-                                     (push `(,var ,temp) rebinds)))
-                     (values (nreverse binds)
-                             (nreverse rebinds)))
-                 (values bindings
-                         ;; TODO
-                         nil
-                         (if (simple-lambda-list? args)
-                             ;; The lambda list has no inits, so we don't
-                             ;; have to worry about refs to the vars
-                             ;; being rebound.
-                             `(lambda ,args
-                                (symbol-macrolet ,rebindings
-                                  ,@body))
-                             (with-gensyms (temp-args)
-                               ;; The lambda list might refer to the
-                               ;; rebindings, so leave it to the
-                               ;; compiler.
-                               `(lambda (&rest ,temp-args)
-                                  (declare (dynamic-extent ,temp-args))
-                                  (symbol-macrolet ,rebindings
-                                    (apply (lambda ,args
-                                             ,@body)
-                                           ,temp-args))))))))))))
-    (otherwise (let ((exp (expand-macro form)))
+            (if (every #'gensym? (mapcar #'ensure-car bindings))
+                ;; If all the bindings are gensyms, don't worry about
+                ;; shadowing or duplicates.
+                (values bindings
+                        (remove 'optimize
+                                (mappend #'cdr decls)
+                                :key #'car)
+                        `(lambda ,args ,@body))
+                ;; Otherwise, we have to rebind some variables.
+                (multiple-value-bind (bindings rebindings)
+                    (let ((binds '())
+                          (rebinds '()))
+                      (loop for binding in bindings
+                            for (var init) = (if (listp binding)
+                                                 binding
+                                                 (list binding nil))
+                            if (gensym? var)
+                              do (push (list var init) binds)
+                            else do (let ((temp (string-gensym var)))
+                                      (push `(,temp ,init) binds)
+                                      (push `(,var ,temp) rebinds)))
+                      (values (nreverse binds)
+                              (nreverse rebinds)))
+                  (values bindings
+                          ;; TODO
+                          nil
+                          (if (simple-lambda-list? args)
+                              ;; The lambda list has no inits, so we don't
+                              ;; have to worry about refs to the vars
+                              ;; being rebound.
+                              `(lambda ,args
+                                 (symbol-macrolet ,rebindings
+                                   ,@body))
+                              (with-gensyms (temp-args)
+                                ;; The lambda list might refer to the
+                                ;; rebindings, so leave it to the
+                                ;; compiler.
+                                `(lambda (&rest ,temp-args)
+                                   (declare (dynamic-extent ,temp-args))
+                                   (symbol-macrolet ,rebindings
+                                     (apply (lambda ,args
+                                              ,@body)
+                                            ,temp-args))))))))))))
+    (otherwise (let ((exp (expand-macro form lexenv)))
                  (if (eq exp form)
                      nil
-                     (let-over-lambda exp))))))
+                     (let-over-lambda exp lexenv))))))
 
-(defun analyze-fbinds (bindings)
+(defun analyze-fbinds (bindings lexenv)
   "Pull apart BINDINGS, looking for lambdas to lift."
   (let ((env '())
         (declarations '())
@@ -232,7 +232,7 @@ analyze it into an environment, declarations, and a lambda."
         (binds '()))
     (loop for (var expr) in bindings do
       (multiple-value-bind (lets decls lambda)
-          (let-over-lambda expr)
+          (let-over-lambda expr lexenv)
         (if (not lambda)
             (push (list var expr) binds)
             (progn (setf env (revappend lets env))
@@ -243,7 +243,7 @@ analyze it into an environment, declarations, and a lambda."
             (nreverse binds)
             (nreverse lambdas))))
 
-(defmacro %fbind (bindings &body body)
+(defmacro %fbind (bindings &body body &environment lexenv)
   "Simplified version of `fbind' that bindings the function as a local
 macro.
 
@@ -258,7 +258,7 @@ Note that this may still expand into an `flet' if any of the
 expressions being fbound can be expanded into a `lambda' form."
   (mvlet* ((bindings (expand-fbindings bindings))
            (env env-decls bindings lambdas
-            (analyze-fbinds bindings))
+            (analyze-fbinds bindings lexenv))
            (temps (make-gensym-list (length bindings)))
            (names (mapcar #'first bindings))
            (exprs (mapcar #'second bindings))
@@ -282,7 +282,7 @@ expressions being fbound can be expanded into a `lambda' form."
                                             (list* 'funcall ',temp args)))
              ,@body))))))
 
-(defmacro fbind (bindings &body body &environment *env*)
+(defmacro fbind (bindings &body body &environment *lexenv*)
   "Binds values in the function namespace.
 
 That is,
@@ -297,7 +297,7 @@ symbol)."
   ;; When possible (if the binding expands to a simple
   ;; let-over-lambda), we hoist the bindings to the top and bind
   ;; the lambda directly with flet.
-  (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings))
+  (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings *lexenv*))
            (body decls (parse-body body))
            (vars  (mapcar #'first bindings))
            (exprs (mapcar #'second bindings))
@@ -358,13 +358,13 @@ BODY is needed because we detect unreferenced bindings by looking for
                    (`(quote ,_) t)
                    (`(function ,_) t)
                    (`(if ,@body)
-                    (and (simple? (first body))
-                         (if (not (second body))
-                             t
-                             (simple? (second body)))))
+                     (and (simple? (first body))
+                          (if (not (second body))
+                              t
+                              (simple? (second body)))))
                    ;; TODO Locally.
                    (`(progn ,@body)
-                    (every #'simple? body)))))
+                     (every #'simple? body)))))
              (tag-expr (var expr)
                (cond ((unreferenced? var) 'unreferenced)
                      ((lambda? expr) 'lambda)
@@ -382,7 +382,7 @@ BODY is needed because we detect unreferenced bindings by looking for
                 (cdr (assoc 'lambda partitioned))
                 (cdr (assoc 'unreferenced partitioned)))))))
 
-(defmacro fbindrec (bindings &body body &environment *env*)
+(defmacro fbindrec (bindings &body body &environment *lexenv*)
   "Like `fbind', but creates recursive bindings.
 
 The consequences of referring to one binding in the expression that
@@ -390,7 +390,7 @@ generates another are undefined."
   (setf bindings (expand-fbindings bindings))
   (unless bindings
     (return-from fbindrec `(locally ,@body)))
-  (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings))
+  (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings *lexenv*))
            (body decls (parse-body body))
            (simple complex lambda unref
             (partition-fbinds (append bindings lambdas)
@@ -425,13 +425,13 @@ generates another are undefined."
                (locally ,@others
                  ,@body))))))))
 
-(defmacro fbindrec* (bindings &body body &environment *env*)
+(defmacro fbindrec* (bindings &body body &environment *lexenv*)
   "Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings."
   (setf bindings (expand-fbindings bindings))
   (unless bindings
     (return-from fbindrec* `(locally ,@body)))
-  (mvlet* ((env env-decls binds lambdas (analyze-fbinds bindings))
+  (mvlet* ((env env-decls binds lambdas (analyze-fbinds bindings *lexenv*))
            (simple complex lambda unref
             (partition-fbinds (append binds lambdas)
                               body))

@@ -65,6 +65,33 @@ part of the arguments to compare, and compares them using TEST."
     (apply #'make-array len :element-type (array-element-type seq) args)
     #+(or sbcl abcl) (apply #'sequence:make-sequence-like seq len args)))
 
+(define-do-macro do-vector ((var vec &optional return) &body body)
+  "Iterate over the items of a vector in a manner similar to `dolist'."
+  ;; TODO See if any other implementations expose something similar.
+  #+ccl `(ccl:dovector (,var ,vec ,@(unsplice return))
+           ,@body)
+  #-ccl `(map nil (lambda (,var) ,@body) ,vec))
+
+(define-do-macro %do-each ((var seq &optional return) &body body)
+  "Only for Lisps that do not support extensible sequences."
+  (once-only (seq)
+    `(seq-dispatch ,seq
+       (dolist (,var ,seq)
+         ,@body)
+       (do-vector (,var ,seq)
+         ,@body))))
+
+(defmacro do-each ((var seq &optional return) &body body)
+  "Iterate over the elements of SEQ, a sequence.
+If SEQ is a list, this is equivalent to `dolist'."
+  (let ((iter-spec `(,var ,seq ,@(unsplice return))))
+    #+(or sbcl abcl)
+    `(sequence:dosequence ,iter-spec
+       ,@body)
+    #-(or sbcl abcl)
+    `(%do-each ,iter-spec
+       ,@body)))
+
 (declaim (inline map-subseq))
 (defun map-subseq (fn seq &optional start end from-end)
   "Helper function to map SEQ between START and END."
@@ -108,13 +135,22 @@ part of the arguments to compare, and compares them using TEST."
                     do (fn (elt seq i)))))))))
 (declaim (notinline map-subseq))
 
-(define-do-macro do-subseq ((var seq &optional return &key start end from-end) &body body)
-  `(map-subseq
-    (lambda (,var)
-      ,@body)
-    ,seq
-    ,start ,end
-    ,from-end))
+(define-do-macro do-subseq ((var seq &optional return
+                                 &key (start nil start-supplied?)
+                                 (end nil end-supplied?)
+                                 (from-end nil from-end-supplied?))
+                            &body body)
+  (if (nor start-supplied?
+           end-supplied?
+           from-end-supplied?)
+      `(do-each (,var ,seq ,@(unsplice return))
+         ,@body)
+      `(map-subseq
+        (lambda (,var)
+          ,@body)
+        ,seq
+        ,start ,end
+        ,from-end)))
 
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
@@ -481,11 +517,9 @@ From Clojure."
             (setf (gethash (key 0) table) (count 0 seq)
                   (gethash (key 1) table) (count 1 seq)
                   total (length seq)))
-          (map nil
-               (lambda (elt)
-                 (incf total)
-                 (incf (gethash (key elt) table 0)))
-               seq)))
+          (do-each (elt seq)
+            (incf total)
+            (incf (gethash (key elt) table 0)))))
     (values table total)))
 
 (defun scan (fn seq &key (key #'identity) (initial-value nil initial-value?))
@@ -722,16 +756,14 @@ UNORDERED-TO-END controls where to sort items that are not present in
 the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order."
-  (with-key-fn (key)
-    (let ((table (make-hash-table :test test))
-          (i -1))
-      (map nil
-           (if from-end
-               (lambda (item)
-                 (setf (gethash (key item) table) (incf i)))
-               (lambda (item)
-                 (ensure-gethash (key item) table (incf i))))
-           seq)
+  (let ((table (make-hash-table :test test))
+        (i -1))
+    (with-key-fn (key)
+      (with-boolean from-end
+        (do-each (item seq)
+          (if from-end
+              (setf (gethash (key item) table) (incf i))
+              (ensure-gethash (key item) table (incf i)))))
 
       (let ((default
               (if unordered-to-end
@@ -922,17 +954,15 @@ The name is from Arc."
              (let ((heap (make-heap n))
                    (i 0))
                (declare (array heap) (array-length i))
-               (map nil
-                    (lambda (elt)
-                      (locally (declare (optimize speed))
-                        (cond ((< i n)
-                               (heap-insert heap elt :key key :test #'test))
-                              ((test (key (heap-maximum heap)) (key elt))
-                               (heap-extract-maximum heap :key key
-                                                          :test #'test)
-                               (heap-insert heap elt :key key :test #'test))))
-                      (incf i))
-                    seq)
+               (do-each (elt seq)
+                 (locally (declare (optimize speed))
+                   (cond ((< i n)
+                          (heap-insert heap elt :key key :test #'test))
+                         ((test (key (heap-maximum heap)) (key elt))
+                          (heap-extract-maximum heap :key key
+                                                     :test #'test)
+                          (heap-insert heap elt :key key :test #'test))))
+                 (incf i))
                (let ((bestn (take n (nreverse (heap-extract-all heap :key key :test #'test)))))
                  (make-sequence-like seq n :initial-contents bestn)))))))
 
@@ -1328,16 +1358,9 @@ values. Cf. `mvfold'."
                (with-gensyms (item)
                  (once-only (fn)
                    `(let ,(mapcar #'list tmps seeds)
-                      ,(if from-end
-                           `(map-subseq (lambda (,item)
-                                          (setf (values ,@tmps)
-                                                (funcall ,fn ,item ,@tmps)))
-                                        ,seq nil nil t)
-
-                           `(map nil (lambda (,item)
-                                       (setf (values ,@tmps)
-                                             (funcall ,fn ,@tmps ,item)))
-                                 ,seq))
+                      (do-subseq (,item ,seq ,@(and from-end `(:from-end ,from-end)))
+                        (setf (values ,@tmps)
+                              (funcall ,fn ,item ,@tmps)))
                       (values ,@tmps)))))))))
 
 (define-compiler-macro mvfold (fn seq &rest seeds)

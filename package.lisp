@@ -297,6 +297,7 @@
    #:string-count
    #:string+
    ;; Sequences.
+   #:do-each
    #:keep
    #:filter
    #:filterf

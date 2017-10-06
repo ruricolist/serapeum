@@ -70,9 +70,9 @@
                 :serial nil
                 :components
                 ((:file "lists")
-                 (:file "strings")
-                 (:file "vectors")
-                 (:file "sequences")))
+                 (:file "sequences")
+                 (:file "strings" :depends-on ("sequences"))
+                 (:file "vectors")))
                ;; Level 2 files can use CL, Alexandria, and the rest
                ;; of Serapeum. Anything at this level could, in
                ;; principle, be its own separate library that depends

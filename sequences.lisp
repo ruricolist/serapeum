@@ -988,7 +988,11 @@ But uses a selection algorithm for better performance than either."
 
 Regardless of the type of SEQ, the return value is always a vector.
 
-If ELEMENT-TYPE is provided, this is the element type to use."
+If ELEMENT-TYPE is provided, this is the element type to use.
+
+If ELEMENT-TYPE is not provided, then the element type is T, if SEQ is
+not a vector. If SEQ is a vector, then the element type of the vector
+returned is the same as the as the element type of SEQ."
   (shuffle
    (if element-type-supplied?
        (copy-sequence `(simple-array ,element-type (*)) seq)

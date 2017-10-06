@@ -9,7 +9,7 @@
 (defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
                   (:predicate queuep))
   "Basic cons queues, with an implementation based on PAIP and the
-original Norvig & Waters paper, an an API mostly borrowed from Arc.
+original Norvig & Waters paper, and an API mostly borrowed from Arc.
 
 About Arc. For the most part, Arc-style identifiers are pessimal,
 neither quite opaque nor quite explicit, like riddles. But by using
@@ -32,22 +32,27 @@ Remove an item with `deq':
 
     (deq (queue 1 2 3)) => 3
 
-To (destructively) add a list to the end of the queue, use `qconc':
+To (destructively) join a list to the end of the queue, use `qconc':
 
     (qconc (queue 1 2 3) '(4 5 6)) => #<QUEUE (1 2 3 4 5 6)>
 
 The rest of the API:
 
+- `queuep' Test for a queue
 - `qlen' Like `(length (qlist ...))'
 - `clear-queue' Clear the queue
 - `front' Like to `(car (qlist ...))'
 - `queue-empty-p' Test if the queue is empty
+- `qappend' Non-destructively join a list to the end of the queue
 
 The idea is that *collecting* is something we do often enough to
 justifying making *collectors* (queues) first-class."
-  (cons nil :type cons :read-only t))
+  (cons (error "No cons!") :type cons :read-only t))
 
 (declaim-freeze-type queue)
+
+(setf (documentation 'queuep 'function)
+      "Test for a queue.")
 
 (defmethod print-object ((queue queue) stream)
   (if (and *print-readably* *read-eval*)

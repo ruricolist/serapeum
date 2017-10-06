@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (31 files, 294 functions)
+# Function Listing For SERAPEUM (31 files, 297 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -196,7 +196,7 @@ Using `define-do-macro` takes care of all of this for you.
 
 Like `define-modify-macro`, but arranges to return the original value.
 
-[View source](macro-tools.lisp#L336)
+[View source](macro-tools.lisp#L338)
 
 ### `(define-case-macro name macro-args params &body macro-body)`
 
@@ -260,24 +260,27 @@ could define it almost trivially using `define-case-macro`:
                  collect `((eql ,expr ,key) ,@body))
          (t ,@body)))
 
-[View source](macro-tools.lisp#L422)
+[View source](macro-tools.lisp#L424)
 
 ### `(case-failure expr keys)`
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L651)
+[View source](macro-tools.lisp#L653)
 
 ### `(eval-if-constant form &optional env)`
 
 Try to reduce FORM to a constant, using ENV.
 If FORM cannot be reduced, return it unaltered.
 
+Also return a second value, T if the form was reduced, or nil
+otherwise.
+
 This is equivalent to testing if FORM is constant, then evaluting it,
 except that FORM is macro-expands FORM in ENV (taking compiler macros
 into account) before doing the test.
 
-[View source](macro-tools.lisp#L672)
+[View source](macro-tools.lisp#L674)
 
 ## Types
 
@@ -518,7 +521,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L163)
+[View source](definitions.lisp#L178)
 
 ### `(defcondition name supers &body (slots &rest options))`
 
@@ -528,7 +531,7 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-[View source](definitions.lisp#L175)
+[View source](definitions.lisp#L190)
 
 ### `(defstruct-read-only name-and-opts &body slots)`
 
@@ -568,7 +571,7 @@ immutable, whether in your own code or in code you are refactoring. In
 new code, however, you may sometimes prefer `defconstructor`, which is
 designed to facilitate working with immutable data.
 
-[View source](definitions.lisp#L244)
+[View source](definitions.lisp#L259)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -577,7 +580,7 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L304)
+[View source](definitions.lisp#L319)
 
 ### `(defconstructor type-name &body slots)`
 
@@ -655,7 +658,7 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](definitions.lisp#L361)
+[View source](definitions.lisp#L375)
 
 ## Binding
 
@@ -1897,7 +1900,7 @@ printer, and with a more concise, Arc-inspired API.
 
 ### `(queuep g)`
 
-NO DOCS!
+Test for a queue.
 
 [View source](queue.lisp#L9)
 
@@ -1905,56 +1908,63 @@ NO DOCS!
 
 Build a new queue with INITIAL-CONTENTS.
 
-[View source](queue.lisp#L65)
+[View source](queue.lisp#L70)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
-[View source](queue.lisp#L71)
+[View source](queue.lisp#L76)
 
 ### `(qlen queue)`
 
 The number of items in QUEUE.
 
-[View source](queue.lisp#L85)
+[View source](queue.lisp#L90)
 
 ### `(qlist queue)`
 
 A list of the items in QUEUE.
 
-[View source](queue.lisp#L90)
+[View source](queue.lisp#L95)
 
 ### `(enq item queue)`
 
 Insert ITEM at the end of QUEUE.
 
-[View source](queue.lisp#L94)
+[View source](queue.lisp#L99)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
-[View source](queue.lisp#L103)
+[View source](queue.lisp#L108)
 
 ### `(front queue)`
 
 The first element in QUEUE.
 
-[View source](queue.lisp#L115)
+[View source](queue.lisp#L120)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
-[View source](queue.lisp#L119)
+[View source](queue.lisp#L124)
 
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L123)
+[View source](queue.lisp#L128)
+
+### `(qappend queue list)`
+
+Append the elements of LIST onto the end of QUEUE.
+Return the queue.
+
+[View source](queue.lisp#L139)
 
 ## Box
 
@@ -3226,13 +3236,40 @@ But uses a selection algorithm for better performance than either.
 
 [View source](sequences.lisp#L939)
 
-### `(reshuffle seq)`
+### `(reshuffle seq &key element-type)`
 
 Like `alexandria:shuffle`, but non-destructive.
 
 Regardless of the type of SEQ, the return value is always a vector.
 
+If ELEMENT-TYPE is provided, this is the element type (modulo
+upgrading) of the vector returned.
+
+If ELEMENT-TYPE is not provided, then the element type of the vector
+returned is T, if SEQ is not a vector. If SEQ is a vector, then the
+element type of the vector returned is the same as the as the element
+type of SEQ.
+
 [View source](sequences.lisp#L986)
+
+### `(sort-new seq pred &key key element-type)`
+
+Return a sorted vector of the elements of SEQ.
+
+You can think of this as a non-destructive version of `sort`, except
+that it always returns a vector. (If you're going to copy a sequence
+for the express purpose of sorting it, you might as well copy it into
+a form that can be sorted efficiently.)
+
+ELEMENT-TYPE is interpreted as for `reshuffle`.
+
+[View source](sequences.lisp#L1006)
+
+### `(stable-sort-new seq pred &key key element-type)`
+
+Like `sort-new`, but sort as if by `stable-sort` instead of `sort`.
+
+[View source](sequences.lisp#L1026)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3242,7 +3279,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L992)
+[View source](sequences.lisp#L1033)
 
 ### `(halves seq &optional split)`
 
@@ -3258,14 +3295,14 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L1033)
+[View source](sequences.lisp#L1074)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1067)
+[View source](sequences.lisp#L1108)
 
 ### `(deltas seq &optional fn)`
 
@@ -3285,14 +3322,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1082)
+[View source](sequences.lisp#L1123)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1106)
+[View source](sequences.lisp#L1147)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3323,14 +3360,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1143)
+[View source](sequences.lisp#L1184)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1202)
+[View source](sequences.lisp#L1243)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3374,14 +3411,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1231)
+[View source](sequences.lisp#L1272)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1273)
+[View source](sequences.lisp#L1314)
 
 ### `(repeat-sequence seq n)`
 
@@ -3405,7 +3442,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1310)
+[View source](sequences.lisp#L1351)
 
 ### `(seq= &rest xs)`
 
@@ -3414,7 +3451,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1375)
+[View source](sequences.lisp#L1416)
 
 ## Internal Definitions
 

@@ -322,6 +322,8 @@
    #:bestn
    #:nth-best
    #:reshuffle
+   #:sort-new
+   #:stable-sort-new
    #:extrema
    #:nsubseq
    #:slice

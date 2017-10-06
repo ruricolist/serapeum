@@ -983,31 +983,52 @@ But uses a selection algorithm for better performance than either."
             finally (return (vref a k))))))
 
 (-> reshuffle (sequence &key (:element-type t)) (simple-array * (*)))
-(defun reshuffle (seq &key (element-type t element-type-supplied?))
+(defun reshuffle (seq &key (element-type '*))
   "Like `alexandria:shuffle', but non-destructive.
 
 Regardless of the type of SEQ, the return value is always a vector.
 
-If ELEMENT-TYPE is provided, this is the element type to use.
+If ELEMENT-TYPE is provided, this is the element type (modulo
+upgrading) of the vector returned.
 
-If ELEMENT-TYPE is not provided, then the element type is T, if SEQ is
-not a vector. If SEQ is a vector, then the element type of the vector
-returned is the same as the as the element type of SEQ."
-  (shuffle
-   (if element-type-supplied?
-       (copy-sequence `(simple-array ,element-type (*)) seq)
-       (copy-sequence '(simple-array * (*)) seq))))
+If ELEMENT-TYPE is not provided, then the element type of the vector
+returned is T, if SEQ is not a vector. If SEQ is a vector, then the
+element type of the vector returned is the same as the as the element
+type of SEQ."
+  (shuffle (copy-sequence `(simple-array ,element-type (*))
+                          seq)))
 
-(define-compiler-macro reshuffle (&whole call seq &key (element-type t element-type-supplied?)
-                                         &environment env)
-  (if (not element-type-supplied?) call
-      (multiple-value-bind (element-type constant?)
-          (eval-if-constant element-type env)
-        (if constant?
-            `(locally (declare (notinline reshuffle))
-               (the (simple-array ,element-type (*))
-                    (reshuffle ,seq :element-type ',element-type)))
-            call))))
+(-> sort-new (sequence function
+                       &key
+                       (:key (or function symbol))
+                       (:element-type t))
+    (simple-array * (*)))
+(defun sort-new (seq pred &key (key #'identity)
+                               (element-type '*))
+  "Return a sorted vector of the elements of SEQ.
+
+You can think of this as a non-destructive version of `sort', except
+that it always returns a vector. (If you're going to copy a sequence
+for the express purpose of sorting it, you might as well copy it into
+a form that can be sorted efficiently.)
+
+ELEMENT-TYPE is interpreted as for `reshuffle'."
+  (sort (copy-sequence `(simple-array ,element-type (*))
+                       seq)
+        pred
+        :key key))
+
+(-> stable-sort-new (sequence function
+                              &key
+                              (:key (or function symbol))
+                              (:element-type t))
+    (simple-array * (*)))
+(defun stable-sort-new (seq pred &key (key #'identity) (element-type '*))
+  "Like `sort-new', but sort as if by `stable-sort' instead of `sort'."
+  (stable-sort (copy-sequence `(simple-array ,element-type (*))
+                              seq)
+               pred
+               :key key))
 
 (defun extrema (seq pred &key (key #'identity) (start 0) end)
   "Like EXTREMUM, but returns both the minimum and the maximum (as two

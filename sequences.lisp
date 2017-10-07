@@ -1351,7 +1351,7 @@ values. Cf. `mvfold'."
                     :initial-value ,(car seeds)))
           (t (let ((tmps (make-gensym-list (length seeds))))
                (with-gensyms (item)
-                 (once-only (fn)
+                 (rebinding-functions (fn)
                    `(let ,(mapcar #'list tmps seeds)
                       ,(if from-end
                            `(do-subseq (,item ,seq :from-end t)

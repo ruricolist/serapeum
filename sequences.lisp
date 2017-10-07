@@ -136,21 +136,16 @@ If SEQ is a list, this is equivalent to `dolist'."
 (declaim (notinline map-subseq))
 
 (define-do-macro do-subseq ((var seq &optional return
-                                 &key (start nil start-supplied?)
-                                 (end nil end-supplied?)
-                                 (from-end nil from-end-supplied?))
+                                 &key start
+                                 end
+                                 from-end)
                             &body body)
-  (if (nor start-supplied?
-           end-supplied?
-           from-end-supplied?)
-      `(do-each (,var ,seq ,@(unsplice return))
-         ,@body)
-      `(map-subseq
-        (lambda (,var)
-          ,@body)
-        ,seq
-        ,start ,end
-        ,from-end)))
+  `(map-subseq
+    (lambda (,var)
+      ,@body)
+    ,seq
+    ,start ,end
+    ,from-end))
 
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.

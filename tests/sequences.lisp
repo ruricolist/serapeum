@@ -177,6 +177,19 @@
                       (range 10) 0 0))
              '(0 9))))
 
+(test (mvfold-compiler-macro :compile-at :run-time)
+  (local
+    (defun extract-format (args/format)
+      (multiple-value-bind (format args)
+          (mvfold (lambda (format args arg)
+                    (if (keywordp arg)
+                        (values arg args)
+                        (values format (cons arg args))))
+                  args/format :rows nil)
+        (values format (reverse args))))
+
+    (is (eql :single (extract-format '(name :single))))))
+
 (test repeat-sequence
   (is (equal "131313" (repeat-sequence "13" 3)))
   (is (equal '(13 13 13) (repeat-sequence '(13) 3)))

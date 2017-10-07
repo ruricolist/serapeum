@@ -1353,9 +1353,13 @@ values. Cf. `mvfold'."
                (with-gensyms (item)
                  (once-only (fn)
                    `(let ,(mapcar #'list tmps seeds)
-                      (do-subseq (,item ,seq ,@(and from-end `(:from-end ,from-end)))
-                        (setf (values ,@tmps)
-                              (funcall ,fn ,item ,@tmps)))
+                      ,(if from-end
+                           `(do-subseq (,item ,seq :from-end t)
+                              (setf (values ,@tmps)
+                                    (funcall ,fn ,item ,@tmps)))
+                           `(do-each (,item ,seq)
+                              (setf (values ,@tmps)
+                                    (funcall ,fn ,@tmps ,item))))
                       (values ,@tmps)))))))))
 
 (define-compiler-macro mvfold (fn seq &rest seeds)

@@ -22,7 +22,7 @@ test-ecl:
 	ecl -eval $(asdf) << /dev/null 2>&1 | sed -e 's/^/ [ECL] /'
 
 test: test-sbcl test-ccl test-ecl
-	beep
+	echo "Test suites passed."; beep
 
 .PHONY: docs
 docs: REFERENCE.md

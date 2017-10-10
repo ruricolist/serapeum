@@ -6,9 +6,11 @@
     - [Dividing sequences](#dividing-sequences)
     - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
     - [Internal definitions](#internal-definitions)
-        - [Example: macros that expand into top-level definitions](#example-macros-that-expand-into-top-level-definitions)
-        - [Block compiling](#block-compiling)
+        - [Example: macros that work locally and globally](#example-macros-that-work-locally-and-globally)
+        - [Example: block compiling](#example-block-compiling)
     - [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
+        - [Example: enums](#example-enums)
+        - [Example: union types](#example-union-types)
     - [CLOS](#clos)
         - [Method combination: standard with context](#method-combination-standard-with-context)
         - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
@@ -197,7 +199,7 @@ can be while remaining portable. That means full support for
 variables, functions, and symbol macros, but restricted support for
 macros.
 
-### Example: macros that expand into top-level definitions
+### Example: macros that work locally and globally
 
 For example, memoizing local functions is usually clumsy; given `local`
 you can define a single `defmemo` form that supports both `defun`
@@ -272,7 +274,7 @@ Expands into this very different code (simplified for readability):
           
           (fibonacci 100))))
 
-### Block compiling
+### Example: block compiling
 
 The macro `local*` is almost the same as `local`, except that it
 leaves the last form in the body intact. This is useful for obtaining
@@ -325,25 +327,17 @@ additional argument – the type to be matched against – and warns, at
 compile time, if the clauses in its body are not an exhaustive
 partition of that type.
 
-```
-(defun negative-integer? (n)
-  (etypecase-of t n
-    ((not integer) nil)
-    ((integer * -1) t)
-    ((integer 1 *) nil)))
-=> Warning
-
-(defun negative-integer? (n)
-  (etypecase-of t n
-    ((not integer) nil)
-    ((integer * -1) t)
-    ((integer 1 *) nil)
-    ((integer 0) nil)))
-=> No warning
-```
-
 `ecase-of` is a succint variant of `etypecase` with the same syntax as
 `ecase`.
+
+`typecase-of` and `case-of` are `etypecase-of` and `ecase-of`,
+respectively, except that they expect, and enforce, the presence of an
+`otherwise` clause.
+
+There are also continuable versions of these macros – `ctypecase-of` and
+`ccase-of`.
+
+### Example: enums
 
 We may call a type defined using `member` an *enumeration*. Take an
 enumeration like this:
@@ -371,12 +365,25 @@ account.
 => No warning
 ```
 
-`typecase-of` and `case-of` are `etypecase-of` and `ecase-of`,
-respectively, except that they expect, and enforce, the presence of an
-`otherwise` clause.
+### Example: union types
 
-There are also continuable versions of these macros – `ctypecase-of` and
-`ccase-of`.
+```
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)))
+=> Warning
+
+(defun negative-integer? (n)
+  (etypecase-of t n
+    ((not integer) nil)
+    ((integer * -1) t)
+    ((integer 1 *) nil)
+    ((integer 0) nil)))
+=> No warning
+```
+
 
 ## CLOS
 

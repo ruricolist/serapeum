@@ -165,6 +165,8 @@ analyze it into an environment, declarations, and a lambda."
     ((or `(lambda ,args ,@body)
          `(function (lambda ,args ,@body)))
      (values nil nil `(lambda ,args ,@body)))
+    (`(ensure-function ,fn)
+      (let-over-lambda fn lexenv))
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
     (`(let* (,binding) ,@body)

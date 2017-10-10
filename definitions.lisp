@@ -143,35 +143,35 @@ Like (setf (fdefinition ALIAS) DEF), but with a place to put
 documentation and some niceties to placate the compiler.
 
 Name from Emacs Lisp."
-  `(progn
-     (declaim (notinline ,alias))
-     (declaim (ftype (function (&rest t) (values &rest t)) ,alias))
-     ,(multiple-value-bind (env decls lambda)
-          (let-over-lambda def env)
-        ;; If we can expand DEF into a lambda (possibly with some
-        ;; variable bindings around it) then splice that lambda in
-        ;; directly as the body of the function. (This is the same
-        ;; function we use to resolve lambdas in `fbind'.)
-        (if lambda
-            (ematch lambda
-              ((list* (and _ (eql 'lambda)) args body)
-               (with-unique-names (rest)
-                 `(let ,env
-                    (declare ,@decls)
-                    (defun ,alias (&rest ,rest)
-                      (apply (lambda ,args ,@body) ,rest))))))
-            (with-unique-names (temp)
-              `(let ((,temp (ensure-function ,def)))
-                 (declare (type function ,temp))
-                 ;; Give the function a temporary definition at
-                 ;; compile time so the compiler doesn't complain
-                 ;; about its being undefined.
-                 (defun ,alias (&rest args)
-                   (apply ,temp args))
-                 (setf (fdefinition ',alias) ,temp)
-                 ,@(unsplice
-                    (and docstring
-                         `(setf (documentation ',alias 'function) ,docstring)))))))))
+  ;; NB `uiop:defun*' is a version of defun intended to portably
+  ;; support redefinition at compile time. We leverage it here to make
+  ;; sure we get consistent behavior everywhere.
+  (multiple-value-bind (env decls lambda)
+      (let-over-lambda def env)
+    ;; If we can expand DEF into a lambda (possibly with some
+    ;; variable bindings around it) then splice that lambda in
+    ;; directly as the body of the function. (This is the same
+    ;; function we use to resolve lambdas in `fbind'.)
+    (if lambda
+        (ematch lambda
+          ((list* (and _ (eql 'lambda)) args body)
+           `(let ,env
+              (declare ,@decls)
+              (uiop:defun* ,alias ,args
+                ,@(unsplice docstring)
+                ,@body))))
+        (with-unique-names (temp)
+          `(let ((,temp (ensure-function ,def)))
+             (declare (type function ,temp))
+             ;; Give the function a temporary definition at
+             ;; compile time so the compiler doesn't complain
+             ;; about its being undefined.
+             (uiop:defun* ,alias (&rest args)
+               (apply ,temp args))
+             (setf (fdefinition ',alias) ,temp)
+             ,@(unsplice
+                (and docstring
+                     `(setf (documentation ',alias 'function) ,docstring))))))))
 
 ;;;# Etc
 

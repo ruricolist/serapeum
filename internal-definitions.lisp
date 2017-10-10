@@ -689,7 +689,7 @@ The recognized definition forms are:
 
 Also, with serious restrictions, you can use:
 
-- `defmacro', for local macros (as with `defmacro')
+- `defmacro', for local macros (as with `macrolet')
 
 \(Note that the top-level definition forms defined by Common Lisp
 are (necessarily) supplemented by three from Serapeum: `def',

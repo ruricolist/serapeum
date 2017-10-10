@@ -679,8 +679,8 @@ Also return a second value, T if the form was reduced, or nil
 otherwise.
 
 This is equivalent to testing if FORM is constant, then evaluting it,
-except that FORM is macro-expands FORM in ENV (taking compiler macros
-into account) before doing the test."
+except that FORM is macro-expanded in ENV (taking compiler macros into
+account) before doing the test."
   (if (constantp form)
       (values (eval form) t)
       (let ((exp (expand-macro-recursively form env)))

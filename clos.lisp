@@ -93,7 +93,9 @@ explain in terms of simpler constructs.)
 Is `defmethods' trivial? Yes, in terms of its implementation. This
 docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
-organized, without any loss of power."
+organized, without any loss of power.
+
+This construct is very loosely inspired by impl blocks in Rust."
   (multiple-value-bind (body decls) (parse-body body)
     (multiple-value-bind (slot-decls decls) (partition-declarations slots decls)
       `(macrolet ((:method (name &body body)

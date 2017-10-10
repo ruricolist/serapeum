@@ -46,10 +46,10 @@ depending on, or even acknowledging, other libraries. Serapeum tries
 to be a good citizen of the Quicklisp era: whenever possible, it
 avoids duplicating functionality that can be had elsewhere.
 
-Some of the utilities in Serapeum are original; others are borrowed
-from other languages, or from other Lispers. I try to give credit in
-the docstrings, but sometimes I have forgotten where I got an idea or
-a name. I regard missing credits as bugs: please report them.
+Many of the utilities in Serapeum are original; many are borrowed from
+other languages, or from other Lispers. I try to give credit in the
+docstrings, but sometimes I have forgotten where I got an idea or a
+name. I regard missing credits as bugs: please report them.
 
 Serapeum is intended to be portable, but it is principally tested
 where it is developed, on [SBCL][] and [Clozure CL][]. (Automated

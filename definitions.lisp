@@ -21,10 +21,10 @@ The original `deflex' is due to Rob Warnock.
 This version of `deflex' differs from the original in the following ways:
 
 - It is possible for VAL to close over VAR.
-- In implementations that support it (SBCL and CCL, at the moment) this
-version creates a backing variable that is \"global\" or \"static\",
-so there is not just a change in semantics, but also a gain in
-efficiency.
+- On implementations that support it (SBCL, CCL, and LispWorks, at the
+moment) this version creates a backing variable that is \"global\" or
+\"static\", so there is not just a change in semantics, but also a
+gain in efficiency.
 - If VAR is a list that starts with `values`, each element is treated as
 a separate variable and initialized as if by `(setf (values VAR...)
 VAL)`."

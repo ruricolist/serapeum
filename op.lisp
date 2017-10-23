@@ -92,6 +92,16 @@ uses of OP are not supported."
                  (when (> n counter)
                    (loop repeat (- n counter) do (make-var))))
                x)
+             (make-spliced-call (f)
+               (let ((fn (car f)))
+                 (if (eql fn 'progn)
+                     (make-spliced-call
+                      `((lambda (&rest xs)
+                          xs)
+                        ,@(rest f)))
+                     (let ((splice (splice (cdr f))))
+                       `(multiple-value-call (function ,fn)
+                          ,@splice)))))
              (walk-op (x &optional env)
                (declare (ignorable env))
                #+sbcl
@@ -106,8 +116,7 @@ uses of OP are not supported."
                         ((and (listp f) (some (lambda (x) (rest-placeholder? x e)) f))
                          (let ((f (cons (car f) (mapcar (lambda (x) (walk-op x e)) (cdr f)))))
                            (values
-                            `(multiple-value-call (function ,(car f))
-                               ,@(splice (cdr f)))
+                            (make-spliced-call f)
                             t)))
                         (t f))))
                #-sbcl
@@ -118,8 +127,7 @@ uses of OP are not supported."
                       (let ((splice? (some #'rest-placeholder? x))
                             (y (mapcar (lambda (y) (walk-op y)) x)))
                         (if splice?
-                            `(multiple-value-call (function ,(car y))
-                               ,@(splice (cdr y)))
+                            (make-spliced-call y)
                             y)))
                      (t x))))
       (let ((body (walk-op `(progn ,@body)))

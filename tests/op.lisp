@@ -8,6 +8,8 @@
   (is (= (funcall (op 1)) 1))
   ;; Identity.
   (is (= (funcall (op _) 1) 1))
+  ;; Identity with rest.
+  (is (equal (funcall (op _*) 1 2 3) '(1 2 3)))
   ;; Positional.
   (is (= (funcall (op (+ 1 _)) 1) 2))
   ;; Backward reference.

@@ -34,7 +34,10 @@ and that OP with a single placeholder is equivalent to IDENTITY:
 OP can also be used to define variadic functions by using _* as the
 placeholder. It is not necessary to use APPLY.
 
-     (apply (op (+ _*)) '(1 2 3 4)) => 10"
+     (apply (op (+ _*)) '(1 2 3 4)) => 10
+
+Note that OP is intended for simple functions. In particular nested
+uses of OP are not supported."
   ;; No `single' yet.
   (let ((counter 0)
         (vars '()))
@@ -123,4 +126,12 @@ placeholder. It is not necessary to use APPLY.
             (rest (and (rest-op? `(progn ,@body)) `(&rest ,(intern (string '_*))))))
         `(lambda (,@(reverse vars) ,@rest)
            (declare (ignorable ,@vars))
-           ,body)))))
+           ,(forbid-nested-op body))))))
+
+(defun forbid-nested-op (form)
+  `(locally (declare #+sbcl (sb-ext:disable-package-locks op))
+     (macrolet ((op (&rest args)
+                  (declare (ignore args))
+                  (warn "The OP macro cannot be nested.")))
+       (declare #+sbcl (sb-ext:enable-package-locks op))
+       ,form)))

@@ -24,3 +24,8 @@
   (is (= 9 (apply (op (+ _1 _3 _5)) '(1 2 3 4 5))))
   ;; Backquotes.
   (is (equal '((:x 1) (:x 2) (:x 3)) (mapcar (op `(:x ,_)) '(1 2 3)))))
+
+(test nested-op
+  (signals warning
+    (eval*
+     '(op (list _1 (map nil (op (print _2)) _1))))))

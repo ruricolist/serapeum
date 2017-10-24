@@ -120,6 +120,7 @@ may be used to make calling VAR more efficient by avoiding `apply'."
 (defun let-over-lambda (form lexenv)
   "Expand form, using `expand-macro'. If the result is a simple let-over-lambda,
 analyze it into an environment, declarations, and a lambda."
+  (declare (optimize (debug 0)))        ;TCO please.
   (match form
     ;; Special cases for `complement` and `constantly`.
     (`(complement ,fn)
@@ -161,12 +162,32 @@ analyze it into an environment, declarations, and a lambda."
                 `(lambda (&rest more)
                    (declare (dynamic-extent more))
                    (multiple-value-call ,tempfn (values-list more) ,@temps)))))
+    ;; TODO Special-case partial. We should be smart enough to see through this.
+    (`(partial ,fn ,@args)
+      (let-over-lambda `(curry ,fn ,@args) lexenv))
     ;; A plain lambda.
     ((or `(lambda ,args ,@body)
          `(function (lambda ,args ,@body)))
      (values nil nil `(lambda ,args ,@body)))
     (`(ensure-function ,fn)
       (let-over-lambda fn lexenv))
+    (`(locally ,@body)
+      (multiple-value-bind (forms decls)
+          (parse-body body)
+        (let-over-lambda
+         `(let ()
+            ,@decls
+            ,@forms)
+         lexenv)))
+    ;; A literal lambda as the function.
+    (`((lambda ,lambda-list ,@body) ,@arguments)
+      ;; Just rewrite it as a let, if possible.
+      (if (intersection lambda-list lambda-list-keywords)
+          (trivia.fail:fail)
+          (let-over-lambda
+           `(let ,(mapcar #'list lambda-list arguments)
+              ,@body)
+           lexenv)))
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
     (`(let* (,binding) ,@body)

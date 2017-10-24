@@ -119,12 +119,19 @@
    ;; Op.
    #:op
    ;; Functions.
-   #:flip
-   #:nth-arg
+   #:capped-fork
+   #:capped-fork2
+   #:define-train
    #:distinct
-   #:throttle
-   #:juxt
    #:dynamic-closure
+   #:flip
+   #:fork
+   #:fork2
+   #:hook
+   #:hook2
+   #:juxt
+   #:nth-arg
+   #:throttle
    ;; Trees.
    #:occurs
    #:occurs-if

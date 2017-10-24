@@ -8,6 +8,8 @@
   (is (= (funcall (op 1)) 1))
   ;; Identity.
   (is (= (funcall (op _) 1) 1))
+  ;; Identity with rest.
+  (is (equal (funcall (op _*) 1 2 3) '(1 2 3)))
   ;; Positional.
   (is (= (funcall (op (+ 1 _)) 1) 2))
   ;; Backward reference.
@@ -24,3 +26,18 @@
   (is (= 9 (apply (op (+ _1 _3 _5)) '(1 2 3 4 5))))
   ;; Backquotes.
   (is (equal '((:x 1) (:x 2) (:x 3)) (mapcar (op `(:x ,_)) '(1 2 3)))))
+
+(test nested-op
+  (signals warning
+    (eval*
+     '(op (list _1 (map nil (op (print _2)) _1))))))
+
+(test op-quote
+  (is (equal '(x _)
+             (funcall (op (cons _ '(_)))
+                      'x)))
+
+  (is (equal '(x _)
+             (macrolet ((tail () ''(_)))
+               (funcall (op (cons _ (tail)))
+                        'x)))))

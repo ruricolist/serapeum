@@ -31,3 +31,13 @@
   (signals warning
     (eval*
      '(op (list _1 (map nil (op (print _2)) _1))))))
+
+(test op-quote
+  (is (equal '(x _)
+             (funcall (op (cons _ '(_)))
+                      'x)))
+
+  (is (equal '(x _)
+             (macrolet ((tail () ''(_)))
+               (funcall (op (cons _ (tail)))
+                        'x)))))

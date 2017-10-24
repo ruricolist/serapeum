@@ -28,6 +28,62 @@
   (once-only (x)
     `(lambda (y) (equal ,x y))))
 
+(-> partial (function &rest t) function)
+(defun partial (fn &rest args)
+  "Partial application.
+
+Unlike `alexandria:curry', which is only inlined when you ask it to
+be, `partial' is always inlined if possible.
+
+From Clojure."
+  ;; Allow Lisp to use the compiler macro.
+  (declare (inline curry))
+  ;; `values' keeps SBCL from complaining that the type is too
+  ;; complex.
+  (values
+   ;; For most actual uses of partial, the compiler macro for curry
+   ;; will take care of compiling the function efficiently. However,
+   ;; we can improve the worst case by explicitly handling the most
+   ;; common cases -- cases with small numbers of arguments.
+   (match args
+     (() (ensure-function fn))
+     ((list arg) (curry fn arg))
+     ((list arg1 arg2) (curry fn arg1 arg2))
+     ((list arg1 arg2 arg3) (curry fn arg1 arg2 arg3))
+     (otherwise (apply #'curry fn args)))))
+
+(define-compiler-macro partial (fn &rest args)
+  (if (null args)
+      `(ensure-function ,fn)
+      ;; The declaration is needed to make sure the compiler macro
+      ;; actually gets used.
+      `(locally (declare (inline curry))
+         (curry ,fn ,@args))))
+
+(-> trampoline (function &rest t) (not function))
+(defun trampoline (fn &rest args)
+  "Use the trampoline technique to simulate mutually recursive functions.
+
+Call FN with supplied ARGS, if any.
+
+If FN returns a functions, call that function with no arguments.
+Repeat until the return value is not a function, and finally return
+that non-function value.
+
+Note that, to return a function as a final value, you must wrap it in
+some data structure and unpack it.
+
+Most likely to be useful for Lisp implementations that do not provide
+tail call elimination.
+
+From Clojure."
+  (if args
+      (trampoline (apply fn args))
+      (nlet trampoline ((fn fn))
+        (if (functionp fn)
+            (trampoline (funcall fn))
+            fn))))
+
 (defmacro define-train (name args &body body)
   "Define a function that takes only a fixed number of functions as arguments and returns another functions.
 

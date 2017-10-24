@@ -275,7 +275,7 @@ The place designed by the first argument is set to th result of
 calling FILTER with PRED, the place, and ARGS.")
 
 (defun keep (item seq &rest args &key (test #'eql) from-end key count
-                                      &allow-other-keys)
+             &allow-other-keys)
   "Almost, but not quite, an alias for `remove` with `:test-not` instead of `:test`.
 
 The difference is the handling of COUNT. For keep, COUNT is the number of items to keep, not remove.
@@ -294,7 +294,7 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
   (let ((args (remove-from-plist args :test)))
     (if (null count)
         (apply #'remove item seq :test-not test args)
-        (fbind ((test (curry test item)))
+        (fbind ((test (partial test item)))
           (declare (dynamic-extent #'test))
           (apply #'filter #'test seq :count count args)))))
 
@@ -425,7 +425,7 @@ The arguments START, END, and KEY are as for `reduce'.
           (collecting*
             (nlet runs ((start start))
               (let* ((elt (elt seq start))
-                     (pos (position-if-not (curry #'test elt)
+                     (pos (position-if-not (partial #'test elt)
                                            seq
                                            :start (1+ start)
                                            :end end)))

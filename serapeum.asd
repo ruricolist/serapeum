@@ -41,7 +41,7 @@
                  (:file "conditions")
                  (:file "op")
                  (:file "functions"
-                  :depends-on ("macro-tools" "types" "hash-tables"))
+                  :depends-on ("macro-tools" "types" "hash-tables" "iter"))
                  (:file "trees"
                   :depends-on ("macro-tools"))
                  (:file "hash-tables"

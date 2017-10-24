@@ -131,7 +131,9 @@
    #:hook2
    #:juxt
    #:nth-arg
+   #:partial
    #:throttle
+   #:trampoline
    ;; Trees.
    #:occurs
    #:occurs-if

@@ -38,7 +38,7 @@
   (let ((sample (range 100)))
     (is (= (mean sample)
            (funcall (serapeum::fork #'/
-                                    (curry #'reduce #'+)
+                                    (partial #'reduce #'+)
                                     #'length)
                     sample)))))
 
@@ -51,3 +51,23 @@
   (is (equal '(11 9)
              (funcall (serapeum::fork2 #'list #'+ #'-)
                       10 1))))
+
+(test trampoline
+  ;; Example from
+  ;; <http://jakemccrary.com/blog/2010/12/06/trampolining-through-mutual-recursion/>.
+  (local
+    (defun my-even? (n)
+      (flet ((e? (n)
+               (or (zerop n)
+                   (op (1- (abs n)))))
+             (o? (n)
+               (if (zerop n)
+                   nil
+                   (op (1- (abs n))))))
+        (trampoline #'e? n)))
+
+    (defun my-odd? (n)
+      (not (my-even? n)))
+
+    (is-true (my-even? 1000000))
+    (is-false (my-odd? 1000000))))

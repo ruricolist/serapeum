@@ -32,6 +32,24 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                  ;; the list below; see array-tran.lisp.
                  (list ,@inits))))
 
+(defconst vector-comparison-specializations
+  (if (featurep :allegro-cl-express)
+      ;; Trying to compile vector= with specialized types exhausts the
+      ;; heap on the Allegro CL Free Express Edition.
+      '(vector)
+      '((simple-array (unsigned-byte 8) (*))
+        ;; Need to raise inline-expansion-limit?
+        ;; (simple-array (signed-byte 8) (*))
+        (simple-array (unsigned-byte 16) (*))
+        ;; (simple-array (signed-byte 16) (*))
+        ;; (simple-array (unsigned-byte 32) (*))
+        ;; (simple-array (signed-byte 32) (*))
+        ;; (simple-array (unsigned-byte 64) (*))
+        ;; (simple-array (signed-byte 64) (*))
+        (simple-array fixnum (*))
+        (simple-array single-float (*))
+        (simple-array double-float (*)))))
+
 (defun vector= (v1 v2 &key (test #'eql)
                            (start1 0)
                            (end1 nil)
@@ -76,20 +94,8 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                  (equal v1 v2)))))))
   ;; Generate code for other kinds of vectors.
   (with-test-fn (test)
-    (with-vector-dispatch #1=((simple-array (unsigned-byte 8) (*))
-                              ;; Need to raise inline-expansion-limit?
-                              ;; (simple-array (signed-byte 8) (*))
-                              (simple-array (unsigned-byte 16) (*))
-                              ;; (simple-array (signed-byte 16) (*))
-                              ;; (simple-array (unsigned-byte 32) (*))
-                              ;; (simple-array (signed-byte 32) (*))
-                              ;; (simple-array (unsigned-byte 64) (*))
-                              ;; (simple-array (signed-byte 64) (*))
-                              (simple-array fixnum (*))
-                              (simple-array single-float (*))
-                              (simple-array double-float (*)))
-      v1
-      (with-vector-dispatch #1# v2
+    (with-vector-dispatch #.vector-comparison-specializations v1
+      (with-vector-dispatch #.vector-comparison-specializations v2
         (let* ((len1 (length v1))
                (len2 (length v2))
                (end1 (or end1 len1))

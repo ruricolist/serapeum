@@ -14,8 +14,13 @@
 
 (deftype signed-array-index ()
   "A (possibly negated) array index."
-  '#.(let ((limit array-dimension-limit))
+  '#.(let ((limit (1- array-dimension-limit)))
        `(integer (,(- limit)) (,limit))))
+
+(deftype signed-array-length ()
+  "A (possibly negated) array length."
+  '#.(let ((limit (1- array-dimension-limit)))
+       `(integer ,(- limit) ,limit)))
 
 (defsubst sequence? (x)
   (typep x 'sequence))
@@ -185,6 +190,9 @@ If SEQ is a list, this is equivalent to `dolist'."
          (vref bucket 0))
     (bucket-front () bucket)))
 
+(-> nsubseq
+    (sequence array-index &optional (or null array-length))
+    sequence)
 (defun nsubseq (seq start &optional end)
   "Return a subsequence that may share structure with SEQ.
 
@@ -308,6 +316,7 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
       `(remove ,item ,seq :test-not ,test ,@(remove-from-plist args :test))
       decline))
 
+(-> single (sequence) boolean)
 (defsubst single (seq)
   "Is SEQ a sequence of one element?"
   (seq-dispatch seq
@@ -589,6 +598,7 @@ If there is no common suffix, return NIL."
                (return)))
          seqs)))))
 
+(-> of-length (array-length) function)
 (defun of-length (length)
   "Return a predicate that returns T when called on a sequence of
 length LENGTH.
@@ -670,10 +680,12 @@ If X and Y are of equal length, return X."
         ((< (length x) (length y)) y)
         (t x)))
 
+(-> longest (sequence) sequence)
 (defun longest (seqs)
   "Return the longest seq in SEQS."
   (reduce #'longer seqs))
 
+(-> shortest (sequence) sequence)
 (defun shortest (seqs)
   "Return the shortest seq in SEQS."
   (reduce (lambda (x y)
@@ -683,7 +695,8 @@ If X and Y are of equal length, return X."
 (defsubst slice-bounds (len start end)
   "Normalize START and END, which may be negative, to offsets
 acceptable to SUBSEQ."
-  (declare (type signed-array-index start end)
+  (declare (type signed-array-index start)
+           (type signed-array-length end)
            (type array-index len))
   (values (if (minusp start)
               (+ len start)
@@ -694,6 +707,9 @@ acceptable to SUBSEQ."
                   (+ len end)
                   end))))
 
+(-> slice
+    (sequence signed-array-index &optional (or null signed-array-length))
+    sequence)
 (defun slice (seq start &optional (end (length seq)))
   "Like `subseq', but allows negative bounds to specify offsets.
 Both START and END accept negative bounds.
@@ -769,6 +785,7 @@ are left in no particular order."
           (< (gethash (key x) table default)
              (gethash (key y) table default)))))))
 
+(-> take (signed-array-length sequence) sequence)
 (defsubst take (n seq)
   "Return, at most, the first N elements of SEQ, as a *new* sequence
 of the same type as SEQ.
@@ -777,7 +794,7 @@ If N is longer than SEQ, SEQ is simply copied.
 
 If N is negative, then |N| elements are taken (in their original
 order) from the end of SEQ."
-  (check-type n signed-array-index)
+  (check-type n signed-array-length)
   (seq-dispatch seq
     (if (minusp n)
         (last seq (abs n))
@@ -786,6 +803,7 @@ order) from the end of SEQ."
         (subseq seq (max 0 (+ (length seq) n)))
         (subseq seq 0 (min n (length seq))))))
 
+(-> drop (signed-array-length sequence) sequence)
 (defsubst drop (n seq)
   "Return all but the first N elements of SEQ.
 The sequence returned is a new sequence of the same type as SEQ.
@@ -794,7 +812,7 @@ If N is greater than the length of SEQ, returns an empty sequence of
 the same type.
 
 If N is negative, then |N| elements are dropped from the end of SEQ."
-  (check-type n signed-array-index)
+  (check-type n signed-array-length)
   (seq-dispatch seq
     (if (minusp n)
         (butlast seq (abs n))
@@ -803,12 +821,14 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
         (subseq seq 0 (max 0 (+ (length seq) n)))
         (subseq seq (min (length seq) n)))))
 
+(-> take-while (function sequence) sequence)
 (defsubst take-while (pred seq)
   "Return the prefix of SEQ for which PRED returns true."
   (seq-dispatch seq
     (ldiff seq (member-if-not pred seq))
     (subseq seq 0 (position-if-not pred seq))))
 
+(-> drop-while (function sequence) sequence)
 (defsubst drop-while (pred seq)
   "Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element."
@@ -1265,6 +1285,7 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
                 (incf j))))
         ret)))
 
+(-> intersperse (t sequence) sequence)
 (defsubst intersperse (new-elt seq)
   "Return a sequence like SEQ, but with NEW-ELT inserted between each
 element."
@@ -1370,6 +1391,7 @@ values. Cf. `mvfold'."
   "Optimize `mvfoldr' with a fixed number of seeds."
   (expand-mvfold fn seq seeds t))
 
+(-> repeat-sequence (sequence array-length) sequence)
 (defun repeat-sequence (seq n)
   "Return a sequence like SEQ, with the same content, but repeated N times.
 

@@ -549,7 +549,7 @@ value like `gethash'."
                    ,getter
                  (if ,presentp
                      ,old
-                     ,newval))))))
+                     (progn ,@newval)))))))
 
 (defun thread-aux (threader needle holes thread-fn)
   ;; http://christophe.rhodes.io/notes/blog/posts/2014/code_walking_for_pipe_sequencing/

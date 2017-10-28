@@ -1391,7 +1391,12 @@ values. Cf. `mvfold'."
   "Optimize `mvfoldr' with a fixed number of seeds."
   (expand-mvfold fn seq seeds t))
 
-(-> repeat-sequence (sequence array-length) sequence)
+;;; The obvious signature:
+;;; (-> repeat-sequence (sequence array-length) sequence)
+;;; is not used because N could be any positive integer as long as
+;;; SEQUENCE is empty.
+
+(-> repeat-sequence (sequence (integer 0 *)) sequence)
 (defun repeat-sequence (seq n)
   "Return a sequence like SEQ, with the same content, but repeated N times.
 

@@ -480,13 +480,15 @@ some implementation tricks from `cl-algebraic-data-type'."
             (:print-function
              (lambda (object stream depth)
                (declare (ignore depth))
-               ,(with-unique-names (fields)
-                  `(let ((,fields
-                           (list
-                            ,@(loop for reader in readers
-                                    collect `(,reader object)))))
-                     (declare (dynamic-extent ,fields))
-                     (print-constructor object stream ,fields))))))
+               ,(if (null readers)
+                    `(print-constructor object stream nil)
+                    (with-unique-names (fields)
+                      `(let ((,fields
+                               (list
+                                ,@(loop for reader in readers
+                                        collect `(,reader object)))))
+                         (declare (dynamic-extent ,fields))
+                         (print-constructor object stream ,fields)))))))
          ,@(unsplice docstring)
          ,@(loop for (slot-name slot-type) in slots
                  collect `(,slot-name :type ,slot-type)))

@@ -433,6 +433,9 @@ Note that the arguments to the pattern are optional:
       ((person name) name))
     => \"Common Lisp\"
 
+Note also that no predicate is defined for the type, so to test for
+the type you must either use `typep' or pattern matching as above.
+
 While it is possible to inherit from a type defined with
 `defconstructor' (this is Lisp, I can't stop you), it's a bad idea. In
 particular, on Lisps which support it, a type defined with

@@ -119,8 +119,8 @@ the collect clause in `loop', finally returning the collection.
 
 To see the collection so far, call COLLECTOR with no arguments.
 
-Note that this version COLLECTOR to a closure, not a macro: you can
-pass the collector around or return it like any other function."
+Note that this version binds COLLECTOR to a closure, not a macro: you
+can pass the collector around or return it like any other function."
   (with-gensyms (head tail)
     `(let* ((,head (list nil))
             (,tail ,head))

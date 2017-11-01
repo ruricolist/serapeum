@@ -152,7 +152,7 @@ Returns the final value of each collector as multiple values.
        (z 3))
      => '(1) '(2) '(3)"
   ;; Warn if there are duplications in COLLECTORS.
-  (when (< (length collectors)
+  (when (> (length collectors)
            (length (remove-duplicates collectors)))
     (warn "Duplicated collectors in with-collectors form: ~s" collectors))
   (with-gensyms (outer)

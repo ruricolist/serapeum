@@ -89,13 +89,19 @@ part of the arguments to compare, and compares them using TEST."
 (defmacro do-each ((var seq &optional return) &body body)
   "Iterate over the elements of SEQ, a sequence.
 If SEQ is a list, this is equivalent to `dolist'."
-  (let ((iter-spec `(,var ,seq ,@(unsplice return))))
-    #+(or sbcl abcl)
-    `(sequence:dosequence ,iter-spec
-       ,@body)
-    #-(or sbcl abcl)
-    `(%do-each ,iter-spec
-       ,@body)))
+  ;; We hoist the body and use sb-ext:muffle-conditions to prevent
+  ;; SBCL from spamming us with code deletion notes. (It may also be
+  ;; desirable in itself to avoid needless code duplication in Lisps
+  ;; without type inference.)
+  (with-thunk (body var)
+    (let ((iter-spec `(,var ,seq ,@(unsplice return))))
+      `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+         #+(or sbcl abcl)
+         (sequence:dosequence ,iter-spec
+           (,body ,var))
+         #-(or sbcl abcl)
+         (%do-each ,iter-spec
+           (,body ,var))))))
 
 (declaim (inline map-subseq))
 (defun map-subseq (fn seq &optional start end from-end)

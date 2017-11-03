@@ -197,12 +197,23 @@ Lisp."
      ,slots
      ,@options))
 
+(defgeneric read-only-struct-slot-names (x)
+  (:method append ((x t)) nil)
+  (:method-combination append))
+
 (defstruct
     (%read-only-struct
      (:constructor nil)                 ;Abstract.
      (:copier nil)
      (:predicate nil))
   "Abstract base class for read-only structures.")
+
+(defmethod make-load-form ((self %read-only-struct) &optional env)
+  (let* ((slot-names (read-only-struct-slot-names self))
+         (slot-names (remove-duplicates slot-names)))
+    (make-load-form-saving-slots self
+                                 :slot-names slot-names
+                                 :environment env)))
 
 (defun read-only-include-clause (clause)
   "Rewrite CLAUSE, an include clause, for use with a read-only
@@ -253,8 +264,9 @@ raises an error is supplied."
 ;;; all the slots are read-only. But where there is inheritance, there
 ;;; are no guarantees. Even if we could check that the class being
 ;;; inherited from has only read-only slots at the time the initial
-;;; definition, there is nothing to prevent the superclass from being
-;;; redefined in the future.
+;;; definition, there is nothing to prevent the superclass (or any
+;;; other class in the inheritance chain) from being redefined with
+;;; mutable slots in the future.
 
 (defmacro defstruct-read-only (name-and-opts &body slots)
   "Easily define a defstruct with no mutable slots.
@@ -284,6 +296,9 @@ There are only a few syntactic differences:
 The idea here is simply that an unbound slot in an immutable data
 structure does not make sense.
 
+A read-only struct is always externalizable; it has an implicit
+definition for `make-load-form'.
+
 On Lisps that support it, the structure is also marked as \"pure\":
 that is, instances may be moved into read-only memory.
 
@@ -308,13 +323,19 @@ designed to facilitate working with immutable data."
             (if-let (clause (find :include opts :key #'car-safe))
               (values clause (remove clause opts))
               (values nil opts))
-          `(defstruct (,name (:copier nil)
-                             ;; Mark as OK to save in pure memory.
-                             #+(or sbcl cmucl) (:pure t)
-                             ,@opts
-                             ,(read-only-include-clause include-clause))
-             ,@(unsplice docstring)
-             ,@(mapcar #'read-only-slotdef slots)))))))
+          (let* ((slot-defs (mapcar #'read-only-slotdef slots))
+                 (slot-names (mapcar #'first slot-defs)))
+            `(progn
+               (defstruct (,name (:copier nil)
+                                 ;; Mark as OK to save in pure memory.
+                                 #+(or sbcl cmucl) (:pure t)
+                                 ,@opts
+                                 ,(read-only-include-clause include-clause))
+                 ,@(unsplice docstring)
+                 ,@slot-defs)
+               (defmethod read-only-struct-slot-names append ((self ,name))
+                 ',slot-names)
+               ',name)))))))
 
 (defmacro defvar-unbound (var &body (docstring))
   "Define VAR as if by `defvar' with no init form, and set DOCSTRING

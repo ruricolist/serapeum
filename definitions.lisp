@@ -388,6 +388,11 @@ I believe the name comes from Edi Weitz."
   (write-char #\) stream)
   (values))
 
+(defgeneric constructor-values/generic (x))
+
+(defun deconstruct (x)
+  (constructor-values/generic x))
+
 ;;; NB If you ever figure out how to safely support inheritance in
 ;;; read-only structs, you should *still* not allow constructors to
 ;;; inherit from one another. Cf. Scala, where they forbid case class
@@ -453,6 +458,13 @@ Note that the arguments to the pattern are optional:
     (trivia:match (person \"Common Lisp\" 33)
       ((person name) name))
     => \"Common Lisp\"
+
+If you don't use Trivia, you can still do destructuring with
+`deconstruct', which returns the slots of a constructor as multiple
+values:
+
+    (deconstruct (person \"Common Lisp\" 33))
+    => \"Common Lisp\", 33
 
 Note also that no predicate is defined for the type, so to test for
 the type you must either use `typep' or pattern matching as above.
@@ -548,6 +560,12 @@ some or all of its slots." type-name)
                                                    (,reader o2))))
               t))
 
+       ;; Define a destructor.
+       (defmethod constructor-values/generic ((x ,type-name))
+         (values ,@(loop for reader in readers
+                         collect `(,reader x))))
+
+       ;; Define a pattern to match.
        (trivia:defpattern ,type-name
            ,(if slot-names
                 `(&optional ,@slot-names)

@@ -48,6 +48,7 @@
    #:defcondition
    #:defstruct-read-only
    #:defconstructor
+   #:deconstruct
    #:defvar-unbound
    #:local
    #:local*

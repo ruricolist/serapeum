@@ -122,6 +122,12 @@ that understand such declarations."
                (lambda (s) (format s "Supply a new value for ~s" place)))))
     (require-type-for new spec place)))
 
+(deftype assure (type-spec)
+  type-spec)
+
+(trivia:defpattern assure (type binding)
+  `(and ,binding (type ,type)))
+
 (defmacro assure (type-spec &body (form) &environment env)
   "Macro for inline type checking.
 

@@ -542,7 +542,10 @@ some implementation tricks from `cl-algebraic-data-type'."
          ,(fmt "Copy ~:@(~a~), optionally overriding ~
 some or all of its slots." type-name)
          (declare (ignorable ,type-name))
-         (,type-name ,@slot-names))
+         ;; A copier without slots should be identity.
+         ,(if (null readers)
+              type-name
+              `(,type-name ,@slot-names)))
 
        ;; Define a load form.
        (defmethod make-load-form ((self ,type-name) &optional env)

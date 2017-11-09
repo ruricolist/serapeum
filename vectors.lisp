@@ -28,7 +28,7 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                  :initial-contents
                  ;; NB We use to stack-allocate the list of inits, but
                  ;; that could result in junk in the vector; see issue
-                 ;; #14. Note that, SBCL does not actually allocate
+                 ;; #14. Note that SBCL does not actually allocate
                  ;; the list below; see array-tran.lisp.
                  (list ,@inits))))
 

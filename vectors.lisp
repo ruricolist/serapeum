@@ -85,6 +85,9 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                       (if (and (zerop start)
                                (= end (length v)))
                           v
+                          ;; Using `equal', even with displaced bit
+                          ;; vectors, is orders of magnitude faster
+                          ;; than looping bit by bit.
                           (make-array (- end start)
                                       :element-type 'bit
                                       :displaced-to v

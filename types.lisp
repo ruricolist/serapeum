@@ -159,6 +159,9 @@ From ISLISP."
   ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
 
+(defpattern assure (type bind)
+  `(and ,bind (type ,type)))
+
 (defmacro assuref (place type-spec)
   "Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once."

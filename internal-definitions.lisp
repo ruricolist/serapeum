@@ -1,7 +1,6 @@
 (defpackage :serapeum/internal-definitions
   (:use :cl :alexandria :serapeum)
   (:import-from :trivia :match :ematch)
-  (:shadowing-import-from :uiop :nest)
   #+sb-package-locks (:implement :serapeum :serapeum/internal-definitions))
 
 (in-package :serapeum/internal-definitions)
@@ -125,7 +124,8 @@ them sane initialization values."
      (labels :type list :initform nil)
      (exprs :type list :initform nil)
      (global-symbol-macros :type list :initform nil)
-     (env :type list :initarg :env))
+     (env :type t :initarg :env
+          :documentation "The Lisp environment."))
     (:default-initargs
      :env nil
      :decls nil)))
@@ -133,26 +133,30 @@ them sane initialization values."
 (deftype expr () t)
 (deftype body () 'list)
 
-(adt:defdata binding
-  (var symbol expr)
-  (symbol-macro symbol expr)
-  (fun symbol body)
-  ;; But of course we can't get the function.
-  (macro symbol function))
+(locally (declare (optimize safety))
+  (defclass %binding ()
+    ((name :reader binding-name
+           :initarg :name
+           :type symbol)
+     (init :reader binding-init
+           :initarg :init
+           :type expr)))
 
-(defmethod .name ((self binding))
-  (adt:match binding self
-    ((var name _) name)
-    ((symbol-macro name _) name)
-    ((fun name _) name)
-    ((macro name _) name)))
+  (defclass var (%binding) ())
+  (defclass symbol-macro (%binding) ())
+  (defclass fun (%binding) ())
+  (defclass macro (%binding) ()))
 
-(defmethod .init ((self binding))
-  (adt:match binding self
-    ((var _ init) init)
-    ((symbol-macro _ init) init)
-    ((fun _ init) init)
-    ((macro _ init) init)))
+(macrolet ((binding-constructor (class)
+             `(defun ,class (name  init)
+                (make ',class :name name :init init))))
+  (binding-constructor var)
+  (binding-constructor symbol-macro)
+  (binding-constructor fun)
+  (binding-constructor macro))
+
+(deftype binding ()
+  '(or var symbol-macro fun macro))
 
 (defgeneric .vars (env)
   (:method ((env null))
@@ -207,13 +211,16 @@ them sane initialization values."
         :tags tags))
 
 (defun augment/vars (binds &optional (subenv *subenv*))
-  (let ((vars (mapcar (op (apply #'var (expand-binding _))) binds)))
+  (let ((vars
+          (~>> binds
+               (mapcar #'expand-binding)
+               (mapply #'var))))
     (copy-subenv subenv
                  :vars (append vars (.vars subenv)))))
 
 (defun augment/symbol-macros (symbol-macros &optional (subenv *subenv*))
   (copy-subenv subenv
-               :vars (append (mapcar (op (apply #'symbol-macro _)) symbol-macros)
+               :vars (append (mapply #'symbol-macro symbol-macros)
                              (.vars subenv))))
 
 (defun augment/block (block &optional (subenv *subenv*))
@@ -242,23 +249,23 @@ them sane initialization values."
 ;;; Of course this isn't used at the moment.
 (defun augment/macros (macros &optional (subenv *subenv*))
   (copy-subenv subenv
-               :funs (append (mapcar (op (apply #'macro _)) macros)
+               :funs (append (mapply #'macro macros)
                              (.funs subenv))))
 
 (defun visible-of-type (type subenv)
   (let* ((vars (.vars subenv))
-         (visible (remove-duplicates vars :from-end t :key #'.name))
+         (visible (remove-duplicates vars :from-end t :key #'binding-name))
          (of-type (remove-if-not (of-type type) visible)))
     of-type))
 
 (defun symbol-macro-bindings (&optional (subenv *subenv*))
-  (loop for sm in (visible-of-type 'symbol-macro subenv)
-        collect (list (.name sm) (.init sm))))
+  (mapcar (juxt #'binding-name #'binding-init)
+          (visible-of-type 'symbol-macro subenv)))
 
 (defun remove-shadowed (binds &optional (subenv *subenv*))
   (remove-if (op (member (ensure-car _)
                          (.vars subenv)
-                         :key #'.name))
+                         :key #'binding-name))
              binds))
 
 (defun shadow-names (binds)
@@ -290,8 +297,7 @@ them sane initialization values."
         (push (cons var alias) var-aliases)
         alias)))
   (:method var-alias-bindings (self)
-    (loop for (var . alias) in var-aliases
-          collect (list var alias)))
+    (mapcar (juxt #'car #'cdr) var-aliases))
   (:method alias-decls (self decls)
     ;; XXX Is this reliable?
     (sublis var-aliases decls))
@@ -364,11 +370,13 @@ them sane initialization values."
               (macroexpand-1 form env)))
         (macroexpand-1 form env)))
   (:method expand-in-env (self form &optional env)
-    (let (exps? exp?)
-      (loop (setf (values form exp?) (expand-in-env-1 self form env)
-                  exps? (or exps? exp?))
-            (unless exp?
-              (return (values form exps?))))))
+    (nlet rec ((form form)
+               (exps? nil))
+      (mvlet* ((form exp? (expand-in-env-1 self form env))
+               (exps? (or exps? exp?)))
+        (if (not exp?)
+            (values form exps?)
+            (rec form exps?)))))
   (:method wrap-expr (self form)
     (let ((symbol-macros
             (append (symbol-macro-bindings *subenv*)
@@ -393,8 +401,7 @@ them sane initialization values."
                              `(progn
                                 ,@body))))))
   (:method step-expansion (self form)
-    (multiple-value-bind (exp exp?)
-        (expand-in-env-1 self form env)
+    (receive (exp exp?) (expand-in-env-1 self form env)
       (if exp?
           ;; Try to make sure that, if the
           ;; expansion bottoms out, we return the
@@ -614,44 +621,43 @@ them sane initialization values."
            (aliased-vars (mapcar #'first var-aliases)))
       (when (null exprs)
         (simple-style-warning "No expressions in `local' form"))
-      (nest
-       (multiple-value-bind (var-decls decls)     (partition-declarations var-names decls))
-       (multiple-value-bind (fn-decls decls)      (partition-declarations fn-names decls))
-       (multiple-value-bind (aliased-decls decls) (partition-declarations aliased-vars decls))
-       ;; These functions aren't necessary, but they
-       ;; make the expansion cleaner.
-       (labels ((wrap-decls (body)
-                  (if decls
-                      `(locally ,@decls
-                         ,@body)
-                      `(progn ,@body)))
-                (wrap-vars (body)
-                  (if (or hoisted-vars vars)
-                      ;; As an optimization, hoist constant
-                      ;; bindings, e.g. (def x 1), so the
-                      ;; compiler can infer their types or
-                      ;; make use of declarations. (Ideally we
-                      ;; would hoist anything we know for sure
-                      ;; is not a closure, but that's
-                      ;; impractical.)
-                      `((let-initialized (,@hoisted-vars
-                                          ,@vars)
-                          ,@var-decls
-                          ;; Un-alias the vars.
-                          (symbol-macrolet ,(var-alias-bindings self)
-                            ,@aliased-decls
-                            ,@body)))
-                      body))
-                (wrap-labels (body)
-                  (if labels
-                      `((labels ,(shadow-names labels)
-                          ,@fn-decls
-                          ,@body))
-                      body))))
-       (wrap-decls
-        (wrap-vars
-         (wrap-labels
-          body)))))))
+      (mvlet* ((var-decls decls     (partition-declarations var-names decls))
+               (fn-decls decls      (partition-declarations fn-names decls))
+               (aliased-decls decls (partition-declarations aliased-vars decls)))
+        ;; These functions aren't necessary, but they
+        ;; make the expansion cleaner.
+        (labels ((wrap-decls (body)
+                   (if decls
+                       `(locally ,@decls
+                          ,@body)
+                       `(progn ,@body)))
+                 (wrap-vars (body)
+                   (if (or hoisted-vars vars)
+                       ;; As an optimization, hoist constant
+                       ;; bindings, e.g. (def x 1), so the
+                       ;; compiler can infer their types or
+                       ;; make use of declarations. (Ideally we
+                       ;; would hoist anything we know for sure
+                       ;; is not a closure, but that's
+                       ;; impractical.)
+                       `((let-initialized (,@hoisted-vars
+                                           ,@vars)
+                           ,@var-decls
+                           ;; Un-alias the vars.
+                           (symbol-macrolet ,(var-alias-bindings self)
+                             ,@aliased-decls
+                             ,@body)))
+                       body))
+                 (wrap-labels (body)
+                   (if labels
+                       `((labels ,(shadow-names labels)
+                           ,@fn-decls
+                           ,@body))
+                       body)))
+          (wrap-decls
+           (wrap-vars
+            (wrap-labels
+             body))))))))
 
 (defmacro local (&body orig-body &environment env)
   "Make internal definitions using top-level definition forms.

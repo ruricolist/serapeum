@@ -19,7 +19,6 @@
                "parse-declarations-1.0"
                "introspect-environment"
                "global-vars"
-               "cl-algebraic-data-type"
                "trivial-file-size")
   :serial t
   :components ((:file "package")

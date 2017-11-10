@@ -22,7 +22,8 @@
 
 (defun run-hooks (&rest hookvars)
   "Run all the hooks in all the HOOKVARS.
-The variable `*hook*' is bound to each hook as it is being run."
+The variable `*hook*' is bound to the name of each hook as it is being
+run."
   (dolist (*hook* hookvars)
     (dolist (fn (symbol-value *hook*))
       (with-hook-restart

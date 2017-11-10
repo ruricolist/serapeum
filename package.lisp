@@ -4,7 +4,7 @@
   (:use :cl :alexandria :split-sequence :parse-number
     :named-readtables :tcr.parse-declarations-1.0
     :introspect-environment)
-  (:import-from :trivia :match :ematch)
+  (:import-from :trivia :match :ematch :defpattern)
   (:import-from :trivial-file-size :file-size-in-octets)
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)

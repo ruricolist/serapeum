@@ -28,9 +28,12 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                  :initial-contents
                  ;; NB We use to stack-allocate the list of inits, but
                  ;; that could result in junk in the vector; see issue
-                 ;; #14. Note that, SBCL does not actually allocate
+                 ;; #14. Note that SBCL does not actually allocate
                  ;; the list below; see array-tran.lisp.
                  (list ,@inits))))
+
+(defpattern vect (&rest inits)
+  `(vector ,@inits))
 
 (defconst vector-comparison-specializations
   (if (featurep :allegro-cl-express)
@@ -85,6 +88,9 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                       (if (and (zerop start)
                                (= end (length v)))
                           v
+                          ;; Using `equal', even with displaced bit
+                          ;; vectors, is orders of magnitude faster
+                          ;; than looping bit by bit.
                           (make-array (- end start)
                                       :element-type 'bit
                                       :displaced-to v

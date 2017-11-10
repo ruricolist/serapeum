@@ -569,7 +569,7 @@ some or all of its slots." type-name)
                          collect `(,reader x))))
 
        ;; Define a pattern to match.
-       (trivia:defpattern ,type-name
+       (defpattern ,type-name
            ,(if slot-names
                 `(&optional ,@slot-names)
                 ())

@@ -23,3 +23,15 @@
   (is (not (true nil)))
   ;; NB The read base doesn't matter; 0 (or 1) is always a digit char.
   (is (eql t (true (digit-char-p #\0)))))
+
+(test assure-pattern
+  (is
+   (stringp
+    (trivia:match ""
+      ((assure string x)
+       x))))
+  (is
+   (null
+    (trivia:match ""
+      ((assure list x)
+       x)))))

@@ -32,6 +32,9 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                  ;; the list below; see array-tran.lisp.
                  (list ,@inits))))
 
+(defpattern vect (&rest inits)
+  `(vector ,@inits))
+
 (defconst vector-comparison-specializations
   (if (featurep :allegro-cl-express)
       ;; Trying to compile vector= with specialized types exhausts the

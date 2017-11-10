@@ -125,7 +125,7 @@ that understand such declarations."
 (deftype assure (type-spec)
   type-spec)
 
-(trivia:defpattern assure (type binding)
+(defpattern assure (type binding)
   `(and ,binding (type ,type)))
 
 (defmacro assure (type-spec &body (form) &environment env)
@@ -164,9 +164,6 @@ From ISLISP."
 
   ;; `values' is hand-holding for SBCL.
   `(the ,type-spec (values (require-type ,form ',type-spec))))
-
-(defpattern assure (type bind)
-  `(and ,bind (type ,type)))
 
 (defmacro assuref (place type-spec)
   "Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates

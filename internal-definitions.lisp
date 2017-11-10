@@ -114,18 +114,21 @@ them sane initialization values."
        ,@decls
        ,@body)))
 
-(defclass internal-definitions-env ()
-  ((vars :initform nil)
-   (var-aliases :initform nil)
-   (decls :initarg :decls)
-   (hoisted-vars :initform nil)
-   (labels :initform nil)
-   (exprs :initform nil)
-   (global-symbol-macros :initform nil)
-   (env :initarg :env))
-  (:default-initargs
-   :env nil
-   :decls nil))
+(locally
+    ;; Enforce types.
+    (declare (optimize safety))
+  (defclass internal-definitions-env ()
+    ((vars :type list :initform nil)
+     (var-aliases :type list :initform nil)
+     (decls :type list :initarg :decls)
+     (hoisted-vars :type list :initform nil)
+     (labels :type list :initform nil)
+     (exprs :type list :initform nil)
+     (global-symbol-macros :type list :initform nil)
+     (env :type list :initarg :env))
+    (:default-initargs
+     :env nil
+     :decls nil)))
 
 (deftype expr () t)
 (deftype body () 'list)
@@ -177,17 +180,20 @@ them sane initialization values."
 (defun expand-bindings (bindings)
   (mapcar #'expand-binding bindings))
 
-(defclass subenv ()
-  ((vars :type list :initarg :vars :reader .vars)
-   (funs :type list :initarg :funs :reader .funs)
-   (blocks :type list :initarg :blocks :reader .blocks)
-   (tags :type list :initarg :tags :reader .tags))
-  (:default-initargs
-   :vars nil
-   :funs nil
-   :blocks nil
-   :tags nil)
-  (:documentation "Minimal lexical environment."))
+(locally
+    ;; Enforce types.
+    (declare (optimize safety))
+  (defclass subenv ()
+    ((vars :type list :initarg :vars :reader .vars)
+     (funs :type list :initarg :funs :reader .funs)
+     (blocks :type list :initarg :blocks :reader .blocks)
+     (tags :type list :initarg :tags :reader .tags))
+    (:default-initargs
+     :vars nil
+     :funs nil
+     :blocks nil
+     :tags nil)
+    (:documentation "Minimal lexical environment.")))
 
 (defun copy-subenv (subenv
                     &key (vars (.vars subenv))

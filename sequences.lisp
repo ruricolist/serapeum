@@ -800,7 +800,7 @@ If N is longer than SEQ, SEQ is simply copied.
 
 If N is negative, then |N| elements are taken (in their original
 order) from the end of SEQ."
-  (check-type n signed-array-length)
+  (declare (type signed-array-length n))
   (seq-dispatch seq
     (if (minusp n)
         (last seq (abs n))
@@ -818,7 +818,7 @@ If N is greater than the length of SEQ, returns an empty sequence of
 the same type.
 
 If N is negative, then |N| elements are dropped from the end of SEQ."
-  (check-type n signed-array-length)
+  (declare (type signed-array-length n))
   (seq-dispatch seq
     (if (minusp n)
         (butlast seq (abs n))

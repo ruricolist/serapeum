@@ -41,3 +41,21 @@
              (macrolet ((tail () ''(_)))
                (funcall (op (cons _ (tail)))
                         'x)))))
+
+;;; Failing tests (on SBCL at least).
+
+;; (test (lexical-underscore-around :compile-at :run-time)
+;;   (is (= 4
+;;          (let ((_ 1)) (declare (ignorable _))
+;;            (funcall
+;;             (op (+ _ _))
+;;             2 2)))))
+
+;; (test (lexical-underscore-inside :compile-at :run-time)
+;;   (is (= 2
+;;          (funcall
+;;           (op (+ (let ((_ 1))
+;;                    _)
+;;                  (let ((_ 1))
+;;                    _)))
+;;           2 2))))

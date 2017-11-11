@@ -1,6 +1,36 @@
 (in-package :serapeum)
 (in-readtable :standard)
 
+;;; `op/no-walker' is not actually meant to be used, but it may be
+;;; taken as an executable specification of how `op' is supposed to
+;;; work.
+(defmacro op/no-walker (&body body)
+  (let ((underscore (intern "_"))
+        (rest (intern "_*")))
+    (with-unique-names (counter args vec next-arg len arg-ref)
+      `(let ((,counter -1)
+             (,len 0))
+         (declare (ignorable ,counter))
+         (lambda (&rest ,args)
+           (let ((,vec (coerce ,args '(simple-array * (*)))))
+             (declare (ignorable ,vec))
+             (flet ((,next-arg ()
+                      (prog1 (svref ,vec (incf ,counter))
+                        (maxf ,len (1+ ,counter))))
+                    (,arg-ref (i)
+                      (maxf ,len (1+ i))
+                      (svref ,vec i)))
+               (symbol-macrolet ((,underscore (,next-arg))
+                                 (,rest
+                                   (prog1 (nthcdr ,args (1+ ,counter))
+                                     (setf ,len (length ,vec))))
+                                 ,@(loop for i from 0 below 50
+                                         for sym = (intern (format nil "_~a" (1+ i)))
+                                         collect `(,sym (arg-ref ,i))))
+                 (multiple-value-prog1 (progn ,@body)
+                   (when (< ,len (length ,vec))
+                     (error "Too many arguments.")))))))))))
+
 ;; TODO Handle dotted lists.
 (defmacro op (&body body &environment outer-env)
   "GOO's simple macro for positional lambdas.

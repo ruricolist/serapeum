@@ -2,7 +2,7 @@
 (in-readtable :standard)
 
 ;; TODO Handle dotted lists.
-(defmacro op (&body body &environment env)
+(defmacro op (&body body &environment outer-env)
   "GOO's simple macro for positional lambdas.
 
 An OP is like a lambda without an argument list. Within the body of the OP
@@ -38,30 +38,32 @@ placeholder. It is not necessary to use APPLY.
 
 Note that OP is intended for simple functions. In particular nested
 uses of OP are not supported."
-  ;; No `single' yet.
   (let ((counter 0)
         (vars '()))
-    (labels ((placeholder? (x env)
+    (labels ((var-lexical? (x env)
+               (declare (ignorable x env))
+               #+sbcl (sb-walker:var-lexical-p x env)
+               #-sbcl nil)
+             (free? (x env) (not (var-lexical? x env)))
+             (placeholder? (x env)
                (declare (ignorable env))
-               #+sbcl (when (sb-walker:var-lexical-p x env)
-                        (return-from placeholder? nil))
                (and (symbolp x)
-                    (string= x '_)))
+                    (free? x env)
+                    (string= x "_")))
              (numbered-placeholder? (x env)
                (declare (ignorable env))
-               #+sbcl (when (sb-walker:var-lexical-p x env)
-                        (return-from numbered-placeholder? nil))
                (and (symbolp x)
+                    (free? x env)
                     (let ((x (string x)))
+                      #+sbcl (declare (notinline every))
                       (and (>= (length x) 2)
                            (string= '_ x :end2 1)
                            (every #'digit-char-p (subseq x 1))))))
              (rest-placeholder? (x env)
                (declare (ignorable env))
-               #+sbcl (when (sb-walker:var-lexical-p x env)
-                        (return-from rest-placeholder? nil))
                (and (symbolp x)
-                    (string= x '_*)))
+                    (free? x env)
+                    (string= x "_*")))
              (splice (y env)
                (mapcar (lambda (x)
                          (if (rest-placeholder? x env)
@@ -69,19 +71,19 @@ uses of OP are not supported."
                              `(values ,x)))
                        y))
              (quotation? (x env)
-               (let ((exp (expand-macro-recursively x env)))
-                 (and (listp exp)
-                      (eql (car exp) 'quote))))
+               (match (expand-macro-recursively x env)
+                 ((list 'quote _) t)))
              (rest-op? (x env)
                (declare (ignorable env))
                #+sbcl
-               (prog1 nil
+               (block nil
                  (sb-walker:walk-form
                   x env
                   (lambda (f c e)
                     (cond ((and (eql c :eval) (rest-placeholder? f e))
-                           (return-from rest-op? t))
-                          (t f)))))
+                           (return t))
+                          (t f))))
+                 nil)
 
                #-sbcl
                (or (and (listp x)
@@ -97,16 +99,17 @@ uses of OP are not supported."
                    (loop repeat (- n counter) do (make-var))))
                x)
              (make-spliced-call (f env)
-               (let ((fn (car f)))
-                 (if (eql fn 'progn)
-                     (make-spliced-call
-                      `((lambda (&rest xs)
-                          xs)
-                        ,@(rest f))
-                      env)
-                     (let ((splice (splice (cdr f) env)))
-                       `(multiple-value-call (function ,fn)
-                          ,@splice)))))
+               (match f
+                 ((list* 'progn body)
+                  (make-spliced-call
+                   `((lambda (&rest xs)
+                       xs)
+                     ,@body)
+                   env))
+                 ((list* fn _)
+                  (let ((splice (splice (cdr f) env)))
+                    `(multiple-value-call (function ,fn)
+                       ,@splice)))))
              (walk-op (x env)
                (declare (ignorable env))
                #+sbcl
@@ -119,7 +122,9 @@ uses of OP are not supported."
                         ((numbered-placeholder? f e)
                          (values (make-var/numbered f) t))
                         ((and (listp f) (some (lambda (x) (rest-placeholder? x e)) f))
-                         (let ((f (cons (car f) (mapcar (lambda (x) (walk-op x e)) (cdr f)))))
+                         (let ((f (cons (car f)
+                                        (mapcar (lambda (x) (walk-op x e))
+                                                (cdr f)))))
                            (values
                             (make-spliced-call f e)
                             t)))
@@ -137,9 +142,9 @@ uses of OP are not supported."
                             y)))
                      (t x))))
       (declare (ignorable #'quotation?))
-      (let ((body (walk-op `(progn ,@body) env))
+      (let ((body (walk-op `(progn ,@body) outer-env))
             (rest
-              (and (rest-op? `(progn ,@body) env)
+              (and (rest-op? `(progn ,@body) outer-env)
                    `(&rest ,(intern (string '_*))))))
         `(lambda (,@(reverse vars) ,@rest)
            (declare (ignorable ,@vars))

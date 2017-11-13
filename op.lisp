@@ -1,35 +1,39 @@
-(in-package :serapeum)
-(in-readtable :standard)
+(defpackage :serapeum/op
+  (:use :cl :alexandria :serapeum)
+  (:import-from :trivia :match :ematch)
+  #+sb-package-locks (:implement :serapeum :serapeum/op))
+(in-package :serapeum/op)
+
+(define-symbol-macro underscore '_)
+(define-symbol-macro rest-arg '_*)
 
 ;;; `op/no-walker' is not actually meant to be used. It is a reference
 ;;; for how `op' would work in an ideal world ("ideal world" = "world
 ;;; with a portable code walker").
 (defmacro op/no-walker (&body body)
-  (let ((underscore (intern "_"))
-        (rest (intern "_*")))
-    (with-unique-names (counter args vec next-arg len arg-ref)
-      `(let ((,counter -1)
-             (,len 0))
-         (declare (ignorable ,counter))
-         (lambda (&rest ,args)
-           (let ((,vec (coerce ,args '(simple-array * (*)))))
-             (declare (ignorable ,vec))
-             (flet ((,next-arg ()
-                      (prog1 (svref ,vec (incf ,counter))
-                        (maxf ,len (1+ ,counter))))
-                    (,arg-ref (i)
-                      (maxf ,len (1+ i))
-                      (svref ,vec i)))
-               (symbol-macrolet ((,underscore (,next-arg))
-                                 (,rest
-                                   (prog1 (nthcdr ,args (1+ ,counter))
-                                     (setf ,len (length ,vec))))
-                                 ,@(loop for i from 0 below 50
-                                         for sym = (intern (format nil "_~a" (1+ i)))
-                                         collect `(,sym (arg-ref ,i))))
-                 (multiple-value-prog1 (progn ,@body)
-                   (when (< ,len (length ,vec))
-                     (error "Too many arguments.")))))))))))
+  (with-unique-names (counter args vec next-arg len arg-ref)
+    `(let ((,counter -1)
+           (,len 0))
+       (declare (ignorable ,counter))
+       (lambda (&rest ,args)
+         (let ((,vec (coerce ,args '(simple-array * (*)))))
+           (declare (ignorable ,vec))
+           (flet ((,next-arg ()
+                    (prog1 (svref ,vec (incf ,counter))
+                      (maxf ,len (1+ ,counter))))
+                  (,arg-ref (i)
+                    (maxf ,len (1+ i))
+                    (svref ,vec i)))
+             (symbol-macrolet ((,underscore (,next-arg))
+                               (,rest-arg
+                                 (prog1 (nthcdr ,args (1+ ,counter))
+                                   (setf ,len (length ,vec))))
+                               ,@(loop for i from 0 below 50
+                                       for sym = (intern (format nil "_~a" (1+ i)))
+                                       collect `(,sym (arg-ref ,i))))
+               (multiple-value-prog1 (progn ,@body)
+                 (when (< ,len (length ,vec))
+                   (error "Too many arguments."))))))))))
 
 ;; TODO Handle dotted lists.
 (defmacro op (&body body &environment outer-env)

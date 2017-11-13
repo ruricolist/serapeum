@@ -1,9 +1,9 @@
 (in-package :serapeum)
 (in-readtable :standard)
 
-;;; `op/no-walker' is not actually meant to be used, but it may be
-;;; taken as an executable specification of how `op' is supposed to
-;;; work.
+;;; `op/no-walker' is not actually meant to be used. It is a reference
+;;; for how `op' would work in an ideal world ("ideal world" = "world
+;;; with a portable code walker").
 (defmacro op/no-walker (&body body)
   (let ((underscore (intern "_"))
         (rest (intern "_*")))

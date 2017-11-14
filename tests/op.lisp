@@ -37,11 +37,6 @@
   (is (= 3 (funcall (op (_ _ _))
                     #'+ 1 2))))
 
-(test nested-op
-  (signals warning
-    (eval*
-     '(op (list _1 (map nil (op (print _2)) _1))))))
-
 (test op-quote
   (is (equal '(x _)
              (funcall (op (cons _ '(_)))

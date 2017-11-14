@@ -41,8 +41,12 @@
 
 (defun var-lexical? (x env)
   (declare (ignorable x env))
-  #+sbcl (sb-walker:var-lexical-p x env)
-  #-sbcl nil)
+  ;; #+sbcl (sb-walker:var-lexical-p x env)
+  ;; #-sbcl nil
+
+  ;; TODO Figure out how to ignore bindings in the initial
+  ;; environment.
+  nil)
 
 (defun free? (x env) (not (var-lexical? x env)))
 
@@ -69,13 +73,6 @@
     ((list 'quote _) t)
     ((list 'function _) t)
     (otherwise nil)))
-
-(defun op? (form)
-  (match form
-    ((list* 'op _) t)))
-
-(defun warn-nested-op ()
-  (warn "The ~s macro cannot be nested." 'op))
 
 (defun rest-op? (x env)
   (declare (optimize (debug 0)))
@@ -146,9 +143,6 @@
                          (values (make-var) t))
                         ((numbered-placeholder? f e)
                          (values (make-var/numbered f) t))
-                        ((op? f)
-                         (warn-nested-op)
-                         (values f t))
                         ((and (listp f)
                               (some (lambda (x) (rest-placeholder? x e)) f))
                          (let ((f (cons (car f)
@@ -166,9 +160,6 @@
                      ((placeholder? x env) (make-var))
                      ((numbered-placeholder? x env)
                       (make-var/numbered x))
-                     ((op? x)
-                      (warn-nested-op)
-                      x)
                      ((and (listp x)
                            (some (rcurry #'rest-placeholder? env) x))
                       (let ((y (mapcar (rcurry #'walk-op env) x)))

@@ -120,6 +120,7 @@
    #:maybe-invoke-restart
    ;; Op.
    #:op
+   #:opf
    ;; Functions.
    #:capped-fork
    #:capped-fork2

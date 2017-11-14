@@ -227,6 +227,11 @@ arguments names."
   (let ((env (extract-op-env body env)))
     (op-env-lambda env)))
 
+(defmacro opf (place expr)
+  "Like `(callf PLACE (op EXPR))'.
+From GOO."
+  `(callf (op ,expr) ,place))
+
 ;;; `op/no-walker' is not actually meant to be used. It is a reference
 ;;; for how `op' would work in an ideal world ("ideal world" = "world
 ;;; with a portable code walker").

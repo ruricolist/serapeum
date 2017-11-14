@@ -26,8 +26,16 @@
   (is (equal '(4 5 6) (mapcar (op _2) '(1 2 3) '(4 5 6))))
   ;; Sparse argument lists.
   (is (= 9 (apply (op (+ _1 _3 _5)) '(1 2 3 4 5))))
+  )
+
+(test op-quasiquote
   ;; Backquotes.
-  (is (equal '((:x 1) (:x 2) (:x 3)) (mapcar (op `(:x ,_)) '(1 2 3)))))
+  (is (equal '((:x 1) (:x 2) (:x 3))
+             (mapcar (op `(:x ,_)) '(1 2 3)))))
+
+(test op-fn
+  (is (= 3 (funcall (op (_ _ _))
+                    #'+ 1 2))))
 
 (test nested-op
   (signals warning
@@ -46,12 +54,14 @@
 
 ;;; Failing tests (on SBCL at least).
 
-;; (test (lexical-underscore-around :compile-at :run-time)
-;;   (is (= 4
-;;          (let ((_ 1)) (declare (ignorable _))
-;;            (funcall
-;;             (op (+ _ _))
-;;             2 2)))))
+(test (lexical-underscore-around :compile-at :run-time)
+  "Make sure placeholders shadow lexical bindings in the surrounding
+environment."
+  (is (= 4
+         (let ((_ 1)) (declare (ignorable _))
+           (funcall
+            (op (+ _ _))
+            2 2)))))
 
 ;; (test (lexical-underscore-inside :compile-at :run-time)
 ;;   (is (= 2

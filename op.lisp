@@ -7,17 +7,30 @@
 (define-symbol-macro underscore '_)
 (define-symbol-macro rest-arg '_*)
 
+(defun sym-underscore? (x)
+  (string= x underscore))
+
+(defun sym-rest-arg? (x)
+  (string= x rest-arg))
+
+(defun sym-numbered-placeholder? (x)
+  (let ((x (string x)))
+    #+sbcl (declare (notinline every))
+    (and (>= (length x) 2)
+         (string= '_ x :end2 1)
+         (every #'digit-char-p (subseq x 1)))))
+
 (defclass op-env ()
   ((body :type list :initarg :body :initarg :body)
    (vars :type list :initform nil :initarg :vars)
-   (rest-op? :type boolean :initform nil :initarg :rest-op?)))
+   (rest-op? :type symbol :initform nil :initarg :rest-op?)))
 
 (defun make-op-env (&rest args &key &allow-other-keys)
   (apply #'make-instance 'op-env args))
 
 (defmethod op-env-lambda ((op-env op-env))
   (with-slots (body vars rest-op?) op-env
-    (let ((rest (and rest-op? `(&rest ,rest-arg))))
+    (let ((rest (and rest-op? `(&rest ,rest-op?))))
       `(lambda (,@(reverse vars) ,@rest)
          (declare (ignorable ,@vars))
          ,body))))
@@ -45,11 +58,7 @@
   (declare (ignorable env))
   (and (symbolp x)
        (free? x env)
-       (let ((x (string x)))
-         #+sbcl (declare (notinline every))
-         (and (>= (length x) 2)
-              (string= '_ x :end2 1)
-              (every #'digit-char-p (subseq x 1))))))
+       (sym-numbered-placeholder? x)))
 
 (defun quotation? (x env)
   (match (expand-macro-recursively x env)
@@ -144,6 +153,9 @@
                            (values
                             (make-spliced-call f e)
                             t)))
+                        ((and (listp f)
+                              (placeholder? (car f) e))
+                         `(funcall ,(car f) ,@(cdr f)))
                         (t f))))
                #-sbcl
                (cond ((quotation? x env) x)
@@ -153,12 +165,15 @@
                      ((op? x)
                       (warn-nested-op)
                       x)
+                     ((and (listp x)
+                           (some (rcurry #'rest-placeholder? env) x))
+                      (let ((y (mapcar (rcurry #'walk-op env) x)))
+                        (make-spliced-call y env)))
+                     ((and (listp x)
+                           (placeholder? (car x) env))
+                      (walk-op `(funcall ,(car x) ,@(cdr x)) env))
                      ((listp x)
-                      (let ((splice? (some (rcurry #'rest-placeholder? env) x))
-                            (y (mapcar (rcurry #'walk-op env) x)))
-                        (if splice?
-                            (make-spliced-call y env)
-                            y)))
+                      (loop for y in x collect (walk-op y env)))
                      (t x))))
       (let ((body (walk-op `(progn ,@body) env)))
         (values body vars)))))
@@ -198,9 +213,19 @@ placeholder. It is not necessary to use APPLY.
 
      (apply (op (+ _*)) '(1 2 3 4)) => 10
 
-Note that OP is intended for simple functions. In particular nested
-uses of OP are not supported."
-  (op-env-lambda (extract-op-env body env)))
+OP is intended for simple functions -- one-liners. Parameters are
+extracted according to a depth-first walk of BODY. Macro expansion
+may, or may not, be done depending on the implementation; it should
+not be relied on. Lexical bindings may, or may not, shadow
+placeholders -- again, it depends on the implementation. (This means,
+among other things, that nested use of `op' is not a good idea.)
+Because of the impossibility of a truly portable code walker, `op'
+will never be a true replacement for `lambda'. But even if it were
+possible to do better, `op' would still only be suited for one-liners.
+If you need more than a one-liner, then you should be giving your
+arguments names."
+  (let ((env (extract-op-env body env)))
+    (op-env-lambda env)))
 
 ;;; `op/no-walker' is not actually meant to be used. It is a reference
 ;;; for how `op' would work in an ideal world ("ideal world" = "world

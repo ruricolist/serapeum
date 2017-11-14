@@ -4,6 +4,10 @@
   #+sb-package-locks (:implement :serapeum :serapeum/op))
 (in-package :serapeum/op)
 
+;;; NB We are forced to use SBCL's code walker because it is the only
+;;; way to "see inside" SBCL's implementation of quasiquotation, which
+;;; uses structures.
+
 (define-symbol-macro underscore '_)
 (define-symbol-macro rest-arg '_*)
 
@@ -223,7 +227,11 @@ Because of the impossibility of a truly portable code walker, `op'
 will never be a true replacement for `lambda'. But even if it were
 possible to do better, `op' would still only be suited for one-liners.
 If you need more than a one-liner, then you should be giving your
-arguments names."
+arguments names.
+
+\{One thing you *can* count on the ability to use `op' with
+quasiquotes. If using placeholders inside quasiquotes does not work on
+your Lisp implementation, that's a bug, not a limitation.)"
   (let ((env (extract-op-env body env)))
     (op-env-lambda env)))
 

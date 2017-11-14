@@ -16,6 +16,8 @@
   (is (= (funcall (op (+ _ _1)) 2) 4))
   ;; Rest.
   (is (equal (apply (op (list 1 _*)) '(2 3)) '(1 2 3)))
+  ;; Splicing.
+  (is (equal (funcall (op (list _* 1)) 3 2) '(3 2 1)))
   ;; Positional and rest.
   (is (equal (apply (op (list _ _*)) 1 '(2 3)) '(1 2 3)))
   ;; Flip

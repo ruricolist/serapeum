@@ -222,6 +222,7 @@
    #:make-octet-vector
    #:octets
    #:unoctets
+   #:octet-vector=
    ;; Time.
    #:universal-to-unix
    #:unix-to-universal

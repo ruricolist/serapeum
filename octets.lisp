@@ -55,3 +55,40 @@ Defaults to little-endian order."
               :initial-value 0)
       (loop for i from (1- (length bytes)) downto 0
             sum (ash (aref bytes i) (* i 8)))))
+
+(declaim (inline octet-vector=/unsafe))
+(defun octet-vector=/unsafe (v1 v2 start1 end1 start2 end2)
+  (declare (optimize (speed 3)
+                     (safety 0)
+                     (debug 0)
+                     (compilation-speed 0))
+           (type octet-vector v1 v2)
+           (type array-index start1 start2)
+           (type array-length end1 end2))
+  (and (= (- end1 start1)
+          (- end2 start2))
+       (loop for i from start1 below end1
+             for j from start2 below end2
+             always (eql (aref v1 i) (aref v2 j)))))
+
+(-> octet-vector=
+    (octet-vector octet-vector
+                  &key (:start1 array-index)
+                  (:start2 array-index)
+                  (:end1 (or array-length null))
+                  (:end2 (or array-length null)))
+    boolean)
+(defun octet-vector= (v1 v2 &key (start1 0) end1
+                                 (start2 0) end2)
+  "Like `string=' for octet vectors."
+  (declare (octet-vector v1 v2)
+           (array-index start1 start2)
+           ((or array-length null) end1 end2)
+           (optimize speed))
+  (let* ((len1 (length v1))
+         (len2 (length v2))
+         (end1 (or end1 len1))
+         (end2 (or end2 len2)))
+    (assert (<= start1 end1 len1))
+    (assert (<= start2 end2 len2))
+    (octet-vector=/unsafe v1 v2 start1 end1 start2 end2)))

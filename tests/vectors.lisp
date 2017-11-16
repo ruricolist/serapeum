@@ -14,13 +14,3 @@
   (is (equal
        (princ-to-string #((foo)))
        (princ-to-string ((lambda () (vect (list 'foo))))))))
-
-(test vector=
-  (is (vector= #() #()))
-  (is (vector= "" ""))
-  (is (vector= "" #()))
-  (is (vector= #() ""))
-  (is (vector= #* #()))
-  (is (vector= #() #*))
-  (is (vector= #(x y z) #(y z) :start1 1))
-  (is (vector= #(x y) #(x y z) :end2 2)))

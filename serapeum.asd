@@ -81,7 +81,8 @@
                 :pathname ""
                 :serial nil
                 :components
-                ((:file "mop")
+                ((:file "vector=")
+                 (:file "mop")
                  (:file "internal-definitions")
                  (:file "tree-case")
                  (:file "dispatch-case")
@@ -121,6 +122,7 @@
                  (:file "queue")
                  (:file "box")
                  (:file "vectors")
+                 (:file "vector=")
                  (:file "numbers")
                  (:file "octets")
                  (:file "time")

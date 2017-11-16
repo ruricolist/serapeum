@@ -37,12 +37,17 @@ The same shortcut works for keywords.
      (defun mod-fixnum+ (x y) ...)"
   `(declaim (ftype (-> ,args ,values) ,function)))
 
-(defmacro declaim-freeze-type (type)
-  "Declare that TYPE is not going to change.
+(defmacro declaim-freeze-type (&rest types)
+  "Declare that TYPES is not going to change.
 
 On Lisps that understand it, this is roughly equivalent to \"sealing\"
 a type in an OOP language: a promise that the type will never have any
 new subtypes, so tests for the type can be open-coded."
+  `(progn
+     ,@(loop for type in types
+             collect `(declaim-freeze-type-1 ,type))))
+
+(defmacro declaim-freeze-type-1 (type)
   (declare (ignorable type))
   #+sbcl  `(declaim (sb-ext:freeze-type ,type))
   #+cmucl `(declaim (ext:freeze-type ,type)))

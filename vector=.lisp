@@ -283,9 +283,6 @@ If no TEST is supplied, elements are tested with `eql'."
 
 ;;; Not a string, not a bit vector, and not a pair of numeric vectors.
 
-;;; Alternately, we could use `with-vector-dispatch' to specialize a
-;;; loop for different combinations of vectors. But
-
 ;;; Fall back to `equalp'.
 (defmethod compare-elements ((v1 vector) (v2 vector) (test test/equalp) (bounds null))
   (equalp v1 v2))

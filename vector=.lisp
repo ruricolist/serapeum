@@ -4,6 +4,20 @@
   #+sb-package-locks (:implement :serapeum :serapeum/vector=))
 (in-package :serapeum/vector=)
 
+;;; Here we define `vector=': like `string=', but for any vector. In
+;;; terms of behavior, we could just use `mismatch'. In terms of
+;;; performance, however, for some winning combinations of the type of
+;;; the vectors, the test function, and whether we have bounds to
+;;; consider, we can leave `mismatch' in the dust. Even on SBCL, by
+;;; calling out to `string=' for strings, or `equal' for bit vectors,
+;;; we improve performance by orders of magnitude.
+
+;;; The problem we face is to keep track of those combinations. The
+;;; solution we use is to model kinds of vectors and kinds of tests as
+;;; classes and dispatch with generic functions. We lose on the
+;;; overhead of generic function dispatch, but we more than make up
+;;; for it when we can defer to a specialized comparison function.
+
 
 ;;; Model the relationships between comparison predicates.
 
@@ -55,16 +69,15 @@
 
 (defun test-kind (test)
   (declare (function test))
-  (assure test-kind
-    (select test
-      ((#'=) test/=)
-      ((#'char=) test/char=)
-      ((#'char-equal) test/char-equal)
-      ((#'equalp) test/equalp)
-      ((#'equal) test/equal)
-      ((#'eql) test/eql)
-      ((#'eq) test/eq)
-      (t test))))
+  (select test
+    ((#'=) test/=)
+    ((#'char=) test/char=)
+    ((#'char-equal) test/char-equal)
+    ((#'equalp) test/equalp)
+    ((#'equal) test/equal)
+    ((#'eql) test/eql)
+    ((#'eq) test/eq)
+    (t test)))
 
 
 ;;; Model relationships between vector types.
@@ -155,7 +168,8 @@
                                (start1 0)
                                (start2 0)
                                end1 end2)
-  "Like `string=' for any vector."
+  "Like `string=' for any vector.
+If no TEST is supplied, elements are tested with `eql'."
   (check-type vec1 vector)
   (check-type vec2 vector)
   (check-type start1 array-index)
@@ -170,20 +184,20 @@
                         start1 end1
                         start2 end2)))
     (and (bounds-plausible? bounds vec1 vec2)
-         (vect= kind1 kind2 test-kind bounds))))
+         (compare-elements kind1 kind2 test-kind bounds))))
 
-(defgeneric vect= (kind1 kind2 test-kind bounds))
+(defgeneric compare-elements (kind1 kind2 test-kind bounds))
 
 
 ;;; Handle strings.
 
-(defmethod vect= ((s1 string) (s2 string) (test test/char=) (bounds null))
+(defmethod compare-elements ((s1 string) (s2 string) (test test/char=) (bounds null))
   (string= s1 s2))
 
-(defmethod vect= ((s1 string) (s2 string) (test test/char-equal) (bounds null))
+(defmethod compare-elements ((s1 string) (s2 string) (test test/char-equal) (bounds null))
   (string-equal s1 s2))
 
-(defmethod vect= ((s1 string) (s2 string) (test test/char=) (bounds bounds))
+(defmethod compare-elements ((s1 string) (s2 string) (test test/char=) (bounds bounds))
   (with-bounds (start1 end1 start2 end2) bounds
     (string= s1 s2
              :start1 start1
@@ -191,7 +205,7 @@
              :start2 start2
              :end2 end2)))
 
-(defmethod vect= ((s1 string) (s2 string) (test test/char-equal) (bounds bounds))
+(defmethod compare-elements ((s1 string) (s2 string) (test test/char-equal) (bounds bounds))
   (with-bounds (start1 end1 start2 end2) bounds
     (string-equal s1 s2
                   :start1 start1
@@ -202,10 +216,10 @@
 
 ;;; Handle bit vectors.
 
-(defmethod vect= ((v1 bit-vector) (v2 bit-vector) (test test/rat=) (bounds null))
+(defmethod compare-elements ((v1 bit-vector) (v2 bit-vector) (test test/rat=) (bounds null))
   (equal v1 v2))
 
-(defmethod vect= ((v1 bit-vector) (v2 bit-vector) (test test/rat=) (bounds bounds))
+(defmethod compare-elements ((v1 bit-vector) (v2 bit-vector) (test test/rat=) (bounds bounds))
   (with-bounds (start1 end1 start2 end2) bounds
     ;; Using `equal', even with displaced bit
     ;; vectors, is orders of magnitude faster
@@ -221,59 +235,68 @@
 ;;; tricky part is vectors of floats: `=' and `eql' are not the same
 ;;; for floats.
 
-(defmethod vect= ((w1 numeric-vector) (w2 numeric-vector) (test test/=) (bounds null))
+(defmethod compare-elements ((w1 numeric-vector) (w2 numeric-vector) (test test/=) (bounds null))
   (equalp (unwrap w1) (unwrap w2)))
 
-(defmethod vect= ((w1 rat-vector) (w2 rat-vector) (test test/rat=) (bounds null))
-  (equalp (unwrap w1) (unwrap w2)))
+(defmethod compare-elements ((w1 rat-vector) (w2 rat-vector) (test test/rat=) (bounds null))
+  (let ((v1 (unwrap w1))
+        (v2 (unwrap w2)))
+    (if (and (octet-vector-p v1)
+             (octet-vector-p v2))
+        (octet-vector= v1 v2)
+        (equalp (unwrap w1) (unwrap w2)))))
 
 ;;; Unwrap vector wrappers.
 
-(defmethod vect= ((w1 vector-wrapper) (w2 vector-wrapper) test bounds)
-  (vect= (unwrap w1) (unwrap w2) test bounds))
+(defmethod compare-elements ((w1 vector-wrapper) (w2 vector-wrapper) test bounds)
+  (compare-elements (unwrap w1) (unwrap w2) test bounds))
 
-(defmethod vect= ((w vector-wrapper) (v vector) test bounds)
-  (vect= (unwrap w) v test bounds))
+(defmethod compare-elements ((w vector-wrapper) (v vector) test bounds)
+  (compare-elements (unwrap w) v test bounds))
 
-(defmethod vect= ((v vector) (w vector-wrapper) test bounds)
-  (vect= v (unwrap w) test bounds))
+(defmethod compare-elements ((v vector) (w vector-wrapper) test bounds)
+  (compare-elements v (unwrap w) test bounds))
+
+
+;;; Octet vectors.
+
+(defconst octet-vector-class (class-of (make-octet-vector 0)))
+
+(when (proper-subtype-p octet-vector-class 'vector)
+  (defmethod compare-elements ((v1 #.octet-vector-class)
+                               (v2 #.octet-vector-class)
+                               (test test/rat=)
+                               (bounds null))
+    (octet-vector= v1 v2))
+
+  (defmethod compare-elements ((v1 #.octet-vector-class)
+                               (v2 #.octet-vector-class)
+                               (test test/rat=)
+                               (bounds bounds))
+    (with-bounds (start1 end1 start2 end2) bounds
+      (octet-vector= v1 v2
+                     :start1 start1
+                     :end1 end1
+                     :start2 start2
+                     :end2 end2))))
 
 
 ;;; Not a string, not a bit vector, and not a pair of numeric vectors.
 
-(defconst vector-comparison-specializations
-  (if (featurep :allegro-cl-express)
-      ;; Trying to compile vector= with specialized types exhausts the
-      ;; heap on the Allegro CL Free Express Edition.
-      '(vector)
-      '((simple-array (unsigned-byte 8) (*))
-        ;; Need to raise inline-expansion-limit?
-        ;; (simple-array (signed-byte 8) (*))
-        (simple-array (unsigned-byte 16) (*))
-        ;; (simple-array (signed-byte 16) (*))
-        ;; (simple-array (unsigned-byte 32) (*))
-        ;; (simple-array (signed-byte 32) (*))
-        ;; (simple-array (unsigned-byte 64) (*))
-        ;; (simple-array (signed-byte 64) (*))
-        (simple-array fixnum (*))
-        (simple-array single-float (*))
-        (simple-array double-float (*)))))
+;;; Alternately, we could use `with-vector-dispatch' to specialize a
+;;; loop for different combinations of vectors. But
 
 ;;; Fall back to `equalp'.
-(defmethod vect= ((v1 vector) (v2 vector) (test test/equalp) (bounds null))
+(defmethod compare-elements ((v1 vector) (v2 vector) (test test/equalp) (bounds null))
   (equalp v1 v2))
 
-(defmethod vect= ((v1 vector) (v2 vector) test (bounds null))
+(defmethod compare-elements ((v1 vector) (v2 vector) test (bounds null))
   (every (test-fn test) v1 v2))
 
-(defmethod vect= ((v1 vector) (v2 vector) test (bounds bounds))
-  (declare (optimize (debug 0) (safety 0) (compilation-speed 0)))
+(defmethod compare-elements ((v1 vector) (v2 vector) test (bounds bounds))
   (with-bounds (start1 end1 start2 end2) bounds
-    (declare (type array-index start1 start2)
-             (type array-length end1 end2))
-    (fbind ((test (test-fn test)))
-      (with-vector-dispatch #.vector-comparison-specializations v1
-        (with-vector-dispatch #.vector-comparison-specializations v2
-          (loop for i of-type array-index from start1 below end1
-                for j of-type array-index from start2 below end2
-                always (test (vref v1 i) (vref v2 j))))))))
+    (not (mismatch v1 v2 :start1 start1
+                         :end1 end1
+                         :start2 start2
+                         :end2 end2
+                         :test (test-fn test)))))

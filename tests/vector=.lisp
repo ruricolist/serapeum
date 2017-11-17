@@ -49,11 +49,13 @@
   (is (not (vector= #(1 2 3) #(1.0 2.0 3.0))))
   (is (not
        (vector= (coerce #(1 2 3) 'octet-vector)
-                (coerce #(1.0 2.0 3.0) '(simple-array single-float)))))
+                (make-array 3 :element-type 'single-float
+                              :initial-contents #(1.0f0 2.0f0 3.0f0)))))
 
   (is (vector= #(1 2 3) #(1.0 2.0 3.0) :test #'=))
   (is (vector= (coerce #(1 2 3) 'octet-vector)
-               (coerce #(1.0 2.0 3.0) '(simple-array single-float))
+               (make-array 3 :element-type 'single-float
+                             :initial-contents #(1.0f0 2.0f0 3.0f0))
                :test #'=))
 
   (unless (eql -0.0 0.0)
@@ -61,9 +63,9 @@
     (is (not (vector= #(0.0) #(-0.0))))
     (is (vector= #(-0.0) #(0.0) :test #'=))
     (let ((v1 (make-array 1 :element-type 'single-float
-                            :initial-contents '(0.0)))
+                            :initial-contents '(0.0f0)))
           (v2 (make-array 1 :element-type 'single-float
-                            :initial-contents '(-0.0))))
+                            :initial-contents '(-0.0f0))))
       (is (not (vector= v1 v2)))
       (is (not (vector= v2 v1)))
       (is (vector= v1 v2 :test #'=))
@@ -78,7 +80,7 @@
     (is (vector= #(0) #(0.0) :test #'=))
 
     (let ((v1 (make-array 1 :element-type 'single-float
-                            :initial-contents '(0.0)))
+                            :initial-contents '(0.0f0)))
           (v2 (make-array 1 :element-type '(unsigned-byte 8)
                             :initial-contents '(0))))
       (is (not (vector= v1 v2)))

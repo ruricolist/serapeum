@@ -358,6 +358,27 @@ symbol)."
          ,@others
          ,@body))))
 
+(defun ignored-functions-in-decls (decls)
+  ;; The names of the ignored functions.
+  (mapcar #'second
+          ;; Ignore declarations for functions.
+          (filter #'listp
+                  ;; The ignore declarations.
+                  (mappend (lambda (decl)
+                             (let ((decls (cdr decl)))
+                               (mappend #'cdr
+                                        (keep 'ignore decls :key #'car))))
+                           decls))))
+
+(defun ignored-functions-in-body (body)
+  (~> body
+      body-decls
+      ignored-functions-in-decls))
+
+(defun body-decls (body)
+  (nth-value 1
+    (parse-body body)))
+
 (defun partition-fbinds (fbinds body)
   "Partition FBINDS using the \"Fixing Letrec\" algorithm.
 Returns the bindings in four sets: unreferenced, literal lambdas,
@@ -365,16 +386,25 @@ simple (external references) and complex (everything else).
 
 BODY is needed because we detect unreferenced bindings by looking for
 `ignore' declarations."
-  (let ((ignored
-          (filter #'listp
-                  (mappend (lambda (decl)
-                             (cdr (assoc 'ignore (cdr decl))))
-                           (nth-value 1 (parse-body body))))))
+  (let ((ignored (ignored-functions-in-body body)))
+    ;; Since we cannot walk the code, our checks are limited to
+    ;; special cases.
     (labels ((unreferenced? (expr)
-               (find expr ignored :key #'second))
+               ;; If the function is declared to be ignored, then we
+               ;; know for sure it is unreferenced. (This is more
+               ;; useful than it sounds. After all the compiler warns
+               ;; you if the function is unused but not declared
+               ;; ignored.)
+               (memq expr ignored))
              (lambda? (expr)
-               (and (listp expr) (eql (car expr) 'lambda)))
+               ;; Note that `analyze-fbinds' has already done the work
+               ;; of exposing lambda inside let.
+               (match expr
+                 (`(lambda ,@_) t)))
              (simple? (expr)
+               ;; Special cases where we can be sure the expressions
+               ;; are simple -- that is, that they contain no
+               ;; references to the functions bound by `fbindrec'.
                (let ((expr (expand-macro expr)))
                  (match expr
                    ((and _ (type symbol)) t)
@@ -387,23 +417,18 @@ BODY is needed because we detect unreferenced bindings by looking for
                               (simple? (second body)))))
                    ;; TODO Locally.
                    (`(progn ,@body)
-                     (every #'simple? body)))))
-             (tag-expr (var expr)
-               (cond ((unreferenced? var) 'unreferenced)
-                     ((lambda? expr) 'lambda)
-                     ((simple? expr) 'simple)
-                     (t 'complex))))
-      (let* ((tagged (loop for binding in fbinds
-                           for var = (first binding)
-                           for expr = (second binding)
-                           collect (list (tag-expr var expr) var expr)))
-             (partitioned (mapcar (lambda (kind)
-                                    (cons (caar kind) (mapcar #'cdr kind)))
-                                  (assort tagged :key #'car))))
-        (values (cdr (assoc 'simple partitioned))
-                (cdr (assoc 'complex partitioned))
-                (cdr (assoc 'lambda partitioned))
-                (cdr (assoc 'unreferenced partitioned)))))))
+                     (every #'simple? body))))))
+      (loop for binding in fbinds
+            for var = (first binding)
+            for expr = (second binding)
+            if (unreferenced? var)
+              collect binding into unreferenced
+            else if (lambda? expr)
+                   collect binding into lambdas
+            else if (simple? expr)
+                   collect binding into simple
+            else collect binding into complex
+            finally (return (values simple complex lambdas unreferenced))))))
 
 (defmacro fbindrec (bindings &body body &environment *lexenv*)
   "Like `fbind', but creates recursive bindings.

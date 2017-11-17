@@ -45,12 +45,11 @@ of BUFFER-SIZE."
     (or (equal file1 file2)
         (and (= (file-size-in-octets file1)
                 (file-size-in-octets file2))
-             (file=/loop file1 file2 :buffer-size buffer-size)))))
+             #+ccl (file=/mmap file1 file2)
+             #-ccl (file=/loop file1 file2 :buffer-size buffer-size)))))
 
-;;; Not currently used; actually slower for large files.
 #+ccl
 (defun file=/mmap (file1 file2)
-  (declare (optimize (speed 3)))
   (macrolet ((with-mmap ((var file) &body body)
                `(let* ((,var (ccl:map-file-to-octet-vector ,file)))
                   (unwind-protect
@@ -62,13 +61,9 @@ of BUFFER-SIZE."
             (array-displacement vec1)
           (multiple-value-bind (vec2 start2)
               (array-displacement vec2)
-            ;; Using `equalp' here would be slightly
-            ;; faster, but I'm not sure it's reliable. In
-            ;; particular, how are the initial padding byte
-            ;; initialized?
-            (vector= vec1 vec2
-                     :start1 start1
-                     :start2 start2)))))))
+            (octet-vector= vec1 vec2
+                           :start1 start1
+                           :start2 start2)))))))
 
 (defun file=/loop (file1 file2 &key (buffer-size 4096))
   "Compare two files by looping over their octets."
@@ -84,20 +79,17 @@ of BUFFER-SIZE."
     (declare (inline make-buffer))
     (with-input-from-file (file1 file1 :element-type 'octet)
       (with-input-from-file (file2 file2 :element-type 'octet)
-        (unless (= (file-length file1)
-                   (file-length file2))
-          (return-from file=/loop nil))
-        (let ((buffer1 (make-buffer))
-              (buffer2 (make-buffer)))
-          (assert (equalp buffer1 buffer2))
-          (loop for end1 = (read-sequence buffer1 file1)
-                for end2 = (read-sequence buffer2 file2)
-                until (or (zerop end1) (zerop end2))
-                always (and (= end1 end2)
-                            ;; We can get away with using equalp
-                            ;; because we know each buffer had the
-                            ;; same initial contents.
-                            (equalp buffer1 buffer2))))))))
+        (and (= (file-length file1)
+                (file-length file2))
+             (loop with buffer1 = (make-buffer)
+                   with buffer2 = (make-buffer)
+                   for end1 = (read-sequence buffer1 file1)
+                   for end2 = (read-sequence buffer2 file2)
+                   until (or (zerop end1) (zerop end2))
+                   always (and (= end1 end2)
+                               (octet-vector= buffer1 buffer2
+                                              :end1 end1
+                                              :end2 end2))))))))
 
 (defun file-size (file &key (element-type '(unsigned-byte 8)))
   "The size of FILE, in units of ELEMENT-TYPE (defaults to bytes).

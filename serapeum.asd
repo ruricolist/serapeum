@@ -19,7 +19,8 @@
                "parse-declarations-1.0"
                "introspect-environment"
                "global-vars"
-               "trivial-file-size")
+               "trivial-file-size"
+               "trivial-macroexpand-all")
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.
@@ -61,7 +62,7 @@
                  (:file "clos")
                  (:file "hooks")
                  (:file "fbind"
-                  :depends-on ("binding" "control-flow"))))
+                  :depends-on ("binding" "control-flow" "op" "iter"))))
                ;; Level 1 files can use CL, Alexandria, and any
                ;; Serapeum utilities defined at level 0. Intended for
                ;; functions on sequences.

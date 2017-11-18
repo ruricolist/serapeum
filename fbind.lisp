@@ -266,44 +266,41 @@ analyze it into an environment, declarations, and a lambda."
             (nreverse binds)
             (nreverse lambdas))))
 
-(defmacro %fbind (bindings &body body &environment lexenv)
-  "Simplified version of `fbind' that bindings the function as a local
-macro.
+(defun merely-syntactic-functions (names body-with-decls env)
+  "Which functions in NAMES are merely syntactic?
 
-This can only be used when it is known for sure that BODY does not
-refer to any of the fbindings by their function-quoted name.
+Functions are \"merely syntactic\" if they are never dereferenced with
+`function' (or sharp-quote).
 
-Ideally, we would use this instead of a full `fbind' when possible,
-but that would require a full code walker to examine the body for
-function quotes (or the ability to shadow `function').
-
-Note that this may still expand into an `flet' if any of the
-expressions being fbound can be expanded into a `lambda' form."
-  (mvlet* ((bindings (expand-fbindings bindings))
-           (env env-decls bindings lambdas
-            (analyze-fbinds bindings lexenv))
-           (temps (make-gensym-list (length bindings)))
-           (names (mapcar #'first bindings))
-           (exprs (mapcar #'second bindings))
-           (body decls (parse-body body)))
-    (when (partition-declarations
-           (loop for name in names
-                 collect `(function ,name))
-           decls)
-      (error "Cannot use %fbind with declarations."))
-    `(let ,env
-       ,@(unsplice (and env-decls `(declare ,@env-decls)))
-       (let ,(loop for temp in temps
-                   for expr in exprs
-                   collect `(,temp (ensure-function ,expr)))
-         ,@(unsplice (and temps `(declare (function ,@temps))))
-         (flet (,@(loop for (name lambda) in lambdas
-                        collect `(,name ,@(rest lambda))))
-           (macrolet ,(loop for temp in temps
-                            for name in names
-                            collect `(,name (&rest args)
-                                            (list* 'funcall ',temp args)))
-             ,@body))))))
+This function may return false negatives -- it may fail to detect that
+a function is syntactic -- but it should never return a false positive
+-- it should never say a function is syntactic when it is not."
+  ;; This is as simple as can be: we expand the body with
+  ;; `macroexpand-all' and, if the expansion is valid, look for
+  ;; function quotes in the expansion.
+  (mvlet* ((body decls (parse-body body-with-decls))
+           (exp exp? env-used?
+            (trivial-macroexpand-all:macroexpand-all `(progn ,@body) env))
+           (exp-useful?
+            (and exp?
+                 (or (null env)
+                     (and env env-used?)))))
+    (if (not exp-useful?) nil
+        (let ((quoted-functions
+                (collecting
+                  (walk-tree (lambda (leaf)
+                               (match leaf
+                                 ((list 'function (and fn (type symbol)))
+                                  (collect fn))))
+                             exp))))
+          (remove-if (lambda (name)
+                       (let ((fq `(function ,name)))
+                         (or
+                          ;; We can't compile the function as a macro if
+                          ;; there are declarations for it.
+                          (partition-declarations (list fq) decls env)
+                          (memq name quoted-functions))))
+                     names)))))
 
 (defmacro fbind (bindings &body body &environment *lexenv*)
   "Binds values in the function namespace.
@@ -320,11 +317,19 @@ symbol)."
   ;; When possible (if the binding expands to a simple
   ;; let-over-lambda), we hoist the bindings to the top and bind
   ;; the lambda directly with flet.
+
+  ;; Failing that, if we know that the function is never directly
+  ;; dereferenced with sharp-quote, we can bind with `macrolet'
+  ;; instead of `flet', leaving no runtime overhead vs. `funcall'.
   (mvlet* ((env env-decls bindings lambdas (analyze-fbinds bindings *lexenv*))
-           (body decls (parse-body body))
+           (macro-vars
+            (merely-syntactic-functions (mapcar #'first bindings)
+                                        body
+                                        *lexenv*))
            (vars  (mapcar #'first bindings))
            (exprs (mapcar #'second bindings))
-           (temps (mapcar #'string-gensym vars)))
+           (temps (mapcar #'string-gensym vars))
+           (body decls (parse-body body)))
     `(let ,env
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
        (let ,(loop for temp in temps
@@ -337,10 +342,17 @@ symbol)."
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
                         for temp in temps
-                        collect (build-bind/ftype var temp decls env)))
-           #-sbcl (declare (inline ,@vars))
+                        unless (memq var macro-vars)
+                          collect (build-bind/ftype var temp decls env)))
+           #-sbcl (declare (inline ,@(set-difference vars macro-vars)))
            ,@decls
-           ,@body)))))
+           (macrolet (,@(loop for var in vars
+                              for temp in temps
+                              when (memq var macro-vars)
+                                collect `(,var
+                                          (&rest args)
+                                          (list* 'funcall ',temp args))))
+             ,@body))))))
 
 (defmacro fbind* (bindings &body body &environment env)
   "Like `fbind', but creates bindings sequentially."

@@ -85,7 +85,7 @@ From Clojure."
             fn))))
 
 (defmacro define-train (name args &body body)
-  "Define a function that takes only a fixed number of functions as arguments and returns another functions.
+  "Define a function that takes only a fixed number of functions as arguments and returns another function.
 
 Also define a compiler macro that inlines the resulting lambda
 expression, so compilers can eliminate it.

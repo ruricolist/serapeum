@@ -580,3 +580,137 @@ some or all of its slots." type-name)
                   for name in slot-names
                   collect `(list 'trivia:access '',reader ,name))))
        ',type-name)))
+
+;;; Why use CLOS for unit types? Structures have two benefits: low
+;;; memory use and fast slot access. Neither benefit applies to unit
+;;; types. Since each class has only one instance, memory usage
+;;; doesn't matter. And since unit types have no slots, fast slot
+;;; access is irrelevant. We might as well use CLOS, and take
+;;; advantage of the machinery of `allocate-instance' to make sure
+;;; there can only ever be one instance, without any ugly hacks.
+
+(defclass unit-object ()
+  ()
+  (:documentation "Superclass for instances of unit classes.
+Gives us a place to hang specializations for `print-object' and
+`make-load-form'."))
+
+(defmethod print-object ((self unit-object) stream)
+  (format stream
+          "~a~s"
+          (read-eval-prefix self stream)
+          (class-name (class-of self))))
+
+(defmethod make-load-form ((self unit-object) &optional env)
+  (declare (ignore env))
+  `(make-instance ,(class-of self)))
+
+(defmethod shared-initialize ((self unit-object) slot-names &rest initargs)
+  (declare (ignore slot-names))
+  (when initargs
+    (error "A unit object cannot be initialized.")))
+
+(defclass unit-class (topmost-object-class)
+  ((lock :initform (bt:make-lock))
+   (instance :initform nil :reader unit-class-instance))
+  (:default-initargs :topmost-class 'unit-object))
+
+;;; Note that `topmost-object-class' permits inheriting from a
+;;; standard object.
+
+;;; Unit classes should never be superclasses.
+(defmethod c2mop:validate-superclass
+    (c1 (c2 unit-class))
+  (declare (ignore c1))
+  nil)
+
+(defmethod allocate-instance ((class unit-class) &rest initargs)
+  (declare (ignore initargs))
+  (with-slots (instance lock) class
+    ;; "Double-checked locking".
+    (or instance
+        (bt:with-lock-held (lock)
+          (or instance
+              (setf instance (call-next-method)))))))
+
+(defmethod make-instance ((class unit-class) &rest initargs)
+  (declare (ignore initargs))
+  (allocate-instance class))
+
+(defmacro defunit (name)
+  "Define a unit type.
+
+A unit type is a type that only allows one value.
+
+Or: a unit type is a singleton without state.
+
+Or: a unit type is a product type with no factors.
+
+Or: a unit type is a unique object, like a symbol, but tagged with its
+own individual type."
+  `(progn
+     ;; Make the type work at compile time.
+     (eval-always
+       (defclass ,name () ()
+         (:metaclass unit-class)))
+     (eval-always
+       (c2mop:finalize-inheritance (find-class ',name)))
+     (eval-always
+       (declaim-freeze-type ,name))
+     (defmethod %constructor= ((x ,name) (y ,name))
+       t)
+     (define-symbol-macro ,name
+         (load-time-value (make-instance ',name) t))))
+
+(defmacro defunion (union &body variants)
+  "Define an algebraic data type.
+
+VARIANTS defines the subtypes of UNION. Each expression in VARIANTS is
+either a symbol \(in which case it defines a unit type, as with
+`defunit') or a list \(in which case it defines a structure, as with
+`defconstructor'.
+
+AKA a tagged union or a discriminated union."
+  (let* ((ctors (filter #'listp variants))
+         (units (filter #'atom variants))
+         (types (append units (mapcar #'first ctors))))
+
+    `(progn
+       ,@(loop for type in units
+               collect `(defunit ,type))
+       ,@(loop for (type . slots) in ctors
+               collect `(defconstructor ,type ,@slots))
+       (deftype ,union ()
+         '(or ,@types)))))
+
+(defmacro match-union (union expr &body clauses)
+  "Do pattern matching on an algebraic data type.
+
+UNION should be an algebraic data type.
+
+Each clause in CLAUSES has a pattern as its first element. The pattern
+may be a symbol (in which case it matches a unit type) or a list (in
+which case it matches against a constructor). Specifically, an
+underscore introduces a default or fallthrough clause, and the pattern
+may also be a disjunction of other types (an `or' type)."
+  (let* ((patterns (mapcar #'first clauses))
+         (types (mapcar (compose #'first #'ensure-list) patterns)))
+    (once-only (expr)
+      `(etypecase-of ,union ,expr
+         ,@(loop for type in types
+                 for (pattern . body) in clauses
+                 collect (multiple-value-bind (type pattern)
+                             (ematch pattern
+                               ((and _ (type symbol))
+                                (if (string= pattern "_")
+                                    (values union `(and _ (type ,union)))
+                                    (values type `(and _ (type ,type)))))
+                               ((list* 'or types)
+                                (let ((type `(or ,@types)))
+                                  (values type `(and _ (type ,type)))))
+                               ((list* _ _)
+                                (values type pattern)))
+                           (assert (and type pattern))
+                           `(,type
+                             (ematch ,expr
+                               (,pattern ,@body)))))))))

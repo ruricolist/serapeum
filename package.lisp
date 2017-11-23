@@ -55,6 +55,9 @@
    #:local*
    #:block-compile
    #:defloop
+   #:defunit
+   #:defunion
+   #:match-union
    ;; Binding.
    #:receive
    #:letrec

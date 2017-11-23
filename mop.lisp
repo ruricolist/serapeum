@@ -62,7 +62,7 @@
   ;; the direct superclasses, but that won't work if `standard-object'
   ;; is already one of the superclasses and is itself a superclass of
   ;; the superclass.
-  (cond ((null list) list)
+  (cond ((null list) (list superclass))
         ((subtypep superclass (first list))
          (cons superclass list))
         (t

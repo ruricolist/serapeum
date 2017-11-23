@@ -1,5 +1,9 @@
 (in-package :serapeum)
 
+#+lispworks
+(deftype octet ()
+  '(unsigned-byte 8))
+
 (deftype wholenum ()
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))

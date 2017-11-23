@@ -40,15 +40,34 @@
 
 
 
+;;; Cf. http://www.cliki.net/MOP%20design%20patterns
+
 (defclass topmost-object-class (standard-class)
   ((topmost-class
     :initarg :topmost-class
     :type symbol
     :reader topmost-class)))
 
+(defmethod print-object ((self topmost-object-class) stream)
+  (print-unreadable-object (self stream :type t :identity t)
+    (with-slots (topmost-class) self
+      (format stream "~a" topmost-class))))
+
 (defmethod validate-superclass ((class1 topmost-object-class)
                                 (class2 standard-class))
   t)
+
+(defun insert-superclass (superclass list)
+  ;; NB The version on the Cliki has the new superclass appended to
+  ;; the direct superclasses, but that won't work if `standard-object'
+  ;; is already one of the superclasses and is itself a superclass of
+  ;; the superclass.
+  (cond ((null list) list)
+        ((subtypep superclass (first list))
+         (cons superclass list))
+        (t
+         (cons (first list)
+               (insert-superclass superclass (rest list))))))
 
 (defmethod initialize-instance :around
     ((class topmost-object-class) &rest initargs &key direct-superclasses
@@ -58,8 +77,8 @@
         (call-next-method)
         (apply #'call-next-method
                class
-               :direct-superclasses (append direct-superclasses
-                                            (list (find-class superclass)))
+               :direct-superclasses (insert-superclass (find-class superclass)
+                                                       direct-superclasses)
                initargs))))
 
 (defmethod reinitialize-instance :around
@@ -71,7 +90,7 @@
            (call-next-method))
           (t (apply #'call-next-method
                     class
-                    :direct-superclasses
-                    (append direct-superclasses (list (find-class superclass)))
+                    :direct-superclasses (insert-superclass (find-class superclass)
+                                                            direct-superclasses)
                     initargs)))))
 

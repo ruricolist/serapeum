@@ -31,25 +31,25 @@
      (dynamic-closure '(x) (lambda () (symbol-value 'x))))))
 
 (test hook
-  (is (null (funcall (serapeum::hook #'= #'floor) 2.1)))
-  (is (funcall (serapeum::hook #'= #'floor) 3)))
+  (is (null (funcall (hook #'= #'floor) 2.1)))
+  (is (funcall (hook #'= #'floor) 3)))
 
 (test fork
   (let ((sample (range 100)))
     (is (= (mean sample)
-           (funcall (serapeum::fork #'/
-                                    (partial #'reduce #'+)
-                                    #'length)
+           (funcall (fork #'/
+                          (partial #'reduce #'+)
+                          #'length)
                     sample)))))
 
 (test hook2
   (is (= 3.25
-         (funcall (serapeum::hook2 #'+ (op (/ _ 60)))
+         (funcall (hook2 #'+ (op (/ _ 60)))
                   3 15))))
 
 (test fork2
   (is (equal '(11 9)
-             (funcall (serapeum::fork2 #'list #'+ #'-)
+             (funcall (fork2 #'list #'+ #'-)
                       10 1))))
 
 (test trampoline

@@ -1,7 +1,5 @@
 (in-package :serapeum)
 
-(declaim (optimize speed))
-
 (declaim (inline octet-vector-p))
 (defun octet-vector-p (x)
   "Is X an octet vector?"
@@ -18,9 +16,10 @@
 (defun octets (n &key big-endian)
   "Return N, an integer, as an octet vector.
 Defaults to little-endian order."
+  (declare (optimize speed))
   (with-subtype-dispatch integer
-    ((unsigned-byte 32) (unsigned-byte 64) fixnum)
-    n
+      ((unsigned-byte 32) (unsigned-byte 64) fixnum)
+      n
     (let* ((n-bits (integer-length n))
            (n-bytes (ceiling n-bits 8))
            (vec (make-octet-vector n-bytes)))
@@ -40,7 +39,9 @@ Defaults to little-endian order."
 (defun unoctets (bytes &key big-endian)
   "Concatenate BYTES, an octet vector, into an integer.
 Defaults to little-endian order."
-  (declare (octet-vector bytes) (inline reduce))
+  (declare (octet-vector bytes)
+           (inline reduce)
+           (optimize speed))
   (if big-endian
       (reduce (lambda (sum octet)
                 (+ octet (ash sum 8)))

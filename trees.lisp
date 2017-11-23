@@ -1,10 +1,6 @@
 (in-package :serapeum)
 
-;; Ensure TCO when possible.
-(declaim (optimize (speed 3) (debug 1)))
-
 (declaim (inline reuse-cons))
-
 (defun reuse-cons (x y x-y)
   "If X and Y are the car and cdr of X-Y, return X-Y.
 
@@ -18,6 +14,7 @@ Otherwise, return a fresh cons of X and Y."
   "Call FUN in turn over each atom and cons of TREE.
 
 FUN can skip the current subtree with (throw TAG nil)."
+  (declare (optimize (debug 0)))
   (let ((fun (ensure-function fun)))
     (labels ((walk-tree (tree)
                (cond ((atom tree) (funcall fun tree))
@@ -44,6 +41,7 @@ The new tree may share structure with the old tree.
 
 FUN can skip the current subtree with (throw TAG SUBTREE), in which
 case SUBTREE will be used as the value of the subtree."
+  (declare (optimize (debug 0)))
   (let ((fun (ensure-function fun)))
     (labels ((map-tree (tree)
                (let ((tree2 (funcall fun tree)))
@@ -66,7 +64,7 @@ case SUBTREE will be used as the value of the subtree."
 
 (defun leaf-walk (fun tree)
   "Call FUN on each leaf of TREE."
-  (declare (optimize speed (debug 1)))
+  (declare (optimize speed (debug 0)))
   (let ((fun (ensure-function fun)))
     (labels ((leaf-walk (fun tree)
                (declare (function fun))
@@ -81,6 +79,7 @@ case SUBTREE will be used as the value of the subtree."
 (defun leaf-map (fn tree)
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
+  (declare (optimize (debug 0)))
   (let ((fn (ensure-function fn)))
     (flet ((map-fn (x)
              (if (listp x)
@@ -101,6 +100,7 @@ Return a new tree possibly sharing structure with TREE."
 
 (defun prune-if (test tree &key (key #'identity))
   "Remove any atoms satisfying TEST from TREE."
+  (declare (optimize (debug 0)))
   (ensuring-functions (key test)
     (labels ((prune (tree acc)
                (cond ((null tree)

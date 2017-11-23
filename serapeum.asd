@@ -47,7 +47,8 @@
                   :depends-on ("macro-tools"))
                  (:file "hash-tables"
                   :depends-on ("iter" "types" "control-flow"))
-                 (:file "files")
+                 (:file "files"
+                  :depends-on ("types"))
                  (:file "symbols")
                  (:file "arrays")
                  (:file "queue"

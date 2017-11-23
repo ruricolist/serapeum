@@ -2,13 +2,6 @@
 
 (declaim (optimize speed))
 
-(deftype octet ()
-  '(unsigned-byte 8))
-
-(deftype octet-vector (&optional length)
-  "An array of octets."
-  `(simple-array octet (,length)))
-
 (declaim (inline octet-vector-p))
 (defun octet-vector-p (x)
   "Is X an octet vector?"

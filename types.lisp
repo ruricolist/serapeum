@@ -1,5 +1,12 @@
 (in-package :serapeum)
 
+(deftype octet ()
+  '(unsigned-byte 8))
+
+(deftype octet-vector (&optional length)
+  "An array of octets."
+  `(simple-array octet (,length)))
+
 (deftype wholenum ()
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))

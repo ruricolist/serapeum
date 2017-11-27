@@ -146,12 +146,12 @@
         (right tree)))
 
 (defun count-nodes (tree)
-  (match-union tree tree
-    (leaf 0)
-    ((node _ left right)
-     (+ 1
-        (count-nodes left)
-        (count-nodes right)))))
+  (match-of tree tree
+            (leaf 0)
+            ((node _ left right)
+             (+ 1
+                (count-nodes left)
+                (count-nodes right)))))
 
 (test union/tree
   (is (= 4 (count-nodes
@@ -173,14 +173,14 @@
   knil)
 
 (defun kar (l)
-  (match-union liszt l
-    ((kons a _) a)
-    (knil knil)))
+  (match-of liszt l
+            ((kons a _) a)
+            (knil knil)))
 
 (defun kdr (l)
-  (match-union liszt l
-    ((kons _ b) b)
-    (knil knil)))
+  (match-of liszt l
+            ((kons _ b) b)
+            (knil knil)))
 
 (test union/liszt
   (let ((liszt (kons 1 (kons 2 knil))))
@@ -193,12 +193,12 @@
   (polar (x float) (y float)))
 
 (test union/point
-  (is (= 3.0
-         (match-union point (rectangular 1.0 2.0)
-           ((rectangular x y) (+ x y))
-           ((polar _ _) nil))))
+      (is (= 3.0
+             (match-of point (rectangular 1.0 2.0)
+                       ((rectangular x y) (+ x y))
+                       ((polar _ _) nil))))
 
-  (is (= 3.0
-         (match-union point (rectangular 1.0 2.0)
-           ((rectangular x y) (+ x y))
-           (_ nil)))))
+      (is (= 3.0
+             (match-of point (rectangular 1.0 2.0)
+                       ((rectangular x y) (+ x y))
+                       (_ nil)))))

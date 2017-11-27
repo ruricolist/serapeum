@@ -486,7 +486,7 @@ AKA a tagged union or a discriminated union."
        (deftype ,union ()
          '(or ,@types)))))
 
-(defmacro match-union (union expr &body clauses)
+(defmacro match-of (union expr &body clauses)
   "Do pattern matching on an algebraic data type.
 
 UNION should be an algebraic data type.

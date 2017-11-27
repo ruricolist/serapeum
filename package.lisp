@@ -55,7 +55,7 @@
    #:deconstruct
    #:defunit
    #:defunion
-   #:match-union
+   #:match-of
    ;; Internal definitions.
    #:local
    #:local*

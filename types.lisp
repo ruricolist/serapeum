@@ -1,3 +1,4 @@
+;;; Definitions of types.
 (in-package :serapeum)
 
 (deftype octet ()

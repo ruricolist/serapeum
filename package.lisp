@@ -46,18 +46,20 @@
    #:def
    #:define-values
    #:defplace
+   #:defvar-unbound
+   #:defloop
+   ;; Defining types.
    #:defcondition
    #:defstruct-read-only
    #:defconstructor
    #:deconstruct
-   #:defvar-unbound
-   #:local
-   #:local*
-   #:block-compile
-   #:defloop
    #:defunit
    #:defunion
    #:match-union
+   ;; Internal definitions.
+   #:local
+   #:local*
+   #:block-compile
    ;; Binding.
    #:receive
    #:letrec

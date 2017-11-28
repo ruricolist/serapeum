@@ -296,7 +296,8 @@ some implementation tricks from `cl-algebraic-data-type'."
                             (list slot-name type))
                            (otherwise
                             (error "Constructor slots must have both ~
-                            a name and a type.")))))
+                            a name and a type.~%Constructor: ~a"
+                                   type-name)))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
          (conc-name

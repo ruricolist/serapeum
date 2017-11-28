@@ -1541,10 +1541,26 @@ From Clojure.
 
 ### `(define-train name args &body body)`
 
-Define a function that takes only a fixed number of functions as arguments and returns another function.
+Define a higher-order function and its compiler macro at once.
 
-Also define a compiler macro that inlines the resulting lambda
-expression, so compilers can eliminate it.
+When defining a higher-order function it is usually a good idea to
+write a compiler macro so compilers can inline the resulting lambda
+form.
+
+For the special case of a fixed-arity function that only takes other
+functions as arguments, you can use `define-train` to define the
+function and the compiler macro in one go. The catch is that you have
+to write the single definition as a macro.
+
+E.g., if `complement` did not exist, you could define it like so:
+
+    (define-train complement (fn)
+      `(lambda (&rest args)
+         (not (apply ,fn args))))
+
+Besides providing an implicit compiler macro, `define-train` also
+inserts the proper declarations to ensure the compiler recognizes the
+function arguments as functions.
 
 The term "train" is from J.
 
@@ -1559,7 +1575,7 @@ that takes its two arguments in the opposite order.
 
 From Haskell.
 
-[View source](functions.lisp#L113)
+[View source](functions.lisp#L129)
 
 ### `(nth-arg n)`
 
@@ -1577,7 +1593,7 @@ define it thus:
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))
 
-[View source](functions.lisp#L123)
+[View source](functions.lisp#L139)
 
 ### `(distinct &key key test)`
 
@@ -1596,7 +1612,7 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
-[View source](functions.lisp#L148)
+[View source](functions.lisp#L164)
 
 ### `(throttle fn wait &key synchronized memoized)`
 
@@ -1612,7 +1628,7 @@ to get a version with a lock.
 You can pass MEMOIZED if you want the function to remember values
 between calls.
 
-[View source](functions.lisp#L173)
+[View source](functions.lisp#L189)
 
 ### `(juxt &rest fns)`
 
@@ -1631,7 +1647,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-[View source](functions.lisp#L237)
+[View source](functions.lisp#L253)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -1656,49 +1672,103 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-[View source](functions.lisp#L267)
+[View source](functions.lisp#L283)
 
 ### `(hook f g)`
 
 Monadic hook.
 From J.
 
+The hook of f is defined as f(y,g(y)).
+
+For example, you can use a hook to test whether a number is an
+integer, by asking whether it is equal to its own floor.
+
+    (hook #'= #'floor)
+    (funcall * 2.0)
+    => T
+
 AKA Schoenfinkel's S combinator.
 
-[View source](functions.lisp#L301)
+[View source](functions.lisp#L317)
 
 ### `(fork g f h)`
 
 Monadic fork.
+
+The monadic fork of f, g, and h is defined as
+
+   (f g h) y <-> (f y) g (h y)
+
+The usual example of a monadic fork is defining the mean. Assuming a
+`sum` function defined as
+
+   (defun sum (xs)
+    (reduce #'+ xs))
+
+you can write a (numerically unstable) `mean` using `fork`.
+
+    (fork #'/ #'sum #'length)
+    (funcall * '(1.0 2.0 3.0 4.0))
+    => 2.5
+
 From J.
 
-[View source](functions.lisp#L309)
+[View source](functions.lisp#L334)
 
 ### `(hook2 f g)`
 
 Dyadic hook.
+
+The usual (only?) example of a dyadic hook is an `hour` function that
+takes an hour and a count of minutes and returns a fractional count of
+hours.
+
+    (hook2 #'+ (partial (flip #'/) 60))
+    (funcall * 3.0 15.0)
+    => 3.25
+
 From J.
 
-[View source](functions.lisp#L317)
+[View source](functions.lisp#L359)
 
 ### `(fork2 g f h)`
 
 Dyadic fork.
+
+The dyadic fork of f, g, and h is defined as:
+
+    x (f g h) y <-> (x f y) g (x h y)
+
+For example, say you wanted a "plus or minus" operator. Given
+numbers x and y, it returns a list of x+y and x-y. This can easily be
+written as a dyadic fork.
+
+    (fork2 #'list #'+ #'-)
+    (funcall * 10 2)
+    => '(12 8)
+
 From J.
 
-[View source](functions.lisp#L324)
+[View source](functions.lisp#L375)
 
-### `(capped-fork g f h)`
+### `(capped-fork g h)`
 
 J's capped fork (monadic).
 
-[View source](functions.lisp#L332)
+Like a monadic fork, but F is omitted.
 
-### `(capped-fork2 g f h)`
+Effectively the composition of G and H.
+
+[View source](functions.lisp#L396)
+
+### `(capped-fork2 g h)`
 
 J's capped fork (dyadic).
 
-[View source](functions.lisp#L338)
+Like a dyadic fork, but F is omitted.
+
+[View source](functions.lisp#L405)
 
 ## Trees
 

@@ -176,9 +176,7 @@ designed to facilitate working with immutable data."
   (if *print-readably*
       (if *read-eval*
           "#."
-          (error 'print-not-readable
-                 :stream stream
-                 :object object))
+          (print-unreadable-object (object stream :type t)))
       ""))
 
 (defun print-constructor (object stream fields)

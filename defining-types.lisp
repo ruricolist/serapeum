@@ -494,11 +494,11 @@ AKA a tagged union or a discriminated union."
     ((list* 'or patterns)
      (multiple-value-bind (types patterns)
          (loop for each in patterns
-               for (type . pattern)
+               for (type . pats)
                  = (multiple-value-list
                     (pattern-type each union))
                collect type into types
-               collect pattern into patterns
+               append pats into patterns
                finally (return (values types patterns)))
        (values `(or ,@types)
                `(or ,@patterns))))

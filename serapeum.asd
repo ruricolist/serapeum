@@ -110,6 +110,7 @@
                 ((:file "macro-tools")
                  (:file "types")
                  (:file "definitions")
+                 (:file "defining-types")
                  (:file "internal-definitions")
                  (:file "binding")
                  (:file "control-flow")

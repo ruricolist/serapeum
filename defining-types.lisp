@@ -471,7 +471,9 @@ either a symbol \(in which case it defines a unit type, as with
 `defconstructor'.
 
 AKA a tagged union or a discriminated union."
-  (let* ((ctors (filter #'listp variants))
+  (let* ((docstring (and (stringp (first variants))
+                         (pop variants)))
+         (ctors (filter #'listp variants))
          (units (filter #'atom variants))
          (types (append units (mapcar #'first ctors))))
     `(progn
@@ -480,6 +482,7 @@ AKA a tagged union or a discriminated union."
        ,@(loop for (type . slots) in ctors
                collect `(defconstructor ,type ,@slots))
        (deftype ,union ()
+         ,@(unsplice docstring)
          '(or ,@types)))))
 
 (declaim (ftype (function (t t) (values t t))))

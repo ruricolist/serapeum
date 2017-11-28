@@ -290,12 +290,13 @@ some implementation tricks from `cl-algebraic-data-type'."
                 (pop slots)))
          (slots
            (loop for slot in slots
-                 collect (ematch slot
-                           ((and slot-name (type symbol))
-                            (list slot-name t))
+                 collect (match slot
                            ((list (and slot-name (type symbol))
                                   type)
-                            (list slot-name type)))))
+                            (list slot-name type))
+                           (otherwise
+                            (error "Constructor slots must have both ~
+                            a name and a type.")))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
          (conc-name

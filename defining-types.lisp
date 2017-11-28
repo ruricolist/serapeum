@@ -452,14 +452,11 @@ Or: a unit type is a product type with no factors.
 Or: a unit type is a unique object, like a symbol, but tagged with its
 own individual type."
   `(progn
-     ;; Make the type work at compile time.
-     (eval-always
-       (defclass ,name () ()
-         (:metaclass unit-class)))
-     (eval-always
+     (defclass ,name () ()
+       (:metaclass unit-class))
+     (unless (c2mop:class-finalized-p (find-class ',name))
        (c2mop:finalize-inheritance (find-class ',name)))
-     (eval-always
-       (declaim-freeze-type ,name))
+     (declaim-freeze-type ,name)
      (defmethod %constructor= ((x ,name) (y ,name))
        t)
      (define-symbol-macro ,name

@@ -408,11 +408,6 @@ Gives us a place to hang specializations for `print-object' and
   (declare (ignore env))
   `(make-instance ,(class-of self)))
 
-(defmethod shared-initialize ((self unit-object) slot-names &rest initargs)
-  (declare (ignore slot-names))
-  (when initargs
-    (error "A unit object cannot be initialized.")))
-
 (defclass unit-class (topmost-object-class)
   ((lock :initform (bt:make-lock))
    (instance :initform nil :reader unit-class-instance))

@@ -1,4 +1,5 @@
 ;;; Macros for defining types.
+(in-package :serapeum)
 
 (defmacro defcondition (name supers &body (slots &rest options))
   "Alias for `define-condition'.

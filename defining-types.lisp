@@ -477,7 +477,6 @@ AKA a tagged union or a discriminated union."
   (let* ((ctors (filter #'listp variants))
          (units (filter #'atom variants))
          (types (append units (mapcar #'first ctors))))
-
     `(progn
        ,@(loop for type in units
                collect `(defunit ,type))
@@ -486,7 +485,37 @@ AKA a tagged union or a discriminated union."
        (deftype ,union ()
          '(or ,@types)))))
 
-(defmacro match-of (union expr &body clauses)
+(declaim (ftype (function (t t) (values t t))))
+(defun pattern-type (pattern union)
+  "Return two values: the type and the final pattern."
+  (match pattern
+    ((and type (type symbol))
+     (if (string= pattern "_")
+         (values union `(and _ (type ,union)))
+         (values type `(and _ (type ,type)))))
+    ((list 'assure type _)
+     (values type `(and _ (type ,type))))
+    ((list* 'or patterns)
+     (multiple-value-bind (types patterns)
+         (loop for each in patterns
+               for (type . pattern)
+                 = (multiple-value-list
+                    (pattern-type each union))
+               collect type into types
+               collect pattern into patterns
+               finally (return (values types patterns)))
+       (values `(or ,@types)
+               `(or ,@patterns))))
+    ((list 'not pat)
+     (multiple-value-bind (type pattern)
+         (pattern-type pat union)
+       (values `(not ,type)
+               `(not ,pattern))))
+    ((list* type _)
+     (values type pattern))
+    (otherwise (error "Cannot infer a type from pattern ~a" pattern))))
+
+(defmacro match-of (union expr &body clauses &environment env)
   "Do pattern matching on an algebraic data type.
 
 UNION should be an algebraic data type.
@@ -496,24 +525,36 @@ may be a symbol (in which case it matches a unit type) or a list (in
 which case it matches against a constructor). Specifically, an
 underscore introduces a default or fallthrough clause, and the pattern
 may also be a disjunction of other types (an `or' type)."
-  (let* ((patterns (mapcar #'first clauses))
-         (types (mapcar (compose #'first #'ensure-list) patterns)))
-    (once-only (expr)
-      `(etypecase-of ,union ,expr
-         ,@(loop for type in types
-                 for (pattern . body) in clauses
-                 collect (multiple-value-bind (type pattern)
-                             (ematch pattern
-                               ((and _ (type symbol))
-                                (if (string= pattern "_")
-                                    (values union `(and _ (type ,union)))
-                                    (values type `(and _ (type ,type)))))
-                               ((list* 'or types)
-                                (let ((type `(or ,@types)))
-                                  (values type `(and _ (type ,type)))))
-                               ((list* _ _)
-                                (values type pattern)))
-                           (assert (and type pattern))
-                           `(,type
+  (once-only (expr)
+    ;; The complexity  here comes from allowing  multiple clauses with
+    ;; the same type (but different patterns).
+    (let* ((types-and-patterns
+             ;; Collecting a list of (type . (pattern . body)) items.
+             (loop for (pattern . body) in clauses
+                   collect (multiple-value-bind (type pattern)
+                               (pattern-type pattern union)
+                             (assert (and type pattern))
+                             `(,type
+                               (,pattern ,@body)))))
+           ;; Group the clauses by their type.
+           (type-groups
+             (assort types-and-patterns :key #'first
+                                        :test (lambda (x y)
+                                                ;; `type=' doesn't take an env.
+                                                (and (subtypep x y env)
+                                                     (subtypep y x env)))))
+           ;; Transform the groups into a list of (type (pattern . body)*).
+           (type-groups
+             (mapcar (lambda (group)
+                       (cons (caar group)
+                             (mappend #'cdr group)))
+                     type-groups))
+           ;; Turn the groups into clauses, with the patterns roped into
+           ;; ematch forms.
+           (merged-typecase-clauses
+             (loop for (type . clauses) in type-groups
+                   collect `(,type
                              (ematch ,expr
-                               (,pattern ,@body)))))))))
+                               ,@clauses)))))
+      `(etypecase-of ,union ,expr
+         ,@merged-typecase-clauses))))

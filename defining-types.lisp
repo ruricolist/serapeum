@@ -389,8 +389,8 @@ some or all of its slots." type-name)
 ;;; types. Since each class has only one instance, memory usage
 ;;; doesn't matter. And since unit types have no slots, fast slot
 ;;; access is irrelevant. We might as well use CLOS, and take
-;;; advantage of the machinery of `allocate-instance' to make sure
-;;; there can only ever be one instance, without any ugly hacks.
+;;; advantage of the machinery of `make-instance' to make sure there
+;;; can only ever be one instance, without any ugly hacks.
 
 (defclass unit-object ()
   ()
@@ -427,7 +427,11 @@ Gives us a place to hang specializations for `print-object' and
   (declare (ignore c1))
   nil)
 
-(defmethod allocate-instance ((class unit-class) &rest initargs)
+;;; NB For some reason, on Clozure, specializing `allocate-instance'
+;;; directly causes printing to go into an infinite loop if the class
+;;; has been redefined.
+
+(defmethod make-instance ((class unit-class) &rest initargs)
   (declare (ignore initargs))
   (with-slots (instance lock) class
     ;; "Double-checked locking".
@@ -435,10 +439,6 @@ Gives us a place to hang specializations for `print-object' and
         (bt:with-lock-held (lock)
           (or instance
               (setf instance (call-next-method)))))))
-
-(defmethod make-instance ((class unit-class) &rest initargs)
-  (declare (ignore initargs))
-  (allocate-instance class))
 
 (defmacro defunit (name)
   "Define a unit type.

@@ -438,13 +438,12 @@ Gives us a place to hang specializations for `print-object' and
 (defmacro defunit (name)
   "Define a unit type.
 
-A unit type is a type that only allows one value.
+A unit type is a type with only one instance.
 
-Or: a unit type is a singleton without state.
+You can think of a unit type as a singleton without state.
 
-Or: a unit type is a product type with no factors.
-
-Or: a unit type is a unique object, like a symbol, but tagged with its
+Unit types are used for many of the same purposes as quoted symbols
+\(or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type."
   `(progn
      (defclass ,name () ()
@@ -460,12 +459,9 @@ own individual type."
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.
 
-VARIANTS defines the subtypes of UNION. Each expression in VARIANTS is
-either a symbol \(in which case it defines a unit type, as with
-`defunit') or a list \(in which case it defines a structure, as with
-`defconstructor'.
-
-AKA a tagged union or a discriminated union."
+Each expression in VARIANTS is either a symbol \(in which case it
+defines a unit type, as with `defunit') or a list \(in which case it
+defines a structure, as with `defconstructor'."
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
          (ctors (filter #'listp variants))
@@ -522,12 +518,17 @@ AKA a tagged union or a discriminated union."
 
 UNION should be an algebraic data type.
 
-Each clause in CLAUSES has a pattern as its first element. The pattern
-is usually a symbol (in which case it matches a unit type) or a
-list (in which case it matches against a constructor).
+Each clause in CLAUSES has a pattern as its first element.
 
-An underscore as a pattern introduces a default or fallthrough clause.
-The pattern may also be a disjunction of other types (an `or' type)."
+If the pattern is a symbol, it matches a unit type.
+
+If the pattern is a list, it matches a constructor.
+
+If the pattern is an underscore, it introduces a default or
+fallthrough clause.
+
+If the pattern is a list that starts with `or', it is a disjunction of
+other patterns."
   (check-match-exhaustive union clauses env)
   `(ematch ,expr
      ,@(loop for (pattern . body) in clauses

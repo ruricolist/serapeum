@@ -74,20 +74,6 @@ are being evaluated, and it is safe to close over the arguments."
                          (let ,(mapcar #'list vars temps)
                            ,@body))))))))))
 
-(defmacro defloop (name args &body body)
-  "Define a function, ensuring proper tail recursion.
-This is entirely equivalent to `defun' over `nlet'."
-  (multiple-value-bind (body decls docstring)
-      (parse-body body :documentation t)
-    (let ((vars (lambda-list-vars args)))
-      `(defun ,name ,args
-         ,@(unsplice docstring)
-         ,@decls
-         (nlet ,name ,(mapcar #'list vars vars)
-           (flet ((,name ,args (,name ,@vars)))
-             (declare (inline ,name))
-             ,@body))))))
-
 (defmacro with-syms (syms &body body)
   "Like `with-gensyms', but binds SYMS in the current package."
   `(let ,(loop for sym in syms

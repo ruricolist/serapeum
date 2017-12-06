@@ -544,9 +544,7 @@ them sane initialization values."
           ((eval-when situations &body body)
            (if (member :execute situations)
                (expand-body self body)
-               (progn
-                 (simple-style-warning "Useless eval-when.")
-                 nil)))
+               nil))
 
           ((locally &body body)
            (multiple-value-bind (body decls) (parse-body body)

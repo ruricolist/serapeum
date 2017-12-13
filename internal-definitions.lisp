@@ -210,6 +210,9 @@ them sane initialization values."
         :blocks blocks
         :tags tags))
 
+(defun ensure-subenv ()
+  (or *subenv* (make 'subenv)))
+
 (defun augment/vars (binds &optional (subenv *subenv*))
   (let ((vars
           (~>> binds
@@ -533,8 +536,14 @@ them sane initialization values."
                    (splice-forms self body))))
 
           (((prog1 multiple-value-prog1) f &body body)
-           `(,(car form) ,(expand-partially self f)
-             ,(expand-body self body)))
+           ;; We could simply expand `prog1' and
+           ;; `multiple-value-prog1' in terms of `let', but we don't
+           ;; want to do that, because they can be compiled more
+           ;; efficiently (especially `multiple-value-prog1').
+           (let ((*subenv* (ensure-subenv)))
+             `(,(car form) ,(expand-partially self f)
+               ;; Force a subenv, since progns can't be spliced.
+               ,(expand-body self body))))
 
           ((prog2 first second &body body)
            `(progn ,first

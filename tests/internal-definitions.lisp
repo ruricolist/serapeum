@@ -318,3 +318,11 @@
                                 (with-simple-restart (abort "Abort"))
                                 "bar"))))
                    :test #'equal)))
+
+(test no-splice-in-prog1
+  (is (eql 'goodbye
+           (block nil
+             (local
+               (prog1 (progn 'hello 'world)
+                 ;; Make sure this branch is not eliminated.
+                 (return 'goodbye)))))))

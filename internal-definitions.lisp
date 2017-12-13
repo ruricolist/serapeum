@@ -536,10 +536,10 @@ them sane initialization values."
            `(,(car form) ,(expand-partially self f)
              ,(expand-body self body)))
 
-          ((prog2 f1 f2 &body body)
-           `(prog2 ,(expand-partially self f1)
-                ,(expand-partially self f2)
-              ,(expand-body self body)))
+          ((prog2 first second &body body)
+           `(progn ,first
+                   (prog1 ,second
+                     ,@body)))
 
           ((eval-when situations &body body)
            (if (member :execute situations)

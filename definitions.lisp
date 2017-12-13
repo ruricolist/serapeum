@@ -185,6 +185,7 @@ Note that the body must be a single, setf-able expression."
          ,@(unsplice docstring)
          ,form)
        (defun (setf ,name) (,value ,@args)
+         ,@(unsplice docstring)
          (setf ,form ,value)))))
 
 (defmacro defvar-unbound (var &body (docstring))

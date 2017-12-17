@@ -325,7 +325,7 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
 (defsubst single (seq)
   "Is SEQ a sequence of one element?"
   (seq-dispatch seq
-    (and seq (null (cdr seq)))
+    (and seq (endp (cdr seq)))
     (= (length seq) 1)))
 
 (defun partition (pred seq &key (start 0) end (key #'identity))

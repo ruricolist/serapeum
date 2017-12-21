@@ -5,9 +5,11 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ccl
+    - LISP=allegro
 
 matrix:
   allow-failures:
+    - env: LISP=allegro
     - env: LISP=ecl
 
 before_install:

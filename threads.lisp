@@ -8,6 +8,11 @@
 (eval-when (:compile-toplevel :load-toplevel)
   (defconstant +lock-class+ (class-of (bt:make-recursive-lock))))
 
+;;; Note that we need, relatively speaking, a lot of space for locks.
+;;; In, say, Java, only a handful of locks need exist at a time. But
+;;; in Lisp I often use `synchronized' on symbols, which of course are
+;;; rarely, if ever, garbage collected. Thus our use of hash tables.
+
 (defvar *monitors*
   (tg:make-weak-hash-table
    :weakness :key

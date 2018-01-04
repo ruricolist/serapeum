@@ -353,6 +353,42 @@ Has a compiler macro with `formatter'."
              `(let (*print-pretty*)
                 (format nil ,control-string ,@args)))))
 
+(defun escape/no-arg-parsing (string table start end stream)
+  (declare (string string)
+           ((or function hash-table) table)
+           ((or array-index null) start)
+           ((or array-length null) end)
+           (optimize (debug 0) (safety 1)
+                     (compilation-speed 0)
+                     (space 0))
+           ;; Suppress unreachable code warnings.
+           #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+  (let ((start (or start 0))
+        (end (or end (length string))))
+    (declare (array-index start)
+             (array-length end))
+    (with-string (stream stream)
+      (with-type-dispatch (function hash-table) table
+        (with-string-dispatch () string
+          (flet ((rep (c)
+                   (etypecase table
+                     (function (funcall table c))
+                     (hash-table (gethash c table)))))
+            (declare (inline rep))
+            (nlet escape ((start start))
+              (when (< start end)
+                (let ((next (position-if #'rep string
+                                         :start start
+                                         :end end)))
+                  (if (not next)
+                      (write-string string stream :start start :end end)
+                      (progn
+                        (write-string string stream :start start :end next)
+                        (let ((escape (rep (vref string next))))
+                          (unless (emptyp escape)
+                            (write-string escape stream))
+                          (escape (1+ next))))))))))))))
+
 (defun escape (string table &key (start 0) end stream)
   "Write STRING to STREAM, escaping with TABLE.
 
@@ -369,34 +405,17 @@ where `nil' means to pass the character through unchanged.
 STREAM can be used to specify a stream to write to, like the first
 argument to `format'. The default behavior, with no stream specified,
 is to return a string."
-  (declare (string string)
-           ((or function hash-table) table)
-           (array-index start)
-           ((or array-index null) end)
-           (optimize (safety 1) (debug 0)))
-  (unless end
-    (setf end (length string)))
-  (with-string (stream stream)
-    (with-type-dispatch (function hash-table) table
-      (with-string-dispatch () string
-        (flet ((rep (c)
-                 (etypecase table
-                   (function (funcall table c))
-                   (hash-table (gethash c table)))))
-          (declare (inline rep))
-          (nlet escape ((start start))
-            (when (< start end)
-              (let ((next (position-if #'rep string
-                                       :start start
-                                       :end end)))
-                (if (not next)
-                    (write-string string stream :start start :end end)
-                    (progn
-                      (write-string string stream :start start :end next)
-                      (let ((escape (rep (char string next))))
-                        (unless (emptyp escape)
-                          (write-string escape stream))
-                        (escape (1+ next)))))))))))))
+  (escape/no-arg-parsing string table
+                         start
+                         end
+                         stream))
+
+(define-compiler-macro escape (string table &key (start 0) end stream)
+  `(escape/no-arg-parsing ,string
+                          ,table
+                          ,start
+                          ,end
+                          ,stream))
 
 (-> ellipsize (string array-length &key (:ellipsis string)) string)
 (defun ellipsize (string n &key (ellipsis "..."))
@@ -421,6 +440,7 @@ From Arc."
                         `(defsubst ,name (,s1 ,s2 &key (start1 0) end1 (start2 0) end2 ,@keys)
                            ,@(unsplice docstring)
                            (declare (array-length start1 start2))
+                           (declare (inline mismatch))
                            (let* ((,s1 (string ,s1))
                                   (,s2 (string ,s2))
                                   (end1 (or end1 (length ,s1)))
@@ -453,7 +473,7 @@ From Arc."
                           `((lambda (s)
                               (and (plusp (length s))
                                    (,',test ,(character prefix)
-                                     (aref s 0))))
+                                            (aref s 0))))
                             (string ,string))
                           call)))))
     (dcm string^= char=)
@@ -473,7 +493,7 @@ From Arc."
                           `((lambda (s)
                               (and (plusp (length s))
                                    (,',test ,(character suffix)
-                                     (aref s (1- (length s))))))
+                                            (aref s (1- (length s))))))
                             (string ,string))
                           call)))))
     (dcm string$= char=)
@@ -525,46 +545,18 @@ but without consing."
                                (compare-segment left right))
               until (>= right end))))))
 
-(defun string-replace (old string new &key (start 0) end stream)
-  "Like `string-replace-all', but only replace the first match."
-  (string-replace-all old string new
-                      :start start
-                      :end end
-                      :stream stream
-                      :count 1))
-
-(defun string-replace-all (old string new &key (start 0) end stream count)
-  "Do search-and-replace for constant strings.
-
-Note that START and END only affect where the replacements are made:
-the part of the string before START, and the part after END, are
-always included verbatim.
-
-     (string-replace-all \"old\" \"The old old way\" \"new\"
-                         :start 3 :end 6)
-     => \"The new old way\"
-
-COUNT can be used to limit the maximum number of occurrences to
-replace. If COUNT is not specified, every occurrence of OLD between
-START and END is replaced with NEW.
-
-    (string-replace-all \"foo\" \"foo foo foo\" \"quux\")
-    => \"quux quux quux\"
-
-    (string-replace-all \"foo\" \"foo foo foo\" \"quux\" :count 2)
-    => \"quux quux foo\"
-
-STREAM can be used to specify a stream to write to. It is resolved
-like the first argument to `format'."
-  (declare (array-length start)
+(defun string-replace-all/no-arg-parsing (old string new start end stream count)
+  (declare ((or null array-index) start)
            ((or array-length null) end)
            ;; Can't be more matches than characters.
            ((or array-length null) count))
   (check-type old string)
   (check-type new string)
   (check-type string string)
-  (let ((new (simplify-string new))
+  (let ((start (or start 0))
+        (new (simplify-string new))
         (old (simplify-string old)))
+    (declare (array-index start))
     (with-string-dispatch () string
       (cond
         ((not (search old string :start2 start :end2 end))
@@ -597,6 +589,48 @@ like the first argument to `format'."
                        (write-string new s)
                        (rep (+ match len)
                             (1- count)))))))))))))
+
+(defun string-replace-all (old string new &key (start 0) end stream count)
+  "Do search-and-replace for constant strings.
+
+Note that START and END only affect where the replacements are made:
+the part of the string before START, and the part after END, are
+always included verbatim.
+
+     (string-replace-all \"old\" \"The old old way\" \"new\"
+                         :start 3 :end 6)
+     => \"The new old way\"
+
+COUNT can be used to limit the maximum number of occurrences to
+replace. If COUNT is not specified, every occurrence of OLD between
+START and END is replaced with NEW.
+
+    (string-replace-all \"foo\" \"foo foo foo\" \"quux\")
+    => \"quux quux quux\"
+
+    (string-replace-all \"foo\" \"foo foo foo\" \"quux\" :count 2)
+    => \"quux quux foo\"
+
+STREAM can be used to specify a stream to write to. It is resolved
+like the first argument to `format'."
+  (string-replace-all/no-arg-parsing old string new start end stream count))
+
+(define-compiler-macro string-replace-all (old string new &key (start 0) end stream count)
+  `(string-replace-all/no-arg-parsing ,old
+                                      ,string
+                                      ,new
+                                      ,start
+                                      ,end
+                                      ,stream
+                                      ,count))
+
+(defun string-replace (old string new &key (start 0) end stream)
+  "Like `string-replace-all', but only replace the first match."
+  (string-replace-all old string new
+                      :start start
+                      :end end
+                      :stream stream
+                      :count 1))
 
 (defun chomp (string
               &optional

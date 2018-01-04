@@ -51,7 +51,8 @@
                   :depends-on ("iter" "types" "control-flow"))
                  (:file "files"
                   :depends-on ("types"))
-                 (:file "symbols")
+                 (:file "symbols"
+                  :depends-on ("macro-tools"))
                  (:file "arrays")
                  (:file "queue"
                   :depends-on ("types"))

@@ -84,8 +84,7 @@ From Arc."
                           collect `(equal ,x ,item)))))))
 
 (-> memq (t list) list)
-#+sbcl (declaim (sb-ext:maybe-inline memq))
-#+cmucl (declaim (ext:maybe-inline memq))
+(declaim-maybe-inline memq)
 (defun memq (item list)
   "Like (member ... :test #'eq).
 Should only be used for symbols."

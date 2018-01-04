@@ -687,3 +687,13 @@ account) before doing the test."
         (if (constantp exp)
             (values (eval exp) t)
             (values form nil)))))
+
+(defmacro declaim-maybe-inline-1 (fn)
+  (declare (ignorable fn))
+  #+sbcl `(declaim (sb-ext:maybe-inline ,fn))
+  #+cmucl `(declaim (ext:maybe-inline ,fn)))
+
+(defmacro declaim-maybe-inline (&rest fns)
+  `(progn
+     ,@(loop for fn in fns
+             collect `(declaim-maybe-inline-1 ,fn))))

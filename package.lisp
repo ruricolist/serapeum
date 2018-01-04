@@ -170,6 +170,7 @@
    #:hash-table-function
    #:make-hash-table-function
    #:delete-from-hash-table
+   #:pairhash
    ;; Pathnames.
    #:path-join
    #:write-stream-into-file

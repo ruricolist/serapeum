@@ -434,3 +434,23 @@ Cf. `delete-from-plist' in Alexandria."
   (prog1 table
     (dolist (key keys)
       (remhash key table))))
+
+(defun pairhash (keys data &optional hash-table)
+  "Like `pairlis', but for a hash table.
+
+Unlike `pairlis', KEYS and DATA are only required to be sequences, not
+lists.
+
+By default, the hash table returned uses `eql' as its tests. If you
+want a different test, make the table yourself and pass it as the
+HASH-TABLE argument."
+  (let ((hash-table
+          (or hash-table
+              (make-hash-table :size (max (length keys)
+                                          +hash-table-default-size+)))))
+    (declare (hash-table hash-table))
+    (map nil
+         (lambda (key datum)
+           (setf (gethash key hash-table) datum))
+         keys data)
+    hash-table))

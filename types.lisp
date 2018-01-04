@@ -416,7 +416,8 @@ Functions\", by Irène Durand and Robert Strandh."
                         collect `(,type
                                   (locally (declare (type ,type ,var))
                                     (with-read-only-var (,var)
-                                      ,@body)))))))
+                                      (with-vref ,type
+                                        ,@body))))))))
           (t
            `(with-type-declarations-trusted ()
               (etypecase ,var
@@ -427,7 +428,8 @@ Functions\", by Irène Durand and Robert Strandh."
                                     (let ((,var ,var))
                                       (declare (type ,type ,var))
                                       (with-read-only-var (,var)
-                                        ,@body)))))))))))
+                                        (with-vref ,type
+                                          ,@body))))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)

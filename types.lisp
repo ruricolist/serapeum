@@ -276,6 +276,10 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
+(defun space-beats-speed? (env)
+  (> (policy-quality 'space env)
+     (policy-quality 'speed env)))
+
 (defparameter *vref-by-type*
   (stable-sort
    '((simple-bit-vector . sbit)
@@ -346,7 +350,8 @@ depending on the type being specialized on."
     ;; issue.
     (t `(progn ,@body))))
 
-(defmacro with-type-dispatch ((&rest types) var &body body)
+(defmacro with-type-dispatch ((&rest types) var &body body
+                              &environment env)
   "A macro for writing fast sequence functions (among other things).
 
 In the simplest case, this macro produces one copy of BODY for each
@@ -393,8 +398,12 @@ Serapeum, `with-templated-body'. One possible expansion is based on
 the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
+  (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
   (let ((types (simplify-subtypes types)))
     (cond ((null types)
+           `(progn ,@body))
+          ((space-beats-speed? env)
+           (simple-style-warning "Not using type dispatch (space>speed).")
            `(progn ,@body))
           ;; The advantage of the CMUCL/SBCL way (I hope) is that the
           ;; compiler can decide /not/ to bother inlining if the type
@@ -462,46 +471,54 @@ added to ensure that TYPE itself is handled."
 
 ;;; Are these worth exporting?
 
-(defmacro with-boolean (var &body body)
-  (multiple-value-bind (body decls) (parse-body body)
-    `(with-read-only-var (,var)
-       ,@decls
-       (if ,var
-           ,@body
-           ,@body))))
+(defmacro with-boolean (var &body body
+                        &environment env)
+  (if (space-beats-speed? env)
+      `(locally ,@body)
+      (multiple-value-bind (body decls) (parse-body body)
+        `(with-read-only-var (,var)
+           ,@decls
+           (if ,var
+               ,@body
+               ,@body)))))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var
      ,@body))
 
-(defmacro with-test-fn ((test) &body body)
+(defmacro with-test-fn ((test) &body body
+                        &environment env)
   "Specialize BODY on the most common test functions."
   (check-type test symbol)
-  `(cond ((eql ,test #'eq)
-          (macrolet ((,test (x y) `(eq ,x ,y)))
-            ,@body))
-         ((eql ,test #'eql)
-          (macrolet ((,test (x y) `(eql ,x ,y)))
-            ,@body))
-         ((eql ,test #'equal)
-          (macrolet ((,test (x y) `(equal ,x ,y)))
-            ,@body))
-         ;; ((eql ,test #'equalp)
-         ;;  (macrolet ((,test (x y) `(equalp ,x ,y)))
-         ;;    ,@body))
-         (t (let ((,test (ensure-function ,test)))
-              (macrolet ((,test (x y) (list 'funcall ',test x y)))
-                ,@body)))))
+  (if (space-beats-speed? env)
+      `(locally ,@body)
+      `(cond ((eql ,test #'eq)
+              (macrolet ((,test (x y) `(eq ,x ,y)))
+                ,@body))
+             ((eql ,test #'eql)
+              (macrolet ((,test (x y) `(eql ,x ,y)))
+                ,@body))
+             ((eql ,test #'equal)
+              (macrolet ((,test (x y) `(equal ,x ,y)))
+                ,@body))
+             ;; ((eql ,test #'equalp)
+             ;;  (macrolet ((,test (x y) `(equalp ,x ,y)))
+             ;;    ,@body))
+             (t (let ((,test (ensure-function ,test)))
+                  (macrolet ((,test (x y) (list 'funcall ',test x y)))
+                    ,@body))))))
 
-(defmacro with-key-fn ((key) &body body)
+(defmacro with-key-fn ((key) &body body &environment env)
   "Specialize BODY on the most common key functions."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key)))
-     (cond ((eql ,key #'identity)
-            (macrolet ((,key (x) x))
-              ,@body))
-           (t (macrolet ((,key (x) (list 'funcall ',key x)))
-                ,@body)))))
+     ,@(if (space-beats-speed? env)
+           body
+           `((cond ((eql ,key #'identity)
+                    (macrolet ((,key (x) x))
+                      ,@body))
+                   (t (macrolet ((,key (x) (list 'funcall ',key x)))
+                        ,@body)))))))
 
 (declaim (ftype (function (t) boolean) true))
 (declaim (inline true))

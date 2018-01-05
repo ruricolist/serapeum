@@ -794,10 +794,9 @@ within the entry points.
 
 If you pass `:block-compile nil', this macro is equivalent to progn.
 This may be useful during development."
-  (if block-compile
+  (if (not block-compile) `(progn ,@body)
       `(local*
          ,@body
          (progn
            ,@(loop for entry-point in entry-points
-                   collect `(defalias ,entry-point #',entry-point))))
-      `(progn ,@body)))
+                   collect `(defalias ,entry-point #',entry-point))))))

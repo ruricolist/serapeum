@@ -792,6 +792,9 @@ and all of their calls to one another will be compiled as local calls.
 This includes calls to the entry points, and even self-calls from
 within the entry points.
 
+Note that `declaim' forms occuring inside of BODY will be translated
+into local `declare' forms.
+
 If you pass `:block-compile nil', this macro is equivalent to progn.
 This may be useful during development."
   (if (not block-compile) `(progn ,@body)

@@ -147,14 +147,14 @@ Alternately, you could do it with `defgeneric':
       (:method ((t1 timestamp) (t2 integer))
         (time= t2 t1)))
 
-This is easy to read, but it has three disadvantages. (1) There is no
-exhaustiveness checking. If, at some point in the future, you want to
-add another representation of time to your project, the compiler will
-not warn you if you forget to update `time='. (This is bad enough with
-only two objects to dispatch on, but with three or more it gets
-rapidly easier to miss a case.) (2) You cannot use the
+This is easy to read, but it has three potential disadvantages. \(1)
+There is no exhaustiveness checking. If, at some point in the future,
+you want to add another representation of time to your project, the
+compiler will not warn you if you forget to update `time='. \(This is
+bad enough with only two objects to dispatch on, but with three or
+more it gets rapidly easier to miss a case.) \(2) You cannot use the
 `universal-time' type you just defined; it is a type, not a class, so
-you cannot specialize methods on it. (3) You are paying a run-time
+you cannot specialize methods on it. \(3) You are paying a run-time
 price for extensibility -- the inherent overhead of a generic function
 -- when extensibility is not what you want.
 

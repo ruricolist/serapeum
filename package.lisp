@@ -341,6 +341,7 @@
    #:ordering
    #:bestn
    #:nth-best
+   #:nth-best!
    #:reshuffle
    #:sort-new
    #:stable-sort-new

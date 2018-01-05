@@ -998,11 +998,19 @@ Or even
     (elt (bestn (1+ n) seq pred) n)
 
 But uses a selection algorithm for better performance than either."
+  (nth-best! n
+             (copy-sequence 'vector seq)
+             pred
+             :key key))
+
+(defun nth-best! (n seq pred &key (key #'identity))
+  "Destructive version of `nth-best'.
+Note that this function requires that SEQ be a vector."
   (check-type n array-index)
+  (check-type seq vector)
   (if (zerop n)
       (extremum seq pred :key key)
-      (let* ((seq  (copy-sequence 'vector seq))
-             (pred (ensure-function pred))
+      (let* ((pred (ensure-function pred))
              (key  (ensure-function key))
              (pred (key-test key pred)))
         (quickselect seq n pred))))

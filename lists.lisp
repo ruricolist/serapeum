@@ -98,6 +98,19 @@ Should only be used for symbols."
          (go loop)))
      (return-from memq list)))
 
+(define-compiler-macro memq (&whole call
+                                    item list
+                                    &environment env)
+  (multiple-value-bind (list constant?)
+      (eval-if-constant list env)
+    (if (not constant?) call
+        (if (not (every #'symbolp list)) call
+            `(case ,item
+               ,@(loop for tail on list
+                       ;; NB. The symbol might be nil.
+                       collect `((,(car tail))
+                                 ',tail)))))))
+
 (-> delq (t list) list)
 (defun delq (item list)
   "Like (delete ... :test #'eq), but only for lists.

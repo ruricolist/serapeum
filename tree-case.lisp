@@ -10,6 +10,7 @@
   "A variant of `case' optimized for when every key is an integer.
 
 Comparison is done using `eql'."
+  ;; Check that all the keys are integers.
   (let ((keys (mapcar #'first cases)))
     (dolist (key keys)
       (unless (typep key 'integer)

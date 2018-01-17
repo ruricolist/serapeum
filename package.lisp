@@ -142,6 +142,7 @@
    #:partial
    #:throttle
    #:trampoline
+   #:once
    ;; Trees.
    #:occurs
    #:occurs-if

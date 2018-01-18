@@ -71,3 +71,26 @@
 
     (is-true (my-even? 1000000))
     (is-false (my-odd? 1000000))))
+
+(test once
+  (let* ((s "string")
+         (fn (once (lambda () (copy-seq s))))
+         (copy (funcall fn)))
+    (is (string copy))
+    (is (not (eq copy s)))
+    (is (eq copy (funcall fn)))))
+
+(test once/effects
+  (let ((fn (once (lambda () (princ "Hello")))))
+    (is (equal "Hello"
+               (with-output-to-string (*standard-output*)
+                 (funcall fn))))
+    (is (emptyp
+         (with-output-to-string (*standard-output*)
+           (funcall fn))))))
+
+(test once/mv
+  (let ((fn (once (lambda () (values 1 2 3)))))
+    (funcall fn)
+    (is (equal '(1 2 3)
+               (multiple-value-list (funcall fn))))))

@@ -169,6 +169,20 @@ designed to facilitate working with immutable data."
     (equal x y)))
 
 (defun read-eval-prefix (object stream)
+  "A helper for making objects readable.
+
+The obvious way to give an object a readable representation is to use
+the sharp-dot reader macro. However, methods are supposed to consult
+the values of `*print-readably*' and `*read-eval*' before doing so.
+This function takes care of that for you.
+
+If `*print-readably*' is false, return an empty string.
+
+If `*print-readably*' is true, and `*read-eval*' is also true, return
+the string \"#.\".
+
+If `*print-readably*' is true, but `*read-eval*' is not true, signal
+an error."
   ;; "If `*read-eval*' is false and `*print-readably*' is
   ;; true, any method for `print-object' that would output a
   ;; reference to the `#.' reader macro either outputs

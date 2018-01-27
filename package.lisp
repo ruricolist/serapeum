@@ -49,6 +49,7 @@
    #:defvar-unbound
    #:defloop
    ;; Defining types.
+   #:read-eval-prefix
    #:defcondition
    #:defstruct-read-only
    #:defconstructor

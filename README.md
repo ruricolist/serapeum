@@ -66,7 +66,7 @@ library is a fork of its language; it deserves documentation of the
 same quality as a language reference. If a utility is not worth
 documenting, it is not worth having.
 
-The full function reference will be found [here](reference.md). (It is
+The full function reference will be found [here](REFERENCE.md). (It is
 in a separate file in deference to documentation browsers, which often
 print the README as a preamble to their own function reference).
 

@@ -207,6 +207,8 @@ an error."
 (defgeneric constructor-values/generic (x))
 
 (defun deconstruct (x)
+  "If X is a type defined with `defconstructor', return its slots as
+multiple values."
   (constructor-values/generic x))
 
 ;;; NB If you ever figure out how to safely support inheritance in

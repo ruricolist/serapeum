@@ -617,7 +617,8 @@ an error.
 
 ### `(deconstruct x)`
 
-NO DOCS!
+If X is a type defined with `defconstructor`, return its slots as
+multiple values.
 
 [View source](defining-types.lisp#L209)
 
@@ -707,7 +708,7 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](defining-types.lisp#L217)
+[View source](defining-types.lisp#L219)
 
 ### `(defunit name)`
 
@@ -721,7 +722,7 @@ Unit types are used for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L453)
+[View source](defining-types.lisp#L455)
 
 ### `(defunion union &body variants)`
 
@@ -731,7 +732,7 @@ Each expression in VARIANTS is either a symbol (in which case it
 defines a unit type, as with `defunit`) or a list (in which case it
 defines a structure, as with `defconstructor`.
 
-[View source](defining-types.lisp#L475)
+[View source](defining-types.lisp#L477)
 
 ### `(match-of union expr &body clauses)`
 
@@ -751,7 +752,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L532)
+[View source](defining-types.lisp#L534)
 
 ## Binding
 

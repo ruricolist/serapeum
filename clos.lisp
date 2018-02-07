@@ -107,7 +107,7 @@ This construct is very loosely inspired by impl blocks in Rust."
                            (docstring (when (stringp (car body)) (pop body)))
                            (args-with-self (substitute (list self class) self args)))
                       (when (equal args-with-self args)
-                        (warn "No binding for ~s in ~s" self args))
+                        (error "No binding for ~s in ~s" self args))
                       `(symbol-macrolet ,(loop for slot in slots
                                                ;; Same as with-slots, use
                                                ;; (x y) alias slot Y to

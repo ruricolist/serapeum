@@ -315,15 +315,16 @@ propagate the current value of `*standard-output*':
             (let ((*standard-output* temp))
               ...))))"
   (check-type fn function)
-  (if (null symbols)
-      fn
-      (let ((values (mapcar #'symbol-value symbols)))
-        (lambda (&rest args)
-          (declare (dynamic-extent args))
-          (progv symbols values
-            (multiple-value-prog1
-                (apply fn args)
-              (map-into values #'symbol-value symbols)))))))
+  (let ((symbols (remove-if-not #'boundp symbols)))
+    (if (null symbols)
+        fn
+        (let ((values (mapcar #'symbol-value symbols)))
+          (lambda (&rest args)
+            (declare (dynamic-extent args))
+            (progv symbols values
+              (multiple-value-prog1
+                  (apply fn args)
+                (map-into values #'symbol-value symbols))))))))
 
 ;;; See http://www.jsoftware.com/papers/fork.htm.
 

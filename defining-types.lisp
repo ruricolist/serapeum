@@ -452,7 +452,7 @@ Gives us a place to hang specializations for `print-object' and
           (or instance
               (setf instance (call-next-method)))))))
 
-(defmacro defunit (name)
+(defmacro defunit (name &optional docstring)
   "Define a unit type.
 
 A unit type is a type with only one instance.
@@ -465,14 +465,22 @@ own individual type."
   `(progn
      (eval-always
        (defclass ,name () ()
-         (:metaclass unit-class)))
+         (:metaclass unit-class)
+         ,@(unsplice
+            (when docstring
+              `(:documentation ,docstring)))))
      (unless (c2mop:class-finalized-p (find-class ',name))
        (c2mop:finalize-inheritance (find-class ',name)))
      (declaim-freeze-type ,name)
      (defmethod %constructor= ((x ,name) (y ,name))
        t)
      (define-symbol-macro ,name
-         (load-time-value (make-instance ',name) t))))
+         (load-time-value (make-instance ',name) t))
+     ,@(unsplice
+        (when docstring
+          `(setf (documentation ',name 'variable)
+                 ,docstring)))
+     ',name))
 
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.

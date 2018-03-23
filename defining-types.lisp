@@ -191,7 +191,9 @@ an error."
   (if *print-readably*
       (if *read-eval*
           "#."
-          (print-unreadable-object (object stream :type t)))
+          (error 'print-not-readable
+                 :object object
+                 :stream stream))
       ""))
 
 (defun print-constructor (object stream fields)

@@ -196,6 +196,16 @@ an error."
                  :stream stream))
       ""))
 
+(defmacro print-readable-object ((object stream &key eval)
+                                 &body body)
+  (once-only (object stream)
+    `(if *print-escape*
+         (progn
+           (when ,eval
+             (read-eval-prefix ,object ,stream))
+           ,@body)
+         (call-next-method))))
+
 (defun print-constructor (object stream fields)
   (write-string (read-eval-prefix object stream) stream)
   (write-char #\( stream)

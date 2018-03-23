@@ -50,6 +50,7 @@
    #:defloop
    ;; Defining types.
    #:read-eval-prefix
+   #:print-readable-object
    #:defcondition
    #:defstruct-read-only
    #:defconstructor

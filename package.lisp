@@ -240,6 +240,7 @@
    #:time-until
    #:interval
    ;; Classes.
+   #:class-name-of
    #:class-name-safe
    #:find-class-safe
    #:make

@@ -12,12 +12,16 @@ After Eulisp."
       (warn "~s cannot designate a class" class)))
   `(make-instance ,class ,@initargs))
 
+(defsubst class-name-of (x)
+  "The class name of the class of X."
+  (class-name (class-of x)))
+
 (defun class-name-safe (x)
   "The class name of the class of X.
 If X is a class, the name of the class itself."
   (if (typep x 'class)
       (class-name x)
-      (class-name (class-of x))))
+      (class-name-of x)))
 
 (defun find-class-safe (x &optional env)
   "The class designated by X.

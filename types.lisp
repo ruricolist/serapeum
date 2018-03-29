@@ -8,6 +8,12 @@
   "An array of octets."
   `(simple-array octet (,length)))
 
+(deftype input-stream ()
+  '(and stream (satisfies input-stream-p)))
+
+(deftype output-stream ()
+  '(and stream (satisfies output-stream-p)))
+
 (deftype wholenum ()
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))

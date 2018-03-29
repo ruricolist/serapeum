@@ -33,6 +33,8 @@
    #:assuref
    #:wholenum
    #:tuple
+   #:input-stream
+   #:output-stream
    #:with-type-dispatch
    #:vref
    #:with-subtype-dispatch

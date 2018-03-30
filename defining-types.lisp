@@ -197,14 +197,18 @@ an error."
       ""))
 
 (defun print-constructor (object stream fields)
-  (write-string (read-eval-prefix object stream) stream)
-  (write-char #\( stream)
-  (prin1 (type-of object) stream)
-  (dolist (field fields)
-    (write-char #\Space stream)
-    (prin1 field stream))
-  (write-char #\) stream)
-  (values))
+  (let ((readable? *print-readably*))
+    (write-string (read-eval-prefix object stream) stream)
+    (write-char #\( stream)
+    (prin1 (type-of object) stream)
+    (dolist (field fields)
+      (write-char #\Space stream)
+      (when readable?
+        (unless (constantp field)
+          (write-char #\' stream)))
+      (prin1 field stream))
+    (write-char #\) stream)
+    (values)))
 
 (defgeneric constructor-values/generic (x))
 

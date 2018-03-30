@@ -147,3 +147,16 @@
          (match-of point (rectangular 1.0 2.0)
            ((rectangular x y) (+ x y))
            (_ nil)))))
+
+(defconstructor dummy-constructor
+  (symbol symbol)
+  (list list))
+
+(test reread-constructors
+  (let ((value
+          (read-from-string
+           (write-to-string
+            (dummy-constructor 'sym (list 1 2 3))
+            :readably t))))
+    (is (eql 'sym (dummy-constructor-symbol value)))
+    (is (equal '(1 2 3) (dummy-constructor-list value)))))

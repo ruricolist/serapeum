@@ -24,6 +24,7 @@
    #:case-failure
    #:define-case-macro
    #:eval-if-constant
+   #:parse-leading-keywords
    ;; Types.
    #:supertypep
    #:proper-subtype-p

@@ -365,7 +365,7 @@ Using `define-do-macro' takes care of all of this for you.
         (pmm-lambda-list lambda-list)
       (expand-pmm args rest?))))
 
-(defun inline-keywords (body)
+(defun parse-leading-keywords (body)
   "Given BODY, return two values: a list of the leading inline keyword
 arguments, and the rest of the body.
 

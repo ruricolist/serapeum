@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (33 files, 317 functions)
+# Function Listing For SERAPEUM (33 files, 319 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -200,6 +200,16 @@ Like `define-modify-macro`, but arranges to return the original value.
 
 [View source](macro-tools.lisp#L338)
 
+### `(parse-leading-keywords body)`
+
+Given BODY, return two values: a list of the leading inline keyword
+arguments, and the rest of the body.
+
+Inline keywords are like the keyword arguments to individual cases in
+`restart-case`.
+
+[View source](macro-tools.lisp#L368)
+
 ### `(define-case-macro name macro-args params &body macro-body)`
 
 Define a macro like `case`.
@@ -293,7 +303,7 @@ Declaim the ftype of FUNCTION from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L41)
+[View source](types.lisp#L47)
 
 ### `(assure type-spec &body (form))`
 
@@ -314,21 +324,21 @@ by FORM. (But see `assuref`.)
 
 From ISLISP.
 
-[View source](types.lisp#L144)
+[View source](types.lisp#L150)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L181)
+[View source](types.lisp#L187)
 
 ### `(supertypep supertype type &optional env)`
 
 Is SUPERTYPE a supertype of TYPE?
 That is, is TYPE a subtype of SUPERTYPE?
 
-[View source](types.lisp#L213)
+[View source](types.lisp#L219)
 
 ### `(proper-subtype-p subtype type &optional env)`
 
@@ -336,7 +346,7 @@ Is SUBTYPE a proper subtype of TYPE?
 
 This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
 
-[View source](types.lisp#L219)
+[View source](types.lisp#L225)
 
 ### `(proper-supertype-p supertype type &optional env)`
 
@@ -345,7 +355,7 @@ Is SUPERTYPE a proper supertype of TYPE?
 That is, is it true that every value of TYPE is also of type
 SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
 
-[View source](types.lisp#L243)
+[View source](types.lisp#L249)
 
 ### `(vref vec index)`
 
@@ -355,7 +365,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L299)
+[View source](types.lisp#L305)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -406,7 +416,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L353)
+[View source](types.lisp#L359)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -415,19 +425,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L443)
+[View source](types.lisp#L449)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L456)
+[View source](types.lisp#L462)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L466)
+[View source](types.lisp#L472)
 
 ### `(true x)`
 
@@ -436,7 +446,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L525)
+[View source](types.lisp#L531)
 
 ## Definitions
 
@@ -620,7 +630,7 @@ an error.
 If X is a type defined with `defconstructor`, return its slots as
 multiple values.
 
-[View source](defining-types.lisp#L209)
+[View source](defining-types.lisp#L215)
 
 ### `(defconstructor type-name &body slots)`
 
@@ -708,9 +718,9 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](defining-types.lisp#L219)
+[View source](defining-types.lisp#L225)
 
-### `(defunit name)`
+### `(defunit name &optional docstring)`
 
 Define a unit type.
 
@@ -722,7 +732,7 @@ Unit types are used for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L455)
+[View source](defining-types.lisp#L461)
 
 ### `(defunion union &body variants)`
 
@@ -732,7 +742,7 @@ Each expression in VARIANTS is either a symbol (in which case it
 defines a unit type, as with `defunit`) or a list (in which case it
 defines a structure, as with `defconstructor`.
 
-[View source](defining-types.lisp#L477)
+[View source](defining-types.lisp#L491)
 
 ### `(match-of union expr &body clauses)`
 
@@ -752,7 +762,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L534)
+[View source](defining-types.lisp#L548)
 
 ## Binding
 
@@ -1717,7 +1727,7 @@ integer, by asking whether it is equal to its own floor.
 
 AKA Schoenfinkel's S combinator.
 
-[View source](functions.lisp#L330)
+[View source](functions.lisp#L331)
 
 ### `(fork g f h)`
 
@@ -1741,7 +1751,7 @@ you can write a (numerically unstable) `mean` using `fork`.
 
 From J.
 
-[View source](functions.lisp#L347)
+[View source](functions.lisp#L348)
 
 ### `(hook2 f g)`
 
@@ -1757,7 +1767,7 @@ hours.
 
 From J.
 
-[View source](functions.lisp#L372)
+[View source](functions.lisp#L373)
 
 ### `(fork2 g f h)`
 
@@ -1777,7 +1787,7 @@ written as a dyadic fork.
 
 From J.
 
-[View source](functions.lisp#L388)
+[View source](functions.lisp#L389)
 
 ### `(capped-fork g h)`
 
@@ -1787,7 +1797,7 @@ Like a monadic fork, but F is omitted.
 
 Effectively the composition of G and H.
 
-[View source](functions.lisp#L409)
+[View source](functions.lisp#L410)
 
 ### `(capped-fork2 g h)`
 
@@ -1795,7 +1805,7 @@ J's capped fork (dyadic).
 
 Like a dyadic fork, but F is omitted.
 
-[View source](functions.lisp#L418)
+[View source](functions.lisp#L419)
 
 ## Trees
 
@@ -2481,19 +2491,25 @@ After Eulisp.
 
 [View source](clos.lisp#L3)
 
+### `(class-name-of x)`
+
+The class name of the class of X.
+
+[View source](clos.lisp#L15)
+
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L15)
+[View source](clos.lisp#L19)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L22)
+[View source](clos.lisp#L26)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -2564,7 +2580,7 @@ organized, without any loss of power.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L32)
+[View source](clos.lisp#L36)
 
 ## Hooks
 

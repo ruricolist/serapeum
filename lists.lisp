@@ -117,9 +117,9 @@ Should only be used for symbols."
 
 Almost always used as (delq nil ...)."
   (declare (list list) (optimize speed))
-  #+ () (cond ((endp list) nil)
-              ((eq (car list) item) (cdr list))
-              (t (rplacd list (delq item (cdr list)))))
+  #+(or) (cond ((endp list) nil)
+               ((eq (car list) item) (cdr list))
+               (t (rplacd list (delq item (cdr list)))))
   (let ((splice '()))
     (loop for l = list then (cdr l) do
       (cond ((endp l) (return list))

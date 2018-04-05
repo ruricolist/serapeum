@@ -84,8 +84,8 @@ From Scheme (SRFI-8)."
             ,expr))
         ((atom formals)
          ;; This could also be written:
-         #+ () `(let ((,formals (multiple-value-list ,expr)))
-                  ,@body)
+         #+(or) `(let ((,formals (multiple-value-list ,expr)))
+                   ,@body)
          ;; But I want it to be possible to declare FORMALS to have
          ;; dynamic extent, and most Lisps support that for &rest
          ;; lists.

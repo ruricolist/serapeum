@@ -81,7 +81,7 @@
     ;; No claws
     (expect  '(and-let* () 1) 1)
     (expect  '(and-let* () 1 2) 2)
-    #+ () (expect  '(and-let* () ) t)
+    #+(or) (expect  '(and-let* () ) t)
     ;; One claw, no body
     (expect '(let ((x nil)) (and-let* (x))) nil)
     (expect '(let ((x 1)) (and-let* (x))) 1)

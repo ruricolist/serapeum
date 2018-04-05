@@ -30,12 +30,12 @@
            (every #'char-test "foo" "FOO")
            (not (every #'char-test "foo" "FOO"))))))
 
-  #+ () (signals error
-          (fbindrec ((make-adder (lambda (x)
-                                   (lambda (y)
-                                     (+ y x))))
-                     (add1 (make-adder 1)))
-            (add1 1))))
+  #+(or) (signals error
+           (fbindrec ((make-adder (lambda (x)
+                                    (lambda (y)
+                                      (+ y x))))
+                      (add1 (make-adder 1)))
+             (add1 1))))
 
 (test fbindrec*
   (is
@@ -56,8 +56,8 @@
            (every #'char-test "foo" "FOO")
            (not (every #'char-test "foo" "FOO"))))))
 
-  #+ () (signals error
-          (fbindrec* ((a (lambda () #'c))
-                      (b (a))
-                      (c (constantly 7)))
-            (b))))
+  #+(or) (signals error
+           (fbindrec* ((a (lambda () #'c))
+                       (b (a))
+                       (c (constantly 7)))
+             (b))))

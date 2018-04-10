@@ -95,7 +95,8 @@ Roughly equivalent to `(merge-tables DICT (dict args...))'."
 
 (defmacro dictq (&rest keys-and-values)
   "A literal hash table.
-Like `dict', but the keys and values are implicitly quoted."
+Like `dict', but the keys and values are implicitly quoted, and the
+hash table is inlined as a literal object."
   (apply #'dict keys-and-values))
 
 (defloop href (table &rest keys)

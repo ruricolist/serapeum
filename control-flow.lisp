@@ -49,6 +49,68 @@ From Arc."
         (values nil sure)
         (subtypep type2 type1 env))))
 
+(defun remove-shadowed-types (types &optional env)
+  "Remove from TYPES any type that is a subtype of any other type in
+TYPES."
+  (flet ((remove-shadows (types)
+           (loop for tail on types
+                 for type1 = (first tail)
+                 unless (loop for type2 in (rest tail)
+                                thereis (subtypep type1 type2 env))
+                   collect type1)))
+    (reverse
+     (remove-shadows
+      (reverse
+       (remove-shadows types))))))
+
+(defun simplify-type (type env)
+  "Try to simplify TYPE in ENV.
+Before simplifying TYPE, try to expand user-defined types."
+  (multiple-value-bind (type exp?)
+      (typexpand type env)
+    (match type
+      ((list 'and) (values t t))
+      ((list 'or) (values nil t))
+
+      ((list 'and type) (values type t))
+      ((list 'or type) (values type t))
+
+      ((list* 'member types)
+       (values
+        (simplify-type
+         `(or ,@(loop for type in types
+                      collect `(eql ,type)))
+         env)
+        t))
+
+      ((list* (and conjunction (or 'or 'and))
+              types)
+       (let ((unique (remove-shadowed-types types)))
+         (if (equal unique types)
+             (trivia.fail:fail)
+             (values `(,conjunction ,@unique) t))))
+
+      (otherwise
+       (if-let (match (find type *simple-types* :test #'type=))
+         (values match t)
+         (values type exp?))))))
+
+(defun simplify-type-loop (type expanded? env)
+  "Call SIMPLIFY-TYPE in a loop until no more simplifications are
+possible."
+  (declare (optimize (debug 0)))
+  (let ((exp (simplify-type type env)))
+    (if (equal exp type)
+        (values type expanded?)
+        (simplify-type-loop exp t env))))
+
+(defun expand-type (type &optional env)
+  "Expand and simplify TYPE."
+  (multiple-value-bind (exp exp?) (simplify-type-loop type nil env)
+    (if (type= exp type)
+        (values exp exp?)
+        (values type nil))))
+
 (defun describe-non-exhaustive-match (stream partition type env)
   (assert (not (same-type? partition type)))
   (labels ((explode-type (type)
@@ -67,7 +129,7 @@ From Arc."
                (format stream "~&There are extra types: ~s" et)))
 
            (missing-types (partition)
-             (multiple-value-bind (exp exp?) (typexpand type env)
+             (multiple-value-bind (exp exp?) (expand-type type env)
                (and exp?
                     (set-difference (explode-type exp)
                                     (explode-type partition)

@@ -375,11 +375,11 @@ some or all of its slots." type-name)
 
        ;; Define a load form.
        (defmethod make-load-form ((self ,type-name) &optional env)
-         (declare (ignore env))
          (declare (ignorable self))
          (list ',type-name
                ,@(loop for reader in readers
-                       collect `(,reader self))))
+                       collect `(quote-unless-constant (,reader self)
+                                                       env))))
 
        ;; Define a comparison method.
        (defmethod %constructor= ((o1 ,type-name) (o2 ,type-name))
@@ -406,6 +406,11 @@ some or all of its slots." type-name)
                   for name in slot-names
                   collect `(list 'trivia:access '',reader ,name))))
        ',type-name)))
+
+(defun quote-unless-constant (value &optional env)
+  (if (constantp value env)
+      value
+      `(quote ,value)))
 
 ;;; Why use CLOS for unit types? Structures have two benefits: low
 ;;; memory use and fast slot access. Neither benefit applies to unit

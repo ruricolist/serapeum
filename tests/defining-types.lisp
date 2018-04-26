@@ -160,3 +160,8 @@
             :readably t))))
     (is (eql 'sym (dummy-constructor-symbol value)))
     (is (equal '(1 2 3) (dummy-constructor-list value)))))
+
+(test constructor-load-forms
+  (let ((obj (dummy-constructor 'sym nil)))
+    (is (equal '(dummy-constructor 'sym nil)
+               (make-load-form obj)))))

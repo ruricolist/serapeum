@@ -291,6 +291,12 @@ Cf. `string-case'."
   `(string-case ,stringform
      ,@clauses))
 
+(defmacro if-let1 (var test &body (then else))
+  `(let1 ,var ,test
+     (if ,var
+         ,then
+         ,else)))
+
 (defmacro eif (&whole whole test then &optional (else nil else?))
   "Like `cl:if', but expects two branches.
 Stands for “exhaustive if”."
@@ -340,13 +346,13 @@ Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
     (`((,test) ,@clauses)
-      `(if-let (,var ,test)
+      `(if-let1 ,var ,test
          ,var
          (cond-let ,var ,@clauses)))
     (`((t ,@body) ,@_)
       `(progn ,@body))
     (`((,test ,@body) ,@clauses)
-      `(if-let (,var ,test)
+      `(if-let1 ,var ,test
          (progn ,@body)
          (cond-let ,var ,@clauses)))))
 
@@ -444,20 +450,20 @@ Burson."
                  (parse-send-clause clause)
                (with-gensyms (tmp)
                  `(cond ,@preceding
-                        (t (if-let (,tmp ,test)
+                        (t (if-let1 ,tmp ,test
                              (funcall ,fn ,tmp)
                              (bcond ,@clauses))))))))
           (t `(cond ,@clauses)))))
 
 (defmacro case-let ((var expr) &body cases)
-  "Like (let ((VAR EXPR)) (case VAR ...))"
-  `(let ((,var ,expr))
+  "Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
      (case ,var
        ,@cases)))
 
 (defmacro ecase-let ((var expr) &body cases)
-  "Like (let ((VAR EXPR)) (ecase VAR ...))"
-  `(let ((,var ,expr))
+  "Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
      (case ,var
        ,@cases)))
 
@@ -569,7 +575,7 @@ value like `gethash'."
                  ((symbolp form) (list form))
                  ((atom form) form)
                  (t (if-let (_ (find-_ form env))
-                      (values `(let ((,_ ,needle))
+                      (values `(let1 ,_ ,needle
                                  ,form)
                               t)
                       (values (funcall thread-fn needle form) t))))))
@@ -583,7 +589,7 @@ value like `gethash'."
         `(,threader ,(let ((hole (first holes)))
                        (if (listp hole)
                            (if-let (_ (find '_ hole :test #'str=))
-                             `(let ((,_ ,needle))
+                             `(let1 ,_ ,needle
                                 ,hole)
                              (funcall thread-fn needle hole))
                            `(,hole ,needle)))

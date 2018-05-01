@@ -243,11 +243,12 @@ list) and `let' (which has an obvious macro-expansion in terms of
       (multiple-value-bind (tags clauses)
           (hoist-clause-bodies block clauses env)
         `(let ,(mapcar #'list vars exprs)
-           (block ,block
-             (tagbody
-                (dispatch-case/nobindings ,(mapcar #'list vars types)
-                  ,@clauses)
-                ,@tags)))))))
+           (with-read-only-vars ,vars
+             (block ,block
+               (tagbody
+                  (dispatch-case/nobindings ,(mapcar #'list vars types)
+                    ,@clauses)
+                  ,@tags))))))))
 
 (defmacro dispatch-case/nobindings (vars-and-types &body clauses
                                     &environment env)

@@ -389,23 +389,37 @@ Inline keywords are like the keyword arguments to individual cases in
 (define-setf-expander read-only-var (real-var &optional (name real-var))
   (error "~a is read-only in this environment" name))
 
-(defmacro with-read-only-vars ((&rest vars) &body body)
+(defun variable-special? (var &optional env)
+  (or (introspect-environment:specialp var env)
+      ;; TODO This should be in introspect-environment proper.
+      #+allegro
+      (eql (sys:variable-information var env) :special)))
+
+(defmacro with-read-only-vars ((&rest vars) &body body &environment env)
   "Make VARS read-only within BODY.
 
 That is, within BODY, each var in VARS is bound as a symbol macro,
 which expands into a macro whose setf expander, in turn, is defined to
-signal an error."
-  #+ccl
-  `(locally (declare (ccl::unsettable ,@vars))
-     ,@body)
-  #-ccl
-  (let ((temps (make-gensym-list (length vars) 'temp)))
+signal an error.
+
+Depending on your Lisp implementation this may or may not do anything,
+and may or may not have an effect when used on special variables."
+  (declare (ignorable env))
+  #+(or ccl sbcl cmucl allegro)
+  (let* ((vars (loop for var in vars
+                     unless (variable-special? var env)
+                       collect var))
+         (temps
+           (loop for var in vars
+                 collect (gensym (string var)))))
     `(let ,(mapcar #'list temps vars)
        (declare (ignorable ,@temps))
        (symbol-macrolet ,(loop for var in vars
                                for temp in temps
                                collect `(,var (read-only-var ,temp ,var)))
-         ,@body))))
+         ,@body)))
+  #-(or ccl sbcl cmucl allegro)
+  `(progn ,@body))
 
 (defun expand-read-only-var (var env)
   (ematch var

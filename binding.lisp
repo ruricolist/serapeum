@@ -8,10 +8,6 @@
 This may be pronounced with equal propriety as \"let-one\" or
 \"let-once\"."
   `(let ((,var ,expr))
-     #+ccl
-     ,@`((declare (ccl::unsettable ,var))
-         ,@body)
-     #-ccl
      (with-read-only-vars (,var)
        ,@body)))
 

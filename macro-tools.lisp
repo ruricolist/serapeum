@@ -395,6 +395,10 @@ Inline keywords are like the keyword arguments to individual cases in
 That is, within BODY, each var in VARS is bound as a symbol macro,
 which expands into a macro whose setf expander, in turn, is defined to
 signal an error."
+  #+ccl
+  `(locally (declare (ccl::unsettable ,@vars))
+     ,@body)
+  #-ccl
   (let ((temps (make-gensym-list (length vars) 'temp)))
     `(let ,(mapcar #'list temps vars)
        (declare (ignorable ,@temps))

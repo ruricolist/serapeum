@@ -1,6 +1,6 @@
 (in-package :serapeum)
 
-;;;# `lret'
+;;; `lret'
 
 (defmacro lret-aux (let (&rest bindings) &body body)
   (if (null bindings)
@@ -37,12 +37,12 @@ Cf. `aprog1' in Anaphora."
   `(lret-aux let* ,bindings
      ,@body))
 
-;;;# `letrec'
+;;; `letrec'
 
-;;; Obviously `letrec' is less useful than in Scheme (where it is the
-;;; way to construct recursive functions) but still sometimes useful;
-;;; say, when initializing a timer whose function needs to refer to
-;;; the timer itself.
+;; Obviously `letrec' is less useful than in Scheme (where it is the
+;; way to construct recursive functions) but still sometimes useful;
+;; say, when initializing a timer whose function needs to refer to
+;; the timer itself.
 
 (defmacro letrec-with (setq (&rest bindings) &body body)
   `(let (,@(mapcar #'car bindings))
@@ -129,7 +129,7 @@ From Scheme (SRFI-8)."
           collect (list binding nil)
         else collect binding))
 
-;;;# `mvlet'
+;;; `mvlet'
 
 ;; TODO Should mvlet* allow bindings to be repeated in a single
 ;; binding form? It would be more consistent with let*.
@@ -227,7 +227,7 @@ Note that declarations work just like `let*'."
                 (let ,rebindings
                   ,@body))))))
 
-;;;# `and-let*'
+;;; `and-let*'
 
 (defmacro and-let* ((&rest clauses) &body body &environment env)
   "Scheme's guarded LET* (SRFI-2).
@@ -264,10 +264,10 @@ false."
                    `(and ,expr ,@(expand clauses body)))))))
       (car (expand clauses body)))))
 
-;;;# Etc
+;;; Etc
 
-;;; These might be worth exporting if we can teach Slime to indent
-;;; them.
+;; These might be worth exporting if we can teach Slime to indent
+;; them.
 
 (defmacro flet* (bindings &body body)
   (if (null bindings)

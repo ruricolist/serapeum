@@ -259,7 +259,9 @@ Each clause should have one of the following forms:
 
 Note that, of course, the semantics are slightly different in Common
 Lisp than in Scheme, because our AND short-circuits on null, not
-false."
+false.
+
+Also, this version makes the bindings immutable."
   (multiple-value-bind (body decls)
       (parse-body body)
     (labels ((expand (clauses body)
@@ -271,7 +273,7 @@ false."
                   ((list* (list var expr) clauses)
                    (multiple-value-bind (local other)
                        (partition-declarations (list var) decls env)
-                     `(let ((,var ,expr))
+                     `(let1 ,var ,expr
                         ,@local
                         (and ,var ,@(expand clauses
                                             (append other body))))))

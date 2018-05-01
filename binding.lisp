@@ -11,8 +11,9 @@
         (let ((last-binding (ensure-car (lastcar bindings))))
           `(,let ,bindings
              ,@decls
-             (prog1 ,last-binding
-               ,@body))))))
+             (with-read-only-vars (,last-binding)
+               (prog1 ,last-binding
+                 ,@body)))))))
 
 (defmacro lret ((&rest bindings) &body body)
   "Return the initial value of the last binding in BINDINGS. The idea

@@ -375,7 +375,8 @@
    #:tree-case
    #:tree-ecase
    #:char-case
-   #:char-ecase))
+   #:char-ecase
+   #:with-read-only-vars))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

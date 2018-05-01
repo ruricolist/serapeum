@@ -3,6 +3,21 @@
 (def-suite binding :in serapeum)
 (in-suite binding)
 
+(test lret
+  (is (equal 1 (lret () 1)))
+  (is (equal 2
+             (lret ((x 1)
+                    (y 2))
+               x))))
+
+(test lret*
+  (is (equal 1 (lret* () 1)))
+  (is (equal 2
+             (lret* ((y 1)
+                     (y 2))
+               (declare (ignorable y))
+               3))))
+
 (test letrec
   "Check that `letrec' and `letrec*' behave differently."
   ;; The exact error depends on the implementation.

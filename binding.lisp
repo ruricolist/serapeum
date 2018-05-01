@@ -16,21 +16,27 @@ can: it eliminates a whole class of bugs (initializing an object, but
 forgetting to return it).
 
 Cf. `aprog1' in Anaphora."
-  (multiple-value-bind (body decls)
-      (parse-body body)
-    `(let ,bindings
-       ,@decls
-       (prog1 ,(ensure-car (lastcar bindings))
-         ,@body))))
+  (if (null bindings)
+      `(let ()
+         ,@body)
+      (multiple-value-bind (body decls)
+          (parse-body body)
+        `(let ,bindings
+           ,@decls
+           (prog1 ,(ensure-car (lastcar bindings))
+             ,@body)))))
 
 (defmacro lret* ((&rest bindings) &body body)
   "Cf. `lret'."
-  (multiple-value-bind (body decls)
-      (parse-body body)
-    `(let* ,bindings
-       ,@decls
-       (prog1 ,(ensure-car (lastcar bindings))
-         ,@body))))
+  (if (null bindings)
+      `(let* ()
+         ,@body)
+      (multiple-value-bind (body decls)
+          (parse-body body)
+        `(let* ,bindings
+           ,@decls
+           (prog1 ,(ensure-car (lastcar bindings))
+             ,@body)))))
 
 ;;;# `letrec'
 

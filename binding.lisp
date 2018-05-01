@@ -2,6 +2,18 @@
 
 ;;;# `lret'
 
+(defmacro lret-aux (let (&rest bindings) &body body)
+  (if (null bindings)
+      `(,let ()
+         ,@body)
+      (multiple-value-bind (body decls)
+          (parse-body body)
+        (let ((last-binding (ensure-car (lastcar bindings))))
+          `(,let ,bindings
+             ,@decls
+             (prog1 ,last-binding
+               ,@body))))))
+
 (defmacro lret ((&rest bindings) &body body)
   "Return the initial value of the last binding in BINDINGS. The idea
 is to create something, initialize it, and then return it.
@@ -16,27 +28,13 @@ can: it eliminates a whole class of bugs (initializing an object, but
 forgetting to return it).
 
 Cf. `aprog1' in Anaphora."
-  (if (null bindings)
-      `(let ()
-         ,@body)
-      (multiple-value-bind (body decls)
-          (parse-body body)
-        `(let ,bindings
-           ,@decls
-           (prog1 ,(ensure-car (lastcar bindings))
-             ,@body)))))
+  `(lret-aux let ,bindings
+     ,@body))
 
 (defmacro lret* ((&rest bindings) &body body)
   "Cf. `lret'."
-  (if (null bindings)
-      `(let* ()
-         ,@body)
-      (multiple-value-bind (body decls)
-          (parse-body body)
-        `(let* ,bindings
-           ,@decls
-           (prog1 ,(ensure-car (lastcar bindings))
-             ,@body)))))
+  `(lret-aux let* ,bindings
+     ,@body))
 
 ;;;# `letrec'
 
@@ -45,6 +43,11 @@ Cf. `aprog1' in Anaphora."
 ;;; say, when initializing a timer whose function needs to refer to
 ;;; the timer itself.
 
+(defmacro letrec-with (setq (&rest bindings) &body body)
+  `(let (,@(mapcar #'car bindings))
+     (,setq ,@(apply #'append bindings))
+     (locally ,@body)))
+
 (defmacro letrec ((&rest bindings) &body body)
   "Recursive LET.
 The idea is that functions created in BINDINGS can close over one
@@ -52,18 +55,16 @@ another, and themselves.
 
 Note that `letrec' only binds variables: it can define recursive
 functions, but can't bind them as functions. (But see `fbindrec'.)"
-  `(let (,@(mapcar #'car bindings))
-     (psetq ,@(apply #'append bindings))
-     (locally ,@body)))
+  `(letrec-with psetq ,bindings
+     ,@body))
 
 (defmacro letrec* ((&rest bindings) &body body)
   "Like LETREC, but the bindings are evaluated in order.
 See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*'."
-  `(let (,@(mapcar #'car bindings))
-     (setq ,@(apply #'append bindings))
-     (locally ,@body)))
+  `(letrec-with setq ,bindings
+     ,@body))
 
 (defmacro receive (formals expr &body body)
   "Stricter version of `multiple-value-bind'.

@@ -1,5 +1,20 @@
 (in-package :serapeum)
 
+;;; `let1'
+
+(defmacro let1 (var expr &body body)
+  "Bind VAR, immutably, to EXPR and evaluate BODY.
+
+This may be pronounced with equal propriety as \"let-one\" or
+\"let-once\"."
+  `(let ((,var ,expr))
+     #+ccl
+     ,@`((declare (ccl::unsettable ,var))
+         ,@body)
+     #-ccl
+     (with-read-only-vars (,var)
+       ,@body)))
+
 ;;; `lret'
 
 (defmacro lret-aux (let (&rest bindings) &body body)

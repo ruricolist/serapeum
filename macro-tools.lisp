@@ -191,10 +191,10 @@ directly into Lisp code:
   "Efficiently dispatch on the type of SEQ."
   (declare (ignorable other-form))
   (let* ((list-form
-           `(with-read-only-var (,seq)
+           `(with-read-only-vars (,seq)
               ,list-form))
          (array-form
-           `(with-read-only-var (,seq)
+           `(with-read-only-vars (,seq)
               ,array-form))
          (list-form
            `(let ((,seq (truly-the list ,seq)))
@@ -389,20 +389,18 @@ Inline keywords are like the keyword arguments to individual cases in
 (define-setf-expander read-only-var (real-var &optional (name real-var))
   (error "~a is read-only in this environment" name))
 
-(defmacro with-read-only-var ((var) &body body)
-  "Try to make VAR read-only within BODY.
+(defmacro with-read-only-vars ((&rest vars) &body body)
+  "Make VARS read-only within BODY.
 
-That is, within BODY, VAR is bound as a symbol macro, which expands
-into a macro whose setf expander, in turn, is defined to signal an
-error.
-
-This is not reliable, of course, but it may occasionally save you from
-shooting yourself in the foot by unwittingly using a macro that calls
-`setf' on a variable."
-  (with-gensyms (temp)
-    `(let ((,temp ,var))
-       (declare (ignorable ,temp))
-       (symbol-macrolet ((,var (read-only-var ,temp ,var)))
+That is, within BODY, each var in VARS is bound as a symbol macro,
+which expands into a macro whose setf expander, in turn, is defined to
+signal an error."
+  (let ((temps (make-gensym-list (length vars) 'temp)))
+    `(let ,(mapcar #'list temps vars)
+       (declare (ignorable ,@temps))
+       (symbol-macrolet ,(loop for var in vars
+                               for temp in temps
+                               collect `(,var (read-only-var ,temp ,var)))
          ,@body))))
 
 (defun expand-read-only-var (var env)

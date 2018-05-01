@@ -5,11 +5,11 @@
 
 (test read-only-var
   (let ((x 1))
-    (serapeum::with-read-only-var (x)
+    (serapeum::with-read-only-vars (x)
       (is (eql x 1))))
 
   (signals error
     (eval*
      '(let ((x 1))
-       (serapeum::with-read-only-var (x)
+       (serapeum::with-read-only-vars (x)
          (setf x 2))))))

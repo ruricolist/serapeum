@@ -418,7 +418,7 @@ Functions\", by Irène Durand and Robert Strandh."
            ;; Cf. sb-impl::string-dispatch.
            (with-unique-names ((fun type-dispatch-fun))
              `(flet ((,fun (,var)
-                       (with-read-only-var (,var)
+                       (with-read-only-vars (,var)
                          ,@body)))
                 (declare (inline ,fun))
                 (etypecase ,var
@@ -430,7 +430,7 @@ Functions\", by Irène Durand and Robert Strandh."
                 ,@(loop for type in types
                         collect `(,type
                                   (locally (declare (type ,type ,var))
-                                    (with-read-only-var (,var)
+                                    (with-read-only-vars (,var)
                                       (with-vref ,type
                                         ,@body))))))))
           (t
@@ -442,7 +442,7 @@ Functions\", by Irène Durand and Robert Strandh."
                                   (locally (declare (type ,type ,var))
                                     (let ((,var ,var))
                                       (declare (type ,type ,var))
-                                      (with-read-only-var (,var)
+                                      (with-read-only-vars (,var)
                                         (with-vref ,type
                                           ,@body))))))))))))
 
@@ -482,7 +482,7 @@ added to ensure that TYPE itself is handled."
   (if (space-beats-speed? env)
       `(locally ,@body)
       (multiple-value-bind (body decls) (parse-body body)
-        `(with-read-only-var (,var)
+        `(with-read-only-vars (,var)
            ,@decls
            (if ,var
                ,@body

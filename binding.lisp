@@ -35,6 +35,16 @@ is to create something, initialize it, and then return it.
       (setf (aref y 0) x))
     => #(1)
 
+Note that the value returned is the value initially bound. Subsequent
+assignments are ignored.
+
+    (lret ((x 1))
+      (setf x 2))
+    => 1
+
+Furthermore, on Lisps that support it, the variable may be made
+read-only, making assignment a compiler-time error.
+
 `lret' may seem trivial, but it fufills the highest purpose a macro
 can: it eliminates a whole class of bugs (initializing an object, but
 forgetting to return it).

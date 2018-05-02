@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (33 files, 319 functions)
+# Function Listing For SERAPEUM (33 files, 320 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -210,6 +210,19 @@ Inline keywords are like the keyword arguments to individual cases in
 
 [View source](macro-tools.lisp#L368)
 
+### `(with-read-only-vars (&rest vars) &body body)`
+
+Make VARS read-only within BODY.
+
+That is, within BODY, each var in VARS is bound as a symbol macro,
+which expands into a macro whose setf expander, in turn, is defined to
+signal an error.
+
+Depending on your Lisp implementation this may or may not do anything,
+and may or may not have an effect when used on special variables.
+
+[View source](macro-tools.lisp#L398)
+
 ### `(define-case-macro name macro-args params &body macro-body)`
 
 Define a macro like `case`.
@@ -272,13 +285,13 @@ could define it almost trivially using `define-case-macro`:
                  collect `((eql ,expr ,key) ,@body))
          (t ,@body)))
 
-[View source](macro-tools.lisp#L424)
+[View source](macro-tools.lisp#L440)
 
 ### `(case-failure expr keys)`
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L653)
+[View source](macro-tools.lisp#L669)
 
 ### `(eval-if-constant form &optional env)`
 
@@ -292,7 +305,7 @@ This is equivalent to testing if FORM is constant, then evaluting it,
 except that FORM is macro-expanded in ENV (taking compiler macros into
 account) before doing the test.
 
-[View source](macro-tools.lisp#L674)
+[View source](macro-tools.lisp#L690)
 
 ## Types
 
@@ -732,7 +745,7 @@ Unit types are used for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L461)
+[View source](defining-types.lisp#L466)
 
 ### `(defunion union &body variants)`
 
@@ -742,7 +755,7 @@ Each expression in VARIANTS is either a symbol (in which case it
 defines a unit type, as with `defunit`) or a list (in which case it
 defines a structure, as with `defconstructor`.
 
-[View source](defining-types.lisp#L491)
+[View source](defining-types.lisp#L496)
 
 ### `(match-of union expr &body clauses)`
 
@@ -762,7 +775,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L548)
+[View source](defining-types.lisp#L553)
 
 ## Binding
 
@@ -776,19 +789,29 @@ is to create something, initialize it, and then return it.
       (setf (aref y 0) x))
     => #(1)
 
+Note that the value returned is the value initially bound. Subsequent
+assignments are ignored.
+
+    (lret ((x 1))
+      (setf x 2))
+    => 1
+
+Furthermore, on Lisps that support it, the variable may be made
+read-only, making assignment a compiler-time error.
+
 `lret` may seem trivial, but it fufills the highest purpose a macro
 can: it eliminates a whole class of bugs (initializing an object, but
 forgetting to return it).
 
 Cf. `aprog1` in Anaphora.
 
-[View source](binding.lisp#L5)
+[View source](binding.lisp#L29)
 
 ### `(lret* (&rest bindings) &body body)`
 
 Cf. `lret`.
 
-[View source](binding.lisp#L26)
+[View source](binding.lisp#L56)
 
 ### `(letrec (&rest bindings) &body body)`
 
@@ -799,7 +822,7 @@ another, and themselves.
 Note that `letrec` only binds variables: it can define recursive
 functions, but can't bind them as functions. (But see `fbindrec`.)
 
-[View source](binding.lisp#L42)
+[View source](binding.lisp#L73)
 
 ### `(letrec* (&rest bindings) &body body)`
 
@@ -808,7 +831,7 @@ See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*`.
 
-[View source](binding.lisp#L53)
+[View source](binding.lisp#L83)
 
 ### `(receive formals expr &body body)`
 
@@ -829,7 +852,7 @@ returned by EXPR, as if by `multiple-value-list`.
 
 From Scheme (SRFI-8).
 
-[View source](binding.lisp#L62)
+[View source](binding.lisp#L91)
 
 ### `(mvlet* (&rest bindings) &body body)`
 
@@ -854,13 +877,13 @@ the motivation:
 
 Note that declarations work just like `let*`.
 
-[View source](binding.lisp#L129)
+[View source](binding.lisp#L158)
 
 ### `(mvlet (&rest bindings) &body body)`
 
 Parallel (`let`-like) version of `mvlet*`.
 
-[View source](binding.lisp#L188)
+[View source](binding.lisp#L217)
 
 ### `(and-let* (&rest clauses) &body body)`
 
@@ -880,7 +903,9 @@ Note that, of course, the semantics are slightly different in Common
 Lisp than in Scheme, because our AND short-circuits on null, not
 false.
 
-[View source](binding.lisp#L224)
+Also, this version makes the bindings immutable.
+
+[View source](binding.lisp#L253)
 
 ## Control Flow
 
@@ -1030,20 +1055,20 @@ Cf. `string-case`.
 Like `cl:if`, but expects two branches.
 Stands for “exhaustive if”.
 
-[View source](control-flow.lisp#L294)
+[View source](control-flow.lisp#L300)
 
 ### `(eif-let binds &body (then &optional (else nil else?)))`
 
 Like `alexandria:if-let`, but expects two branches.
 
-[View source](control-flow.lisp#L302)
+[View source](control-flow.lisp#L308)
 
 ### `(econd &body clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L323)
+[View source](control-flow.lisp#L329)
 
 ### `(cond-let var &body clauses)`
 
@@ -1055,13 +1080,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L332)
+[View source](control-flow.lisp#L338)
 
 ### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L353)
+[View source](control-flow.lisp#L359)
 
 ### `(cond-every &body clauses)`
 
@@ -1079,7 +1104,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L366)
+[View source](control-flow.lisp#L372)
 
 ### `(bcond &body clauses)`
 
@@ -1106,19 +1131,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L399)
+[View source](control-flow.lisp#L405)
 
 ### `(case-let (var expr) &body cases)`
 
-Like (let ((VAR EXPR)) (case VAR ...))
+Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L452)
+[View source](control-flow.lisp#L458)
 
 ### `(ecase-let (var expr) &body cases)`
 
-Like (let ((VAR EXPR)) (ecase VAR ...))
+Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L458)
+[View source](control-flow.lisp#L464)
 
 ### `(comment &body body)`
 
@@ -1130,13 +1155,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L464)
+[View source](control-flow.lisp#L470)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L474)
+[View source](control-flow.lisp#L480)
 
 ### `(nix place)`
 
@@ -1145,7 +1170,7 @@ Set PLACE to nil and return the old value of PLACE.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L478)
+[View source](control-flow.lisp#L484)
 
 ### `(ensure place &body newval)`
 
@@ -1159,14 +1184,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L493)
+[View source](control-flow.lisp#L499)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L525)
+[View source](control-flow.lisp#L531)
 
 ### `(~> needle &rest holes)`
 
@@ -1180,14 +1205,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L592)
+[View source](control-flow.lisp#L598)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L606)
+[View source](control-flow.lisp#L612)
 
 ### `(nest &rest things)`
 
@@ -1219,7 +1244,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L613)
+[View source](control-flow.lisp#L619)
 
 ### `(select keyform &body clauses)`
 
@@ -1239,7 +1264,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L647)
+[View source](control-flow.lisp#L653)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1249,7 +1274,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L666)
+[View source](control-flow.lisp#L672)
 
 ### `(sort-values pred &rest values)`
 
@@ -1261,7 +1286,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L785)
+[View source](control-flow.lisp#L791)
 
 ### `(eq* &rest xs)`
 
@@ -1279,7 +1304,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L856)
+[View source](control-flow.lisp#L862)
 
 ### `(eql* &rest xs)`
 
@@ -1297,7 +1322,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L858)
+[View source](control-flow.lisp#L864)
 
 ### `(equal* &rest xs)`
 
@@ -1315,7 +1340,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L860)
+[View source](control-flow.lisp#L866)
 
 ### `(equalp* &rest xs)`
 
@@ -1333,7 +1358,7 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L862)
+[View source](control-flow.lisp#L868)
 
 ## Threads
 
@@ -1905,7 +1930,8 @@ Roughly equivalent to `(merge-tables DICT (dict args...))'.
 ### `(dictq &rest keys-and-values)`
 
 A literal hash table.
-Like `dict`, but the keys and values are implicitly quoted.
+Like `dict`, but the keys and values are implicitly quoted, and the
+hash table is inlined as a literal object.
 
 [View source](hash-tables.lisp#L96)
 
@@ -1916,14 +1942,14 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y
 
-[View source](hash-tables.lisp#L101)
+[View source](hash-tables.lisp#L102)
 
 ### `(href-default default table &rest keys)`
 
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L110)
+[View source](hash-tables.lisp#L111)
 
 ### `(@ table &rest keys)`
 
@@ -1932,7 +1958,7 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y 
 
-[View source](hash-tables.lisp#L148)
+[View source](hash-tables.lisp#L149)
 
 ### `(pophash key hash-table)`
 
@@ -1942,7 +1968,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L173)
+[View source](hash-tables.lisp#L174)
 
 ### `(swaphash key value hash-table)`
 
@@ -1952,7 +1978,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L184)
+[View source](hash-tables.lisp#L185)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -1962,14 +1988,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L194)
+[View source](hash-tables.lisp#L195)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L208)
+[View source](hash-tables.lisp#L209)
 
 ### `(merge-tables table &rest tables)`
 
@@ -1985,7 +2011,7 @@ All of the tables being merged must have the same value for
 Clojure`s `merge`.
 
 
-[View source](hash-tables.lisp#L219)
+[View source](hash-tables.lisp#L220)
 
 ### `(flip-hash-table table &key test key)`
 
@@ -2011,7 +2037,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L249)
+[View source](hash-tables.lisp#L250)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2025,7 +2051,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L279)
+[View source](hash-tables.lisp#L280)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2034,7 +2060,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L311)
+[View source](hash-tables.lisp#L312)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2042,7 +2068,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L322)
+[View source](hash-tables.lisp#L323)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -2073,7 +2099,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L332)
+[View source](hash-tables.lisp#L333)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2081,14 +2107,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L423)
+[View source](hash-tables.lisp#L424)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L431)
+[View source](hash-tables.lisp#L432)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2101,7 +2127,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L438)
+[View source](hash-tables.lisp#L439)
 
 ## Files
 

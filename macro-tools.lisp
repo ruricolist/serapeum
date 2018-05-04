@@ -411,21 +411,22 @@ signal a warning at compile time, and an error at run time.
 Depending on your Lisp implementation this may or may not do anything,
 and may or may not have an effect when used on special variables."
   (declare (ignorable env))
-  #+(or ccl sbcl cmucl allegro)
-  (let* ((vars (loop for var in vars
-                     unless (variable-special? var env)
-                       collect var))
-         (temps
-           (loop for var in vars
-                 collect (gensym (string var)))))
-    `(let ,(mapcar #'list temps vars)
-       (declare (ignorable ,@temps))
-       (symbol-macrolet ,(loop for var in vars
-                               for temp in temps
-                               collect `(,var (read-only-var ,temp ,var)))
-         ,@body)))
-  #-(or ccl sbcl cmucl allegro)
-  `(progn ,@body))
+  (case uiop:*implementation-type*
+    ((:ccl :sbcl :cmu :acl)
+     (let* ((vars (loop for var in vars
+                        unless (variable-special? var env)
+                          collect var))
+            (temps
+              (loop for var in vars
+                    collect (gensym (string var)))))
+       `(let ,(mapcar #'list temps vars)
+          (declare (ignorable ,@temps))
+          (symbol-macrolet ,(loop for var in vars
+                                  for temp in temps
+                                  collect `(,var (read-only-var ,temp ,var)))
+            ,@body))))
+    (t
+     `(progn ,@body))))
 
 (defun expand-read-only-var (var env)
   (ematch var

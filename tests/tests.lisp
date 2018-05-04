@@ -38,3 +38,11 @@
 (defun eval* (form)
   "Variant of eval forcing macroexpansion."
   (funcall (compile nil (eval `(lambda () ,form)))))
+
+(defun can-introspect-environment? ()
+  (memq uiop:*implementation-type*
+        '(:ccl :sbcl :cmu :acl)))
+
+(defvar-unbound *special*
+  "Always-unbound special variable for testing.")
+(makunbound '*special*)

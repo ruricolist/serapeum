@@ -386,8 +386,14 @@ Inline keywords are like the keyword arguments to individual cases in
   (declare (ignore name))
   `,real-var)
 
-(define-setf-expander read-only-var (real-var &optional (name real-var))
-  (error "~a is read-only in this environment" name))
+(defun (setf %read-only-var) (value var)
+  (declare (ignore value))
+  (error "~a is read-only in this environment"
+         var))
+
+(define-setf-expander read-only-var (real-var &optional (name real-var) &environment env)
+  (warn "~a is read-only in this environment" name)
+  (get-setf-expansion `(%read-only-var ',real-var) env))
 
 (defun variable-special? (var &optional env)
   (or (introspect-environment:specialp var env)
@@ -400,7 +406,7 @@ Inline keywords are like the keyword arguments to individual cases in
 
 That is, within BODY, each var in VARS is bound as a symbol macro,
 which expands into a macro whose setf expander, in turn, is defined to
-signal an error.
+signal a warning at compile time, and an error at run time.
 
 Depending on your Lisp implementation this may or may not do anything,
 and may or may not have an effect when used on special variables."

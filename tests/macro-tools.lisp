@@ -10,8 +10,16 @@
 
 #+(or ccl sbcl cmucl allegro)
 (progn
+  (test read-only-var-warning
+    (signals warning
+      (compile nil
+               '(lambda ()
+                 (let ((x 1))
+                   (serapeum::with-read-only-vars (x)
+                     (setf x 2)))))))
+
   (test read-only-var-error
-    (signals error
+    (signals warning
       (eval*
        '(let ((x 1))
          (serapeum::with-read-only-vars (x)

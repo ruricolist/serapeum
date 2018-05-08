@@ -275,6 +275,10 @@ Functions are \"merely syntactic\" if they are never dereferenced with
 This function may return false negatives -- it may fail to detect that
 a function is syntactic -- but it should never return a false positive
 -- it should never say a function is syntactic when it is not."
+  ;; ECL does not seem to like this.
+  (when (eql uiop:*implementation-type* :ecl)
+    (return-from merely-syntactic-functions
+      nil))
   ;; This is as simple as can be: we expand the body with
   ;; `macroexpand-all' and, if the expansion is valid, look for
   ;; function quotes in the expansion.

@@ -134,15 +134,22 @@ It is also possible to construct a \"thunk\" with arguments.
         (call-with-foo #',thunk))
 
 Someday this may have a better name."
-  (with-gensyms (b stack-thunk gargs)
-    `(let ((,b ,var)
-           (,var ',stack-thunk)
-           (,gargs (list ,@args)))
-       `(flet ((,',stack-thunk ,,gargs
-                 ,@,b))
-          (declare (dynamic-extent (function ,',stack-thunk)))
-          (symbol-macrolet ((,',stack-thunk (function ,',stack-thunk)))
-            ,,@body)))))
+  (let* ((stack-thunk-prefix (string 'stack-fn-))
+         (stack-thunk-name
+           (concatenate 'string
+                        stack-thunk-prefix
+                        (string var)))
+         (stack-thunk
+           (gensym stack-thunk-name)))
+    (with-gensyms (b gargs)
+      `(let ((,b ,var)
+             (,var ',stack-thunk)
+             (,gargs (list ,@args)))
+         `(flet ((,',stack-thunk ,,gargs
+                   ,@,b))
+            (declare (dynamic-extent (function ,',stack-thunk)))
+            (symbol-macrolet ((,',stack-thunk (function ,',stack-thunk)))
+              ,,@body))))))
 
 ;;;# Expanding macros
 ;;; Expanding macros, Swank-style. We use `labels' in these

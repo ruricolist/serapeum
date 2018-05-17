@@ -52,6 +52,12 @@ TABLE, but empty."
                    :rehash-size rehash-size
                    :rehash-threshold rehash-threshold))
 
+;; People rarely provide a :size argument to a hash table unless it’s
+;; because they anticipate a very large hash table. This means that
+;; code that uses hash tables often wastes memory. But most hash
+;; tables made with `dict' are never going to in size, so we size them
+;; to their contents.
+
 (defun dict (&rest keys-and-values)
   "A concise constructor for hash tables.
 
@@ -65,10 +71,14 @@ understood as the test.
 
      (gethash \"string\" (dict \"string\" t)) => t
      (gethash \"string\" (dict 'eq \"string\" t)) => nil"
-  (let ((test (if (oddp (length keys-and-values))
-                  (pop keys-and-values)
-                  'equal)))
-    (values (plist-hash-table keys-and-values :test test))))
+  (let* ((length (length keys-and-values))
+         (test (if (oddp length)
+                   (pop keys-and-values)
+                   'equal)))
+    (values
+     (plist-hash-table keys-and-values
+                       :test test
+                       :size (truncate length 2)))))
 
 (define-compiler-macro dict (&rest keys-and-values)
   (let ((test (if (oddp (length keys-and-values))
@@ -77,9 +87,7 @@ understood as the test.
     (with-gensyms (ht)
       `(let ((,ht (make-hash-table
                    :test ,test
-                   :size ,(max +hash-table-default-size+
-                               (truncate (length keys-and-values)
-                                         2)))))
+                   :size ,(truncate (length keys-and-values) 2))))
          ,@(unsplice
             (when keys-and-values
               `(setf ,@(loop for (key value . nil) on keys-and-values by #'cddr

@@ -365,6 +365,17 @@ account.
 => No warning
 ```
 
+Even more usefully, we don’t have to worry about bugs caused by misspellings:
+
+``` lisp
+(defun flick (switch)
+  (ecase-of switch-state (state switch)
+    (:on (switch-off switch))
+    (:offf (switch-on switch))          ;Gotcha!
+    ((:stuck :broken) (error "Sorry, can't flick ~a" switch))))
+=> Warning
+```
+
 ### Example: union types
 
 ```

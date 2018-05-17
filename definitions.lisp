@@ -142,6 +142,10 @@ From Emacs and other ancient Lisps."
 Like (setf (fdefinition ALIAS) DEF), but with a place to put
 documentation and some niceties to placate the compiler.
 
+Note that a function defined with `defalias' is declared `notinline'.
+This is a matter of semantics: before we can assign to the function,
+we must make it assignable (which is what `notinline' means).
+
 Name from Emacs Lisp."
   ;; NB `uiop:defun*' is a version of defun intended to portably
   ;; support redefinition at compile time. We leverage it here to make

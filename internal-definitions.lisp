@@ -5,8 +5,6 @@
 
 (in-package :serapeum/internal-definitions)
 
-(defvar *subenv*)
-
 (defstruct-read-only (unbound
                       (:constructor unbound (var)))
   "Placeholder for an unbound variable."
@@ -158,22 +156,6 @@ them sane initialization values."
 (deftype binding ()
   '(or var symbol-macro fun macro))
 
-(defgeneric .vars (env)
-  (:method ((env null))
-    nil))
-
-(defgeneric .funs (env)
-  (:method ((env null))
-    nil))
-
-(defgeneric .blocks (env)
-  (:method ((env null))
-    nil))
-
-(defgeneric .tags (env)
-  (:method ((env null))
-    nil))
-
 (defun expand-binding (bind)
   (if (listp bind)
       (if (rest bind)
@@ -184,34 +166,21 @@ them sane initialization values."
 (defun expand-bindings (bindings)
   (mapcar #'expand-binding bindings))
 
-(locally
-    ;; Enforce types.
-    (declare (optimize safety))
-  (defclass subenv ()
-    ((vars :type list :initarg :vars :reader .vars)
-     (funs :type list :initarg :funs :reader .funs)
-     (blocks :type list :initarg :blocks :reader .blocks)
-     (tags :type list :initarg :tags :reader .tags))
-    (:default-initargs
-     :vars nil
-     :funs nil
-     :blocks nil
-     :tags nil)
-    (:documentation "Minimal lexical environment.")))
+(defconstructor subenv
+  "Minimal lexical environment."
+  (vars list)
+  (funs list)
+  (blocks list)
+  (tags list))
 
-(defun copy-subenv (subenv
-                    &key (vars (.vars subenv))
-                         (funs (.funs subenv))
-                         (blocks (.blocks subenv))
-                         (tags (.tags subenv)))
-  (make 'subenv
-        :vars vars
-        :funs funs
-        :blocks blocks
-        :tags tags))
+(defvar *subenv*
+  (subenv nil nil nil nil))
 
-(defun ensure-subenv ()
-  (or *subenv* (make 'subenv)))
+(defun subenv-empty? (&aux (s *subenv*))
+  (nor (subenv-vars s)
+       (subenv-funs s)
+       (subenv-blocks s)
+       (subenv-tags s)))
 
 (defun augment/vars (binds &optional (subenv *subenv*))
   (let ((vars
@@ -219,20 +188,20 @@ them sane initialization values."
                (mapcar #'expand-binding)
                (mapply #'var))))
     (copy-subenv subenv
-                 :vars (append vars (.vars subenv)))))
+                 :vars (append vars (subenv-vars subenv)))))
 
 (defun augment/symbol-macros (symbol-macros &optional (subenv *subenv*))
   (copy-subenv subenv
                :vars (append (mapply #'symbol-macro symbol-macros)
-                             (.vars subenv))))
+                             (subenv-vars subenv))))
 
 (defun augment/block (block &optional (subenv *subenv*))
   (copy-subenv subenv
-               :blocks (cons block (.blocks subenv))))
+               :blocks (cons block (subenv-blocks subenv))))
 
 (defun augment/tags (tags &optional (subenv *subenv*))
   (copy-subenv subenv
-               :tags (append tags (.tags subenv))))
+               :tags (append tags (subenv-tags subenv))))
 
 (defun tagbody-tag? (form)
   (typep form '(or symbol integer)))
@@ -247,16 +216,16 @@ them sane initialization values."
                :funs (append (mapcar (lambda (spec)
                                        (fun (first spec) (rest spec)))
                                      funs)
-                             (.funs subenv))))
+                             (subenv-funs subenv))))
 
 ;;; Of course this isn't used at the moment.
 (defun augment/macros (macros &optional (subenv *subenv*))
   (copy-subenv subenv
                :funs (append (mapply #'macro macros)
-                             (.funs subenv))))
+                             (subenv-funs subenv))))
 
 (defun visible-of-type (type subenv)
-  (let* ((vars (.vars subenv))
+  (let* ((vars (subenv-vars subenv))
          (visible (remove-duplicates vars :from-end t :key #'binding-name))
          (of-type (remove-if-not (of-type type) visible)))
     of-type))
@@ -267,7 +236,7 @@ them sane initialization values."
 
 (defun remove-shadowed (binds &optional (subenv *subenv*))
   (remove-if (op (member (ensure-car _)
-                         (.vars subenv)
+                         (subenv-vars subenv)
                          :key #'binding-name))
              binds))
 
@@ -311,7 +280,8 @@ them sane initialization values."
         (hoisted-var? self var)))
   (:method in-subenv? (self)
     "Are we within a binding form?"
-    (or *subenv* global-symbol-macros))
+    (or (not (subenv-empty?))
+        global-symbol-macros))
   (:method at-beginning? (self)
     "Return non-nil if this is the first form in the `local'."
     (not (or exprs vars hoisted-vars labels (in-subenv? self))))
@@ -415,7 +385,7 @@ them sane initialization values."
           (let ((next-exp (expand-partially self exp)))
             (if (eq exp next-exp)
                 (expansion-done self form)
-                next-exp))
+                (expansion-done self next-exp)))
           (expansion-done self form))))
   (:method expand-partially (self form)
     "Macro-expand FORM until it becomes a definition form or macro expansion stops."
@@ -506,7 +476,7 @@ them sane initialization values."
            (expand-partially self `(defconstant ,name ,expr ,docstring)))
 
           ((defun name args &body body)
-           (if *subenv*
+           (if (not (subenv-empty?))
                (expand-partially self
                                  `(defalias ,name
                                     (named-lambda ,name ,args
@@ -531,19 +501,29 @@ them sane initialization values."
           ((progn &body body)
            (if (single body)
                (expand-partially self (first body))
-               (if *subenv*
+               (if (not (subenv-empty?))
                    `(progn ,@(mapcar (op (expand-partially self _)) body))
                    (splice-forms self body))))
 
-          (((prog1 multiple-value-prog1) f &body body)
-           ;; We could simply expand `prog1' and
-           ;; `multiple-value-prog1' in terms of `let', but we don't
-           ;; want to do that, because they can be compiled more
-           ;; efficiently (especially `multiple-value-prog1').
-           (let ((*subenv* (ensure-subenv)))
-             `(,(car form) ,(expand-partially self f)
-               ;; Force a subenv, since progns can't be spliced.
-               ,(expand-body self body))))
+          ((prog1 f &body body)
+           (if (constantp f)
+               `(progn
+                  ,@body
+                  ,f)
+               (with-unique-names (temp)
+                 `(let ((,temp ,f))
+                    ,@body
+                    ,temp))))
+
+          ((multiple-value-prog1 f &body body)
+           (if (constantp f)
+               `(progn
+                  ,@body
+                  ,f)
+               (with-unique-names (temp)
+                 `(let ((,temp (multiple-value-list ,f)))
+                    ,@body
+                    (values-list ,temp)))))
 
           ((prog2 first second &body body)
            `(progn ,first
@@ -772,14 +752,13 @@ Returns `plus', not 4.
 
 The `local' macro is loosely based on Racket's support for internal
 definitions."
-  (let (*subenv*)
-    (multiple-value-bind (body decls) (parse-body orig-body)
-      (catch 'local
-        (generate-internal-definitions
-         (make 'internal-definitions-env
-               :decls decls
-               :env env)
-         body)))))
+  (multiple-value-bind (body decls) (parse-body orig-body)
+    (catch 'local
+      (generate-internal-definitions
+       (make 'internal-definitions-env
+             :decls decls
+             :env env)
+       body))))
 
 (defmacro block-compile ((&key entry-points
                                (block-compile t))

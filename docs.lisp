@@ -118,7 +118,7 @@ This saves needless updates to the documentation."
                  ;; Each definition.
                  (dolist (def defs)
                    (let* ((docs
-                            (ppcre:regex-replace-all "`([^ ]+)'"
+                            (ppcre:regex-replace-all "`([^ ]+?)'"
                                                      (getf def :documentation)
                                                      "`\\1`"))
                           (*print-case* :downcase)

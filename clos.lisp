@@ -99,6 +99,9 @@ docstring is far longer than the code it documents. But you may find
 it does a lot to keep heavily object-oriented code readable and
 organized, without any loss of power.
 
+Note that `defmethods' may also be useful when converting state
+machines written using `labels' into an object-oriented style.
+
 This construct is very loosely inspired by impl blocks in Rust."
   (multiple-value-bind (body decls) (parse-body body)
     (multiple-value-bind (slot-decls decls) (partition-declarations slots decls)

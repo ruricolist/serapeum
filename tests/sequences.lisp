@@ -3,6 +3,8 @@
 (def-suite sequences :in serapeum)
 (in-suite sequences)
 
+;;; TODO Actually test with extensible sequences.
+
 (test single
   ;; This is too trivial to really need a test, but it also serves a
   ;; regression for a package lock problem.

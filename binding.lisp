@@ -65,6 +65,8 @@ Cf. `aprog1' in Anaphora."
 ;; say, when initializing a timer whose function needs to refer to
 ;; the timer itself.
 
+;;; TODO Lift constant init forms in letrec and letrec*.
+
 (defmacro letrec-with (setq (&rest bindings) &body body)
   `(let (,@(mapcar #'car bindings))
      (,setq ,@(apply #'append bindings))

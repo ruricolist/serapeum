@@ -164,6 +164,10 @@
 
 ;;; vector=.
 
+;;; TODO Allow :type1 and :type2 arguments. These would be ignored by
+;;; the function, but could be used by a compiler macro to produce
+;;; optimized, inline code.
+
 (defun vector= (vec1 vec2 &key (test #'eql)
                                (start1 0)
                                (start2 0)

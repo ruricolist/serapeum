@@ -250,6 +250,10 @@ list) and `let' (which has an obvious macro-expansion in terms of
                     ,@clauses)
                   ,@tags))))))))
 
+;;; TODO The problem with this expansion is that each branch only sees
+;;; one value, which yields error messages that are hard to
+;;; understand.
+
 (defmacro dispatch-case/nobindings (vars-and-types &body clauses
                                     &environment env)
   (setf clauses (sort-clauses clauses env))

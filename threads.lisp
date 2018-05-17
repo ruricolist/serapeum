@@ -29,6 +29,11 @@
              (ensure-monitor ,object ,string)))
           (t `(ensure-monitor ,object ,string)))))
 
+;;; TODO A natural extension to the `synchronized' syntax would be to
+;;; allow multiple locks to be taken at once. This might be useful if
+;;; they could be implicitly re-ordered, using some kind of global
+;;; order, to avoid deadlocks.
+
 (defmacro synchronized ((&optional (object nil objectp)) &body body &environment env)
   "Run BODY holding a unique lock associated with OBJECT.
 If no OBJECT is provided, run BODY as an anonymous critical section.

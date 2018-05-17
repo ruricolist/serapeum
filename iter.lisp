@@ -162,6 +162,8 @@ as the initial sum.
 To see the running sum, call `sum' with no arguments.
 
 Return the total."
+  ;; TODO This should be numerically stable, at least if the zero is a
+  ;; float.
   (let ((zero (if (numberp (first body)) (pop body) 0)))
     (with-gensyms (n x)
       (with-syms (sum)

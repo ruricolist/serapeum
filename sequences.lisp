@@ -328,6 +328,27 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
     (and seq (endp (cdr seq)))
     (= (length seq) 1)))
 
+(deftype single ()
+  '(and sequence (satisfies single)))
+
+;;; TODO Export as soon as you think of a less cumbersome name.
+(defun first-and-only (seq)
+  "If SEQ is a sequence of length one, return its sole element.
+Otherwise, signal an error."
+  (flet ((fail ()
+           (error 'type-error
+                  :expected-type 'single
+                  :datum seq)))
+    (declare (dynamic-extent #'fail))
+    (seq-dispatch seq
+      (if (and seq
+               (endp (rest seq)))
+          (first seq)
+          (fail))
+      (if (= (length seq) 1)
+          (elt seq 0)
+          (fail)))))
+
 (defun partition (pred seq &key (start 0) end (key #'identity))
   "Partition elements of SEQ into those for which PRED returns true
 and false.
@@ -1053,6 +1074,8 @@ If ELEMENT-TYPE is not provided, then the element type of the vector
 returned is T, if SEQ is not a vector. If SEQ is a vector, then the
 element type of the vector returned is the same as the as the element
 type of SEQ."
+  ;; TODO Would it be worthwhile to implement the "inside-out"
+  ;; Fisher-Yates shuffle so we can shuffle and copy in one go?
   (shuffle (copy-sequence `(simple-array ,element-type (*))
                           seq)))
 

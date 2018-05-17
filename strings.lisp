@@ -434,6 +434,9 @@ From Arc."
               ellipsis)
       string))
 
+;;; TODO These are frequently used; it might be worth rewriting them
+;;; to use `with-string-dispatch' instead of mismatch.
+
 (macrolet ((defcmp ((name1 name2) (s1 s2 &rest keys) &body body)
              (let ((docstring (if (stringp (car body)) (pop body))))
                (flet ((mkdef (name &key docstring)

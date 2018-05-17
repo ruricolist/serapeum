@@ -6,20 +6,21 @@
 ;;; Ghuloum and Dybvig, "Fixing Letrec (reloaded)".
 ;;; Sullivan and Wand, "Incremental Lambda Lifting".
 
-;;; TODO
+;;; TODO The binding of lifted environments in fbindrec* is
+;;; inefficient and disregards the declarations. In at least some
+;;; cases, like `ensure-function', we should be able to assign
+;;; dummies.
 
-;;; The binding of lifted environments in fbindrec* is inefficient and
-;;; disregards the declarations. In at least some cases, like
-;;; `ensure-function', we should be able to assign dummies.
-
-;;; fbindrec and fbindrec* don't do enough to enforce the letrec
+;;; TODO fbindrec and fbindrec* don't do enough to enforce the letrec
 ;;; restriction.
 
-;;; Ideally, lift flet, labels, and fbind forms immediately inside a
-;;; literal lambda into the surrounding fbind.
+;;; TODO Ideally, lift flet, labels, and fbind forms immediately
+;;; inside a literal lambda into the surrounding fbind.
 
-;;; When rebinding non-gensyms, analyze the lambda lists and elide the
-;;; inner lambda when possible.
+;;; TODO When rebinding non-gensyms, analyze the lambda lists and
+;;; elide the inner lambda when possible.
+
+;;; TODO Handle named-lambda and equivalent labels forms.
 
 (defvar *lexenv* nil
   "The environment of the macro being expanded.")

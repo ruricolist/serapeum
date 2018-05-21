@@ -9,7 +9,9 @@
 
 (defconst whitespace
   #.(remove-duplicates
-     (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page no-break-space)
+     (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
+                   #\Vt                 ;Vertical tab.
+                   no-break-space)
              'string))
   "Whitespace characters.")
 

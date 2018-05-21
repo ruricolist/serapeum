@@ -35,7 +35,14 @@
   (is (equal (collapse-whitespace " ") " "))
   (is (equal (collapse-whitespace "x") "x"))
   (is (equal (collapse-whitespace "  ") " "))
-  (is (equal (collapse-whitespace "  one   two    three  ") " one two three ")))
+  (is (equal (collapse-whitespace "  one   two    three  ") " one two three "))
+
+  ;; A string consisting of a single whitespace character.
+  (is (equal " " (collapse-whitespace (coerce '(#\Tab) 'string))))
+
+  ;; Sanity check: is the reference string of whitespace characters
+  ;; collapsed to a single whitespace?
+  (is (equal " " (collapse-whitespace whitespace))))
 
 (test mapconcat
   (is (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))

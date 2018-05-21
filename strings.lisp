@@ -74,30 +74,27 @@ functions.
   (with-thunk (body var)
     `(call/string #',body ,stream)))
 
+(defsubst blankp (seq)
+  "SEQ is either empty, or consists entirely of characters that
+satisfy `whitespacep'."
+  (every #'whitespacep seq))
+
 (defun collapse-whitespace (string)
   "Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character."
   (check-type string string)
-  (if (< (length string) 1)
-      string
-      (with-output-to-string (s)
-        (with-string-dispatch () string
-          (write-char (vref string 0) s)
-          (loop for i of-type array-length from 0
-                for j of-type array-length from 1
-                  below (length string)
-                for c1 = (vref string i)
-                for c2 = (vref string j)
-                do (if (whitespacep c2)
-                       (unless (whitespacep c1)
-                         (write-char #\Space s))
-                       (write-char c2 s)))))))
-
-(defsubst blankp (seq)
-  "SEQ is either empty, or consists entirely of characters that
-satisfy `whitespacep'."
-  (every #'whitespacep seq))
+  (with-output-to-string (s)
+    (with-string-dispatch () string
+      (loop with in-whitespace? of-type boolean
+            for char across string
+            do (if (whitespacep char)
+                   (unless in-whitespace?
+                     (write-char #\Space s)
+                     (setf in-whitespace? t))
+                   (progn
+                     (setf in-whitespace? nil)
+                     (write-char char s)))))))
 
 (-> simplify-string (string) (simple-array character (*)))
 (defun simplify-string (string)

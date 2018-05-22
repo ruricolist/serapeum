@@ -349,6 +349,11 @@ Otherwise, signal an error."
           (elt seq 0)
           (fail)))))
 
+;;; TODO Export once you're sure of the name.
+(defun rotation (seq n)
+  "Like `rotate', but non-destructive."
+  (rotate (copy-seq seq) n))
+
 (defun partition (pred seq &key (start 0) end (key #'identity))
   "Partition elements of SEQ into those for which PRED returns true
 and false.

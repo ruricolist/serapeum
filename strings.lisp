@@ -86,15 +86,22 @@ replaced by a single space character."
   (check-type string string)
   (with-output-to-string (s)
     (with-string-dispatch () string
-      (loop with in-whitespace? of-type boolean
-            for char across string
-            do (if (whitespacep char)
-                   (unless in-whitespace?
+      (declare (inline position))
+      (let ((len (length string)))
+        (nlet rec ((i 0))
+          (unless (= i len)
+            (let ((char (vref string i)))
+              (cond ((whitespacep char)
                      (write-char #\Space s)
-                     (setf in-whitespace? t))
-                   (progn
-                     (setf in-whitespace? nil)
-                     (write-char char s)))))))
+                     (rec (or (position-if-not #'whitespacep string
+                                               :start i)
+                              len)))
+                    (t
+                     (let ((j (or (position-if #'whitespacep string
+                                               :start i)
+                                  len)))
+                       (write-string string s :start i :end j)
+                       (rec j)))))))))))
 
 (-> simplify-string (string) (simple-array character (*)))
 (defun simplify-string (string)

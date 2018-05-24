@@ -32,3 +32,9 @@
    (let ((*special* t))
      (with-read-only-vars (*special*)
        (setf *special* nil)))))
+
+(test eval-if-constant-in-env
+  (macrolet ((constant-value/env (x &environment env)
+               (eval-if-constant x env)))
+    (symbol-macrolet ((x 1))
+      (is (eql 1 (constant-value/env x))))))

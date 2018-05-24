@@ -715,12 +715,20 @@ account) before doing the test.
 Note that this function may treat a form as constant which would not
 be recognized as such by `constantp', because we also expand compiler
 macros."
-  (if (constantp form)
-      (values (eval form) t)
-      (let ((exp (expand-macro-recursively form env)))
-        (if (constantp exp)
-            (values (eval exp) t)
-            (values form nil)))))
+  (cond ((constantp form)
+         (values (eval form) t))
+        ((and env (constantp form env))
+         ;; Use the implementation's expander via introspect-environment.
+         (let ((value (constant-form-value form env)))
+           (if (constantp form)
+               (values value t)
+               ;; It failed, let's try macroexpanding.
+               (eval-if-constant form nil))))
+        (t
+         (let ((exp (expand-macro-recursively form env)))
+           (if (constantp exp)
+               (values (eval exp) t)
+               (values form nil))))))
 
 (defmacro declaim-maybe-inline-1 (fn)
   (declare (ignorable fn))

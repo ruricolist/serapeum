@@ -10,6 +10,11 @@
                     (y 2))
                x))))
 
+(test lret-atom
+  (is (null (lret (x y)
+              (declare (ignore x))
+              1))))
+
 (test lret*
   (is (equal 1 (lret* () 1)))
   (is (equal 2
@@ -30,6 +35,19 @@
     (letrec* ((f (constantly t))
               (a (funcall f)))
       (is-true a))))
+
+(test letrec-atom
+  "Test that letrec handles atom in the binding list."
+  (is (null (letrec (x) x)))
+  (is (null (letrec* (x) x))))
+
+(test letrec-constant
+  "Test that letrec handles variables bound to constants."
+  (letrec ((x 1)
+           (y (lambda () y)))
+    (is (functionp y))
+    (is (functionp (funcall y)))
+    (is (numberp x))))
 
 (test receive
   (is (equal '(1 2 3)

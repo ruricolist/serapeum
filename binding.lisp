@@ -1,5 +1,17 @@
 (in-package :serapeum)
 
+;;; Helpers.
+
+(defun simple-binding-p (binding)
+  (or (atom binding)
+      (= (length binding) 2)))
+
+(defun canonicalize-bindings (bindings)
+  (loop for binding in bindings
+        if (atom binding)
+          collect (list binding nil)
+        else collect binding))
+
 ;;; `let1'
 
 (defmacro let1 (var expr &body body)
@@ -65,11 +77,17 @@ Cf. `aprog1' in Anaphora."
 ;; say, when initializing a timer whose function needs to refer to
 ;; the timer itself.
 
-;;; TODO Lift constant init forms in letrec and letrec*.
-
-(defmacro letrec-with (setq (&rest bindings) &body body)
-  `(let (,@(mapcar #'car bindings))
-     (,setq ,@(apply #'append bindings))
+(defmacro letrec-with (setq (&rest bindings) &body body
+                       &environment env)
+  (setf bindings (canonicalize-bindings bindings))
+  `(let (,@(loop for (var init) in bindings
+                 if (constantp init env)
+                   collect `(,var ,init)
+                 else collect var))
+     (,setq
+      ,@(loop for (var init) in bindings
+              unless (constantp init env)
+                append `(,var ,init)))
      (locally ,@body)))
 
 (defmacro letrec ((&rest bindings) &body body)
@@ -141,16 +159,6 @@ From Scheme (SRFI-8)."
                   (lambda (,@vars &rest ,rest)
                     ,@body)
                 ,expr)))))
-
-(defun simple-binding-p (binding)
-  (or (atom binding)
-      (= (length binding) 2)))
-
-(defun canonicalize-bindings (bindings)
-  (loop for binding in bindings
-        if (atom binding)
-          collect (list binding nil)
-        else collect binding))
 
 ;;; `mvlet'
 

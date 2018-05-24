@@ -710,7 +710,11 @@ otherwise.
 
 This is equivalent to testing if FORM is constant, then evaluting it,
 except that FORM is macro-expanded in ENV (taking compiler macros into
-account) before doing the test."
+account) before doing the test.
+
+Note that this function may treat a form as constant which would not
+be recognized as such by `constantp', because we also expand compiler
+macros."
   (if (constantp form)
       (values (eval form) t)
       (let ((exp (expand-macro-recursively form env)))

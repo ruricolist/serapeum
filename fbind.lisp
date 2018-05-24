@@ -494,7 +494,6 @@ used in successive bindings."
            (body decls (parse-body body))
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))
-    env-decls ;; TODO Use env-decls.
     `(let
          ;; Use dummies when we can (with ensure-function).
          ,(loop for (var init) in env
@@ -502,6 +501,7 @@ used in successive bindings."
                                  (eql (car init) 'ensure-function))
                             `(,var #'invalid)
                             var))
+       ,@(unsplice (and env-decls `(declare ,@env-decls)))
        (comment "Simple bindings")
        (fbind ,simple
          ,@simple-decls

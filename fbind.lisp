@@ -6,19 +6,8 @@
 ;;; Ghuloum and Dybvig, "Fixing Letrec (reloaded)".
 ;;; Sullivan and Wand, "Incremental Lambda Lifting".
 
-;;; TODO The binding of lifted environments in fbindrec* is
-;;; inefficient and disregards the declarations. In at least some
-;;; cases, like `ensure-function', we should be able to assign
-;;; dummies.
-
-;;; TODO fbindrec and fbindrec* don't do enough to enforce the letrec
-;;; restriction.
-
 ;;; TODO Ideally, lift flet, labels, and fbind forms immediately
 ;;; inside a literal lambda into the surrounding fbind.
-
-;;; TODO When rebinding non-gensyms, analyze the lambda lists and
-;;; elide the inner lambda when possible.
 
 ;;; TODO Handle named-lambda and equivalent labels forms.
 
@@ -138,7 +127,8 @@ analyze it into an environment, declarations, and a lambda."
                 `(lambda (&rest args)
                    (declare (ignore args))
                    ,temp))))
-    ;; TODO Disjoin, conjoin, and rcurry don't have compiler macros.
+    ;; NB Disjoin, conjoin, and rcurry don't have compiler macros (why
+    ;; not?).
     (`(,(and fun (or 'conjoin 'disjoin)) ,pred ,@preds)
       (let* ((preds (cons pred preds))
              (temps (loop for nil in preds collect (gensym))))

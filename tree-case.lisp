@@ -1,6 +1,6 @@
 (in-package #:serapeum)
 
-;;; TODO See
+;;; See
 ;;; https://www.nextmovesoftware.com/technology/SwitchOptimization.pdf
 ;;; for ideas on further optimization strategies.
 

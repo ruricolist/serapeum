@@ -37,6 +37,9 @@
   (is (equal (collapse-whitespace "  ") " "))
   (is (equal (collapse-whitespace "  one   two    three  ") " one two three "))
 
+  (is (equal (collapse-whitespace "  one   two    three  " :space #\Newline)
+             (fmt "~%one~%two~%three~%")))
+
   ;; A string consisting of a single whitespace character.
   (is (equal " " (collapse-whitespace (coerce '(#\Tab) 'string))))
 

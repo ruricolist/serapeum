@@ -232,6 +232,27 @@ From Zetalisp."
       (let ((range (- high low)))
         (+ low (random range)))))
 
+(defun random-range-type (low high)
+  (assert (< low high))
+  (let ((types-worth-checking
+          '#.(remove-duplicates
+              '(integer single-float short-float double-float long-float)
+              :test #'type=
+              :from-end t)))
+    ;; Low and high have the same type.
+    (when-let (interval-type
+               (find-if (lambda (type)
+                          (and (typep low type)
+                               (typep high type)))
+                        types-worth-checking))
+      (let ((type `(,interval-type ,low (,high))))
+        (assert (subtypep type 'number))
+        (assert (subtypep type interval-type))
+        ;; Note (high) is exclusive.
+        (assert (not (typep high type)))
+        (assert (typep low type))
+        type))))
+
 (define-compiler-macro random-in-range (&whole call low high)
   "When LOW and HIGH are both constants, declare the type of the
 result."
@@ -239,37 +260,20 @@ result."
     (setf low (eval low)))
   (when (constantp high)
     (setf high (eval high)))
-  (or (and (numberp low) (numberp high)
-           (progn
-             (cond ((> low high)
-                    (rotatef low high))
-                   ((= low high)
-                    (error "Equal arguments to ~s: ~s ~s"
-                           'random-in-range
-                           low high)))
-             (assert (< low high))
-             (let ((types-worth-checking
-                     ;; TODO Are there other types worth checking?
-                     '(integer single-float double-float)))
-               ;; Low and high have the same type.
-               (flet ((both-of-type? (type)
-                        (and (typep low type)
-                             (typep high type)
-                             type)))
-                 (let ((interval-type
-                         (loop for type in types-worth-checking
-                                 thereis (both-of-type? type))))
-                   (and interval-type
-                        (let ((type `(,interval-type ,low (,high))))
-                          (assert (subtypep type 'number))
-                          (assert (subtypep type interval-type))
-                          ;; Note (high) is exclusive.
-                          (assert (not (typep high type)))
-                          (assert (typep low type))
-                          `(locally (declare (notinline random-in-range))
-                             (truly-the ,type
-                               (random-in-range ,low ,high))))))))))
+  (unless (and (numberp low) (numberp high))
+    (return-from random-in-range
       call))
+  (when (> low high)
+    (rotatef low high))
+  (when (= low high)
+    (error 'arithmetic-error
+           :operation 'random-in-range
+           :operands (list low high)))
+  (if-let (type (random-range-type low high))
+    `(locally (declare (notinline random-in-range))
+       (truly-the ,type
+         (random-in-range ,low ,high)))
+    call))
 
 (defun float-precision-contagion (&rest ns)
   "Perform numeric contagion on the elements of NS.

@@ -422,3 +422,44 @@ Effectively the composition of G and H."
 Like a dyadic fork, but F is omitted."
   `(lambda (x y)
      (funcall ,g (funcall ,h x y))))
+
+(defun fnil (fn &rest defaults)
+  "Take a function, FN, and a number of DEFAULTS.
+With no defaults, return FN.
+
+Otherwise, wrap FN with special handling for nil as an argument. If
+the first argument to the returned function is nil, then the first
+argument in DEFAULTS is substituted in the call to FN; if the second
+argument to the returned function is nil, then the second argument in
+DEFAULTS is substituted; and so on until we run out of DEFAULTS.
+
+The minimum arity of the returned function is equal to DEFAULTS, plus
+a rest argument.
+
+This has a compiler macro for reasonable efficiency.
+
+From Clojure."
+  (declare (optimize (debug 0)))
+  (ensuring-functions (fn)
+    (labels ((rec (fn defaults)
+               (if (null defaults) fn
+                   (let ((default (first defaults)))
+                     (rec (lambda (arg &rest args)
+                            (apply fn (or arg default) args))
+                          (rest defaults))))))
+      (rec fn (reverse defaults)))))
+
+(define-compiler-macro fnil (fn &rest defaults)
+  (when (null defaults)
+    (return-from fnil `(progn ,fn)))
+  (with-unique-names (rest gfn)
+    (let ((temps (make-gensym-list (length defaults) 'temp))
+          (args (make-gensym-list (length defaults) 'arg)))
+      `(let (,@(mapcar #'list temps defaults)
+             (,gfn (ensure-function ,fn)))
+         (lambda (,@args &rest ,rest)
+           (apply ,gfn
+                  ,@(loop for arg in args
+                          for temp in temps
+                          collect `(or ,arg ,temp))
+                  ,rest))))))

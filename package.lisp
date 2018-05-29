@@ -147,6 +147,7 @@
    #:throttle
    #:trampoline
    #:once
+   #:fnil
    ;; Trees.
    #:occurs
    #:occurs-if

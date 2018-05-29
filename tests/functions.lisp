@@ -94,3 +94,35 @@
     (funcall fn)
     (is (equal '(1 2 3)
                (multiple-value-list (funcall fn))))))
+
+(test fnil
+  (fbind* ((say-hello
+            (lambda (name)
+              (string+ "Hello " name)))
+           (say-hello-with-defaults
+            (fnil #'say-hello "World")))
+    (is (equal "Hello Sir" (say-hello-with-defaults "Sir")))
+    (is (equal "Hello World" (say-hello-with-defaults nil))))
+
+  (fbind* ((say-hello
+            (lambda (first other)
+              (string+ "Hello " first " and " other)))
+           (say-hello-with-defaults (fnil #'say-hello "World" "People")))
+    (is (equal "Hello World and People"
+               (say-hello-with-defaults nil nil)))
+    (is (equal "Hello Sir and People"
+               (say-hello-with-defaults "Sir" nil)))
+    (is (equal "Hello World and Ma'am"
+               (say-hello-with-defaults nil "Ma'am")))
+    (is (equal "Hello Sir and Ma'am"
+               (say-hello-with-defaults "Sir" "Ma'am"))))
+
+  (is (= (funcall (fnil #'1+ 0) nil) 1))
+
+  (is (every #'numberp
+             (mapcar (fnil #'1+ 0)
+                     '(1 2 nil 4 6))))
+  (locally (declare (notinline fnil))
+    (is (every #'numberp
+               (mapcar (fnil #'1+ 0)
+                       '(1 2 nil 4 6))))))

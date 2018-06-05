@@ -38,6 +38,27 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
 (-> pad-start (vector array-length &optional t)
     vector)
 (defun pad-start (vec length &optional (pad #\Space))
+  "Pad VEC, a vector, to LENGTH, using PAD.
+If VEC is already the same length, or longer, than LENGTH, return VEC
+unchanged.
+
+    (pad-start \"abc\" 3)
+    => \"abc\"
+
+If PAD is a sequence, then it is repeated before VEC to make up LENGTH.
+
+    (pad-start \"abc\" 9 \"def\")
+    => \"defdefabc\"
+
+If PAD is not a sequence, it is used to fill the remainder of VEC.
+
+    (pad-start \"abc\" 6 #\x)
+    => \"xxxabc\"
+
+PAD defaults to the space character.
+
+This function is most useful for strings, but it can be used with any
+vector."
   (declare (vector vec)
            (array-length length))
   (cond ((>= (length vec) length) vec)
@@ -69,6 +90,27 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
 (-> pad-end (vector array-length &optional t)
     vector)
 (defun pad-end (vec length &optional (pad #\Space))
+  "Pad VEC, a vector, to LENGTH, using PAD.
+If VEC is already the same length, or longer, than LENGTH, return VEC
+unchanged.
+
+    (pad-end \"abc\" 3)
+    => \"abc\"
+
+If PAD is a sequence, then it is repeated after VEC to make up LENGTH.
+
+    (pad-end \"abc\" 9 \"def\")
+    => \"abcdefdef\"
+
+If PAD is not a sequence, it is used to fill the remainder of VEC.
+
+    (pad-end \"abc\" 6 #\x)
+    => \"abcxxx\"
+
+PAD defaults to the space character.
+
+This function is most useful for strings, but it can be used with any
+vector."
   (declare (vector vec)
            (array-length length))
   (cond ((>= (length vec) length) vec)

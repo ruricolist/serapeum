@@ -322,6 +322,8 @@
    #:chomp
    #:string-count
    #:string+
+   #:pad-start
+   #:pad-end
    ;; Sequences.
    #:do-each
    #:keep

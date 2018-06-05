@@ -59,22 +59,26 @@
              (receive (one two three) (values 1 2 3)
                (list one two three))))
   (signals error
-    (receive (one two) (values 1 2 3)
-      (list one two)))
-  (signals error
-    (receive (one two three four) (values 1 2 3)
-      (list one two three four)))
-  (signals error
     (eval
      '(receive (one two &optional three) (values 1 2 3)
        (list one two three))))
 
   (is (null (receive () (values) nil)))
-  (signals error
-    (receive () (values 1)))
   (is (null (receive x (values) x)))
-  (signals error
-    (receive (x) (values) x)))
+
+  ;; SBCL as of 1.4.2 refuses to even compile these.
+  #-sbcl
+  (progn
+    (signals error
+      (receive (one two) (values 1 2 3)
+        (list one two)))
+    (signals error
+      (receive (one two three four) (values 1 2 3)
+        (list one two three four)))
+    (signals error
+      (receive () (values 1)))
+    (signals error
+      (receive (x) (values) x))))
 
 (test mvlet*
   (is (= 2 (let ((x 1)) x

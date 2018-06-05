@@ -759,3 +759,31 @@ code."
                                  collect `(write-string ,arg ,stream)
                                else
                                  collect `(princ ,arg ,stream))))))))))
+
+;;; TODO Implement for string pads before export.
+
+(-> pad-start (string array-length &optional character)
+    string)
+(defun pad-start (string length &optional (pad #\Space))
+  (declare (string string)
+           (array-length length)
+           (character pad))
+  (if (>= (length string) length) string
+      (lret ((offset (- length (length string)))
+             (out (make-string length)))
+        (fill out pad :end offset)
+        (replace out string :start1 offset)
+        out)))
+
+(-> pad-end (string array-length &optional character)
+    string)
+(defun pad-end (string length &optional (pad #\Space))
+  (declare (string string)
+           (array-length length)
+           (character pad))
+  (if (>= (length string) length) string
+      (lret ((end (- length (length string)))
+             (out (make-string length)))
+        (replace out string)
+        (fill out pad :start end)
+        out)))

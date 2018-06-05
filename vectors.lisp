@@ -111,5 +111,5 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                   `(let ((,temp ,vec))
                      ,len
                      ,temp)))))
-        (1 `(,fn ,vec ,len ,(aref pad 0)))
+        (1 `(,fn ,vec ,len ',(aref pad 0)))
         (t call))))

@@ -153,32 +153,3 @@
       (is (equal "#(1 2 3 4)" (string+ my-vec))))
     (let ((*print-array* nil))
       (is (string^= "#<" (string+ my-vec))))))
-
-(def-suite pad :in strings)
-
-(in-suite pad)
-
-(test pad-start
-  (is (equal "abc" (pad-start "abc" 0)))
-  (is (equal "abc" (pad-start "abc" 1)))
-  (is (equal "abc" (pad-start "abc" 0 "")))
-  (is (equal "abc" (pad-start "abc" 1 "")))
-  (is (equal "0000000001" (pad-start "1" 10 #\0)))
-  (is (equal "0000000012" (pad-start "12" 10 #\0)))
-  (is (equal "0000123456" (pad-start "123456" 10 #\0)))
-  (is (equal "YYYY-MM-12" (pad-start "12" 10 "YYYY-MM-DD")))
-  (is (equal "YYYY-09-12" (pad-start "09-12" 10 "YYYY-MM-DD")))
-  (is (equal "xxabc" (pad-start "abc" 5 #\x)))
-  (is (equal "       abc" (pad-start "abc" 10)))
-  (is (equal "00000abc" (pad-start "abc" 8 "0")))
-  (is (equal "foofoofabc" (pad-start "abc" 10 "foo")))
-  (is (equal "123abc" (pad-start "abc" 6 "123456"))))
-
-(test pad-end
-  (is (equal "123   " (pad-end "123" 6)))
-  (is (equal "123xxx" (pad-end "123" 6 #\x)))
-  (is (equal "123xxx" (pad-end "123" 6 "x")))
-  ;; Possibly surprising behaviors.
-  (is (equal "2016YYYY-M" (pad-end "2016" 10 "YYYY-MM-DD")))
-  (let ((year "2016"))
-    (is (equal "2016-MM-DD" (pad-end year 10 (subseq "YYYY-MM-DD" (length year)))))))

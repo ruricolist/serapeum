@@ -33,7 +33,24 @@
   (is (equal "       abc" (pad-start "abc" 10)))
   (is (equal "00000abc" (pad-start "abc" 8 "0")))
   (is (equal "foofoofabc" (pad-start "abc" 10 "foo")))
-  (is (equal "123abc" (pad-start "abc" 6 "123456"))))
+  (is (equal "123abc" (pad-start "abc" 6 "123456")))
+
+  (signals type-error
+    (is (equal "x" (pad-start "" 3 #((progn (error "Don't eval me!")))))))
+
+  ;; ECMA suite.
+  (signals type-error
+    (pad-start "abc" 10 'symbol))
+  (signals type-error
+    (pad-start nil 1))
+  (signals type-error
+    (pad-start 'symbol 1))
+  (is (equal "abc" (pad-start "abc" 5 "")))
+  (is (equal "   abc" (pad-start "abc" 6)))
+  (is (equal "**abc" (pad-start "abc" 5 "*")))
+  (locally (declare (notinline pad-start))
+    (is (equal "**abc" (pad-start "abc" 5 "*"))))
+  (is (equal "**abc" (pad-start "abc" 5 #\*))))
 
 (test pad-end
   (is (equal "123   " (pad-end "123" 6)))
@@ -42,4 +59,18 @@
   ;; Possibly surprising behaviors.
   (is (equal "2016YYYY-M" (pad-end "2016" 10 "YYYY-MM-DD")))
   (let ((year "2016"))
-    (is (equal "2016-MM-DD" (pad-end year 10 (subseq "YYYY-MM-DD" (length year)))))))
+    (is (equal "2016-MM-DD" (pad-end year 10 (subseq "YYYY-MM-DD" (length year))))))
+
+  (signals type-error
+    (is (equal "x" (pad-end "" 3 #((progn (error "Don't eval me!")))))))
+
+  ;; ECMA
+  (signals type-error
+    (pad-end "abc" 10 'symbol))
+  (is (equal "abc" (pad-end "abc" 5 "")))
+  (is (equal "abc  " (pad-end "abc" 5)))
+  (is (equal "abcdefd" (pad-end "abc" 7 "def")))
+  (is (equal "abc**" (pad-end "abc" 5 "*")))
+  (locally (declare (notinline pad-end))
+    (is (equal "abc**" (pad-end "abc" 5 "*"))))
+  (is (equal "abc**" (pad-end "abc" 5 #\*))))

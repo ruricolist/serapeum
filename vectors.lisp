@@ -50,15 +50,15 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                   (lret* ((offset (- length (length vec)))
                           (element-type (array-element-type vec))
                           (out (make-array length :element-type element-type)))
+                    (replace out vec :start1 offset)
                     (loop for i from 0 below offset by pad-len do
-                      (replace out pad :start1 i :end1 offset))
-                    (replace out vec :start1 offset))))))
+                      (replace out pad :start1 i :end1 offset)))))))
         (t
          (lret* ((offset (- length (length vec)))
                  (element-type (array-element-type vec))
                  (out (make-array length :element-type element-type)))
-           (fill out pad :end offset)
            (replace out vec :start1 offset)
+           (fill out pad :end offset)
            out))))
 
 (define-compiler-macro pad-start (&whole call vec len

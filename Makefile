@@ -2,13 +2,15 @@ asdf='(uiop:quit (if (asdf:test-system :serapeum) 0 1))'
 
 source_files = $(wildcard *.lisp)
 
+CCL = ccl
+
 all: REFERENCE.md
 
 %.html: %.md
 	pandoc $< -o $@
 
 REFERENCE.md: $(source_files) $(wildcard $(source_files:.lisp=.md))
-	ccl --load docs.lisp
+	$(CCL) --load docs.lisp
 
 .PHONY: test-sbcl test-ccl test-ecl test
 

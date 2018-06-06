@@ -58,7 +58,10 @@ If PAD is not a sequence, it is used to fill the remainder of VEC.
 PAD defaults to the space character.
 
 This function is most useful for strings, but it can be used with any
-vector."
+vector. Note that the vector returned has the same element type as
+VEC, so PAD must satisfy that element type.
+
+Loosely inspired by ECMA."
   (declare (vector vec)
            (array-length length))
   (cond ((>= (length vec) length) vec)
@@ -91,26 +94,8 @@ vector."
     vector)
 (defun pad-end (vec length &optional (pad #\Space))
   "Pad VEC, a vector, to LENGTH, using PAD.
-If VEC is already the same length, or longer, than LENGTH, return VEC
-unchanged.
-
-    (pad-end \"abc\" 3)
-    => \"abc\"
-
-If PAD is a sequence, then it is repeated after VEC to make up LENGTH.
-
-    (pad-end \"abc\" 9 \"def\")
-    => \"abcdefdef\"
-
-If PAD is not a sequence, it is used to fill the remainder of VEC.
-
-    (pad-end \"abc\" 6 #\x)
-    => \"abcxxx\"
-
-PAD defaults to the space character.
-
-This function is most useful for strings, but it can be used with any
-vector."
+Like `pad-start', but padding is addded to the end, rather than the
+beginning."
   (declare (vector vec)
            (array-length length))
   (cond ((>= (length vec) length) vec)
@@ -138,6 +123,8 @@ vector."
   (expand-pad-x call 'pad-end env vec len pad))
 
 (defun expand-pad-x (call fn env vec len pad)
+  "Auxiliary function for `pad-X' compiler macros.
+Optimizes some cases where PAD is a constant sequence."
   (if (not (typep pad 'sequence)) call
       (case (length pad)
         (0

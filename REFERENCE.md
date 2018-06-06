@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (33 files, 321 functions)
+# Function Listing For SERAPEUM (33 files, 323 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -3833,6 +3833,43 @@ Succinct constructor for adjustable vectors with fill pointers.
 The fill pointer is placed after the last element in INITIAL-CONTENTS.
 
 [View source](vectors.lisp#L4)
+
+### `(pad-start vec length &optional pad)`
+
+Pad VEC, a vector, to LENGTH, using PAD.
+If VEC is already the same length, or longer, than LENGTH, return VEC
+unchanged.
+
+    (pad-start "abc" 3)
+    => "abc"
+
+If PAD is a sequence, then it is repeated before VEC to make up LENGTH.
+
+    (pad-start "abc" 9 "def")
+    => "defdefabc"
+
+If PAD is not a sequence, it is used to fill the remainder of VEC.
+
+    (pad-start "abc" 6 #x)
+    => "xxxabc"
+
+PAD defaults to the space character.
+
+This function is most useful for strings, but it can be used with any
+vector. Note that the vector returned has the same element type as
+VEC, so PAD must satisfy that element type.
+
+Loosely inspired by ECMA.
+
+[View source](vectors.lisp#L40)
+
+### `(pad-end vec length &optional pad)`
+
+Pad VEC, a vector, to LENGTH, using PAD.
+Like `pad-start`, but padding is addded to the end, rather than the
+beginning.
+
+[View source](vectors.lisp#L95)
 
 ## Vector=
 

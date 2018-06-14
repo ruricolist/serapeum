@@ -63,7 +63,8 @@
                  (:file "octets"
                   :depends-on ("types"))
                  (:file "time")
-                 (:file "clos")
+                 (:file "clos"
+                  :depends-on ("binding"))
                  (:file "hooks")
                  (:file "fbind"
                   :depends-on ("binding" "control-flow" "op" "iter"))))

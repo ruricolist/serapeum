@@ -83,6 +83,18 @@ Which is equivalent to:
 Note in particular that `self' can appear in any position, and that
 you can freely specialize the other arguments.
 
+Just as in `with-slots', slots can be renamed:
+
+    (defmethods my-class (self (abscissa x) (ordinate y))
+      ...)
+
+You can also use `defmethods' in place of `with-accessors', by using a
+function-quote:
+
+    (defmethods my-class (self (x #'my-class-x)
+                               (y #'my-class-y))
+      ...)
+
 \(The difference from using `with-slots' is the scope of the slot
 bindings: they are established *outside* of the method definition,
 which means argument bindings shadow slot bindings:
@@ -103,28 +115,38 @@ Note that `defmethods' may also be useful when converting state
 machines written using `labels' into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust."
-  (multiple-value-bind (body decls) (parse-body body)
-    (multiple-value-bind (slot-decls decls) (partition-declarations slots decls)
-      `(macrolet ((:method (name &body body)
-                    (let* ((class ',class)
-                           (self ',self)
-                           (slots ',slots)
-                           (qualifier (when (not (listp (car body))) (pop body)))
-                           (args (pop body))
-                           (docstring (when (stringp (car body)) (pop body)))
-                           (args-with-self (substitute (list self class) self args)))
-                      (when (equal args-with-self args)
-                        (error "No binding for ~s in ~s" self args))
-                      `(symbol-macrolet ,(loop for slot in slots
-                                               ;; Same as with-slots, use
-                                               ;; (x y) alias slot Y to
-                                               ;; var X.
-                                               for alias = (if (listp slot) (first slot) slot)
-                                               for slot-name = (if (listp slot) (second slot) slot)
-                                               collect `(,alias (slot-value ,self ',slot-name)))
-                         ,@',slot-decls
-                         (defmethod ,name ,@(unsplice qualifier) ,args-with-self
-                           ,@(unsplice docstring)
-                           ,@body)))))
-         ,@decls
-         ,@body))))
+  (mvlet* ((slot-names slot-binds
+            (loop for slot in slots
+                  if (listp slot)
+                    collect slot into slot-binds
+                    and collect (first slot) into slot-names
+                  else
+                    collect slot into slot-names
+                    and collect (list slot slot) into slot-binds
+                  finally (return (values slot-names slot-binds))))
+           (body decls
+            (parse-body body))
+           (slot-decls decls
+            (partition-declarations slot-names decls)))
+    `(macrolet ((:method (name &body body)
+                  (let* ((class ',class)
+                         (self ',self)
+                         (slot-binds ',slot-binds)
+                         (qualifier (when (not (listp (car body))) (pop body)))
+                         (args (pop body))
+                         (docstring (when (stringp (car body)) (pop body)))
+                         (args-with-self (substitute (list self class) self args)))
+                    (when (equal args-with-self args)
+                      (error "No binding for ~s in ~s" self args))
+                    `(symbol-macrolet ,(loop for (alias ref) in slot-binds
+                                             collect (ematch ref
+                                                       ((and ref (type symbol))
+                                                        `(,alias (slot-value ,self ',ref)))
+                                                       ((list 'function fn)
+                                                        `(,alias (,fn ,self)))))
+                       ,@',slot-decls
+                       (defmethod ,name ,@(unsplice qualifier) ,args-with-self
+                         ,@(unsplice docstring)
+                         ,@body)))))
+       ,@decls
+       ,@body)))

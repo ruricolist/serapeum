@@ -2617,6 +2617,18 @@ Which is equivalent to:
 Note in particular that `self` can appear in any position, and that
 you can freely specialize the other arguments.
 
+Just as in `with-slots`, slots can be renamed:
+
+    (defmethods my-class (self (abscissa x) (ordinate y))
+      ...)
+
+You can also use `defmethods` in place of `with-accessors`, by using a
+function-quote:
+
+    (defmethods my-class (self (x #'my-class-x)
+                               (y #'my-class-y))
+      ...)
+
 (The difference from using `with-slots` is the scope of the slot
 bindings: they are established *outside* of the method definition,
 which means argument bindings shadow slot bindings:

@@ -506,14 +506,16 @@ them sane initialization values."
                    (splice-forms self body))))
 
           ((prog1 f &body body)
-           (if (constantp f)
-               `(progn
-                  ,@body
-                  ,f)
-               (with-unique-names (temp)
-                 `(let ((,temp ,f))
-                    ,@body
-                    ,temp))))
+           (let ((form
+                   (if (constantp f)
+                       `(progn
+                          ,@body
+                          ,f)
+                       (with-unique-names (temp)
+                         `(let ((,temp ,f))
+                            ,@body
+                            ,temp)))))
+             (expand-partially self form)))
 
           ((multiple-value-prog1 f &body body)
            (if (constantp f)

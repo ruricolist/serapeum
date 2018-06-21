@@ -75,7 +75,9 @@ part of the arguments to compare, and compares them using TEST."
   ;; TODO See if any other implementations expose something similar.
   #+ccl `(ccl:dovector (,var ,vec ,@(unsplice return))
            ,@body)
-  #-ccl `(map nil (lambda (,var) ,@body) ,vec))
+  #+sbcl `(sb-int:dovector (,var ,vec ,@(unsplice return))
+            ,@body)
+  #-(or ccl sbcl) `(map nil (lambda (,var) ,@body) ,vec))
 
 (define-do-macro %do-each ((var seq &optional return) &body body)
   "Only for Lisps that do not support extensible sequences."

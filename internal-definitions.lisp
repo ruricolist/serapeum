@@ -637,7 +637,10 @@ them sane initialization values."
   (let* ((body (expand-top self body))
          (fn-names (mapcar (lambda (x) `(function ,(car x))) labels))
          (var-names (append (mapcar #'first hoisted-vars) vars))
-         (aliased-vars (mapcar #'first var-aliases)))
+         (aliased-vars (mapcar #'first var-aliases))
+         ;; XXX This is needed by ABCL 1.5.0. If I can work up a
+         ;; minimal example it should be reported as a bug.
+         #+abcl (decls decls))
     (when (null exprs)
       (simple-style-warning "No expressions in `local' form"))
     (mvlet* ((var-decls decls     (partition-declarations var-names decls))

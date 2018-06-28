@@ -113,7 +113,7 @@
                 ((:file "macro-tools")
                  (:file "types")
                  (:file "definitions")
-                 (:file "defining-types")
+                 (:file "defining-types" :if-feature (:not :abcl))
                  (:file "internal-definitions")
                  (:file "binding")
                  (:file "control-flow")

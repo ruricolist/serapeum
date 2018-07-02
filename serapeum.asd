@@ -92,7 +92,8 @@
                  (:file "internal-definitions")
                  (:file "tree-case")
                  (:file "dispatch-case")
-                 (:file "range" :depends-on ("dispatch-case"))))))
+                 (:file "range" :depends-on ("dispatch-case"))
+                 (:file "generalized-arrays" :depends-on ("range"))))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."

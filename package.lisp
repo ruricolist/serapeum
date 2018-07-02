@@ -1,5 +1,4 @@
 ;;;; package.lisp
-
 (defpackage #:serapeum
   (:use :cl :alexandria :split-sequence :parse-number
     :named-readtables :tcr.parse-declarations-1.0
@@ -379,7 +378,21 @@
    #:tree-ecase
    #:char-case
    #:char-ecase
-   #:with-read-only-vars))
+   #:with-read-only-vars
+   ;; Generalized arrays.
+   #:tally
+   #:shape
+   #:valence
+   #:reshape
+   #:ravel
+   #:tell
+   #:array=
+   #:each
+   #:each-right
+   #:each-left
+   #:link
+   #:sum
+   #:prod))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

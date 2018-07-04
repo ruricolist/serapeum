@@ -144,4 +144,5 @@
                  (:file "tree-case")
                  (:file "dispatch-case")
                  (:file "range")
+                 (:file "generalized-arrays")
                  (:file "quicklisp")))))

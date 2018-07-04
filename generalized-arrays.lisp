@@ -3,9 +3,11 @@
   (:export
    :tally
    :valence
-   :shape
-   :reshape
-   :ravel)
+   :each
+   :each-left
+   :each-right
+   :tell
+   :array=)
   (:documentation "Implementation of generalized arrays.")
   #+sb-package-locks (:implement :serapeum :serapeum/dispatch-case))
 (in-package :serapeum/generalized-arrays)

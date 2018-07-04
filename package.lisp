@@ -380,17 +380,9 @@
    #:char-ecase
    #:with-read-only-vars
    ;; Generalized arrays.
-   #:tally
    #:shape
-   #:valence
    #:reshape
    #:ravel
-   #:tell
-   #:array=
-   #:each
-   #:each-right
-   #:each-left
-   #:link
    #:sum
    #:prod))
 

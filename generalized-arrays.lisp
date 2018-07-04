@@ -14,6 +14,8 @@
 ;;; prefix for generalized array operations.
 
 (defsubst tally (array)
+  "Return the total size of ARRAY, a generalized array.
+For a true array this is equivalent to `array-total-size'."
   ;; (reduce #'* (shape array))
   (typecase array
     (sequence (length array))
@@ -21,6 +23,8 @@
     (t 0)))
 
 (defsubst shape (array)
+  "Return the shape of ARRAY, a generalized array.
+For a true array this is equivalent to `array-dimensions'."
   (typecase array
     (sequence (list (length array)))
     (array (array-dimensions array))
@@ -28,6 +32,8 @@
     (otherwise nil)))
 
 (defsubst valence (array)
+  "Return the number of dimensions of ARRAY, a generalized array.
+For a true array this is equivalent to `array-rank'."
   ;; (tally (shape array))
   (typecase array
     (sequence 1)
@@ -35,6 +41,7 @@
     (t 0)))
 
 (defsubst shape= (array1 array2)
+  "Return true if ARRAY1 and ARRAY2 have the same shape."
   ;; (equal (shape array1) (shape array2))
   (typecase array1
     (sequence
@@ -95,8 +102,8 @@ OBJECT."
               :element-type (array-element-type array)))
 
 (defun reshape (shape array &key (element-type t) (displace t))
-  "Return an array that has the same items as ARRAY, but whose shape
-is SHAPE.
+  "Return an array that has the same items as ARRAY, a generalized
+array, but whose shape is SHAPE.
 
 If the resulting array is smaller than ARRAY, then discard the excess
 items.
@@ -314,6 +321,8 @@ identical and has a more distinctive name."
       (pairwise fn (coerce xs 'vector))))
 
 (defun sum (array)
+  "Return the sum of all of the elements of ARRAY, a generalized array.
+Operates pairwise for numerical stability."
   (etypecase array
     (bit-vector
      (with-type-dispatch (simple-bit-vector bit-vector) array
@@ -323,6 +332,8 @@ identical and has a more distinctive name."
     (number array)))
 
 (defun prod (array)
+  "Return the product of all of the elements of ARRAY, a generalized array.
+Operates pairwise for numerical stability."
   (etypecase array
     (bit-vector
      (with-type-dispatch (simple-bit-vector bit-vector) array

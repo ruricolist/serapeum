@@ -69,3 +69,23 @@
   (is (prime? 7))
   (is (not (prime? 8)))
   (is (array= #(nil t t nil t nil t nil) (sieve (count* 8)))))
+
+(test sum
+  (is (= 0 (sum '())))
+  (is (= 1 (sum '(1))))
+  (let ((xs (range 1000)))
+    (is (= (reduce #'+ xs)
+           (sum xs))))
+  (let ((xs (range 1001)))
+    (is (= (reduce #'+ xs)
+           (sum xs)))))
+
+(test prod
+  (is (= 1 (prod '())))
+  (is (= 1 (prod '(1))))
+  (let ((xs (range 1000)))
+    (is (= (reduce #'* xs)
+           (prod xs))))
+  (let ((xs (range 1001)))
+    (is (= (reduce #'* xs)
+           (prod xs)))))

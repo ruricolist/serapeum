@@ -316,9 +316,7 @@ identical and has a more distinctive name."
     (pairwise 0 (length xs))))
 
 (defun pairwise (fn xs)
-  (if (vectorp xs)
-      (reduce-vector-pairwise fn xs)
-      (pairwise fn (coerce xs 'vector))))
+  (reduce-vector-pairwise fn (coerce xs 'vector)))
 
 (defun sum (array)
   "Return the sum of all of the elements of ARRAY, a generalized array.

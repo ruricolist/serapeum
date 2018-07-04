@@ -20,7 +20,8 @@
                "introspect-environment"
                "global-vars"
                "trivial-file-size"
-               "trivial-macroexpand-all")
+               "trivial-macroexpand-all"
+               (:feature :abcl (:require :extensible-sequences)))
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.
@@ -113,7 +114,7 @@
                 ((:file "macro-tools")
                  (:file "types")
                  (:file "definitions")
-                 (:file "defining-types")
+                 (:file "defining-types" :if-feature (:not :abcl))
                  (:file "internal-definitions")
                  (:file "binding")
                  (:file "control-flow")

@@ -41,6 +41,9 @@
    (array= '(5 3 1)
            (frequency "abc" "The cat sat on the baseball bat"))))
 
+(defun divisible-by (a b)
+  (if (zerop (mod a b)) 1 0))
+
 (test each-right
   (is
    (array= #*11010001
@@ -48,9 +51,6 @@
 
   (is
    (= 4 (sum (each-right 8 #'divisible-by (count* 8))))))
-
-(defun divisible-by (a b)
-  (if (zerop (mod a b)) 1 0))
 
 (defun number-of-divisors (n)
   (sum (each-right n #'divisible-by (count* n))))

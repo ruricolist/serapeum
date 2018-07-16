@@ -1,17 +1,16 @@
 (in-package #:serapeum)
 
-;;; NB We use to use non-recursive locks here, but on comparison with
-;;; other languages providing a `synchronized' keyword (Java,
-;;; Objective-C, C#, D) they all use a recursive lock, so that is what
-;;; we now use here.
+;;; NB We used to use non-recursive locks here, but it turns out all
+;;; languages providing a `synchronized' keyword (Java, Objective-C,
+;;; C#, D) use recursive locks, so that is what we use now.
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defconstant +lock-class+ (class-of (bt:make-recursive-lock))))
 
-;;; Note that we need, relatively speaking, a lot of space for locks.
-;;; In, say, Java, only a handful of locks need exist at a time. But
-;;; in Lisp I often use `synchronized' on symbols, which of course are
-;;; rarely, if ever, garbage collected. Thus our use of hash tables.
+;;; We need more space for locks than you might expect. In, say, Java,
+;;; only a handful of locks exist at a time. But in Lisp I often use
+;;; `synchronized' on symbols, which of course are rarely \(if ever)
+;;; garbage-collected. Thus our use of a hash table instead of a list.
 
 (defvar *monitors*
   (tg:make-weak-hash-table

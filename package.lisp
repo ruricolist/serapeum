@@ -384,7 +384,9 @@
    #:reshape
    #:ravel
    #:sum
-   #:prod))
+   #:prod
+   ;; Reader.
+   #:with-standard-input-syntax))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

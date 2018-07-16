@@ -40,20 +40,33 @@
 (define-do-macro %do-hash (((key var) hash-table &optional ret) &body body)
   `(maphash (lambda (,key ,var) ,@body) ,hash-table))
 
+(define-do-macro %do-hash/opt (((key &optional (var (gensym (string 'var))))
+                                hash-table &optional ret)
+                               &body body)
+  `(maphash (lambda (,key ,var) (declare (ignorable ,var)) ,@body) ,hash-table))
+
 (test define-do-macro
   (local
     (let ((seq #(1 2 3 4 5)))
-      (seq= seq
-            (collecting
-              (%do-each (x seq nil) (collect x)))))
+      (is
+       (seq= seq
+             (collecting
+               (%do-each (x seq nil) (collect x))))))
 
     (let ((hash (dict :x 1 :y 2 :z 3)))
       (is (set-equal '(1 2 3)
                      (collecting
                        (%do-hash ((key var) hash)
-                                 (declare (ignore key))
-                                 (collect var)))))
+                         (declare (ignore key))
+                         (collect var)))))
+      (is (set-equal '(:x :y :z)
+                     (collecting
+                       (%do-hash/opt ((key) hash)
+                         (collect key)))))
 
       (is (eql 'done
                (%do-hash ((key var) hash 'done)
-                         (declare (ignore key var))))))))
+                 (declare (ignore key var)))))
+      (is (eql 'done
+               (%do-hash/opt ((key) hash 'done)
+                 (declare (ignore key))))))))

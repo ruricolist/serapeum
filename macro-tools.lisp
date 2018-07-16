@@ -317,8 +317,11 @@ Using `define-do-macro' takes care of all of this for you.
                  ,hash-table))"
   (let* ((opts (member '&optional (car binds)))
          (ret-var (cadr opts))
-         ;; Handle both (key value table) and ((key value) table).
-         (iter-vars (flatten (butlast (ldiff (car binds) opts))))
+         ;; Handle both (key value table) and ((key value) table) as
+         ;; well as ((key &optional value) table).
+         (iter-vars (mappend (compose #'lambda-list-vars
+                                      #'ensure-list)
+                             (butlast (ldiff (car binds) opts))))
          (body-var (cadr (member '&body (cdr binds)))))
     (unless ret-var
       (error "No binding for return form in ~s" (car binds)))

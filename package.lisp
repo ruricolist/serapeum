@@ -24,6 +24,7 @@
    #:define-case-macro
    #:eval-if-constant
    #:parse-leading-keywords
+   #:with-read-only-vars
    ;; Types.
    #:supertypep
    #:proper-subtype-p
@@ -378,7 +379,7 @@
    #:tree-ecase
    #:char-case
    #:char-ecase
-   #:with-read-only-vars
+   #:do-splits
    ;; Generalized arrays.
    #:shape
    #:reshape

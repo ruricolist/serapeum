@@ -232,3 +232,16 @@
   (is (seq= '("xyz") #((#\x #\y #\z))))
   (is (not (seq= '("xyza") #((#\x #\y #\z)))))
   (is (not (seq= '("xyz") #((#\x #\y #\z #\a))))))
+
+(defun split-seq/do-splits (seq fn &key from-end)
+  (collecting
+    (do-splits ((l r) (seq fn :from-end from-end))
+      (collect (subseq seq l r)))))
+
+(test do-splits
+  (is (equalp (split-sequence-if #'oddp #())
+              (split-seq/do-splits #() #'oddp)))
+  (is (equalp (split-sequence-if #'oddp #(1 2))
+              (split-seq/do-splits #(1 2) #'oddp)))
+  (is (equalp (split-sequence-if #'oddp #(1 2 3))
+              (split-seq/do-splits #(1 2 3) #'oddp))))

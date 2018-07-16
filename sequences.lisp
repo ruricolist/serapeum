@@ -1537,3 +1537,67 @@ both sequences of the same length and their elements are all `seq='."
     ((list x) `(progn ,x t))
     ((list x y) `(seq=/2 ,x ,y))
     (otherwise call)))
+
+(defun map-splits (fn split-fn seq start end from-end)
+  (if from-end
+      (map-splits-from-end fn split-fn seq start end)
+      (map-splits-from-start fn split-fn seq start end)))
+
+(defun map-splits-from-start (fn split-fn seq start end)
+  (fbind (fn)
+    (let ((start (or start 0))
+          (end (or end (length seq))))
+      (loop with len = (length seq)
+            for left = start then (1+ right)
+            for right = (min (or (position-if split-fn seq
+                                              :start left)
+                                 len)
+                             end)
+            do (fn left right (/= right end))
+            until (>= right end)))))
+
+(defun map-splits-from-end (fn split-fn seq start end)
+  (fbind (fn)
+    (loop
+      for right = end then left
+      for left = (max (or (position-if split-fn
+                                       seq
+                                       :end right
+                                       :from-end t)
+                          -1)
+                      (1- start))
+      collect (fn left right (/= right end))
+      until (< left start))))
+
+(define-do-macro do-splits (((left right &optional not-at-end?)
+                             (seq split-fn &key (start 0) end from-end)
+                             &optional return)
+                            &body body)
+  "For each run of elements in SEQ that does not satisfy SPLIT-FN, call the body with LEFT bound to the start of the run and RIGHT bound to the end of the run.
+
+If `split-sequence-if' did not exist, you could define a simple version trivially with `do-splits' and `collecting':
+
+    (defun split-sequence-if (fn seq &key (start 0) end from-end)
+      (collecting
+        (do-splits ((l r) (seq fn :start start :end end :from-end from-end))
+          (collect (subseq seq l r)))))
+
+Providing NOT-AT-END? will bind it as a variable that is T if RIGHT is
+not equal to END, and null otherwise. This can be useful when, in
+processing a sequence, you want to replace existing delimiters, but do
+nothing at the end.
+
+In general `do-splits' will be found useful in situations where you
+want to iterate over subsequences in the manner of `split-sequence',
+but don't actually need to realize the sequences."
+  (let ((c (or not-at-end? (gensym))))
+    (with-unique-names (fn)
+      `(flet ((,fn (,left ,right &optional ,c)
+                (declare
+                 (type array-index ,left)
+                 (type array-length ,right)
+                 (type boolean ,c)
+                 ,@(unsplice (unless not-at-end? `(ignorable ,c))))
+                ,@body))
+         (declare (dynamic-extent #',fn))
+         (map-splits #',fn ,split-fn ,seq ,start ,end ,from-end)))))

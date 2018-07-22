@@ -436,7 +436,7 @@ and may or may not have an effect when used on special variables."
                                   collect `(,var (read-only-var ,temp ,var)))
             ,@body))))
     (t
-     `(progn ,@body))))
+     `(locally ,@body))))
 
 (defun expand-read-only-var (var env)
   (ematch var

@@ -407,10 +407,10 @@ Functions\", by Irène Durand and Robert Strandh."
   (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
   (let ((types (simplify-subtypes types)))
     (cond ((null types)
-           `(progn ,@body))
+           `(locally ,@body))
           ((space-beats-speed? env)
            (simple-style-warning "Not using type dispatch (space>speed).")
-           `(progn ,@body))
+           `(locally ,@body))
           ;; The advantage of the CMUCL/SBCL way (I hope) is that the
           ;; compiler can decide /not/ to bother inlining if the type
           ;; is such that it cannot do any meaningful optimization.

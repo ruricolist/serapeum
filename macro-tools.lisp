@@ -84,6 +84,15 @@ You can write:
 
     `(.... ,@(unsplice (when flag '(code))))
 
+It may be especially helpful when splicing in variables. Instead of
+writing:
+
+    `(.... ,@(and docstring `(,docstring)))
+
+You can simply write:
+
+   `(.... ,@(unsplice docstring))
+
 From Lparallel."
   (if form
       (list form)

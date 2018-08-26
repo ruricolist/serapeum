@@ -628,18 +628,18 @@ Otherwise, leave the keylist alone."
                 ;; Easy case. No lists of keys; do nothing special.
                 (funcall cont expr-temp default clauses)
                 ;; This could be done two ways: with flet or with
-                ;; tagbody. I'm opting to use the version with flet
-                ;; here, as I think it results in a more readable
-                ;; expansion, and probably makes the job of type
-                ;; inference easier. If it proves too expensive,
-                ;; however, switching back to tagbody is
-                ;; straightforward: just swap out
+                ;; tagbody. Switching is straightforward: just swap
                 ;; `expand-case-macro/flet' for
-                ;; `expand-case-macro/tagbody'. (It might even be
-                ;; worth using different expansions on different
-                ;; Lisps.)
-                (expand-case-macro/flet cont expr-temp clauses default
-                                        :macro-name macro-name)))))))
+                ;; `expand-case-macro/tagbody', or vice versa. (It
+                ;; might even be worth using different expansions on
+                ;; different Lisps.)
+                (let ((expander
+                        (case uiop:*implementation-type*
+                          ((:sbcl :cmu) #'expand-case-macro/flet)
+                          (t #'expand-case-macro/tagbody))))
+                  (funcall expander
+                           cont expr-temp clauses default
+                           :macro-name macro-name))))))))
 
 (defun expand-case-macro/common (clauses &key jump macro-name)
   (check-type jump function)
@@ -686,7 +686,9 @@ Otherwise, leave the keylist alone."
          (tagbody
             (return-from ,case-block
               ,(funcall cont expr-temp default clauses))
-            ,@(apply #'append dests))))))
+            ,@(loop for (sym . body) in dests
+                    append `(,sym (return-from ,case-block
+                                    ,@body))))))))
 
 (define-condition case-failure (type-error)
   ()

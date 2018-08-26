@@ -18,19 +18,25 @@ Comparison is done using `eql'."
                :datum key
                :expected-type 'integer))))
   (let ((cases (sort (copy-list cases) #'< :key #'first))
+        (block (string-gensym 'block))
         (fail (string-gensym 'fail)))
     (labels ((rec (keyform cases)
                (if (< (length cases) 4)
                    `(case ,keyform
-                      ,@cases
-                      (t (,fail)))
+                      ,@(loop for (key . body) in cases
+                              collect `(,key (return-from ,block
+                                               (progn ,@body))))
+                      (t (go ,fail)))
                    (mvlet* ((left-cases right-cases (halves cases))
                             (split (caar right-cases)))
                      `(if (< ,keyform ,split)
                           ,(rec keyform left-cases)
                           ,(rec keyform right-cases))))))
-      `(flet ((,fail () ,@default))
-         ,(rec keyform cases)))))
+      `(block ,block
+         (tagbody
+            ,(rec keyform cases)
+            ,fail (return-from ,block
+                    (progn ,@default)))))))
 
 (define-case-macro tree-ecase (keyform &body clauses)
     (:error t)
@@ -57,7 +63,7 @@ can be specified as a literal string.
         (\"aeiouy\" t)))
 
 Signals an error if KEYFORM does not evaluate to a character."
-  `(char-case-1 (assure character ,keyform)
+  `(char-case-1 ,keyform
      ,@(expand-char-case-keys clauses)))
 
 (defmacro char-ecase (keyform &body clauses)

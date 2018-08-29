@@ -387,7 +387,12 @@
    #:sum
    #:prod
    ;; Reader.
-   #:with-standard-input-syntax))
+   #:with-standard-input-syntax
+   ;; Packages.
+   #:package-exports
+   #:package-names
+   #:package-name-keyword
+   #:find-external-symbol))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

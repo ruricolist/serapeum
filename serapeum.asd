@@ -25,42 +25,37 @@
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.
+               (:file "macro-tools")    ;Very early.
                (:module "level0"
                 :serial nil
                 :pathname ""
                 :components
-                ((:file "macro-tools")
-                 (:file "types")
+                ((:file "types")
                  (:file "definitions"
-                  :depends-on ("macro-tools" "iter"))
+                  :depends-on ("iter"))
                  (:file "defining-types"
-                  :depends-on ("macro-tools" "iter"))
-                 (:file "binding"
-                  :depends-on ("macro-tools"))
-                 (:file "control-flow"
-                  :depends-on ("macro-tools"))
+                  :depends-on ("iter"))
+                 (:file "binding")
+                 (:file "control-flow")
                  (:file "threads")
-                 (:file "iter"
-                  :depends-on ("macro-tools"))
+                 (:file "iter")
                  (:file "conditions")
                  (:file "op")
                  (:file "functions"
-                  :depends-on ("macro-tools" "types" "hash-tables" "iter"))
-                 (:file "trees"
-                  :depends-on ("macro-tools"))
+                  :depends-on ("types" "hash-tables" "iter"))
+                 (:file "trees")
                  (:file "hash-tables"
                   :depends-on ("iter" "types" "control-flow"))
                  (:file "files"
                   :depends-on ("types"))
-                 (:file "symbols"
-                  :depends-on ("macro-tools"))
+                 (:file "symbols")
                  (:file "arrays")
                  (:file "queue"
                   :depends-on ("types"))
                  (:file "box"
                   :depends-on ("types" "definitions"))
                  (:file "numbers"
-                  :depends-on ("macro-tools" "types"))
+                  :depends-on ("types"))
                  (:file "octets"
                   :depends-on ("types"))
                  (:file "time")

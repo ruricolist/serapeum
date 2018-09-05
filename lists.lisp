@@ -304,8 +304,8 @@ This uses the technique described by Durand and Strandh in their paper
 presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
   (declare (optimize (speed 3)
                      (safety 1)
-                     (debug 0)
                      (compilation-speed 0)))
+  #.+merge-tail-calls+
   (symbol-macrolet ((small 10000)
                     (big 100000000))
     (labels ((aux1 (fun list length)

@@ -9,7 +9,7 @@ Given an array and a row-major index, return a list of subscripts.
      (apply #'aref (array-index-row-major i))
      ≡ (array-row-major-aref i)"
   (declare (array-index row-major-index)
-           (optimize (speed 3) (safety 1) (debug 0)))
+           (optimize (speed 3) (safety 1)))
   (nlet rec ((subs (list row-major-index))
              (dims (reverse (rest (array-dimensions array)))))
     (if (null dims) subs

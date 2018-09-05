@@ -25,6 +25,7 @@
    #:eval-if-constant
    #:parse-leading-keywords
    #:with-read-only-vars
+   #:+merge-tail-calls+
    ;; Types.
    #:supertypep
    #:proper-subtype-p

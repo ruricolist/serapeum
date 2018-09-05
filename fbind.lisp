@@ -110,7 +110,7 @@ may be used to make calling VAR more efficient by avoiding `apply'."
 (defun let-over-lambda (form lexenv)
   "Expand form, using `expand-macro'. If the result is a simple let-over-lambda,
 analyze it into an environment, declarations, and a lambda."
-  (declare (optimize (debug 0)))        ;TCO please.
+  #.+merge-tail-calls+
   (match form
     ;; Special cases for `complement` and `constantly`.
     (`(complement ,fn)

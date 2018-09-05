@@ -98,7 +98,7 @@ that understand such declarations."
        new)))
 
 (defun require-type (datum spec)
-  (declare (optimize (debug 0)))
+  #.+merge-tail-calls+
   (if (typep datum spec)
       datum
       (%require-type datum spec)))
@@ -114,13 +114,13 @@ that understand such declarations."
       call))
 
 (defun %require-type (datum spec)
-  (declare (optimize (debug 0)))
+  #.+merge-tail-calls+
   (let ((new (wrong-type datum spec use-value
                "Supply a value to use instead")))
     (require-type new spec)))
 
 (defun require-type-for (datum spec place)
-  (declare (optimize (debug 0)))
+  #.+merge-tail-calls+
   (if (typep datum spec)
       datum
       (%require-type-for datum spec place)))
@@ -136,7 +136,7 @@ that understand such declarations."
       call))
 
 (defun %require-type-for (datum spec place)
-  (declare (optimize (debug 0)))
+  #.+merge-tail-calls+
   (let ((new (wrong-type datum spec store-value
                (lambda (s) (format s "Supply a new value for ~s" place)))))
     (require-type-for new spec place)))

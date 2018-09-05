@@ -203,7 +203,7 @@ identical and has a more distinctive name."
                       (array-index-row-major array i)))))))
 
 (defun array= (x y)
-  (declare (optimize (debug 0)))
+  #.+merge-tail-calls+
   (and (shape= x y)
        (typecase x
          (sequence

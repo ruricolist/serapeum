@@ -75,8 +75,6 @@
     (otherwise nil)))
 
 (defun rest-op? (x env)
-  (declare (optimize (debug 0)))
-
   #+sbcl
   (block nil
     (sb-walker:walk-form

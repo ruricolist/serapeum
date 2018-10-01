@@ -231,7 +231,10 @@ Return `:upper' or `:lower' as appropriate."
 (-> string-invert-case (string-designator) string)
 (defun string-invert-case (string)
   "Invert the case of STRING.
-This does the same thing as a case-inverting readtable."
+This does the same thing as a case-inverting readtable:
+- If the string is uppercase, downcase the string.
+- If the string is lowercase, upcase the string.
+- If the string is mixed-case, leave it alone."
   (nstring-invert-case (copy-string string)))
 
 (-> words (string &key (:start array-index) (:end (or array-index null)))

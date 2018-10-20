@@ -1418,13 +1418,12 @@ values. Cf. `mvfold'."
                  (rebinding-functions (fn)
                    `(let ,(mapcar #'list tmps seeds)
                       ,(if from-end
-                           `(do-subseq (,item ,seq :from-end t)
+                           `(do-subseq (,item ,seq (values ,@tmps) :from-end t)
                               (setf (values ,@tmps)
                                     (funcall ,fn ,item ,@tmps)))
-                           `(do-each (,item ,seq)
+                           `(do-each (,item ,seq (values ,@tmps))
                               (setf (values ,@tmps)
-                                    (funcall ,fn ,@tmps ,item))))
-                      (values ,@tmps)))))))))
+                                    (funcall ,fn ,@tmps ,item))))))))))))
 
 (define-compiler-macro mvfold (fn seq &rest seeds)
   "Optimize `mvfold' with a fixed number of seeds."

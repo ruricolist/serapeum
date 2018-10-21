@@ -192,6 +192,17 @@
 
     (is (eql :single (extract-format '(name :single))))))
 
+(test (mvfoldr-compiler-macro :compile-at :run-time)
+  (local
+    (defun foo ()
+      (serapeum:mvfoldr (lambda (val min max)
+                          (values (min min val) (max max val)))
+                        (loop for i below 100 collect i)
+                        0
+                        0))
+
+    (is (equal '(0 99) (multiple-value-list (foo))))))
+
 (test repeat-sequence
   (is (equal "131313" (repeat-sequence "13" 3)))
   (is (equal '(13 13 13) (repeat-sequence '(13) 3)))

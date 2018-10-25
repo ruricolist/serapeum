@@ -405,7 +405,12 @@ the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
   (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-  (let ((types (simplify-subtypes types)))
+  (let* ((types (simplify-subtypes types))
+         (var-type (variable-type var env))
+         ;; If the var has a declared type, remove excluded types.
+         (types (remove-if-not (lambda (type)
+                                 (subtypep type var-type env))
+                               types)))
     (cond ((null types)
            `(locally ,@body))
           ((space-beats-speed? env)

@@ -464,7 +464,7 @@ Burson."
 (defmacro ecase-let ((var expr) &body cases)
   "Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only."
   `(let1 ,var ,expr
-     (case ,var
+     (ecase ,var
        ,@cases)))
 
 (defmacro comment (&body body)
@@ -779,7 +779,7 @@ From Zetalisp."
   (with-gensyms (temp)
     `(let ((,temp (make-array ,(length values))))
        (declare (dynamic-extent ,temp))
-       ,@(loop for i from 0 
+       ,@(loop for i from 0
                for v in values
                collect `(setf (svref ,temp ,i) ,v))
        ;; Keep compiler quiet.
@@ -791,7 +791,7 @@ From Zetalisp."
 (defmacro sort-values (pred &rest values)
   "Sort VALUES with PRED and return as multiple values.
 
-Equivalent to 
+Equivalent to
 
     (values-list (sort (list VALUES...) pred))
 

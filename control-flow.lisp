@@ -312,28 +312,23 @@ Stands for “exhaustive if”."
           whole))
   `(if-let ,binds ,then ,else))
 
-(defun format-econd-tests (stream tests)
-  (format stream "~@[~&None of these tests were satisfied: ~
-                    ~{~%~^~a~}~]"
-          tests))
-
 (define-condition econd-failure (error)
-  ((tests :type list :initarg :tests))
-  (:default-initargs :tests nil)
+  ((test-count :type (integer 0 *) :initarg :test-count))
+  (:default-initargs :test-count 0)
   (:report (lambda (c s)
-             (with-slots (tests) c
-               (format s "ECOND fell through.")
-               (format-econd-tests s tests))))
-  (:documentation "A failed ECOND form."))
+             (with-slots (test-count) c
+               (format s "~s fell through after ~d failed test~:p."
+                       'econd test-count))))
+  (:documentation "An ECOND failed."))
 
 (defmacro econd (&body clauses)
   "Like `cond', but signal an error of type `econd-failure' if no
 clause succeeds."
-  (let ((tests (mapcar #'car clauses)))
+  (let ((test-count (length clauses)))
     `(cond ,@clauses
            ;; SBCL will silently eliminate this branch if it is
            ;; unreachable.
-           (t (error 'econd-failure :tests ',tests)))))
+           (t (error 'econd-failure :test-count ',test-count)))))
 
 (defmacro cond-let (var &body clauses)
   "Cross between COND and LET.

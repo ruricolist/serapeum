@@ -76,3 +76,10 @@
         ("b" 2)
         ("c" 3)
         ("x" 4))))
+
+(test econd
+  (declare (optimize (speed 0) (safety 3)))
+  (let ((n (random 10)))
+    (signals econd-failure
+      (econd
+        ((> n 10) (assert nil))))))

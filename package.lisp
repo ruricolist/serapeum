@@ -181,6 +181,7 @@
    ;; Pathnames.
    #:path-join
    #:write-stream-into-file
+   #:write-file-into-stream
    #:file=
    #:file-size
    ;; Symbols.

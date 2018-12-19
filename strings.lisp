@@ -558,51 +558,6 @@ but without consing."
                                (compare-segment left right))
               until (>= right end))))))
 
-(defun string-replace-all/no-arg-parsing (old string new start end stream count)
-  (declare ((or null array-index) start)
-           ((or array-length null) end)
-           ;; Can't be more matches than characters.
-           ((or array-length null) count))
-  (check-type old string)
-  (check-type new string)
-  (check-type string string)
-  (let ((start (or start 0))
-        (new (simplify-string new))
-        (old (simplify-string old)))
-    (declare (array-index start))
-    (with-string-dispatch () string
-      (cond
-        ((not (search old string :start2 start :end2 end))
-         string)
-        ((and count (zerop count))
-         string)
-        ;; The use case in mind here is one where you have a list of
-        ;; substitutions.
-        ((and (= (length new) 1)
-              (= (length old) 1))
-         (substitute new old string :start start :end end :count count))
-        (t
-         (let* ((end (or end (length string)))
-                (len (length old)))
-           (declare (array-length len))
-           (with-string (s stream)
-             (unless (zerop start)
-               (write-string string s :start 0 :end start))
-             (nlet rep ((start start)
-                        (count (or count (1- array-dimension-limit))))
-               (declare (array-length start count))
-               (let ((match (search old string :start2 start :end2 end)))
-                 (declare ((or array-length null) match))
-                 (if (or (not match) (zerop count))
-                     ;; No end, because we want the whole remainder of the
-                     ;; string.
-                     (write-string string s :start start)
-                     (progn
-                       (write-string string s :start start :end match)
-                       (write-string new s)
-                       (rep (+ match len)
-                            (1- count)))))))))))))
-
 (defun string-replace-all (old string new &key (start 0) end stream count)
   "Do search-and-replace for constant strings.
 
@@ -626,16 +581,38 @@ START and END is replaced with NEW.
 
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format'."
-  (string-replace-all/no-arg-parsing old string new start end stream count))
-
-(define-compiler-macro string-replace-all (old string new &key (start 0) end stream count)
-  `(string-replace-all/no-arg-parsing ,old
-                                      ,string
-                                      ,new
-                                      ,start
-                                      ,end
-                                      ,stream
-                                      ,count))
+  (declare ((or null array-index) start)
+           ((or array-length null) end)
+           ;; Can't be more matches than characters.
+           ((or array-length null) count))
+  (check-type old string)
+  (check-type new string)
+  (check-type string string)
+  (let ((start (or start 0))
+        (new (simplify-string new))
+        (old (simplify-string old)))
+    (declare (array-index start))
+    (with-string (s stream)
+      (with-string-dispatch () string
+        (let* ((end (or end (length string)))
+               (len (length old)))
+          (declare (array-length len))
+          (unless (zerop start)
+            (write-string string s :start 0 :end start))
+          (nlet rep ((start start)
+                     (count (or count (1- array-dimension-limit))))
+            (declare (array-length start count))
+            (let ((match (search old string :start2 start :end2 end)))
+              (declare ((or array-length null) match))
+              (if (or (not match) (zerop count))
+                  ;; No end, because we want the whole remainder of the
+                  ;; string.
+                  (write-string string s :start start)
+                  (progn
+                    (write-string string s :start start :end match)
+                    (write-string new s)
+                    (rep (+ match len)
+                         (1- count)))))))))))
 
 (defun string-replace (old string new &key (start 0) end stream)
   "Like `string-replace-all', but only replace the first match."

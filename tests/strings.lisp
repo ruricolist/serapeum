@@ -129,6 +129,20 @@
   (is (equal "quux quux foo"
              (string-replace-all "foo" "foo foo foo" "quux" :count 2))))
 
+(test string-replace-all-to-stream
+  (is (equal
+       (with-output-to-string (s)
+         (string-replace-all "x" "foo" "y" :stream s))
+       "foo"))
+  (is (equal
+       (with-output-to-string (s)
+         (string-replace-all "o" "foo" "u" :stream s))
+       "fuu"))
+  (is (equal
+       (with-output-to-string (s)
+         (string-replace-all "o" "foo" "u" :stream s :count 0))
+       "foo")))
+
 (test chomp
   ;; Remove the longest sequence first.
   (is (equal "abc"

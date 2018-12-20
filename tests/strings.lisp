@@ -117,9 +117,6 @@
 
 (test string-replace-all
   (is (equal (string-replace-all "foo" "foobar" "baz") "bazbar"))
-  (is-true
-   (let ((s "foo, bar"))
-     (eq s (string-replace-all ":" s ""))))
   (is (equal "The new way"
              (string-replace-all "old" "The old way" "new")))
   (is (equal "The new old way"

@@ -3,6 +3,12 @@
 (def-suite vectors :in serapeum)
 (in-suite vectors)
 
+(test ensure-vector
+  (let ((vec #(1)))
+    (is (eq vec (ensure-vector vec))))
+  (is (vectorp (ensure-vector 1)))
+  (is (vectorp (ensure-vector '(1)))))
+
 (test vect
   (is (adjustable-array-p (vect)))
   (is (fill-pointer (vect)))

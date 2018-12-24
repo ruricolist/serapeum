@@ -1,5 +1,11 @@
 (in-package #:serapeum)
 
+(defsubst ensure-vector (x)
+  "If X is a vector, return it.
+Otherwise, return a vector with X as its sole element."
+  (if (vectorp x) x
+      (vector x)))
+
 (-> vect (&rest t) (vector t *))
 (defun vect (&rest initial-contents)
   "Succinct constructor for adjustable vectors with fill pointers.

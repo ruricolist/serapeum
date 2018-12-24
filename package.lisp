@@ -206,6 +206,7 @@
    #:box
    #:unbox
    ;; Vectors.
+   #:ensure-vector
    #:vect
    #:vector=
    ;; Numbers.

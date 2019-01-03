@@ -299,7 +299,7 @@ The general idea is that `juxt` takes things apart."
 Some ancient Lisps had closures without lexical binding. Instead, you
 could \"close over\" pieces of the current dynamic environment. When
 the resulting closure was called, the symbols closed over would be
-bound to their values at the time the closure was created. These
+bound to their storage at the time the closure was created. These
 bindings would persist through subsequent invocations and could be
 mutated. The result was something between a closure and a
 continuation.
@@ -316,15 +316,13 @@ propagate the current value of `*standard-output*':
               ...))))"
   (check-type fn function)
   (let ((symbols (remove-if-not #'boundp symbols)))
-    (if (null symbols)
-        fn
-        (let ((values (mapcar #'symbol-value symbols)))
+    (if (null symbols) fn
+        (let ((storage (map 'vector #'symbol-value symbols)))
           (lambda (&rest args)
             (declare (dynamic-extent args))
-            (progv symbols values
-              (multiple-value-prog1
-                  (apply fn args)
-                (map-into values #'symbol-value symbols))))))))
+            (progv symbols (coerce storage 'list)
+              (multiple-value-prog1 (apply fn args)
+                (map-into storage #'symbol-value symbols))))))))
 
 ;;; See http://www.jsoftware.com/papers/fork.htm.
 

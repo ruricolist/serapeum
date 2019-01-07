@@ -364,6 +364,7 @@
    #:drop
    #:halves
    #:dsu-sort
+   #:dsu-sort-new
    #:deltas
    #:intersperse
    #:toposort

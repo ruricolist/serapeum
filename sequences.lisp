@@ -1196,17 +1196,24 @@ the left."
 (defun dsu-sort (seq fn &key (key #'identity) stable)
   "Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access)."
-  (with-key-fn (key)
-    (map-into seq
-              #'cdr
-              ;; Vectors sort faster.
-              (funcall (if stable #'stable-sort #'sort)
-                       (map 'vector
-                            (lambda (item)
-                              (cons (key item) item))
-                            seq)
-                       fn
-                       :key #'car))))
+  (let ((vec (dsu-sort-new seq fn :key key :stable stable)))
+    (assert (length= vec seq))
+    (replace seq vec)))
+
+(defun dsu-sort-new (seq fn &key (key #'identity) stable)
+  "Like `dsu-sort', but returning a new vector."
+  (let* ((vec
+           ;; Vectors sort faster.
+           (map 'vector
+                (with-key-fn (key)
+                  (lambda (item)
+                    (cons (key item) item)))
+                seq))
+         (vec
+           (funcall (if stable #'stable-sort #'sort)
+                    vec fn
+                    :key #'car)))
+    (map-into vec #'cdr vec)))
 
 (defun deltas (seq &optional (fn #'-))
   "Return the successive differences in SEQ.

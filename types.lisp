@@ -524,7 +524,8 @@ added to ensure that TYPE itself is handled."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key)))
      ,@(if (space-beats-speed? env)
-           body
+           `((macrolet ((,key (x) (list 'funcall ',key x)))
+               ,@body))
            `((cond ((eql ,key #'identity)
                     (macrolet ((,key (x) x))
                       ,@body))

@@ -35,3 +35,15 @@
     (trivia:match ""
       ((assure list x)
        x)))))
+
+(test (with-key-fn :compile-at :run-time)
+  (finishes
+    (locally (declare (optimize (space 3) (speed 0)))
+      (let ((key #'reverse))
+        (serapeum::with-key-fn (key)
+          (key "xyz")))))
+  (finishes
+    (locally (declare (optimize (speed 3) (space 0)))
+      (let ((key #'reverse))
+        (serapeum::with-key-fn (key)
+          (key "xyz"))))))

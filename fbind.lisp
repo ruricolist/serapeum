@@ -294,7 +294,7 @@ a function is syntactic -- but it should never return a false positive
                           ;; We can't compile the function as a macro if
                           ;; there are declarations for it.
                           (partition-declarations (list fq) decls env)
-                          (memq name quoted-functions))))
+                          (member name quoted-functions))))
                      names)))))
 
 (defmacro fbind (bindings &body body &environment *lexenv*)
@@ -337,13 +337,13 @@ symbol)."
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
                         for temp in temps
-                        unless (memq var macro-vars)
+                        unless (member var macro-vars)
                           collect (build-bind/ftype var temp decls env)))
            #-sbcl (declare (inline ,@(set-difference vars macro-vars)))
            ,@decls
            (macrolet (,@(loop for var in vars
                               for temp in temps
-                              when (memq var macro-vars)
+                              when (member var macro-vars)
                                 collect `(,var
                                           (&rest args)
                                           (list* 'funcall ',temp args))))
@@ -402,7 +402,7 @@ BODY is needed because we detect unreferenced bindings by looking for
                ;; useful than it sounds. After all the compiler warns
                ;; you if the function is unused but not declared
                ;; ignored.)
-               (memq expr ignored))
+               (member expr ignored))
              (lambda? (expr)
                ;; Note that `analyze-fbinds' has already done the work
                ;; of exposing lambda inside let.

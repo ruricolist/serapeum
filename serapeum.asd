@@ -66,7 +66,9 @@
                   :depends-on ("binding" "control-flow" "op" "iter"))
                  (:file "reader"
                   :depends-on ("definitions"))
-                 (:file "packages")))
+                 (:file "packages")
+                 (:file "heap"
+                  :depends-on ("types" "fbind"))))
                ;; Level 1 files can use CL, Alexandria, and any
                ;; Serapeum utilities defined at level 0. Intended for
                ;; functions on sequences.

@@ -519,10 +519,11 @@ added to ensure that TYPE itself is handled."
                   (macrolet ((,test (x y) (list 'funcall ',test x y)))
                     ,@body))))))
 
-(defmacro with-key-fn ((key) &body body &environment env)
+(defmacro with-key-fn ((key &optional (key-form key))
+                       &body body &environment env)
   "Specialize BODY on the most common key functions."
   (check-type key symbol)
-  `(let ((,key (canonicalize-key ,key)))
+  `(let ((,key (canonicalize-key ,key-form)))
      ,@(if (space-beats-speed? env)
            `((macrolet ((,key (x) (list 'funcall ',key x)))
                ,@body))

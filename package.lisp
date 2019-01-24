@@ -205,6 +205,13 @@
    ;; Boxes.
    #:box
    #:unbox
+   ;; Heaps.
+   #:make-heap
+   #:heap-insert
+   #:heap-maximum
+   #:heap-extract-maximum
+   #:heap-extract
+   #:heap-extract-all
    ;; Vectors.
    #:ensure-vector
    #:vect

@@ -361,18 +361,21 @@ some implementation tricks from `cl-algebraic-data-type'."
 
        ;; Define the copier.
        (declaim (inline ,copier-name))
-       (defun ,copier-name
-           (,type-name &key
-                         ,@(loop for (slot-name nil) in slots
-                                 for reader in readers
-                                 collect `(,slot-name (,reader ,type-name))))
-         ,(fmt "Copy ~:@(~a~), optionally overriding ~
-some or all of its slots." type-name)
-         (declare (ignorable ,type-name))
-         ;; A copier without slots should be identity.
-         ,(if (null readers)
-              type-name
-              `(,type-name ,@slot-names)))
+       ;; The gensym is needed in case one of the slots has the same
+       ;; name as the type itself.
+       ,(let ((orig (gensym (string type-name))))
+          `(defun ,copier-name
+               (,orig &key
+                        ,@(loop for (slot-name nil) in slots
+                                for reader in readers
+                                collect `(,slot-name (,reader ,orig))))
+             ,(fmt "Copy an instance of ~:@(~a~), optionally ~
+overriding some or all of its slots." type-name)
+             (declare (ignorable ,orig))
+             ;; A copier without slots should be identity.
+             ,(if (null readers)
+                  orig
+                  `(,type-name ,@slot-names))))
 
        ;; Define a load form.
        (defmethod make-load-form ((self ,type-name) &optional env)

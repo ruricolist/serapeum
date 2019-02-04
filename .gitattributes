@@ -1,0 +1,2 @@
+# CRLF breaks the tilde-newline format directive.
+*.lisp text eol=lf

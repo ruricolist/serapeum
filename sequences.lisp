@@ -559,31 +559,45 @@ From Clojure."
             (incf (gethash (key elt) table 0)))))
     (values table total)))
 
-(defun scan (fn seq &key (key #'identity) (initial-value nil initial-value?))
+(defun scan (fn seq
+             &rest args
+             &key from-end
+                  (start 0)
+                  (end (length seq))
+                  (initial-value nil initial-value-supplied?)
+             &allow-other-keys)
   "A version of `reduce' that shows its work.
 
-Instead of returning just the final result, `scan' returns a sequence
+Instead of returning just the final result, `scan' returns a list
 of the successive results at each step.
 
-    (reduce #'+ '(1 2 3 4))
-    => 10
+    (reduce #'+ '(1))       => 1
+    (reduce #'+ '(1 2))     => 3
+    (reduce #'+ '(1 2 3))   => 6
+    (reduce #'+ '(1 2 3 4)) => 10
 
-    (scan #'+ '(1 2 3 4))
-    => '(1 3 6 10)
+    (scan #'+ '(1 2 3 4))   => '(1 3 6 10)
 
 From APL and descendants."
-  (multiple-value-bind (seq initial-value)
-      (if initial-value?
-          (values seq (list initial-value))
-          (values (nsubseq seq 1) (list (elt seq 0))))
-    (fbind (fn)
-      (with-key-fn (key)
-        (nreverse
-         (with-key-fn (key)
-           (reduce (lambda (acc x)
-                     (cons (fn x (key (car acc))) acc))
-                   seq
-                   :initial-value initial-value)))))))
+  (fbind (fn)
+    (if (= start end)
+        (if initial-value-supplied?
+            ;; NB reduce does not apply the key to the initial value
+            ;; if the sequence is empty.
+            (list initial-value)
+            (list))
+        (collecting
+          (collect
+              (apply #'reduce
+                     (if from-end
+                         (lambda (x y)
+                           (collect y)
+                           (fn x y))
+                         (lambda (x y)
+                           (collect x)
+                           (fn x y)))
+                     seq
+                     args))))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.

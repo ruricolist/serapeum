@@ -20,6 +20,18 @@
   (is (single #(t)))
   (is (not (single #(t t)))))
 
+(test scan
+  (is (equal '() (scan #'+ '())))
+  (is (equal '(1) (scan #'+ '(1))))
+  (is (equal '(1)(scan #'+ '() :initial-value 1)))
+  (is (equal '(1 3 6 10) (scan #'+ '(1 2 3 4))))
+  (is (equal '(1 3 6 10) (scan #'+ '(2 3 4) :initial-value 1)))
+  (is (equal '(1 3 6 10) (scan #'+ '(2 3 4) :initial-value 1)))
+  (is (equal '(-1 -3 -6 -10)
+             (scan #'+ '(1 2 3 4) :key #'-)))
+  (is (equal (list (reduce #'+ '() :initial-value 1 :key #'-))
+             (scan #'+ '() :initial-value 1 :key #'-))))
+
 (test filter-with-count
   (is (seq= '(0 2 4 6 8) (filter #'evenp (range 100) :count 5)))
   (is (equalp #(0 2 4 6 8) (filter #'evenp (coerce (range 100) 'vector) :count 5)))

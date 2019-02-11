@@ -566,19 +566,27 @@ From Clojure."
                   (end (length seq))
                   (initial-value nil initial-value-supplied?)
              &allow-other-keys)
-  "A version of `reduce' that shows its work.
+  "Return the partial reductions of SE.
 
-Instead of returning just the final result, `scan' returns a list
-of the successive results at each step.
+Each element of the result sequence is the result of calling `reduce'
+on the elements of the sequence up to that point (inclusively).
 
     (reduce #'+ '(1))       => 1
     (reduce #'+ '(1 2))     => 3
     (reduce #'+ '(1 2 3))   => 6
     (reduce #'+ '(1 2 3 4)) => 10
+    (scan   #'+ '(1 2 3 4)) => '(1 3 6 10)
 
-    (scan #'+ '(1 2 3 4))   => '(1 3 6 10)
+The result of calling `scan` on an empty sequence is always an empty
+sequence, however.
 
-From APL and descendants."
+    (reduce #'+ '()) => 0
+    (scan   #'+ '())        => '()
+
+This is sometimes called a \"prefix sum\", \"cumulative sum\", or
+\"inclusive scan\".
+
+From APL."
   (fbind (fn)
     (if (= start end)
         (if initial-value-supplied?

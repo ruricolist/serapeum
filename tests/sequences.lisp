@@ -20,6 +20,20 @@
   (is (single #(t)))
   (is (not (single #(t t)))))
 
+(test only-elt
+  (signals error
+    (only-elt '()))
+  (signals error
+    (only-elt #()))
+  (signals error
+    (only-elt '(1 . 2)))
+  (signals error
+    (only-elt '(1 2)))
+  (signals error
+    (only-elt #(1 2)))
+  (is (eql 1 (only-elt '(1))))
+  (is (eql 1 (only-elt #(1)))))
+
 (test scan
   (is (equal '() (scan #'+ '())))
   (is (equal '(1) (scan #'+ '(1))))

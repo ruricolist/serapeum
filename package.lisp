@@ -345,6 +345,7 @@
    #:batches
    #:assort
    #:single
+   #:only-elt
    #:frequencies
    #:scan
    #:nub

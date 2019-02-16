@@ -334,9 +334,9 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
   '(and sequence (satisfies single)))
 
 ;;; TODO Export as soon as you think of a less cumbersome name.
-(defun first-and-only (seq)
-  "If SEQ is a sequence of length one, return its sole element.
-Otherwise, signal an error."
+(defun only-elt (seq)
+  "Return the only element of SEQ.
+If SEQ is empty, or contains more than one element, signal an error."
   (flet ((fail ()
            (error 'type-error
                   :expected-type 'single

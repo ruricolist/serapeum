@@ -22,7 +22,7 @@
   '#.(let ((limit (1- array-dimension-limit)))
        `(integer ,(- limit) ,limit)))
 
-(defsubst sequence? (x)
+(defsubst sequencep (x)
   (typep x 'sequence))
 
 (-> canonicalize-key (key-designator) function)

@@ -335,6 +335,7 @@
    #:pad-start
    #:pad-end
    ;; Sequences.
+   #:sequencep
    #:do-each
    #:keep
    #:filter

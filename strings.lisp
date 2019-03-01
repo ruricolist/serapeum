@@ -325,7 +325,7 @@ removed."
 (defun fmt (control-string &rest args)
   "A cousin of `format` expressly for fast formatting of strings.
 
-Like (format nil ...), binding `*pretty-pretty*' to `nil', which in
+Like (format nil ...), binding `*print-pretty*' to `nil', which in
 some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter'."

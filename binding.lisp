@@ -216,7 +216,7 @@ Note that declarations work just like `let*'."
 
 (defmacro firstn-values (n expr)
   (cond ((= n 0)
-         `(values))
+         `(progn ,expr (values)))
         ((= n 1)
          `(values ,expr))
         (t (let ((temps (loop for i below n collect (string-gensym 'temp))))

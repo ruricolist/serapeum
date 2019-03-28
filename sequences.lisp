@@ -194,7 +194,7 @@ If SEQ is a list, this is equivalent to `dolist'."
   (seq-dispatch seq
     (front bucket)
     (and (> (length bucket) 0)
-         (vref bucket 0))
+         (aref bucket 0))
     (bucket-front () bucket)))
 
 (-> nsubseq

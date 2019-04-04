@@ -10,7 +10,7 @@ that key in TABLE is bound to VALUE."
     (multiple-value-bind (body decls) (parse-body body)
       `(with-hash-table-iterator (,iterator ,table)
          ;; Don't shadow the outer block.
-         (loop named ,loop do
+         (loop :named ,loop :do
            (multiple-value-bind (,found? ,key ,value)
                (,iterator)
              ,@decls

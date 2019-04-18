@@ -478,12 +478,11 @@ Unit types are used for many of the same purposes as quoted symbols
 \(or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type."
   `(progn
-     (eval-always
-       (defclass ,name () ()
-         (:metaclass unit-class)
-         ,@(unsplice
-            (when docstring
-              `(:documentation ,docstring)))))
+     (defclass ,name () ()
+       (:metaclass unit-class)
+       ,@(unsplice
+          (when docstring
+            `(:documentation ,docstring))))
      (unless (c2mop:class-finalized-p (find-class ',name))
        (c2mop:finalize-inheritance (find-class ',name)))
      (declaim-freeze-type ,name)

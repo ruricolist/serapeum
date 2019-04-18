@@ -494,7 +494,9 @@ own individual type."
      ,@(unsplice
         (when docstring
           `(setf (documentation ',name 'variable)
-                 ,docstring)))
+                 ,docstring
+                 (documentation ',name 'standard-class)
+                 (documentation ',name 'variable))))
      ',name))
 
 (defmacro defunion (union &body variants)

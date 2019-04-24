@@ -692,6 +692,7 @@ code."
 
 (defun simplify-args-for-string-plus (args)
   (reduce (lambda (x args)
+            ;; Merge together runs of strings.
             (if (and (stringp x)
                      (stringp (car args)))
                 (cons (concat x (car args))
@@ -700,19 +701,24 @@ code."
           args
           :from-end t
           :key (lambda (arg)
+                 ;; Stringify constant arguments when possible.
                  (trivia:match arg
                    ((and arg (type character))
                     (string arg))
-                   ((and arg (type keyword))
-                    (symbol-name arg))
-                   ((eql t) #.(string 't))
-                   ((eql nil) #.(string 'nil))
+                   ((or (and sym (type keyword))
+                        (list 'quote (and sym (type symbol))))
+                    ;; Note that `*print-case*' may affect how symbols
+                    ;; are printed, so even if the symbol is constant
+                    ;; we can only be sure of the printed
+                    ;; representation if there are no uppercase
+                    ;; characters.
+                    (let ((s (symbol-name sym)))
+                      (if (notany #'upper-case-p s) s
+                          arg)))
                    ;; The smallest base is 2, so these are always the
                    ;; same regardless of `*print-base*'.
                    ((eql 0) "0")
                    ((eql 1) "1")
-                   ((list 'quote (and s (type symbol)))
-                    (symbol-name s))
                    ((list 'quote (and s (type string)))
                     s)
                    ((list 'quote (and c (type character)))

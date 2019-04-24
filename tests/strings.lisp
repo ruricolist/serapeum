@@ -164,3 +164,11 @@
       (is (equal "#(1 2 3 4)" (string+ my-vec))))
     (let ((*print-array* nil))
       (is (string^= "#<" (string+ my-vec))))))
+
+(test print-case-string+
+  "Check that print case is respected even for constant symbols."
+  (is (equal "foo1" (string+ '|foo| 1)))
+  (is (equal "FOO1" (string+ '|FOO| 1)))
+  (let ((*print-case* :downcase))
+    (is (equal "foo1" (string+ :|FOO| 1)))
+    (is (equal "foo1" (string+ '|FOO| 1)))))

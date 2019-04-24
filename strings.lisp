@@ -690,7 +690,7 @@ code."
           (symbol (write-string (symbol-name arg) s))
           (t (princ arg s)))))))
 
-(defun simplify-string-plus-args (args)
+(defun simplify-args-for-string-plus (args)
   (reduce (lambda (x args)
             (if (and (stringp x)
                      (stringp (car args)))
@@ -723,7 +723,7 @@ code."
 (define-compiler-macro string+ (&whole call &rest args)
   (if (null args)
       `(make-string 0)
-      (let ((args (simplify-string-plus-args args)))
+      (let ((args (simplify-args-for-string-plus args)))
         (if (> (length args) 20) call
             (if (= (length args) 1)
                 (if (stringp (first args))

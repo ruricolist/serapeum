@@ -48,16 +48,16 @@ depending on, or even acknowledging, other libraries. Serapeum tries
 to be a good citizen of the Quicklisp era: whenever possible, it
 avoids duplicating functionality that can be had elsewhere.
 
-Many of the utilities in Serapeum are original; many are borrowed from
-other languages, or from other Lispers. I try to give credit in the
-docstrings, but sometimes I have forgotten where I got an idea or a
-name. I regard missing credits as bugs: please report them.
+Many of the utilities in Serapeum are original ideas; many ideas are
+borrowed from other languages, or from other Lispers. I try to give
+credit in the docstrings, but sometimes I have forgotten where I got
+an idea or a name. I regard missing credits as bugs: please report
+them.
 
 Serapeum is intended to be portable, but it is principally tested
-where it is developed, on [SBCL][] and [Clozure CL][]. (Automated
-tests are also run on [Allegro][].) Patches for other
-Lisps are always welcome, whether bug fixes or implementation-specific
-optimizations.
+where it is developed, on [SBCL][] and [Clozure CL][]. Patches and bug
+reports for other Lisps are always welcome, however, including
+implementation-specific optimizations.
 
 # Commentary
 
@@ -77,6 +77,17 @@ that deserve separate introduction.
 - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
 - [Internal definitions](#internal-definitions) and [block compilation](#block-compiling)
 - [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
+
+## A note about strings
+
+Beginning Lispers often ask about Lisp: “Where are the string
+utilities?” Since strings in Lisp are a kind of vector, which is in
+turn a kind of sequence, the right place to look is under the
+documentation for sequences (and vectors).
+
+This is also true for Serapeum: there are many [sequence utilities](REFERENCE.md#sequences), 
+and a few [vector utilities](REFERENCE.md#vectors), that work equally well on strings.
+But there are also many [string-specific utilities](REFERENCE.md#strings).
 
 ## Dividing sequences
 
@@ -175,7 +186,7 @@ its being undefined.
 ## Internal definitions
 
 The `local` form lets you use top-level definition forms to create local
-bindings. You can use `defun` instead of labels, `defmacro` instead of
+bindings. You can use `defun` instead of `labels`, `defmacro` instead of
 `macrolet`, `def` (which is Serapeum’s macro for top-level lexical
 bindings) instead of `let`, and so forth.
 

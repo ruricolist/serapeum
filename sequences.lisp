@@ -566,7 +566,7 @@ From Clojure."
                   (end (length seq))
                   (initial-value nil initial-value-supplied?)
              &allow-other-keys)
-  "Return the partial reductions of SE.
+  "Return the partial reductions of SEQ.
 
 Each element of the result sequence is the result of calling `reduce'
 on the elements of the sequence up to that point (inclusively).

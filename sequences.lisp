@@ -581,7 +581,7 @@ The result of calling `scan` on an empty sequence is always an empty
 sequence, however.
 
     (reduce #'+ '()) => 0
-    (scan   #'+ '())        => '()
+    (scan   #'+ '()) => '()
 
 This is sometimes called a \"prefix sum\", \"cumulative sum\", or
 \"inclusive scan\".

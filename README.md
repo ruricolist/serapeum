@@ -172,7 +172,7 @@ These are non-trivial implementations. In many cases, `fbind` can
 produce code that is more efficient than using `funcall`, and even
 eliminate the overhead of higher-order functions like `compose` and
 `curry`. And `fbindrec`, which builds on `fbind`, further implements
-the optimizing transformation from Waddell et. al., *Fixing Letrec*. (Note that the macroexpansion of `fbind` may sometimes appear simplistic, using `macroexpand`; this is the happy case when we can prove that the function is never used a value.)
+the optimizing transformation from Waddell et. al., *Fixing Letrec*. (Note that the macroexpansion of `fbind` may sometimes appear simplistic, using `macroexpand`; this is the happy case when we can prove that the function is never used as a value.)
 
 For binding values in the function namespace at the top level,
 Serapeum provides `defalias`:

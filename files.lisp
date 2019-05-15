@@ -60,6 +60,8 @@ of BUFFER-SIZE."
 
 #+ccl
 (defun file=/mmap (file1 file2)
+  "Compare FILE1 and FILE2 by memory-mapping them and comparing them
+as vectors."
   (macrolet ((with-mmap ((var file) &body body)
                `(let* ((,var (ccl:map-file-to-octet-vector ,file)))
                   (unwind-protect
@@ -67,6 +69,10 @@ of BUFFER-SIZE."
                     (ccl:unmap-ivector ,var)))))
     (with-mmap (vec1 file1)
       (with-mmap (vec2 file2)
+        ;; The vector returned when CCL memory maps a file is a
+        ;; displaced vector, because of alignment issues. But
+        ;; `octet-vector=' takes a `:start' parameter, so we can
+        ;; directly compare the underlying simple vectors.
         (multiple-value-bind (vec1 start1)
             (array-displacement vec1)
           (multiple-value-bind (vec2 start2)
@@ -76,7 +82,7 @@ of BUFFER-SIZE."
                            :start2 start2)))))))
 
 (defun file=/loop (file1 file2 &key (buffer-size 4096))
-  "Compare two files by looping over their octets."
+  "Compare two files by looping over their contents using a buffer."
   (declare
    (type pathname file1 file2)
    (type array-length buffer-size)

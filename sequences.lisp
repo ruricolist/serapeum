@@ -191,6 +191,15 @@ If SEQ is a list, this is equivalent to `dolist'."
     (let ((len (qlen bucket)))
       (make-sequence-like seq len :initial-contents (qlist bucket)))))
 
+;;; Not currently used, but probably should be.
+(defun bucket-append (seq items bucket)
+  (if (and (listp seq)
+           (listp items))
+      (qappend bucket items)
+      (map nil (lambda (item)
+                 (bucket-push seq item bucket))
+           items)))
+
 (-> nsubseq
     (sequence array-index &optional (or null array-length))
     sequence)

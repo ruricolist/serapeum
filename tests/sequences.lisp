@@ -285,3 +285,8 @@
               (split-seq/do-splits #(1 2) #'oddp)))
   (is (equalp (split-sequence-if #'oddp #(1 2 3))
               (split-seq/do-splits #(1 2 3) #'oddp))))
+
+(test collapse-duplicates
+  (is (seq= '(1 2 1)
+            (collapse-duplicates #(1 1 2 2 1 1))
+            (collapse-duplicates '(1 1 2 2 1 1)))))

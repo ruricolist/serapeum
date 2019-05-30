@@ -23,6 +23,7 @@
        `(integer ,(- limit) ,limit)))
 
 (defsubst sequencep (x)
+  "Is X a sequence?"
   (typep x 'sequence))
 
 (-> canonicalize-key (key-designator) function)
@@ -1549,3 +1550,52 @@ but don't actually need to realize the sequences."
                 ,@body))
          (declare (dynamic-extent #',fn))
          (map-splits #',fn ,split-fn ,seq ,start ,end ,from-end)))))
+
+(defun collapse-duplicates (seq &key (key #'identity) (test #'eql))
+  "Remove adjacent duplicates in SEQ.
+
+Repetitions that are not adjacent are left alone.
+
+    (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
+    (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
+  (seq-dispatch seq
+    (list-collapse-duplicates test key seq)
+    (let ((bucket (make-bucket seq))
+          (len (length seq)))
+      (with-test-fn (test)
+        (with-key-fn (key)
+          (nlet rec ((i 0)
+                     (last-key nil))
+            (cond ((= i len)
+                   (bucket-seq seq bucket))
+                  ((= i 0)
+                   (let ((elt (elt seq 0)))
+                     (bucket-push seq elt bucket)
+                     (rec 1 (key elt))))
+                  (t
+                   (let* ((elt (elt seq i))
+                          (new-key (key elt)))
+                     (if (test new-key last-key)
+                         (rec (1+ i) last-key)
+                         (progn
+                           (bucket-push seq elt bucket)
+                           (rec (1+ i) new-key))))))))))))
+
+(defun list-collapse-duplicates (test key list)
+  (declare (list list))
+  (with-test-fn (test)
+    (with-key-fn (key)
+      (nlet rec ((list list)
+                 (acc '())
+                 (last-result nil))
+        (if (endp list) (nreverse acc)
+            (if (null acc)
+                (rec (cdr list)
+                     (cons (car list) acc)
+                     (key (car list)))
+                (let ((new-result (key (car list))))
+                  (if (test last-result new-result)
+                      (rec (cdr list) acc last-result)
+                      (rec (cdr list)
+                           (cons (car list) acc)
+                           new-result)))))))))

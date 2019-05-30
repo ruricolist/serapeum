@@ -393,6 +393,7 @@
    #:char-case
    #:char-ecase
    #:do-splits
+   #:collapse-duplicates
    ;; Generalized arrays.
    #:shape
    #:reshape

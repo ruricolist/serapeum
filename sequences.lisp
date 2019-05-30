@@ -164,6 +164,11 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; `assort', `partition', &c. generically.
 
 (defun make-bucket (seq &optional (init nil initp))
+  "Return a \"bucket\" suitable for collecting elements from SEQ.
+
+If SEQ is restricted as to the type of elements it can hold (for
+example, if SEQ is an array with an element type) the same restriction
+will apply to the bucket."
   (seq-dispatch seq
     (if initp
         (queue init)
@@ -185,6 +190,7 @@ If SEQ is a list, this is equivalent to `dolist'."
         (make-bucket ()))))
 
 (defun bucket-push (seq item bucket)
+  "Insert ITEM at the end of BUCKET according to SEQ."
   (seq-dispatch seq
     (enq item bucket)
     (if (stringp seq)
@@ -193,6 +199,10 @@ If SEQ is a list, this is equivalent to `dolist'."
     (bucket-push () item bucket)))
 
 (defun bucket-seq (seq bucket)
+  "Return a sequence \"like\" SEQ using the elements of BUCKET.
+
+Note that it is not safe to call the function more than once on the
+same bucket."
   (seq-dispatch seq
     (qlist bucket)
     (if (stringp seq)
@@ -203,6 +213,10 @@ If SEQ is a list, this is equivalent to `dolist'."
 
 ;;; Not currently used, but probably should be.
 (defun bucket-append (seq items bucket)
+  "Append ITEMS to the end of BUCKET according to SEQ.
+
+The items will appear, together and in the same order, in the
+sequence taken from the bucket by BUCKET-SEQ."
   (cond ((and (listp seq)
               (listp items))
          (qappend bucket items))

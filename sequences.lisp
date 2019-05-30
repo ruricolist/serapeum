@@ -168,12 +168,18 @@ If SEQ is a list, this is equivalent to `dolist'."
     (if initp
         (queue init)
         (queue))
-    (with-boolean initp
-      (make-array (eif initp 1 0)
-                  :element-type (array-element-type seq)
-                  :adjustable t
-                  :fill-pointer (eif initp 1 0)
-                  :initial-contents (and initp (list init))))
+    (if (stringp seq)
+        (let ((stream
+                (make-string-output-stream
+                 :element-type (array-element-type seq))))
+          (and initp (write-char init stream))
+          stream)
+        (with-boolean initp
+          (make-array (eif initp 1 0)
+                      :element-type (array-element-type seq)
+                      :adjustable t
+                      :fill-pointer (eif initp 1 0)
+                      :initial-contents (and initp (list init)))))
     (if initp
         (make-bucket () init)
         (make-bucket ()))))
@@ -181,24 +187,31 @@ If SEQ is a list, this is equivalent to `dolist'."
 (defun bucket-push (seq item bucket)
   (seq-dispatch seq
     (enq item bucket)
-    (vector-push-extend item bucket)
+    (if (stringp seq)
+        (write-char item bucket)
+        (vector-push-extend item bucket))
     (bucket-push () item bucket)))
 
 (defun bucket-seq (seq bucket)
   (seq-dispatch seq
     (qlist bucket)
-    bucket
+    (if (stringp seq)
+        (get-output-stream-string bucket)
+        bucket)
     (let ((len (qlen bucket)))
       (make-sequence-like seq len :initial-contents (qlist bucket)))))
 
 ;;; Not currently used, but probably should be.
 (defun bucket-append (seq items bucket)
-  (if (and (listp seq)
-           (listp items))
-      (qappend bucket items)
-      (map nil (lambda (item)
-                 (bucket-push seq item bucket))
-           items)))
+  (cond ((and (listp seq)
+              (listp items))
+         (qappend bucket items))
+        ((stringp seq)
+         (write-string items bucket))
+        (t
+         (map nil (lambda (item)
+                    (bucket-push seq item bucket))
+              items))))
 
 (-> nsubseq
     (sequence array-index &optional (or null array-length))

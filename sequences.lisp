@@ -191,13 +191,6 @@ If SEQ is a list, this is equivalent to `dolist'."
     (let ((len (qlen bucket)))
       (make-sequence-like seq len :initial-contents (qlist bucket)))))
 
-(defun bucket-front (seq bucket)
-  (seq-dispatch seq
-    (front bucket)
-    (and (> (length bucket) 0)
-         (aref bucket 0))
-    (bucket-front () bucket)))
-
 (-> nsubseq
     (sequence array-index &optional (or null array-length))
     sequence)
@@ -420,16 +413,17 @@ You can think of `assort' as being akin to `remove-duplicates':
     (with-key-fn (key)
       (let ((groups (queue)))
         (do-subseq (item seq nil :start start :end end)
-          (if-let ((group
-                    (let ((kitem (key item)))
-                      (find-if
-                       (lambda (group)
-                         (test kitem (key (bucket-front seq group))))
-                       (qlist groups)))))
-            (bucket-push seq item group)
-            (enq (make-bucket seq item) groups)))
+          (let ((kitem (key item)))
+            (if-let ((group
+                      (cdr
+                       (find-if
+                        (lambda (group)
+                          (test kitem (car group)))
+                        (qlist groups)))))
+              (bucket-push seq item group)
+              (enq (cons kitem (make-bucket seq item)) groups))))
         (mapcar-into (lambda (bucket)
-                       (bucket-seq seq bucket))
+                       (bucket-seq seq (cdr bucket)))
                      (qlist groups))))))
 
 (defun list-runs (list start end key test)

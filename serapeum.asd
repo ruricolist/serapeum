@@ -21,6 +21,7 @@
                "global-vars"
                "trivial-file-size"
                "trivial-macroexpand-all"
+               "inlined-generic-function"
                (:feature :abcl (:require :extensible-sequences)))
   :serial t
   :components ((:file "package")

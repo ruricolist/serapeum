@@ -37,7 +37,14 @@
 ;;; #'= and #'eql differ for floating point numbers.
 (defclass test/equalp (test/char-equal test/equal test/=) ())
 
+(declaim-freeze-type
+ test/rat= test/=
+ test/char= test/char-equal
+ test/eq test/eql test/equal test/equalp)
+
 (defgeneric test.fn (test)
+  #+(or sbcl ccl)
+  (:generic-function-class inlined-generic-function:inlined-generic-function)
   (:method ((test test/eq)) #'eq)
   (:method ((test test/eql)) #'eql)
   (:method ((test test/equal)) #'equal)
@@ -46,11 +53,6 @@
   (:method ((test test/=)) #'=)
   (:method ((test test/equalp)) #'equalp)
   (:method ((test function)) test))
-
-(declaim-freeze-type
- test/rat= test/=
- test/char= test/char-equal
- test/eq test/eql test/equal test/equalp)
 
 (-> test-fn (t) function)
 (defsubst test-fn (test)
@@ -152,7 +154,10 @@
         (bounds start1 end1 start2 end2))))
 
 (defgeneric bounds-plausible? (bounds v1 v2)
+  #+(or sbcl ccl)
+  (:generic-function-class inlined-generic-function:inlined-generic-function)
   (:method ((bounds null) v1 v2)
+    (declare (ignore bounds))
     (or (eq v1 v2)
         (= (length v1) (length v2))))
   (:method ((bounds bounds) v1 v2)
@@ -161,36 +166,9 @@
       (= (- end1 start1)
          (- end2 start2)))))
 
-
-;;; vector=.
-
-;;; TODO Allow :type1 and :type2 arguments. These would be ignored by
-;;; the function, but could be used by a compiler macro to produce
-;;; optimized, inline code.
-
-(defun vector= (vec1 vec2 &key (test #'eql)
-                               (start1 0)
-                               (start2 0)
-                               end1 end2)
-  "Like `string=' for any vector.
-If no TEST is supplied, elements are tested with `eql'."
-  (check-type vec1 vector)
-  (check-type vec2 vector)
-  (check-type start1 array-index)
-  (check-type start2 array-index)
-  (check-type end1 (or array-length null))
-  (check-type end2 (or array-length null))
-  (let ((kind1 (vector-kind vec1))
-        (kind2 (vector-kind vec2))
-        (test-kind (test-kind (ensure-function test)))
-        (bounds
-          (reify-bounds vec1 vec2
-                        start1 end1
-                        start2 end2)))
-    (and (bounds-plausible? bounds vec1 vec2)
-         (compare-elements kind1 kind2 test-kind bounds))))
-
-(defgeneric compare-elements (kind1 kind2 test-kind bounds))
+(defgeneric compare-elements (kind1 kind2 test-kind bounds)
+  #+(or sbcl ccl)
+  (:generic-function-class inlined-generic-function:inlined-generic-function))
 
 
 ;;; Handle strings.
@@ -301,3 +279,35 @@ If no TEST is supplied, elements are tested with `eql'."
                          :start2 start2
                          :end2 end2
                          :test (test-fn test)))))
+
+
+;;; vector=.
+
+;;; TODO Allow :type1 and :type2 arguments. These would be ignored by
+;;; the function, but could be used by a compiler macro to produce
+;;; optimized, inline code.
+
+(declaim (inline vector=))
+(defun vector= (vec1 vec2 &key (test #'eql)
+                               (start1 0)
+                               (start2 0)
+                               end1 end2)
+  "Like `string=' for any vector.
+If no TEST is supplied, elements are tested with `eql'."
+  (declare (inline bounds-plausible? compare-elements))
+  (check-type vec1 vector)
+  (check-type vec2 vector)
+  (check-type start1 array-index)
+  (check-type start2 array-index)
+  (check-type end1 (or array-length null))
+  (check-type end2 (or array-length null))
+  (let ((kind1 (vector-kind vec1))
+        (kind2 (vector-kind vec2))
+        (test-kind (test-kind (ensure-function test)))
+        (bounds
+          (reify-bounds vec1 vec2
+                        start1 end1
+                        start2 end2)))
+    (and (bounds-plausible? bounds vec1 vec2)
+         (compare-elements kind1 kind2 test-kind bounds))))
+(declaim (notinline vector=))

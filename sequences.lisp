@@ -232,7 +232,7 @@ If SEQ is a list, this is equivalent to `dolist'."
      (declare (inline make-bucket bucket-push bucket-seq))
      ,@body))
 
-(defmacro with-bucket-dispatch ((seq) &body body)
+(defmacro with-specialized-buckets ((seq) &body body)
   (once-only (seq)
     `(seq-dispatch ,seq
        (with-list-bucket (,seq)
@@ -250,14 +250,14 @@ If SEQ is a list, this is equivalent to `dolist'."
 If SEQ is restricted as to the type of elements it can hold (for
 example, if SEQ is an array with an element type) the same restriction
 will apply to the bucket."
-  (with-bucket-dispatch (seq)
+  (with-specialized-buckets (seq)
     (if initp
         (make-bucket seq init)
         (make-bucket seq))))
 
 (defun bucket-push (seq item bucket)
   "Insert ITEM at the end of BUCKET according to SEQ."
-  (with-bucket-dispatch (seq)
+  (with-specialized-buckets (seq)
     (bucket-push seq item bucket)))
 
 (defun bucket-seq (seq bucket)
@@ -265,7 +265,7 @@ will apply to the bucket."
 
 Note that it is not safe to call the function more than once on the
 same bucket."
-  (with-bucket-dispatch (seq)
+  (with-specialized-buckets (seq)
     (bucket-seq seq bucket)))
 
 ;;; Not currently used, but probably should be.
@@ -331,7 +331,7 @@ Uses `replace' internally."
     ((= count 0) (make-sequence-like seq 0))
     ((> count (length seq)) (apply #'filter pred seq :count nil args))
     (t (fbind (pred)
-         (with-bucket-dispatch (seq)
+         (with-specialized-buckets (seq)
            (with-key-fn (key)
              (let ((ret (make-bucket seq)))
                (do-subseq (item seq nil :start start :end end :from-end from-end)
@@ -460,7 +460,7 @@ the sequence; `partition` always returns the “true” elements first.
 
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
-  (with-bucket-dispatch (seq)
+  (with-specialized-buckets (seq)
     (fbind ((test (compose pred (canonicalize-key key))))
       (let ((pass (make-bucket seq))
             (fail (make-bucket seq)))
@@ -478,7 +478,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (with-bucket-dispatch (seq)
+  (with-specialized-buckets (seq)
     (with-key-fn (key)
       (let ((buckets (loop for nil in preds collect (make-bucket seq)))
             (extra (make-bucket seq)))
@@ -506,7 +506,7 @@ You can think of `assort' as being akin to `remove-duplicates':
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
   (fbind (test)
-    (with-bucket-dispatch (seq)
+    (with-specialized-buckets (seq)
       (with-key-fn (key)
         (let ((groups (queue)))
           (do-subseq (item seq nil :start start :end end)
@@ -1670,7 +1670,7 @@ Repetitions that are not adjacent are left alone.
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
   (if (listp seq)
       (list-collapse-duplicates test key seq)
-      (with-bucket-dispatch (seq)
+      (with-specialized-buckets (seq)
         (let ((bucket (make-bucket seq))
               (len (length seq)))
           (with-test-fn (test)

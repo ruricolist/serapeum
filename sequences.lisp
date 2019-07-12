@@ -163,53 +163,98 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
 
+(defmacro with-list-bucket (&body body)
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (declare (ignore seq))
+            (if initp
+                (queue init)
+                (queue)))
+          (bucket-push (seq item bucket)
+            (declare (ignore seq))
+            (enq item bucket))
+          (bucket-seq (seq bucket)
+            (declare (ignore seq))
+            (qlist bucket)))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-vector-bucket (&body body)
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (if (stringp seq)
+                (let ((stream
+                        (make-string-output-stream
+                         :element-type (array-element-type seq))))
+                  (and initp (write-char init stream))
+                  stream)
+                (with-boolean initp
+                  (make-array (eif initp 1 0)
+                              :element-type (array-element-type seq)
+                              :adjustable t
+                              :fill-pointer (eif initp 1 0)
+                              :initial-contents (and initp (list init))))))
+          (bucket-push (seq item bucket)
+            (if (stringp seq)
+                (write-char item bucket)
+                (vector-push-extend item bucket)))
+          (bucket-seq (seq bucket)
+            (if (stringp seq)
+                (get-output-stream-string bucket)
+                bucket)))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-sequence-bucket (&body body)
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (declare (ignore seq))
+            (if initp
+                (queue init)
+                (queue)))
+          (bucket-push (seq item bucket)
+            (declare (ignore seq))
+            (enq item bucket))
+          (bucket-seq (seq bucket)
+            (let ((len (qlen bucket)))
+              (make-sequence-like seq len :initial-contents (qlist bucket)))))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-bucket-dispatch ((seq) &body body)
+  `(seq-dispatch ,seq
+     (with-list-bucket
+       ,@body)
+     (with-vector-bucket
+       ,@body)
+     (with-sequence-bucket
+       ,@body)))
+
+;;; Non-specialized versions.
+
 (defun make-bucket (seq &optional (init nil initp))
   "Return a \"bucket\" suitable for collecting elements from SEQ.
 
 If SEQ is restricted as to the type of elements it can hold (for
 example, if SEQ is an array with an element type) the same restriction
 will apply to the bucket."
-  (seq-dispatch seq
+  (with-bucket-dispatch (seq)
     (if initp
-        (queue init)
-        (queue))
-    (if (stringp seq)
-        (let ((stream
-                (make-string-output-stream
-                 :element-type (array-element-type seq))))
-          (and initp (write-char init stream))
-          stream)
-        (with-boolean initp
-          (make-array (eif initp 1 0)
-                      :element-type (array-element-type seq)
-                      :adjustable t
-                      :fill-pointer (eif initp 1 0)
-                      :initial-contents (and initp (list init)))))
-    (if initp
-        (make-bucket () init)
-        (make-bucket ()))))
+        (make-bucket seq init)
+        (make-bucket seq))))
 
 (defun bucket-push (seq item bucket)
   "Insert ITEM at the end of BUCKET according to SEQ."
-  (seq-dispatch seq
-    (enq item bucket)
-    (if (stringp seq)
-        (write-char item bucket)
-        (vector-push-extend item bucket))
-    (bucket-push () item bucket)))
+  (with-bucket-dispatch (seq)
+    (bucket-push seq item bucket)))
 
 (defun bucket-seq (seq bucket)
   "Return a sequence \"like\" SEQ using the elements of BUCKET.
 
 Note that it is not safe to call the function more than once on the
 same bucket."
-  (seq-dispatch seq
-    (qlist bucket)
-    (if (stringp seq)
-        (get-output-stream-string bucket)
-        bucket)
-    (let ((len (qlen bucket)))
-      (make-sequence-like seq len :initial-contents (qlist bucket)))))
+  (with-bucket-dispatch (seq)
+    (bucket-seq seq bucket)))
 
 ;;; Not currently used, but probably should be.
 (defun bucket-append (seq items bucket)
@@ -274,15 +319,16 @@ Uses `replace' internally."
     ((= count 0) (make-sequence-like seq 0))
     ((> count (length seq)) (apply #'filter pred seq :count nil args))
     (t (fbind (pred)
-         (with-key-fn (key)
-           (let ((ret (make-bucket seq)))
-             (do-subseq (item seq nil :start start :end end :from-end from-end)
-               (when (pred (key item))
-                 (bucket-push seq item ret)
-                 (when (zerop (decf count))
-                   (return))))
-             (let ((seq2 (bucket-seq seq ret)))
-               (if from-end (nreverse seq2) seq2))))))))
+         (with-bucket-dispatch (seq)
+           (with-key-fn (key)
+             (let ((ret (make-bucket seq)))
+               (do-subseq (item seq nil :start start :end end :from-end from-end)
+                 (when (pred (key item))
+                   (bucket-push seq item ret)
+                   (when (zerop (decf count))
+                     (return))))
+               (let ((seq2 (bucket-seq seq ret)))
+                 (if from-end (nreverse seq2) seq2)))))))))
 
 (defun filter (pred seq &rest args &key count &allow-other-keys)
   "Almost, but not quite, an alias for `remove-if-not'.
@@ -402,14 +448,15 @@ the sequence; `partition` always returns the “true” elements first.
 
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
-  (fbind ((test (compose pred (canonicalize-key key))))
-    (let ((pass (make-bucket seq))
-          (fail (make-bucket seq)))
-      (do-subseq (item seq nil :start start :end end)
-        (if (test item)
-            (bucket-push seq item pass)
-            (bucket-push seq item fail)))
-      (values (bucket-seq seq pass) (bucket-seq seq fail)))))
+  (with-bucket-dispatch (seq)
+    (fbind ((test (compose pred (canonicalize-key key))))
+      (let ((pass (make-bucket seq))
+            (fail (make-bucket seq)))
+        (do-subseq (item seq nil :start start :end end)
+          (if (test item)
+              (bucket-push seq item pass)
+              (bucket-push seq item fail)))
+        (values (bucket-seq seq pass) (bucket-seq seq fail))))))
 
 (defun partitions (preds seq &key (start 0) end (key #'identity))
   "Generalized version of PARTITION.
@@ -419,20 +466,21 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (with-key-fn (key)
-    (let ((buckets (loop for nil in preds collect (make-bucket seq)))
-          (extra (make-bucket seq)))
-      (do-subseq (item seq nil :start start :end end)
-        (loop for pred in preds
-              for bucket in buckets
-              for fn = (ensure-function pred)
-              if (funcall fn (key item))
-                return (bucket-push seq item bucket)
-              finally (bucket-push seq item extra)))
-      (values (mapcar-into (lambda (bucket)
-                             (bucket-seq seq bucket))
-                           buckets)
-              (bucket-seq seq extra)))))
+  (with-bucket-dispatch (seq)
+    (with-key-fn (key)
+      (let ((buckets (loop for nil in preds collect (make-bucket seq)))
+            (extra (make-bucket seq)))
+        (do-subseq (item seq nil :start start :end end)
+          (loop for pred in preds
+                for bucket in buckets
+                for fn = (ensure-function pred)
+                if (funcall fn (key item))
+                  return (bucket-push seq item bucket)
+                finally (bucket-push seq item extra)))
+        (values (mapcar-into (lambda (bucket)
+                               (bucket-seq seq bucket))
+                             buckets)
+                (bucket-seq seq extra))))))
 
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
@@ -446,21 +494,22 @@ You can think of `assort' as being akin to `remove-duplicates':
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
   (fbind (test)
-    (with-key-fn (key)
-      (let ((groups (queue)))
-        (do-subseq (item seq nil :start start :end end)
-          (let ((kitem (key item)))
-            (if-let ((group
-                      (cdr
-                       (find-if
-                        (lambda (group)
-                          (test kitem (car group)))
-                        (qlist groups)))))
-              (bucket-push seq item group)
-              (enq (cons kitem (make-bucket seq item)) groups))))
-        (mapcar-into (lambda (bucket)
-                       (bucket-seq seq (cdr bucket)))
-                     (qlist groups))))))
+    (with-bucket-dispatch (seq)
+      (with-key-fn (key)
+        (let ((groups (queue)))
+          (do-subseq (item seq nil :start start :end end)
+            (let ((kitem (key item)))
+              (if-let ((group
+                        (cdr
+                         (find-if
+                          (lambda (group)
+                            (test kitem (car group)))
+                          (qlist groups)))))
+                (bucket-push seq item group)
+                (enq (cons kitem (make-bucket seq item)) groups))))
+          (mapcar-into (lambda (bucket)
+                         (bucket-seq seq (cdr bucket)))
+                       (qlist groups)))))))
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
@@ -1581,36 +1630,6 @@ but don't actually need to realize the sequences."
          (declare (dynamic-extent #',fn))
          (map-splits #',fn ,split-fn ,seq ,start ,end ,from-end)))))
 
-(defun collapse-duplicates (seq &key (key #'identity) (test #'eql))
-  "Remove adjacent duplicates in SEQ.
-
-Repetitions that are not adjacent are left alone.
-
-    (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
-    (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
-  (seq-dispatch seq
-    (list-collapse-duplicates test key seq)
-    (let ((bucket (make-bucket seq))
-          (len (length seq)))
-      (with-test-fn (test)
-        (with-key-fn (key)
-          (nlet rec ((i 0)
-                     (last-key nil))
-            (cond ((= i len)
-                   (bucket-seq seq bucket))
-                  ((= i 0)
-                   (let ((elt (elt seq 0)))
-                     (bucket-push seq elt bucket)
-                     (rec 1 (key elt))))
-                  (t
-                   (let* ((elt (elt seq i))
-                          (new-key (key elt)))
-                     (if (test new-key last-key)
-                         (rec (1+ i) last-key)
-                         (progn
-                           (bucket-push seq elt bucket)
-                           (rec (1+ i) new-key))))))))))))
-
 (defun list-collapse-duplicates (test key list)
   (declare (list list))
   (with-test-fn (test)
@@ -1629,3 +1648,34 @@ Repetitions that are not adjacent are left alone.
                       (rec (cdr list)
                            (cons (car list) acc)
                            new-result)))))))))
+
+(defun collapse-duplicates (seq &key (key #'identity) (test #'eql))
+  "Remove adjacent duplicates in SEQ.
+
+Repetitions that are not adjacent are left alone.
+
+    (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
+    (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
+  (if (listp seq)
+      (list-collapse-duplicates test key seq)
+      (with-bucket-dispatch (seq)
+        (let ((bucket (make-bucket seq))
+              (len (length seq)))
+          (with-test-fn (test)
+            (with-key-fn (key)
+              (nlet rec ((i 0)
+                         (last-key nil))
+                (cond ((= i len)
+                       (bucket-seq seq bucket))
+                      ((= i 0)
+                       (let ((elt (elt seq 0)))
+                         (bucket-push seq elt bucket)
+                         (rec 1 (key elt))))
+                      (t
+                       (let* ((elt (elt seq i))
+                              (new-key (key elt)))
+                         (if (test new-key last-key)
+                             (rec (1+ i) last-key)
+                             (progn
+                               (bucket-push seq elt bucket)
+                               (rec (1+ i) new-key)))))))))))))

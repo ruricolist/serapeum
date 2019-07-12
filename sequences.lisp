@@ -331,16 +331,16 @@ Uses `replace' internally."
     ((= count 0) (make-sequence-like seq 0))
     ((> count (length seq)) (apply #'filter pred seq :count nil args))
     (t (fbind (pred)
-         (with-specialized-buckets (seq)
+         (let ((ret (make-bucket seq)))
            (with-key-fn (key)
-             (let ((ret (make-bucket seq)))
+             (with-specialized-buckets (seq)
                (do-subseq (item seq nil :start start :end end :from-end from-end)
                  (when (pred (key item))
                    (bucket-push seq item ret)
                    (when (zerop (decf count))
-                     (return))))
-               (let ((seq2 (bucket-seq seq ret)))
-                 (if from-end (nreverse seq2) seq2)))))))))
+                     (return))))))
+           (let ((seq2 (bucket-seq seq ret)))
+             (if from-end (nreverse seq2) seq2)))))))
 
 (defun filter (pred seq &rest args &key count &allow-other-keys)
   "Almost, but not quite, an alias for `remove-if-not'.
@@ -460,15 +460,15 @@ the sequence; `partition` always returns the “true” elements first.
 
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
-  (with-specialized-buckets (seq)
-    (fbind ((test (compose pred (canonicalize-key key))))
-      (let ((pass (make-bucket seq))
-            (fail (make-bucket seq)))
+  (fbind ((test (compose pred (canonicalize-key key))))
+    (let ((pass (make-bucket seq))
+          (fail (make-bucket seq)))
+      (with-specialized-buckets (seq)
         (do-subseq (item seq nil :start start :end end)
           (if (test item)
               (bucket-push seq item pass)
-              (bucket-push seq item fail)))
-        (values (bucket-seq seq pass) (bucket-seq seq fail))))))
+              (bucket-push seq item fail))))
+      (values (bucket-seq seq pass) (bucket-seq seq fail)))))
 
 (defun partitions (preds seq &key (start 0) end (key #'identity))
   "Generalized version of PARTITION.
@@ -478,8 +478,8 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (with-specialized-buckets (seq)
-    (with-key-fn (key)
+  (with-key-fn (key)
+    (with-specialized-buckets (seq)
       (let ((buckets (loop for nil in preds collect (make-bucket seq)))
             (extra (make-bucket seq)))
         (do-subseq (item seq nil :start start :end end)
@@ -506,9 +506,9 @@ You can think of `assort' as being akin to `remove-duplicates':
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
   (fbind (test)
-    (with-specialized-buckets (seq)
-      (with-key-fn (key)
-        (let ((groups (queue)))
+    (with-key-fn (key)
+      (let ((groups (queue)))
+        (with-specialized-buckets (seq)
           (do-subseq (item seq nil :start start :end end)
             (let ((kitem (key item)))
               (if-let ((group
@@ -1670,11 +1670,11 @@ Repetitions that are not adjacent are left alone.
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
   (if (listp seq)
       (list-collapse-duplicates test key seq)
-      (with-specialized-buckets (seq)
-        (let ((bucket (make-bucket seq))
-              (len (length seq)))
-          (with-test-fn (test)
-            (with-key-fn (key)
+      (with-test-fn (test)
+        (with-key-fn (key)
+          (with-specialized-buckets (seq)
+            (let ((bucket (make-bucket seq))
+                  (len (length seq)))
               (nlet rec ((i 0)
                          (last-key nil))
                 (cond ((= i len)

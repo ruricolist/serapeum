@@ -652,12 +652,12 @@ From Clojure."
     (values table total)))
 
 (defun scan (fn seq
-             &rest args
-             &key from-end
-                  (start 0)
-                  (end (length seq))
-                  (initial-value nil initial-value-supplied?)
-             &allow-other-keys)
+              &rest args
+              &key from-end
+              (start 0)
+              (end (length seq))
+              (initial-value nil initial-value-supplied?)
+              &allow-other-keys)
   "Return the partial reductions of SEQ.
 
 Each element of the result sequence is the result of calling `reduce'
@@ -1535,15 +1535,15 @@ as long as SEQ is empty.
          (len-out (* len n)))
     (declare (array-index len n len-out))
     (with-vector-dispatch (bit-vector simple-bit-vector (simple-array character (*)))
-      vec
+                          vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
-              (declare (array-index n offset))
-              (if (zerop n)
-                  out
-                  (progn
-                    (replace out vec :start1 offset)
-                    (rec (1- n) (+ offset len)))))))))
+          (declare (array-index n offset))
+          (if (zerop n)
+              out
+              (progn
+                (replace out vec :start1 offset)
+                (rec (1- n) (+ offset len)))))))))
 
 (labels ((%seq= (x y)
            (or (equal x y)

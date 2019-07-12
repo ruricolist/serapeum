@@ -163,7 +163,8 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
 
-(defmacro with-list-bucket (&body body)
+(defmacro with-list-bucket ((seq) &body body)
+  (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
             (if initp
@@ -179,33 +180,43 @@ If SEQ is a list, this is equivalent to `dolist'."
      (declare (inline make-bucket bucket-push bucket-seq))
      ,@body))
 
-(defmacro with-vector-bucket (&body body)
+(defmacro with-string-bucket ((seq) &body body)
+  (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
-            (if (stringp seq)
-                (let ((stream
-                        (make-string-output-stream
-                         :element-type (array-element-type seq))))
-                  (and initp (write-char init stream))
-                  stream)
+            (let ((stream
+                    (make-string-output-stream
+                     :element-type (array-element-type seq))))
+              (and initp (write-char init stream))
+              stream))
+          (bucket-push (seq item bucket)
+            (write-char item bucket))
+          (bucket-seq (seq bucket)
+            (get-output-stream-string bucket)))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-vector-bucket ((seq) &body body)
+  `(if (stringp ,seq)
+       (with-string-bucket (,seq)
+         ,@body)
+       (flet ((make-bucket (seq &optional (init nil initp))
                 (with-boolean initp
                   (make-array (eif initp 1 0)
                               :element-type (array-element-type seq)
                               :adjustable t
                               :fill-pointer (eif initp 1 0)
-                              :initial-contents (and initp (list init))))))
-          (bucket-push (seq item bucket)
-            (if (stringp seq)
-                (write-char item bucket)
-                (vector-push-extend item bucket)))
-          (bucket-seq (seq bucket)
-            (if (stringp seq)
-                (get-output-stream-string bucket)
-                bucket)))
-     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
-     (declare (inline make-bucket bucket-push bucket-seq))
-     ,@body))
+                              :initial-contents (and initp (list init)))))
+              (bucket-push (seq item bucket)
+                (vector-push-extend item bucket))
+              (bucket-seq (seq bucket)
+                bucket))
+         (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+         (declare (inline make-bucket bucket-push bucket-seq))
+         ,@body)))
 
-(defmacro with-sequence-bucket (&body body)
+(defmacro with-sequence-bucket ((seq) &body body)
+  (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
             (if initp
@@ -222,13 +233,14 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-bucket-dispatch ((seq) &body body)
-  `(seq-dispatch ,seq
-     (with-list-bucket
-       ,@body)
-     (with-vector-bucket
-       ,@body)
-     (with-sequence-bucket
-       ,@body)))
+  (once-only (seq)
+    `(seq-dispatch ,seq
+       (with-list-bucket (,seq)
+         ,@body)
+       (with-vector-bucket (,seq)
+         ,@body)
+       (with-sequence-bucket (,seq)
+         ,@body))))
 
 ;;; Non-specialized versions.
 

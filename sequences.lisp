@@ -164,6 +164,7 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; `assort', `partition', &c. generically.
 
 (defmacro with-list-bucket ((seq) &body body)
+  "Implement bucket accessors for lists."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
@@ -181,6 +182,7 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-string-bucket ((seq) &body body)
+  "Implement bucket accessors for strings."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (let ((stream
@@ -197,6 +199,7 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-vector-bucket ((seq) &body body)
+  "Implement bucket accessors for vectors (including strings)."
   `(if (stringp ,seq)
        (with-string-bucket (,seq)
          ,@body)
@@ -216,6 +219,7 @@ If SEQ is a list, this is equivalent to `dolist'."
          ,@body)))
 
 (defmacro with-sequence-bucket ((seq) &body body)
+  "Implement bucket accessors for generic sequences."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
@@ -233,6 +237,8 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-specialized-buckets ((seq) &body body)
+  "Ensure BODY is run with the appropriate specialized, inlined
+versions of the bucket accessors."
   `(locally
        (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
      (seq-dispatch ,seq
@@ -243,7 +249,7 @@ If SEQ is a list, this is equivalent to `dolist'."
        (with-sequence-bucket (,seq)
          ,@body))))
 
-;;; Non-specialized versions.
+;;; Fallback versions for non-specialized code.
 
 (defun make-bucket (seq &optional (init nil initp))
   "Return a \"bucket\" suitable for collecting elements from SEQ.

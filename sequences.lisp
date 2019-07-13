@@ -233,8 +233,9 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-specialized-buckets ((seq) &body body)
-  (once-only (seq)
-    `(seq-dispatch ,seq
+  `(locally
+       (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+     (seq-dispatch ,seq
        (with-list-bucket (,seq)
          ,@body)
        (with-vector-bucket (,seq)

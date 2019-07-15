@@ -244,21 +244,24 @@ generic sequences just uses queues."
      (declare (inline make-bucket bucket-push bucket-seq))
      ,@body))
 
-(defmacro with-specialized-buckets ((seq) &body body)
+(defmacro with-specialized-buckets ((seq) &body body
+                                    &environment env)
   "Ensure BODY is run with the appropriate specialized, inlined
 versions of the bucket accessors.
 
 This is only likely to be worthwhile around a loop; if you're calling
 a bucket accessor once or twice the code bloat isn't worth it."
-  `(locally
-       (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-     (seq-dispatch ,seq
-       (with-list-bucket (,seq)
-         ,@body)
-       (with-vector-bucket (,seq)
-         ,@body)
-       (with-sequence-bucket (,seq)
-         ,@body))))
+  (if (space-beats-speed? env)
+      `(progn ,@body)
+      `(locally
+           (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+         (seq-dispatch ,seq
+           (with-list-bucket (,seq)
+             ,@body)
+           (with-vector-bucket (,seq)
+             ,@body)
+           (with-sequence-bucket (,seq)
+             ,@body)))))
 
 ;;; Fallback versions for non-specialized code.
 

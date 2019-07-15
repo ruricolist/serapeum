@@ -67,12 +67,14 @@ justifying making *collectors* (queues) first-class."
   (values `(make-queue)
           `(qconc ',queue (list ,@(qlist queue)))))
 
+(-> queue (&rest t) queue)
 (defun queue (&rest initial-contents)
   "Build a new queue with INITIAL-CONTENTS."
   (let ((q (make-queue)))
     (dolist (x initial-contents q)
       (enq x q))))
 
+(-> clear-queue (queue) list)
 (defun clear-queue (queue)
   "Return QUEUE's contents and reset it."
   (prog1 (qlist queue)
@@ -87,48 +89,51 @@ allowing the queue to be declared dynamic-extent."
       decline
       `(make-queue)))
 
+(-> qlen (queue) array-length)
 (defun qlen (queue)
   "The number of items in QUEUE."
   (length (qlist queue)))
 
-(declaim (ftype (function (queue) list) qlist))
+(-> qlist (queue) list)
 (defun qlist (queue)
   "A list of the items in QUEUE."
   (cdr (queue-cons queue)))
 
+(-> enq (t queue) queue)
 (defun enq (item queue)
   "Insert ITEM at the end of QUEUE."
-  (check-type queue queue)
   (let ((q (queue-cons queue)))
     (setf (car q)
           (setf (cdr (car q))
                 (cons item nil))))
   queue)
 
+(-> deq (queue) t)
 (defun deq (queue)
   "Remove item from the front of the QUEUE."
   ;; Bizarrely, the version in PAIP returns the queue, not the
   ;; item dequeued. This version from Waters & Norvig,
   ;; "Implementing Queues in Lisp."
-  (check-type queue queue)
   (let ((q (queue-cons queue)))
     (let ((items (cdr q)))
       (unless (setf (cdr q) (cdr items))
         (setf (car q) q))
       (car items))))
 
+(-> front (queue) t)
 (defun front (queue)
   "The first element in QUEUE."
   (first (qlist queue)))
 
+(-> queue-empty-p (queue) boolean)
 (defun queue-empty-p (queue)
   "Is QUEUE empty?"
   (not (qlist queue)))
 
+(-> qconc (queue list) queue)
 (defun qconc (queue list)
   "Destructively concatenate LIST onto the end of QUEUE.
 Return the queue."
-  (check-type queue queue)
   (when (null list)
     (return-from qconc queue))
   (let ((q (queue-cons queue)))
@@ -136,6 +141,7 @@ Return the queue."
           (last (setf (cdr (car q)) list))))
   queue)
 
+(-> qappend (queue list) queue)
 (defun qappend (queue list)
   "Append the elements of LIST onto the end of QUEUE.
 Return the queue."

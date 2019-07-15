@@ -172,10 +172,12 @@ If SEQ is a list, this is equivalent to `dolist'."
                 (queue init)
                 (queue)))
           (bucket-push (seq item bucket)
-            (declare (ignore seq))
+            (declare (ignore seq)
+                     (queue bucket))
             (enq item bucket))
           (bucket-seq (seq bucket)
-            (declare (ignore seq))
+            (declare (ignore seq)
+                     (queue bucket))
             (qlist bucket)))
      (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
      (declare (inline make-bucket bucket-push bucket-seq))
@@ -235,9 +237,11 @@ generic sequences just uses queues."
                 (queue init)
                 (queue)))
           (bucket-push (seq item bucket)
-            (declare (ignore seq))
+            (declare (ignore seq)
+                     (queue bucket))
             (enq item bucket))
           (bucket-seq (seq bucket)
+            (declare (queue bucket))
             (let ((len (qlen bucket)))
               (make-sequence-like seq len :initial-contents (qlist bucket)))))
      (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
@@ -252,16 +256,19 @@ versions of the bucket accessors.
 This is only likely to be worthwhile around a loop; if you're calling
 a bucket accessor once or twice the code bloat isn't worth it."
   (if (space-beats-speed? env)
-      `(progn ,@body)
-      `(locally
-           (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-         (seq-dispatch ,seq
-           (with-list-bucket (,seq)
-             ,@body)
-           (with-vector-bucket (,seq)
-             ,@body)
-           (with-sequence-bucket (,seq)
-             ,@body)))))
+      `(locally ,@body)
+      (multiple-value-bind (body decls) (parse-body body)
+        `(locally
+             (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+           ,@decls
+           (with-type-declarations-trusted ()
+             (seq-dispatch ,seq
+               (with-list-bucket (,seq)
+                 ,@body)
+               (with-vector-bucket (,seq)
+                 ,@body)
+               (with-sequence-bucket (,seq)
+                 ,@body)))))))
 
 ;;; Fallback versions for non-specialized code.
 

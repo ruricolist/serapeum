@@ -164,7 +164,7 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; `assort', `partition', &c. generically.
 
 (defmacro with-list-bucket ((seq) &body body)
-  "Implement bucket accessors for lists."
+  "Wrap BODY with inlined bucket accessors for lists."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
@@ -182,7 +182,7 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-string-bucket ((seq) &body body)
-  "Implement bucket accessors for strings."
+  "Wrap BODY with inlined bucket accessors for strings."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (let ((stream
@@ -201,7 +201,7 @@ If SEQ is a list, this is equivalent to `dolist'."
      ,@body))
 
 (defmacro with-vector-bucket ((seq) &body body)
-  "Implement bucket accessors for vectors (including strings)."
+  "Wrap BODY with inlined bucket accessors for vectors (including strings)."
   `(if (stringp ,seq)
        (with-string-bucket (,seq)
          ,@body)
@@ -223,7 +223,11 @@ If SEQ is a list, this is equivalent to `dolist'."
          ,@body)))
 
 (defmacro with-sequence-bucket ((seq) &body body)
-  "Implement bucket accessors for generic sequences."
+  "Wrap BODY with inlined bucket accessors for generic sequences.
+
+This might not seem worthwhile, and it's not for `bucket-seq', but for
+`bucket-push' (and even `make-bucket') it is, since accumulating for
+generic sequences just uses queues."
   (declare (ignore seq))
   `(flet ((make-bucket (seq &optional (init nil initp))
             (declare (ignore seq))
@@ -242,7 +246,10 @@ If SEQ is a list, this is equivalent to `dolist'."
 
 (defmacro with-specialized-buckets ((seq) &body body)
   "Ensure BODY is run with the appropriate specialized, inlined
-versions of the bucket accessors."
+versions of the bucket accessors.
+
+This is only likely to be worthwhile around a loop; if you're calling
+a bucket accessor once or twice the code bloat isn't worth it."
   `(locally
        (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
      (seq-dispatch ,seq
@@ -602,10 +609,10 @@ size N, with no leftovers."
                (unless (zerop (rem (- end start) n))
                  (uneven)))))
       (declare (inline check-bounds-even))
-      (with-boolean even
-        (seq-dispatch seq
-          (let ((seq (nthcdr start seq)))
-            (if (null end)
+      (seq-dispatch seq
+        (let ((seq (nthcdr start seq)))
+          (if (null end)
+              (with-boolean even
                 (loop while seq
                       collect (loop for i below n
                                     for (elt . rest) on seq
@@ -613,9 +620,10 @@ size N, with no leftovers."
                                     finally (setf seq rest)
                                             (when even
                                               (unless (= i n)
-                                                (uneven)))))
-                (progn
-                  (check-bounds-even start end)
+                                                (uneven))))))
+              (progn
+                (check-bounds-even start end)
+                (with-boolean even
                   (loop while seq
                         for i from start below end by n
                         collect
@@ -626,16 +634,16 @@ size N, with no leftovers."
                               finally (setf seq rest)
                                       (when even
                                         (unless (= i m)
-                                          (uneven))))))))
-          (let ((end (or end (length seq))))
-            (check-bounds-even start end)
-            (nlet batches ((i start)
-                           (acc '()))
-              (if (>= i end)
-                  (nreverse acc)
-                  (batches (+ i n)
-                           (cons (subseq seq i (min (+ i n) end))
-                                 acc))))))))))
+                                          (uneven)))))))))
+        (let ((end (or end (length seq))))
+          (check-bounds-even start end)
+          (nlet batches ((i start)
+                         (acc '()))
+            (if (>= i end)
+                (nreverse acc)
+                (batches (+ i n)
+                         (cons (subseq seq i (min (+ i n) end))
+                               acc)))))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
                     &allow-other-keys)

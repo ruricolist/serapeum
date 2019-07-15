@@ -490,8 +490,8 @@ added to ensure that TYPE itself is handled."
         `(with-read-only-vars (,var)
            ,@decls
            (if ,var
-               ,@body
-               ,@body)))))
+               (progn ,@body)
+               (progn ,@body))))))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var

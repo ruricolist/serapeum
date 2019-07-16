@@ -163,53 +163,138 @@ If SEQ is a list, this is equivalent to `dolist'."
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
 
+(defmacro with-list-bucket ((seq) &body body)
+  "Wrap BODY with inlined bucket accessors for lists."
+  (declare (ignore seq))
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (declare (ignore seq))
+            (if initp
+                (queue init)
+                (queue)))
+          (bucket-push (seq item bucket)
+            (declare (ignore seq)
+                     (queue bucket))
+            (enq item bucket))
+          (bucket-seq (seq bucket)
+            (declare (ignore seq)
+                     (queue bucket))
+            (qlist bucket)))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-string-bucket ((seq) &body body)
+  "Wrap BODY with inlined bucket accessors for strings."
+  (declare (ignore seq))
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (let ((stream
+                    (make-string-output-stream
+                     :element-type (array-element-type seq))))
+              (and initp (write-char init stream))
+              stream))
+          (bucket-push (seq item bucket)
+            (declare (ignore seq))
+            (write-char item bucket))
+          (bucket-seq (seq bucket)
+            (declare (ignore seq))
+            (get-output-stream-string bucket)))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-vector-bucket ((seq) &body body)
+  "Wrap BODY with inlined bucket accessors for vectors (including strings)."
+  `(if (stringp ,seq)
+       (with-string-bucket (,seq)
+         ,@body)
+       (flet ((make-bucket (seq &optional (init nil initp))
+                (with-boolean initp
+                  (make-array (eif initp 1 0)
+                              :element-type (array-element-type seq)
+                              :adjustable t
+                              :fill-pointer (eif initp 1 0)
+                              :initial-contents (and initp (list init)))))
+              (bucket-push (seq item bucket)
+                (declare (ignore seq))
+                (vector-push-extend item bucket))
+              (bucket-seq (seq bucket)
+                (declare (ignore seq))
+                bucket))
+         (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+         (declare (inline make-bucket bucket-push bucket-seq))
+         ,@body)))
+
+(defmacro with-sequence-bucket ((seq) &body body)
+  "Wrap BODY with inlined bucket accessors for generic sequences.
+
+This might not seem worthwhile, and it's not for `bucket-seq', but for
+`bucket-push' (and even `make-bucket') it is, since accumulating for
+generic sequences just uses queues."
+  (declare (ignore seq))
+  `(flet ((make-bucket (seq &optional (init nil initp))
+            (declare (ignore seq))
+            (if initp
+                (queue init)
+                (queue)))
+          (bucket-push (seq item bucket)
+            (declare (ignore seq)
+                     (queue bucket))
+            (enq item bucket))
+          (bucket-seq (seq bucket)
+            (declare (queue bucket))
+            (let ((len (qlen bucket)))
+              (make-sequence-like seq len :initial-contents (qlist bucket)))))
+     (declare (ignorable #'make-bucket #'bucket-push #'bucket-seq))
+     (declare (inline make-bucket bucket-push bucket-seq))
+     ,@body))
+
+(defmacro with-specialized-buckets ((seq) &body body
+                                    &environment env)
+  "Ensure BODY is run with the appropriate specialized, inlined
+versions of the bucket accessors.
+
+This is only likely to be worthwhile around a loop; if you're calling
+a bucket accessor once or twice the code bloat isn't worth it."
+  (if (space-beats-speed? env)
+      `(locally ,@body)
+      (multiple-value-bind (body decls) (parse-body body)
+        `(locally
+             (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+           ,@decls
+           (with-type-declarations-trusted ()
+             (seq-dispatch ,seq
+               (with-list-bucket (,seq)
+                 ,@body)
+               (with-vector-bucket (,seq)
+                 ,@body)
+               (with-sequence-bucket (,seq)
+                 ,@body)))))))
+
+;;; Fallback versions for non-specialized code.
+
 (defun make-bucket (seq &optional (init nil initp))
   "Return a \"bucket\" suitable for collecting elements from SEQ.
 
 If SEQ is restricted as to the type of elements it can hold (for
 example, if SEQ is an array with an element type) the same restriction
 will apply to the bucket."
-  (seq-dispatch seq
+  (with-specialized-buckets (seq)
     (if initp
-        (queue init)
-        (queue))
-    (if (stringp seq)
-        (let ((stream
-                (make-string-output-stream
-                 :element-type (array-element-type seq))))
-          (and initp (write-char init stream))
-          stream)
-        (with-boolean initp
-          (make-array (eif initp 1 0)
-                      :element-type (array-element-type seq)
-                      :adjustable t
-                      :fill-pointer (eif initp 1 0)
-                      :initial-contents (and initp (list init)))))
-    (if initp
-        (make-bucket () init)
-        (make-bucket ()))))
+        (make-bucket seq init)
+        (make-bucket seq))))
 
 (defun bucket-push (seq item bucket)
   "Insert ITEM at the end of BUCKET according to SEQ."
-  (seq-dispatch seq
-    (enq item bucket)
-    (if (stringp seq)
-        (write-char item bucket)
-        (vector-push-extend item bucket))
-    (bucket-push () item bucket)))
+  (with-specialized-buckets (seq)
+    (bucket-push seq item bucket)))
 
 (defun bucket-seq (seq bucket)
   "Return a sequence \"like\" SEQ using the elements of BUCKET.
 
 Note that it is not safe to call the function more than once on the
 same bucket."
-  (seq-dispatch seq
-    (qlist bucket)
-    (if (stringp seq)
-        (get-output-stream-string bucket)
-        bucket)
-    (let ((len (qlen bucket)))
-      (make-sequence-like seq len :initial-contents (qlist bucket)))))
+  (with-specialized-buckets (seq)
+    (bucket-seq seq bucket)))
 
 ;;; Not currently used, but probably should be.
 (defun bucket-append (seq items bucket)
@@ -274,15 +359,16 @@ Uses `replace' internally."
     ((= count 0) (make-sequence-like seq 0))
     ((> count (length seq)) (apply #'filter pred seq :count nil args))
     (t (fbind (pred)
-         (with-key-fn (key)
-           (let ((ret (make-bucket seq)))
-             (do-subseq (item seq nil :start start :end end :from-end from-end)
-               (when (pred (key item))
-                 (bucket-push seq item ret)
-                 (when (zerop (decf count))
-                   (return))))
-             (let ((seq2 (bucket-seq seq ret)))
-               (if from-end (nreverse seq2) seq2))))))))
+         (let ((ret (make-bucket seq)))
+           (with-key-fn (key)
+             (with-specialized-buckets (seq)
+               (do-subseq (item seq nil :start start :end end :from-end from-end)
+                 (when (pred (key item))
+                   (bucket-push seq item ret)
+                   (when (zerop (decf count))
+                     (return))))))
+           (let ((seq2 (bucket-seq seq ret)))
+             (if from-end (nreverse seq2) seq2)))))))
 
 (defun filter (pred seq &rest args &key count &allow-other-keys)
   "Almost, but not quite, an alias for `remove-if-not'.
@@ -405,10 +491,11 @@ the sequence; `partition` always returns the “true” elements first.
   (fbind ((test (compose pred (canonicalize-key key))))
     (let ((pass (make-bucket seq))
           (fail (make-bucket seq)))
-      (do-subseq (item seq nil :start start :end end)
-        (if (test item)
-            (bucket-push seq item pass)
-            (bucket-push seq item fail)))
+      (with-specialized-buckets (seq)
+        (do-subseq (item seq nil :start start :end end)
+          (if (test item)
+              (bucket-push seq item pass)
+              (bucket-push seq item fail))))
       (values (bucket-seq seq pass) (bucket-seq seq fail)))))
 
 (defun partitions (preds seq &key (start 0) end (key #'identity))
@@ -420,19 +507,20 @@ sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
   (with-key-fn (key)
-    (let ((buckets (loop for nil in preds collect (make-bucket seq)))
-          (extra (make-bucket seq)))
-      (do-subseq (item seq nil :start start :end end)
-        (loop for pred in preds
-              for bucket in buckets
-              for fn = (ensure-function pred)
-              if (funcall fn (key item))
-                return (bucket-push seq item bucket)
-              finally (bucket-push seq item extra)))
-      (values (mapcar-into (lambda (bucket)
-                             (bucket-seq seq bucket))
-                           buckets)
-              (bucket-seq seq extra)))))
+    (with-specialized-buckets (seq)
+      (let ((buckets (loop for nil in preds collect (make-bucket seq)))
+            (extra (make-bucket seq)))
+        (do-subseq (item seq nil :start start :end end)
+          (loop for pred in preds
+                for bucket in buckets
+                for fn = (ensure-function pred)
+                if (funcall fn (key item))
+                  return (bucket-push seq item bucket)
+                finally (bucket-push seq item extra)))
+        (values (mapcar-into (lambda (bucket)
+                               (bucket-seq seq bucket))
+                             buckets)
+                (bucket-seq seq extra))))))
 
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
@@ -448,19 +536,20 @@ You can think of `assort' as being akin to `remove-duplicates':
   (fbind (test)
     (with-key-fn (key)
       (let ((groups (queue)))
-        (do-subseq (item seq nil :start start :end end)
-          (let ((kitem (key item)))
-            (if-let ((group
-                      (cdr
-                       (find-if
-                        (lambda (group)
-                          (test kitem (car group)))
-                        (qlist groups)))))
-              (bucket-push seq item group)
-              (enq (cons kitem (make-bucket seq item)) groups))))
-        (mapcar-into (lambda (bucket)
-                       (bucket-seq seq (cdr bucket)))
-                     (qlist groups))))))
+        (with-specialized-buckets (seq)
+          (do-subseq (item seq nil :start start :end end)
+            (let ((kitem (key item)))
+              (if-let ((group
+                        (cdr
+                         (find-if
+                          (lambda (group)
+                            (test kitem (car group)))
+                          (qlist groups)))))
+                (bucket-push seq item group)
+                (enq (cons kitem (make-bucket seq item)) groups))))
+          (mapcar-into (lambda (bucket)
+                         (bucket-seq seq (cdr bucket)))
+                       (qlist groups)))))))
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
@@ -530,10 +619,10 @@ size N, with no leftovers."
                (unless (zerop (rem (- end start) n))
                  (uneven)))))
       (declare (inline check-bounds-even))
-      (with-boolean even
-        (seq-dispatch seq
-          (let ((seq (nthcdr start seq)))
-            (if (null end)
+      (seq-dispatch seq
+        (let ((seq (nthcdr start seq)))
+          (if (null end)
+              (with-boolean even
                 (loop while seq
                       collect (loop for i below n
                                     for (elt . rest) on seq
@@ -541,9 +630,10 @@ size N, with no leftovers."
                                     finally (setf seq rest)
                                             (when even
                                               (unless (= i n)
-                                                (uneven)))))
-                (progn
-                  (check-bounds-even start end)
+                                                (uneven))))))
+              (progn
+                (check-bounds-even start end)
+                (with-boolean even
                   (loop while seq
                         for i from start below end by n
                         collect
@@ -554,16 +644,16 @@ size N, with no leftovers."
                               finally (setf seq rest)
                                       (when even
                                         (unless (= i m)
-                                          (uneven))))))))
-          (let ((end (or end (length seq))))
-            (check-bounds-even start end)
-            (nlet batches ((i start)
-                           (acc '()))
-              (if (>= i end)
-                  (nreverse acc)
-                  (batches (+ i n)
-                           (cons (subseq seq i (min (+ i n) end))
-                                 acc))))))))))
+                                          (uneven)))))))))
+        (let ((end (or end (length seq))))
+          (check-bounds-even start end)
+          (nlet batches ((i start)
+                         (acc '()))
+            (if (>= i end)
+                (nreverse acc)
+                (batches (+ i n)
+                         (cons (subseq seq i (min (+ i n) end))
+                               acc)))))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
                     &allow-other-keys)
@@ -591,12 +681,12 @@ From Clojure."
     (values table total)))
 
 (defun scan (fn seq
-             &rest args
-             &key from-end
-                  (start 0)
-                  (end (length seq))
-                  (initial-value nil initial-value-supplied?)
-             &allow-other-keys)
+              &rest args
+              &key from-end
+              (start 0)
+              (end (length seq))
+              (initial-value nil initial-value-supplied?)
+              &allow-other-keys)
   "Return the partial reductions of SEQ.
 
 Each element of the result sequence is the result of calling `reduce'
@@ -1474,15 +1564,15 @@ as long as SEQ is empty.
          (len-out (* len n)))
     (declare (array-index len n len-out))
     (with-vector-dispatch (bit-vector simple-bit-vector (simple-array character (*)))
-      vec
+                          vec
       (let ((out (make-array len-out :element-type (array-element-type vec))))
         (nlet rec ((n n) (offset 0))
-              (declare (array-index n offset))
-              (if (zerop n)
-                  out
-                  (progn
-                    (replace out vec :start1 offset)
-                    (rec (1- n) (+ offset len)))))))))
+          (declare (array-index n offset))
+          (if (zerop n)
+              out
+              (progn
+                (replace out vec :start1 offset)
+                (rec (1- n) (+ offset len)))))))))
 
 (labels ((%seq= (x y)
            (or (equal x y)
@@ -1581,36 +1671,6 @@ but don't actually need to realize the sequences."
          (declare (dynamic-extent #',fn))
          (map-splits #',fn ,split-fn ,seq ,start ,end ,from-end)))))
 
-(defun collapse-duplicates (seq &key (key #'identity) (test #'eql))
-  "Remove adjacent duplicates in SEQ.
-
-Repetitions that are not adjacent are left alone.
-
-    (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
-    (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
-  (seq-dispatch seq
-    (list-collapse-duplicates test key seq)
-    (let ((bucket (make-bucket seq))
-          (len (length seq)))
-      (with-test-fn (test)
-        (with-key-fn (key)
-          (nlet rec ((i 0)
-                     (last-key nil))
-            (cond ((= i len)
-                   (bucket-seq seq bucket))
-                  ((= i 0)
-                   (let ((elt (elt seq 0)))
-                     (bucket-push seq elt bucket)
-                     (rec 1 (key elt))))
-                  (t
-                   (let* ((elt (elt seq i))
-                          (new-key (key elt)))
-                     (if (test new-key last-key)
-                         (rec (1+ i) last-key)
-                         (progn
-                           (bucket-push seq elt bucket)
-                           (rec (1+ i) new-key))))))))))))
-
 (defun list-collapse-duplicates (test key list)
   (declare (list list))
   (with-test-fn (test)
@@ -1629,3 +1689,34 @@ Repetitions that are not adjacent are left alone.
                       (rec (cdr list)
                            (cons (car list) acc)
                            new-result)))))))))
+
+(defun collapse-duplicates (seq &key (key #'identity) (test #'eql))
+  "Remove adjacent duplicates in SEQ.
+
+Repetitions that are not adjacent are left alone.
+
+    (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
+    (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
+  (if (listp seq)
+      (list-collapse-duplicates test key seq)
+      (with-test-fn (test)
+        (with-key-fn (key)
+          (with-specialized-buckets (seq)
+            (let ((bucket (make-bucket seq))
+                  (len (length seq)))
+              (nlet rec ((i 0)
+                         (last-key nil))
+                (cond ((= i len)
+                       (bucket-seq seq bucket))
+                      ((= i 0)
+                       (let ((elt (elt seq 0)))
+                         (bucket-push seq elt bucket)
+                         (rec 1 (key elt))))
+                      (t
+                       (let* ((elt (elt seq i))
+                              (new-key (key elt)))
+                         (if (test new-key last-key)
+                             (rec (1+ i) last-key)
+                             (progn
+                               (bucket-push seq elt bucket)
+                               (rec (1+ i) new-key)))))))))))))

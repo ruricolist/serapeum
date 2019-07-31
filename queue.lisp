@@ -96,7 +96,8 @@ allowing the queue to be declared dynamic-extent."
 
 (-> qlist (queue) list)
 (defun qlist (queue)
-  "A list of the items in QUEUE."
+  "A list of the items in QUEUE.
+Does not cons."
   (cdr (queue-cons queue)))
 
 (-> enq (t queue) queue)

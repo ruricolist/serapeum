@@ -195,6 +195,7 @@
    #:queuep
    #:enq
    #:deq
+   #:undeq
    #:front
    #:qlen
    #:qlist

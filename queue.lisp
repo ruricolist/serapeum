@@ -114,11 +114,25 @@ allowing the queue to be declared dynamic-extent."
   ;; Bizarrely, the version in PAIP returns the queue, not the
   ;; item dequeued. This version from Waters & Norvig,
   ;; "Implementing Queues in Lisp."
+  (let* ((q (queue-cons queue))
+         (items (cdr q)))
+    (unless (setf (cdr q) (cdr items))
+      (setf (car q) q))
+    (car items)))
+
+(-> undeq (t queue) t)
+(defun undeq (item queue)
+  "Add an item to the front of QUEUE.
+For an empty queue, this does the same thing as ENQ.
+
+For a queue with elements, this adds a new element onto the front of
+queue (like pushing to an ordinary list.
+
+This is called `undeq' because it can be used to undo a `deq'."
   (let ((q (queue-cons queue)))
-    (let ((items (cdr q)))
-      (unless (setf (cdr q) (cdr items))
-        (setf (car q) q))
-      (car items))))
+    (if (cdr q)
+        (push item (cdr q))
+        (enq item queue))))
 
 (-> front (queue) t)
 (defun front (queue)

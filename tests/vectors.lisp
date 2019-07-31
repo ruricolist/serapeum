@@ -21,6 +21,13 @@
        (princ-to-string #((foo)))
        (princ-to-string ((lambda () (vect (list 'foo))))))))
 
+(test values-vector
+  (loop for i from 0 to 21
+        for vec  = (range i)
+        for list = (coerce vec 'list)
+        do (is (equal (multiple-value-list (values-list list))
+                      (multiple-value-list (values-vector vec))))))
+
 (def-suite pad :in vectors)
 
 (in-suite pad)

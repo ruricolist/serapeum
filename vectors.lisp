@@ -25,6 +25,22 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
                 :fill-pointer len
                 :initial-contents initial-contents)))
 
+(defmacro generate-values-vector-case (vec)
+  ;; TODO This should use `tree-case', but it would need to be a
+  ;; different file.
+  `(case (length ,vec)
+     ,@(loop for i from 0 below 20
+             collect `(,i
+                       (values ,@(loop for j from 0 below i
+                                       collect `(aref ,vec ,j)))))
+     (t (values-list (coerce ,vec 'list)))))
+
+(defun values-vector (vec)
+  "Return the elements of VEC, a vector, as multiple values.
+This is to vectors what `vector-list' is to lists."
+  (declare (type vector vec))
+  (generate-values-vector-case vec))
+
 (define-compiler-macro vect (&rest inits)
   (let ((len (length inits)))
     `(make-array ,len

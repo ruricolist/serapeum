@@ -216,6 +216,7 @@
    #:ensure-vector
    #:vect
    #:vector=
+   #:values-vector
    ;; Numbers.
    #:fixnump
    #:parse-number

@@ -18,6 +18,7 @@
                "fare-quasiquote-extras"
                "parse-declarations-1.0"
                "introspect-environment"
+               "trivial-cltl2"
                "global-vars"
                "trivial-file-size"
                "trivial-macroexpand-all"

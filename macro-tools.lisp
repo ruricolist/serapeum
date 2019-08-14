@@ -415,10 +415,27 @@ Inline keywords are like the keyword arguments to individual cases in
   (get-setf-expansion `(%read-only-var ',real-var) env))
 
 (defun variable-special? (var &optional env)
-  (or (introspect-environment:specialp var env)
-      ;; TODO This should be in introspect-environment proper.
-      #+allegro
-      (eql (sys:variable-information var env) :special)))
+  (if (fboundp 'trivial-cltl2:variable-information)
+      (eql (funcall 'trivial-cltl2:variable-information var env) :special)
+      nil))
+
+(defun policy-quality (quality &optional env)
+  "Query ENV for optimization declaration information.
+Returns 1 when the environment cannot be accessed."
+  (if (fboundp 'trivial-cltl2:declaration-information)
+      (let ((alist (funcall 'trivial-cltl2:declaration-information 'optimize env)))
+        (or (second (assoc quality alist))
+            (error "Unknown policy quality ~s" quality)))
+      (if (member quality '(speed safety space debug compilation-speed))
+          1
+          (error "Unknown policy quality ~s" quality))))
+
+(defun variable-type (var &optional env)
+  (if (fboundp 'trivial-cltl2:variable-information)
+      (let ((alist (nth-value 2 (funcall 'trivial-cltl2:variable-information var env))))
+        (or (cdr (assoc 'type alist))
+            t))
+      t))
 
 (defmacro with-read-only-vars ((&rest vars) &body body &environment env)
   "Make VARS read-only within BODY.

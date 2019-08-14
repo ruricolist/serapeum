@@ -777,3 +777,35 @@ If you just want portable self-calls, for writing loops using
 recursion, use `nlet' or `defloop' instead.
 
 This may not work at all on some Lisps.")
+
+(defparameter *forbidden-heads*
+  '(progn locally prog1 prog2 prog prog* declare tagbody
+    block tagbody progv
+    when unless cond if or and
+    case ecase ccase
+    typecase ctypecase etypecase
+    let let* multiple-value-bind)
+  "Symbols that should not occur in the head of a list of forms.
+E.g. `progn', `locally'.")
+
+(defun require-body-for-splice (exp)
+  "Sanity-check EXP, a macro expansion, assuming it is supposed to be
+  a series of forms suitable for splicing into a progn (implicit or
+  explicit.)"
+  (if (or (not (listp exp))
+          (member (car exp) *forbidden-heads*))
+      (error "A list of forms was expected, but this appears to be a single form:~%~s"
+             exp)
+      exp))
+
+(defun require-form-for-eval (exp)
+  "Sanity-check EXP, a macro expansion, assuming it is supposed to be
+  a single form suitable for inserting intact."
+  (if (match exp
+        ((and _ (type atom)) t)
+        ((list* (list* 'lambda _) _) t)
+        ((list* (and _ (type symbol)) _) t)
+        (otherwise nil))
+      exp
+      (error "A single form was expected, but this appears to be a list of forms:~%~s"
+             exp)))

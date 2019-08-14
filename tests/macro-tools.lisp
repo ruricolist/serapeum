@@ -38,3 +38,23 @@
                (eval-if-constant x env)))
     (symbol-macrolet ((x 1))
       (is (eql 1 (constant-value/env x))))))
+
+(test require-form-for-eval
+  (finishes
+    (require-form-for-eval (list '(lambda ()))))
+  (finishes
+    (require-form-for-eval nil))
+  (finishes
+    (require-form-for-eval (list nil)))
+  (signals error
+    (require-form-for-eval (list '(+ 1 2)))))
+
+(test require-body-for-splice
+  (signals error
+    (require-body-for-splice '(progn)))
+  (signals error
+    (require-body-for-splice '(locally)))
+  (signals error
+    (require-body-for-splice 'x))
+  (finishes
+    (require-body-for-splice nil)))

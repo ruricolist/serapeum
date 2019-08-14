@@ -524,14 +524,15 @@ added to ensure that TYPE itself is handled."
   "Specialize BODY on the most common key functions."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
-     ,@(if (space-beats-speed? env)
-           `((macrolet ((,key (x) (list 'funcall ',key x)))
-               ,@body))
-           `((cond ((eql ,key #'identity)
-                    (macrolet ((,key (x) x))
-                      ,@body))
-                   (t (macrolet ((,key (x) (list 'funcall ',key x)))
-                        ,@body)))))))
+     ,@(require-body-for-splice
+        (if (space-beats-speed? env)
+            `((macrolet ((,key (x) (list 'funcall ',key x)))
+                ,@body))
+            `((cond ((eql ,key #'identity)
+                     (macrolet ((,key (x) x))
+                       ,@body))
+                    (t (macrolet ((,key (x) (list 'funcall ',key x)))
+                         ,@body))))))))
 
 (declaim (ftype (function (t) boolean) true))
 (declaim (inline true))

@@ -328,8 +328,8 @@ depending on the type being specialized on."
 
 (defmacro with-type-declarations-trusted (&environment env (&key) &body body)
   ;; The way to do this in SBCL and CMUCL is to use truly-the.
-  (cond
-    ((or #+ccl t)
+  (case uiop:*implementation-type*
+    (:ccl
      ;; Try to force CCL to trust our declarations. According to
      ;; <https://trac.clozure.com/ccl/wiki/DeclareOptimize>, that
      ;; requires safety<3 and speed>=safety. But, if the
@@ -350,6 +350,15 @@ depending on the type being specialized on."
             (declare
              (optimize (speed ,speed)
                        (safety ,safety)))
+          ,@body)))
+    (:ecl
+     ;; According to
+     ;; <https://common-lisp.net/project/ecl/static/manual/ch02.html>,
+     ;; ECL only trusts type declarations (and inference) when safety
+     ;; <= 1.
+     (let* ((current-safety (policy-quality 'safety env))
+            (capped-safety (min current-safety 1)))
+       `(locally (declare (optimize (safety ,capped-safety)))
           ,@body)))
     ;; If you know how to make a particular Lisp trust type
     ;; declarations, feel free to make a pull request, or open an

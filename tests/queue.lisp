@@ -4,6 +4,18 @@
 (def-suite queue :in serapeum)
 (in-suite queue)
 
+(test qappend
+  (let* ((list (list 1 2 3))
+         (queue (qappend (queue) list))
+         (qlist (qlist queue)))
+    (is (not (eq qlist list)))))
+
+(test qconc
+  (let* ((list (list 1 2 3))
+         (queue (qconc (queue) list))
+         (qlist (qlist queue)))
+    (is (eq qlist list))))
+
 (test undeq
   (flet ((q= (q1 q2)
            (equal (qlist q1)

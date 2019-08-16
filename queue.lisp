@@ -70,9 +70,14 @@ justifying making *collectors* (queues) first-class."
 (-> queue (&rest t) queue)
 (defun queue (&rest initial-contents)
   "Build a new queue with INITIAL-CONTENTS."
-  (let ((q (make-queue)))
-    (dolist (x initial-contents q)
-      (enq x q))))
+  (qappend (make-queue) initial-contents))
+
+(define-compiler-macro queue (&whole decline &rest xs)
+  "When there are no initial elements, use the bare constructor,
+allowing the queue to be declared dynamic-extent."
+  (if xs
+      decline
+      `(make-queue)))
 
 (-> clear-queue (queue) list)
 (defun clear-queue (queue)
@@ -81,13 +86,6 @@ justifying making *collectors* (queues) first-class."
     (let ((q (queue-cons queue)))
       (setf (cdr q) nil
             (car q) q))))
-
-(define-compiler-macro queue (&whole decline &rest xs)
-  "When there are no initial elements, use the bare constructor,
-allowing the queue to be declared dynamic-extent."
-  (if xs
-      decline
-      `(make-queue)))
 
 (-> qlen (queue) array-length)
 (defun qlen (queue)

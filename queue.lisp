@@ -67,7 +67,7 @@ justifying making *collectors* (queues) first-class."
   (values `(make-queue)
           `(qconc ',queue (list ,@(qlist queue)))))
 
-(-> queue (&rest t) queue)
+(-> queue (&rest t) (values queue &optional))
 (defun queue (&rest initial-contents)
   "Build a new queue with INITIAL-CONTENTS."
   (qappend (make-queue) initial-contents))

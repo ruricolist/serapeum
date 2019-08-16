@@ -1131,7 +1131,8 @@ Note that this function requires that SEQ be a vector."
               (when (< k i) (setf r j))
             finally (return (vref a k))))))
 
-(-> reshuffle (sequence &key (:element-type t)) (simple-array * (*)))
+(-> reshuffle (sequence &key (:element-type t))
+    (values (simple-array * (*)) &optional))
 (defun reshuffle (seq &key (element-type '*))
   "Like `alexandria:shuffle', but non-destructive.
 
@@ -1398,7 +1399,7 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
                 (incf j))))
         ret)))
 
-(-> intersperse (t sequence) sequence)
+(-> intersperse (t sequence) (values sequence &optional))
 (defsubst intersperse (new-elt seq)
   "Return a sequence like SEQ, but with NEW-ELT inserted between each
 element."
@@ -1508,7 +1509,8 @@ values. Cf. `mvfold'."
 ;;; is not used because N could be any positive integer as long as
 ;;; SEQUENCE is empty.
 
-(-> repeat-sequence (sequence (integer 0 *)) sequence)
+(-> repeat-sequence (sequence (integer 0 *))
+    (values sequence &optional))
 (defun repeat-sequence (seq n)
   "Return a sequence like SEQ, with the same content, but repeated N times.
 

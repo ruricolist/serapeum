@@ -113,8 +113,12 @@ From Arc."
       (multiple-value-bind (subtype? sure?)
           (subtypep clause-type type env)
         (cond ((not sure?)
-               (warn "Can't tell if ~s is a subtype of ~s. Is ~s defined?"
-                     clause-type type type))
+               (warn "Can't tell if ~s is a subtype of ~s.~@[Is ~s defined?~]"
+                     clause-type type
+                     ;; Only warn about definition when the type could
+                     ;; be defined.
+                     (and (symbolp type)
+                          type)))
               ((not subtype?)
                (warn "~s is not a subtype of ~s" clause-type type)))))
     ;; Check that the clause types form an exhaustive partition of TYPE.

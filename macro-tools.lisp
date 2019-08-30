@@ -751,7 +751,7 @@ macros."
         ((and env (constantp form env))
          ;; Use the implementation's expander via introspect-environment.
          (let ((value (constant-form-value form env)))
-           (if (constantp form)
+           (if (constantp value)
                (values value t)
                ;; It failed, let's try macroexpanding.
                (eval-if-constant form nil))))

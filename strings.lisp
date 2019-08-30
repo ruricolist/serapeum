@@ -690,7 +690,7 @@ code."
           (symbol (write-string (symbol-name arg) s))
           (t (princ arg s)))))))
 
-(defun simplify-args-for-string-plus (args)
+(defun simplify-args-for-string-plus (args &optional env)
   (reduce (lambda (x args)
             ;; Merge together runs of strings.
             (if (and (stringp x)
@@ -700,7 +700,7 @@ code."
                 (cons x args)))
           args
           :from-end t
-          :key (lambda (arg)
+          :key (named-lambda stringify (arg)
                  ;; Stringify constant arguments when possible.
                  (trivia:match arg
                    ((and arg (type character))
@@ -723,13 +723,21 @@ code."
                     s)
                    ((list 'quote (and c (type character)))
                     (string c))
-                   (otherwise arg)))
+                   (otherwise
+                    (multiple-value-bind (val evaluated?)
+                        (eval-if-constant arg env)
+                      (if (equal arg val) arg
+                          (if evaluated?
+                              (stringify `(quote ,val))
+                              arg))))))
           :initial-value '()))
 
-(define-compiler-macro string+ (&whole call &rest args)
+(define-compiler-macro string+ (&whole call
+                                       &environment env
+                                       &rest args)
   (if (null args)
       `(make-string 0)
-      (let ((args (simplify-args-for-string-plus args)))
+      (let ((args (simplify-args-for-string-plus args env)))
         (if (> (length args) 20) call
             (if (= (length args) 1)
                 (if (stringp (first args))

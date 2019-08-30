@@ -16,8 +16,18 @@
          (name (package-name package)))
     (intern name :keyword)))
 
-(defun find-external-symbol (string package)
-  "If PACKAGE exports a symbol named STRING, return it."
+(defun find-external-symbol (string package &key ((:error errorp) nil))
+  "If PACKAGE exports a symbol named STRING, return it.
+If PACKAGE does not contain such a symbol, or if the symbol is not
+exported, then `nil' is returned, unless ERROR is non-nil, in which
+case an error is signaled."
   (multiple-value-bind (sym status)
-      (find-symbol string package)
-    (and sym (eql status :external) sym)))
+      (find-symbol (string string) package)
+    (cond ((null sym)
+           (when errorp
+             (error "No symbol named ~a in ~a" string package)))
+          ((eql status :external) sym)
+          (t
+           (when errorp
+             (error "~s is not exported from package ~a."
+                    sym package))))))

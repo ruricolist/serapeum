@@ -87,3 +87,19 @@
   (locally (declare (notinline pad-end))
     (is (equal "abc**" (pad-end "abc" 5 "*"))))
   (is (equal "abc**" (pad-end "abc" 5 #\*))))
+
+(test vector-conc-extend
+  (let ((v (vect 1 2 3)))
+    (is (= 3 (length (vector-conc-extend v '()))))
+    (is (= 3 (length (vector-conc-extend v #()))))
+    (is (seq= '(1 2 3 4)
+              (vector-conc-extend v #(4))))
+    (is (seq= '(1 2 3 4 5 6)
+              (vector-conc-extend v #(5 6)))))
+  (is (equal "abcxyz"
+             (vector-conc-extend
+              (make-array 3 :adjustable t
+                            :element-type 'character
+                            :fill-pointer 3
+                            :initial-contents "abc")
+              "xyz"))))

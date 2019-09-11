@@ -169,3 +169,23 @@ Optimizes some cases where PAD is a constant sequence."
                      ,temp)))))
         (1 `(,fn ,vec ,len ',(aref pad 0)))
         (t call))))
+
+(defun vector-conc-extend (vector new-elements &optional (extension 0))
+  "Add NEW-ELEMENTS to the end of VECTOR, an adjustable array with a fill-pointer.
+This is the practical equivalent to calling `vector-push-extend' on
+each element on NEW-ELEMENTS, but should be faster.
+
+Returns VECTOR."
+  (declare (type array-length extension))
+  (cond ((emptyp new-elements))
+        ((single new-elements)
+         (vector-push-extend (elt new-elements 0) vector))
+        (t (let* ((size (array-dimension vector 0))
+                  (len1 (length vector))
+                  (len2 (length new-elements))
+                  (diff (- size len1 len2)))
+             (when (minusp diff)
+               (adjust-array vector (max extension (- size diff))))
+             (incf (fill-pointer vector) len2)
+             (replace vector new-elements :start1 len1))))
+  vector)

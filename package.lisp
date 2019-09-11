@@ -226,6 +226,7 @@
    #:vect
    #:vector=
    #:values-vector
+   #:vector-conc-extend
    ;; Numbers.
    #:fixnump
    #:parse-number

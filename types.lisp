@@ -40,6 +40,9 @@ The same shortcut works for keywords.
           :from-end t
           :initial-value 'null))
 
+(defpattern tuple (&rest args)
+  `(list ,@args))
+
 (deftype -> (args values)
   "The type of a function from ARGS to VALUES."
   `(function ,args ,values))

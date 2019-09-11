@@ -47,3 +47,10 @@ recognize boxes using a type or predicate."
   (declare (ignore env))
   (values `(box)
           `(setf (unbox ',self) ,(unbox self))))
+
+(defpattern box (x)
+  (with-unique-names (b)
+    `(trivia:guard1 ,b
+                    (typep ,b 'box)
+                    (unbox ,b)
+                    ,x)))

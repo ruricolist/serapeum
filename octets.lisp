@@ -97,3 +97,10 @@ Defaults to little-endian order."
     (assert (<= start1 end1 len1))
     (assert (<= start2 end2 len2))
     (octet-vector=/unsafe v1 v2 start1 end1 start2 end2)))
+
+(defpattern octet-vector (&rest args)
+  (with-unique-names (vec)
+    `(trivia:guard1 ,vec
+                    (octet-vector-p ,vec)
+                    ,vec
+                    (vector ,@args))))

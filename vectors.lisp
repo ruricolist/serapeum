@@ -54,8 +54,13 @@ This is to vectors what `vector-list' is to lists."
                  ;; the list below; see array-tran.lisp.
                  (list ,@inits))))
 
-(defpattern vect (&rest inits)
-  `(vector ,@inits))
+;;; This differs from the default Trivia `vector' pattern in that it
+;;; works for adjustable vectors with fill pointers.
+
+(defpattern vect (&rest elts)
+  (with-unique-names (it)
+    `(trivia:guard (and ,it (trivia:vector* ,@elts))
+                   (= (length ,it) ,(length elts)))))
 
 (-> pad-start (vector array-length &optional t)
     vector)

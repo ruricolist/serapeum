@@ -79,6 +79,13 @@ allowing the queue to be declared dynamic-extent."
       decline
       `(make-queue)))
 
+(defpattern queue (&rest args)
+  (with-unique-names (it)
+    `(trivia:guard1 ,it
+                    (typep ,it 'queue)
+                    (qlist ,it)
+                    (list ,@args))))
+
 (-> clear-queue (queue) list)
 (defun clear-queue (queue)
   "Return QUEUE's contents and reset it."

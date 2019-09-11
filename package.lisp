@@ -137,6 +137,9 @@
    #:op
    #:opf
    ;; Functions.
+   #:eqs
+   #:eqls
+   #:equals
    #:capped-fork
    #:capped-fork2
    #:define-train

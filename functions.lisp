@@ -4,7 +4,7 @@
 ;;; * Functions
 
 (defun eqs (x)
-  "A predicate for equality (under EQ) with X."
+  "Return a one-argument function that tests if its argument is `eq' to X."
   (lambda (y) (eq x y)))
 
 (define-compiler-macro eqs (x)
@@ -12,7 +12,7 @@
     `(lambda (y) (eq ,x y))))
 
 (defun eqls (x)
-  "A predicate for equality (under EQL) with X."
+  "Return a one-argument function that tests if its argument is `eql' to X."
   (lambda (y) (eql x y)))
 
 (define-compiler-macro eqls (x)
@@ -20,7 +20,7 @@
     `(lambda (y) (eql ,x y))))
 
 (defun equals (x)
-  "A predicate for equality (under EQUAL) with X."
+  "Return a one-argument function that tests if its argument is `equal' to X."
   (lambda (y)
     (equal y x)))
 

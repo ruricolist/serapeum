@@ -11,6 +11,17 @@
   (declare (array-index size))
   (make-array size :element-type 'octet))
 
+(defun octet-vector (&rest args)
+  "Constructor an octet vector from ARGS."
+  (make-array (length args)
+              :element-type 'octet
+              :initial-contents args))
+
+(define-compiler-macro octet-vector (&rest args)
+  `(make-array ,(length args)
+               :element-type 'octet
+               :initial-contents (list ,@args)))
+
 ;;; Adapted from Ironclad.
 (-> octets (integer &key (:big-endian t)) octet-vector)
 (defun octets (n &key big-endian)

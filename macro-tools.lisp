@@ -269,8 +269,8 @@ form provides generic handling for all types of vectors."
             (declare (ignorable ,vec))
             ,vector-form))))
 
-;;; `callf' and `callf2' are extracted from the guts of Emacs Lisp's
-;;; `cl' package.
+;;; `callf' and `callf2' are inspired by macros used in the
+;;; implementation of Emacs Lisp's `cl' package.
 
 (defmacro callf (function place &rest args &environment env)
   "Set PLACE to the value of calling FUNCTION on PLACE, with ARGS."

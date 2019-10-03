@@ -108,7 +108,7 @@ The name is from Emacs Lisp."
 
 ;;;## `defsubst'
 
-;;; This is of course by way of Emacs, although it's actually much
+;;; The name is of course by way of Emacs, although it's actually much
 ;;; older.
 
 (defmacro defsubst (name params &body body)

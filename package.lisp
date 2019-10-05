@@ -192,6 +192,8 @@
    #:write-file-into-stream
    #:file=
    #:file-size
+   #:exe
+   #:resolve-executable
    ;; Symbols.
    #:find-keyword
    #:bound-value

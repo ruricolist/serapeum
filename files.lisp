@@ -118,3 +118,47 @@ metadata, consider `trivial-file-size:file-size-in-octets' instead."
   (check-type file (or string pathname))
   (with-input-from-file (in file :element-type element-type)
     (file-length in)))
+
+(defconstant +pathsep+
+  (if (uiop:os-windows-p) #\; #\:)
+  "Path separator for this OS.")
+
+(defun exe (p)
+  "If P, a pathname designator, has no extension, then, on Windows
+only, add an extension of `.exe`."
+  (let* ((p (pathname p))
+         (type (pathname-type p)))
+    (if (and (uiop:os-windows-p)
+             (null type))
+        (make-pathname :type "exe"
+                       :defaults p)
+        p)))
+
+(defun $path ()
+  "Split the PATH environment variable."
+  (mapcar #'uiop:pathname-directory-pathname
+          ;; This is enough; Neither Windows nor POSIX support
+          ;; escaping the separator in $PATH.
+          (split-sequence +pathsep+
+                          (uiop:getenv "PATH")
+                          :remove-empty-subseqs t)))
+
+(defun resolve-executable (p)
+  "Look for an executable using the PATH environment variable.
+P is a pathname designator.
+
+On Windows only, if P does not have an extension, it assumed to end in
+`.exe`.
+
+Note that this function does not check the current directory (even on
+Windows) and it does not care if P is already an absolute pathname: it
+only cares about its name and type."
+  (let* ((p (exe p))
+         (name (pathname-name p))
+         (type (pathname-type p)))
+    (loop for dir in ($path)
+          for pathname = (make-pathname :name name
+                                        :type type
+                                        :defaults dir)
+          when (uiop:file-exists-p pathname)
+            do (return pathname))))

@@ -13,9 +13,11 @@
          (is (equal (resolve-executable "clip")
                     (resolve-executable "clip.exe"))))
         ((uiop:os-unix-p)
+         (is-true (resolve-executable "sh"))
          (is (equal
               (pathname
-               (uiop:run-program '("command" "-v" "ls")
-                                 :output :string))
-              (resolve-executable "ls"))))
+               (chomp
+                (uiop:run-program '("sh" "-c" "command -v sh")
+                                  :output :string)))
+              (resolve-executable "sh"))))
         (t (skip "Not Windows or Unix."))))

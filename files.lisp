@@ -136,7 +136,7 @@ only, add an extension of `.exe`."
 
 (defun $path ()
   "Split the PATH environment variable."
-  (mapcar #'uiop:pathname-directory-pathname
+  (mapcar #'uiop:ensure-directory-pathname
           ;; This is enough; Neither Windows nor POSIX support
           ;; escaping the separator in $PATH.
           (split-sequence +pathsep+

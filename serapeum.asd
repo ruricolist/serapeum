@@ -37,7 +37,8 @@
                  (:file "defining-types"
                   :depends-on ("iter"))
                  (:file "binding")
-                 (:file "control-flow")
+                 (:file "control-flow"
+                  :depends-on ("definitions"))
                  (:file "threads")
                  (:file "iter")
                  (:file "conditions")
@@ -56,7 +57,7 @@
                  (:file "box"
                   :depends-on ("types" "definitions"))
                  (:file "numbers"
-                  :depends-on ("types"))
+                  :depends-on ("types" "op"))
                  (:file "octets"
                   :depends-on ("types"))
                  (:file "time")
@@ -65,7 +66,7 @@
                  (:file "hooks"
                   :depends-on ("threads"))
                  (:file "fbind"
-                  :depends-on ("binding" "control-flow" "op" "iter"))
+                  :depends-on ("binding" "control-flow" "op" "iter" "trees"))
                  (:file "reader"
                   :depends-on ("definitions"))
                  (:file "packages")

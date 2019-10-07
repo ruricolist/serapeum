@@ -280,6 +280,7 @@
    #:add-hook
    #:remove-hook
    #:run-hooks
+   #:run-hook
    #:run-hook-with-args
    #:run-hook-with-args-until-failure
    #:run-hook-with-args-until-success

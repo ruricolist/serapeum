@@ -62,7 +62,8 @@
                  (:file "time")
                  (:file "clos"
                   :depends-on ("binding"))
-                 (:file "hooks")
+                 (:file "hooks"
+                  :depends-on ("threads"))
                  (:file "fbind"
                   :depends-on ("binding" "control-flow" "op" "iter"))
                  (:file "reader"

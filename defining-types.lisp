@@ -217,7 +217,8 @@ multiple values."
 ;;; inherit from one another. Cf. Scala, where they forbid case class
 ;;; inheritance for good reasons.
 
-(defmacro defconstructor (type-name &body slots)
+(defmacro defconstructor (type-name &body slots
+                          &environment env)
   "A variant of `defstruct' for modeling immutable data.
 
 The structure defined by `defconstructor' has only one constructor,
@@ -302,8 +303,8 @@ Because `defconstructor' is implemented on top of
 The design of `defconstructor' is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type'."
-  (check-type type-name symbol)
-  (let* ((docstring
+  (let* ((super (env-super env))
+         (docstring
            (and (stringp (first slots))
                 (pop slots)))
          (slots
@@ -332,6 +333,7 @@ some implementation tricks from `cl-algebraic-data-type'."
        ;; Actually define the type.
        (defstruct-read-only
            (,type-name
+            ,@(unsplice (and super `(:include ,super)))
             (:constructor ,constructor ,slot-names)
             (:conc-name ,conc-name)
             (:predicate nil)
@@ -425,7 +427,8 @@ overriding some or all of its slots." type-name)
           (read-eval-prefix object stream)
           (class-name (class-of object))))
 
-(defmacro defunit (name &optional docstring)
+(defmacro defunit (name &optional docstring
+                   &environment env)
   "Define a unit type.
 
 A unit type is a type with only one instance.
@@ -435,7 +438,8 @@ You can think of a unit type as a singleton without state.
 Unit types are useful for many of the same purposes as quoted symbols
 \(or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type."
-  (let ((ctor (symbolicate '%make- name)))
+  (let ((ctor (symbolicate '%make- name))
+        (super (env-super env '%unit)))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defstruct (,name
@@ -456,25 +460,47 @@ own individual type."
        (fmakunbound ',ctor)
        ',name)))
 
+(define-symbol-macro %union nil)
+
+(defun env-super (env &optional default)
+  "Look for the superclass bound in ENV."
+  (or (macroexpand-1 '%union env) default))
+
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.
 
 Each expression in VARIANTS is either a symbol \(in which case it
 defines a unit type, as with `defunit') or a list \(in which case it
-defines a structure, as with `defconstructor'."
+defines a read-only structure, as with `defconstructor').
+
+UNION is defined as a type equivalent to the disjunction of all the
+member types. A class is also defined, with the same name, but with
+angle brackets around it."
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
          (ctors (filter #'listp variants))
          (units (filter #'atom variants))
-         (types (append units (mapcar #'first ctors))))
-    `(progn
-       ,@(loop for type in units
-               collect `(defunit ,type))
-       ,@(loop for (type . slots) in ctors
-               collect `(defconstructor ,type ,@slots))
-       (deftype ,union ()
-         ,@(unsplice docstring)
-         '(or ,@types)))))
+         (types (append units (mapcar #'first ctors)))
+         (super (symbolicate '< union '>)))
+    `(locally (declare #+sbcl (sb-ext:disable-package-locks %union))
+       (symbol-macrolet ((%union ,super))
+         (declare #+sbcl (sb-ext:enable-package-locks %union))
+         (eval-when (:compile-toplevel :load-toplevel :execute)
+           (defstruct (,super
+                       (:constructor nil)
+                       (:copier nil)
+                       (:predicate nil)
+                       (:include %read-only-struct))
+             ,@(unsplice docstring)))
+         ,@(loop for type in units
+                 collect `(defunit ,type))
+         ,@(loop for (type . slots) in ctors
+                 collect `(defconstructor ,type ,@slots))
+         (deftype ,union ()
+           ,@(unsplice docstring)
+           '(or ,@types))
+         (declaim-freeze-type ,super)
+         ',union))))
 
 (declaim (ftype (function (t t) (values t t))))
 (defun pattern-type (pattern union)

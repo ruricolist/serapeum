@@ -104,20 +104,40 @@
         (count-nodes left)
         (count-nodes right)))))
 
+(defgeneric count-nodes-generic (tree)
+  (:method ((tree leaf)) 0)
+  (:method ((node node))
+    (let ((left (node-left node))
+          (right (node-right node)))
+      (+ 1
+         (count-nodes left)
+         (count-nodes right)))))
+
+(defgeneric tree? (x)
+  (:method ((tree <tree>)) t)
+  (:method ((x t)) nil))
+
 (test union/tree
-  (is (= 4 (count-nodes
-            (node 5
-                  (node 1 leaf leaf)
-                  (node 3 leaf
-                        (node 4 leaf leaf)))))))
+  (let ((tree
+          (node 5
+                (node 1 leaf leaf)
+                (node 3 leaf
+                      (node 4 leaf leaf)))))
+    (is-true (tree? tree))
+    (is (= 4 (count-nodes tree)))
+    (is (= 4 (count-nodes-generic tree)))))
 
 (defunion maybe
   (just (value t))
   nothing)
 
 (test union/maybe
+  (is (subtypep (find-class 'just) (find-class '<maybe>)))
+  (is (subtypep (find-class 'nothing) (find-class '<maybe>)))
+  (is (type= '(or just nothing) 'maybe))
   (is (= 5 (just-value (just 5))))
-  (is (eq nothing nothing)))
+  (is (eq nothing nothing))
+  (is (eq nothing (eval 'nothing))))
 
 (defunion liszt
   (kons (kar t) (kdr liszt))

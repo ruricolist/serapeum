@@ -43,10 +43,17 @@
                      (bar nil :read-only nil))))))))
 
   (signals error
-    (macroexpand-1 '(defstruct-read-only (foo (:include bar)))))
-
-  (signals error
     (macroexpand-1 '(defstruct-read-only (foo (:copier copy-foo))))))
+
+(defstruct-read-only ro-struct-1)
+(defstruct-read-only (ro-struct-2 (:include ro-struct-1)))
+
+(defstruct rw-struct-1)
+
+(test read-only-struct-inheritance
+  (finishes (make-ro-struct-2))
+  (signals error
+    (eval `(defstruct-read-only (rw-struct-2 (:include rw-struct-1))))))
 
 (defconstructor person
   (name string)

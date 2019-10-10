@@ -29,13 +29,17 @@ Lisp."
                                  :slot-names slot-names
                                  :environment env)))
 
-(defun read-only-include-clause (clause)
+(defun read-only-include-clause (name clause &optional env)
   "Rewrite CLAUSE, an include clause, for use with a read-only
 structure."
   (ematch clause
     ((list)
      `(:include %read-only-struct))
     ((list* :include type slot-redefs)
+     (multiple-value-bind (sub? sure?) (subtypep type '%read-only-struct env)
+       (when (and (not sub?) sure?)
+         (error "Read-only struct ~a can only inherit from other structs defined as read-only."
+                name)))
      ;; Do we need to specify that the slots are read-only? No, since
      ;; we can only inherit from read-only structures, and the
      ;; specification says that read-only slots cannot be redefined as
@@ -71,18 +75,8 @@ raises an error is supplied."
             :read-only t
             ,@args))))))
 
-;;; Why not allow `defstruct-read-only' to use inheritance? I would
-;;; like to, but I haven't figured out yet how to make it work
-;;; reliably. The point of `defstruct-read-only' is that when you see
-;;; it you know *for sure* that the instances are immutable -- that
-;;; all the slots are read-only. But where there is inheritance, there
-;;; are no guarantees. Even if we could check that the class being
-;;; inherited from has only read-only slots at the time the initial
-;;; definition, there is nothing to prevent the superclass (or any
-;;; other class in the inheritance chain) from being redefined with
-;;; mutable slots in the future.
-
-(defmacro defstruct-read-only (name-and-opts &body slots)
+(defmacro defstruct-read-only (name-and-opts &body slots
+                               &environment env)
   "Easily define a defstruct with no mutable slots.
 
 The syntax of `defstruct-read-only' is as close as possible to that of
@@ -92,8 +86,9 @@ make it immutable simply by switching out `defstruct' for
 
 There are only a few syntactic differences:
 
-1. To prevent accidentally inheriting mutable slots,
-   `defstruct-read-only' does not allow inheritance.
+1. To prevent accidentally inheriting mutable slots, and preserve its
+   own meaningfulness, `defstruct-read-only' only allows inheritance
+   from other classes defined using `defstruct-read-only'.
 
 2. The `:type' option may not be used.
 
@@ -124,9 +119,6 @@ designed to facilitate working with immutable data."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
-        (when-let (clause (find :include opts :key #'car-safe))
-          (error "Read-only struct ~a cannot use inheritance: ~s."
-                 name clause))
         (when (find :copier opts :key #'ensure-car)
           (error "Read only struct ~a does not need a copier."
                  name))
@@ -144,7 +136,7 @@ designed to facilitate working with immutable data."
                                  ;; Mark as OK to save in pure memory.
                                  #+(or sbcl cmucl) (:pure t)
                                  ,@opts
-                                 ,(read-only-include-clause include-clause))
+                                 ,(read-only-include-clause name include-clause env))
                  ,@(unsplice docstring)
                  ,@slot-defs)
                (defmethod read-only-struct-slot-names append ((self ,name))

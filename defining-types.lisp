@@ -75,6 +75,11 @@ raises an error is supplied."
             :read-only t
             ,@args))))))
 
+(defun include+opts (opts)
+  (if-let (clause (find :include opts :key #'car-safe))
+    (values clause (remove clause opts))
+    (values nil opts)))
+
 (defmacro defstruct-read-only (name-and-opts &body slots
                                &environment env)
   "Easily define a defstruct with no mutable slots.
@@ -126,9 +131,7 @@ designed to facilitate working with immutable data."
           (error "Read-only structs may not use the ~s option: ~a"
                  :type clause))
         (multiple-value-bind (include-clause opts)
-            (if-let (clause (find :include opts :key #'car-safe))
-              (values clause (remove clause opts))
-              (values nil opts))
+            (include+opts opts)
           (let* ((slot-defs (mapcar #'read-only-slotdef slots))
                  (slot-names (mapcar #'first slot-defs)))
             `(progn
@@ -408,56 +411,19 @@ overriding some or all of its slots." type-name)
       value
       `(quote ,value)))
 
-;;; Why use CLOS for unit types? Structures have two benefits: low
-;;; memory use and fast slot access. Neither benefit applies to unit
-;;; types. Since each class has only one instance, memory usage
-;;; doesn't matter. And since unit types have no slots, fast slot
-;;; access is irrelevant. We might as well use CLOS, and take
-;;; advantage of the machinery of `make-instance' to make sure there
-;;; can only ever be one instance, without any ugly hacks.
+(defstruct (%unit
+            (:constructor nil)          ;Abstract.
+            (:copier nil)
+            (:predicate nil)
+            (:include %read-only-struct))
+  "Abstract base class for unit classes.")
 
-(defclass unit-object ()
-  ()
-  (:documentation "Superclass for instances of unit classes.
-Gives us a place to hang specializations for `print-object' and
-`make-load-form'."))
-
-(defmethod print-object ((self unit-object) stream)
+(defun print-unit (object stream depth)
+  (declare (ignore depth))
   (format stream
           "~a~s"
-          (read-eval-prefix self stream)
-          (class-name (class-of self))))
-
-(defmethod make-load-form ((self unit-object) &optional env)
-  (declare (ignore env))
-  `(make-instance ,(class-of self)))
-
-(defclass unit-class (topmost-object-class)
-  ((lock :initform (bt:make-lock))
-   (instance :initform nil :reader unit-class-instance))
-  (:default-initargs :topmost-class 'unit-object))
-
-;;; Note that `topmost-object-class' permits inheriting from a
-;;; standard object.
-
-;;; Unit classes should never be superclasses.
-(defmethod c2mop:validate-superclass
-    (c1 (c2 unit-class))
-  (declare (ignore c1))
-  nil)
-
-;;; NB For some reason, on Clozure, specializing `allocate-instance'
-;;; directly causes printing to go into an infinite loop if the class
-;;; has been redefined.
-
-(defmethod make-instance ((class unit-class) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (instance lock) class
-    ;; "Double-checked locking".
-    (or instance
-        (bt:with-lock-held (lock)
-          (or instance
-              (setf instance (call-next-method)))))))
+          (read-eval-prefix object stream)
+          (class-name (class-of object))))
 
 (defmacro defunit (name &optional docstring)
   "Define a unit type.
@@ -466,27 +432,29 @@ A unit type is a type with only one instance.
 
 You can think of a unit type as a singleton without state.
 
-Unit types are used for many of the same purposes as quoted symbols
+Unit types are useful for many of the same purposes as quoted symbols
 \(or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type."
-  `(progn
-     (defclass ,name () ()
-       (:metaclass unit-class)
-       ,@(unsplice
-          (when docstring
-            `(:documentation ,docstring))))
-     (unless (c2mop:class-finalized-p (find-class ',name))
-       (c2mop:finalize-inheritance (find-class ',name)))
-     (declaim-freeze-type ,name)
-     (defmethod %constructor= ((x ,name) (y ,name))
-       t)
-     (define-symbol-macro ,name
-         (load-time-value (make-instance ',name) t))
-     ,@(unsplice
-        (when docstring
-          `(setf (documentation ',name 'variable)
-                 ,docstring)))
-     ',name))
+  (let ((ctor (symbolicate '%make- name)))
+    `(progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (defstruct (,name
+                     (:include ,super)
+                     (:constructor ,ctor)
+                     (:copier nil)
+                     (:predicate nil)
+                     (:print-function print-unit))
+           ,@(unsplice docstring)))
+       (defmethod make-load-form ((x ,name) &optional env)
+         (make-load-form-saving-slots x
+                                      :slot-names nil
+                                      :environment env))
+       (defmethod %constructor= ((x ,name) (y ,name))
+         t)
+       (defconst ,name (,ctor))
+       (declaim-freeze-type ,name)
+       (fmakunbound ',ctor)
+       ',name)))
 
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.

@@ -83,13 +83,12 @@
 (defunit zero)
 
 (test defunit
-  (is (eq zero zero))
+  (is (eq* zero zero (eval 'zero)))
   (is (equal "#.ZERO"
              (with-standard-io-syntax
                (let ((*package* (find-package :serapeum.tests))
                      (*print-readably* t))
-                 (write-to-string zero)))))
-  (is (subtypep 'zero 'serapeum::unit-object)))
+                 (write-to-string zero))))))
 
 (defunion tree
   leaf

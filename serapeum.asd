@@ -57,7 +57,7 @@
                  (:file "box"
                   :depends-on ("types" "definitions"))
                  (:file "numbers"
-                  :depends-on ("types" "op"))
+                  :depends-on ("types" "op" "definitions"))
                  (:file "octets"
                   :depends-on ("types"))
                  (:file "time")

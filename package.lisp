@@ -250,6 +250,7 @@
    #:random-in-range
    #:float-precision-contagion
    #:range
+   #:si-prefix
    ;; Octets.
    #:octet
    #:octet-vector

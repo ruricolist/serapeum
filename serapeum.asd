@@ -57,7 +57,7 @@
                  (:file "box"
                   :depends-on ("types" "definitions"))
                  (:file "numbers"
-                  :depends-on ("types" "op" "definitions"))
+                  :depends-on ("types" "op"))
                  (:file "octets"
                   :depends-on ("types"))
                  (:file "time")
@@ -97,7 +97,8 @@
                  (:file "tree-case")
                  (:file "dispatch-case")
                  (:file "range" :depends-on ("dispatch-case"))
-                 (:file "generalized-arrays" :depends-on ("range"))))))
+                 (:file "generalized-arrays" :depends-on ("range"))
+                 (:file "units")))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
@@ -148,4 +149,5 @@
                  (:file "dispatch-case")
                  (:file "range")
                  (:file "generalized-arrays")
-                 (:file "quicklisp")))))
+                 (:file "quicklisp")
+                 (:file "units")))))

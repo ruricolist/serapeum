@@ -460,11 +460,16 @@ own individual type."
        (fmakunbound ',ctor)
        ',name)))
 
-(define-symbol-macro %union nil)
+;;; Hack to work around an SBCL bug.
+(defpackage #:serapeum.unlocked
+  (:use)
+  (:export :%union))
+
+(define-symbol-macro serapeum.unlocked:%union nil)
 
 (defun env-super (env &optional default)
   "Look for the superclass bound in ENV."
-  (or (macroexpand-1 '%union env) default))
+  (or (macroexpand-1 'serapeum.unlocked:%union env) default))
 
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.
@@ -482,15 +487,16 @@ angle brackets around it."
          (units (filter #'atom variants))
          (types (append units (mapcar #'first ctors)))
          (super (symbolicate '< union '>)))
+    ;; NB The declarations are not currently used, due to an SBCL bug.
     `(locally (declare #+sbcl (sb-ext:disable-package-locks %union))
-       (symbol-macrolet ((%union ,super))
+       (symbol-macrolet ((serapeum.unlocked:%union ,super))
          (declare #+sbcl (sb-ext:enable-package-locks %union))
          (eval-when (:compile-toplevel :load-toplevel :execute)
            (defstruct (,super
-                       (:constructor nil)
-                       (:copier nil)
-                       (:predicate nil)
-                       (:include %read-only-struct))
+                        (:constructor nil)
+                        (:copier nil)
+                        (:predicate nil)
+                        (:include %read-only-struct))
              ,@(unsplice docstring)))
          ,@(loop for type in units
                  collect `(defunit ,type))

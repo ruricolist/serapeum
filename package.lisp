@@ -194,6 +194,8 @@
    #:file-size
    #:exe
    #:resolve-executable
+   #:format-file-size-human-readable
+   #:file-size-human-readable
    ;; Symbols.
    #:find-keyword
    #:bound-value

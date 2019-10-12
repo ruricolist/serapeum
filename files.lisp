@@ -162,3 +162,65 @@ only cares about its name and type."
                                         :defaults dir)
           when (uiop:file-exists-p pathname)
             do (return pathname))))
+
+(defun format-file-size-human-readable (stream file-size
+                                        &key flavor
+                                             (space (and (eql flavor :si) t))
+                                             (suffix (if (eql flavor :iec) "B" "")))
+  "Write SIZE, a file size in bytes, to STREAM, in human-readable form.
+If FLAVOR is nil, kilobytes are 1024 bytes and SI prefixes are used.
+
+If FLAVOR is `:si', kilobytes are 1000 bytes and SI prefixes are used.
+
+If FLAVOR is `:iec', kilobytes are 1024 bytes and SI prefixes (KiB,
+MiB, etc.) are used.
+
+If SPACE is non-nil, include a space between the number and the
+prefix. (Defaults to T if FLAVOR is `:si'.)
+
+SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec',
+otherwise empty.
+
+Inspired by the function of the same name in Emacs."
+  (when (zerop file-size)
+    (return-from format-file-size-human-readable
+      (format stream "0")))
+  (let ((file-size (coerce file-size 'double-float))
+        ;; Avoid printing exponent markers.
+        (*read-default-float-format* 'double-float)
+        (base (ecase flavor
+                ((nil) (values 1024 ""))
+                (:si   (values 1000 ""))
+                (:iec  (values 2    "B")))))
+    (multiple-value-bind (long short factor)
+        (si-prefix file-size :base base)
+      (declare (ignore long))
+      (let* ((file-size (/ file-size factor))
+             (int (round file-size))
+             (file-size
+               (if (> (abs (- file-size int))
+                      0.05d0)
+                   file-size
+                   int))
+             (control-string
+               (if (floatp file-size)
+                   (formatter "~,1f")
+                   (formatter "~d"))))
+        (format stream
+                "~@?~:[~; ~]~a~a"
+                control-string
+                file-size
+                space
+                short
+                suffix)))))
+
+(defun file-size-human-readable (file &key flavor space suffix stream)
+  "Format the size of FILE (in octets) using `format-file-size-human-readable'.
+The size of file is found by `trivial-file-size:file-size-in-octets'."
+  (let ((file-size (file-size-in-octets file)))
+    (format-file-size-human-readable
+     stream
+     file-size
+     :flavor flavor
+     :suffix suffix
+     :space space)))

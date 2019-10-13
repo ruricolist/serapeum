@@ -189,9 +189,9 @@ Inspired by the function of the same name in Emacs."
         ;; Avoid printing exponent markers.
         (*read-default-float-format* 'double-float)
         (base (ecase flavor
-                ((nil) (values 1024 ""))
-                (:si   (values 1000 ""))
-                (:iec  (values 2    "B")))))
+                ((nil) 1024)
+                (:si   1000)
+                (:iec  2))))
     (multiple-value-bind (long short factor)
         (si-prefix file-size :base base)
       (declare (ignore long))

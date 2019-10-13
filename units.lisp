@@ -73,3 +73,57 @@ sizes. Base 2 uses the IEC binary prefixes."
           (10 (si-prefix-rec n 10d0 #.si-prefixes))
           (1000 (si-prefix-rec n 1000d0 #.si-prefixes-base-1000))
           (1024 (si-prefix-rec n 1024d0 #.si-prefixes-base-1000))))))
+
+(defun human-size-formatter (size &key (flavor :si)
+                                       (space (eql flavor :si)))
+  "Auxiliary function for formatting quantities human-readably.
+Returns two values: a format control and a list of arguments.
+
+This can be used to integrate the human-readable printing of
+quantities into larger format control strings using the recursive
+processing format directive (~?):
+
+    (multiple-value-bind (control args)
+        (human-size-formatter size)
+      (format t \"~?\" control args))"
+  (let ((size (coerce size 'double-float))
+        ;; Avoid printing exponent markers.
+        (*read-default-float-format* 'double-float)
+        (base (ecase flavor
+                (:file 1024)
+                (:si   1000)
+                (:iec  2))))
+    (multiple-value-bind (long short factor)
+        (si-prefix size :base base)
+      (declare (ignore long))
+      (let* ((size (/ size factor))
+             (int (round size))
+             (size
+               (if (> (abs (- size int))
+                      0.05d0)
+                   size
+                   int)))
+        (values (formatter "~:[~d~;~,1f~]~:[~; ~]~a")
+                (list (floatp size) size space short))))))
+
+(defun format-human-size (stream size
+                          &key (flavor :si)
+                               (space (eql flavor :si)))
+  "Write SIZE to STREAM, in human-readable form.
+
+STREAM is interpreted as by `format'.
+
+If FLAVOR is `:si' (the default) the base is 1000 and SI prefixes are used.
+
+If FLAVOR is `:file', the base is 1024 and SI prefixes are used.
+
+If FLAVOR is `:iec', the base is 1024 bytes and IEC prefixes (Ki, Mi,
+etc.) are used.
+
+If SPACE is non-nil, include a space between the number and the
+prefix. (Defaults to T if FLAVOR is `:si'.)"
+  (if (zerop size)
+      (format stream "0")
+      (multiple-value-bind (formatter args)
+          (human-size-formatter size :flavor flavor :space space)
+        (format stream "~?" formatter args))))

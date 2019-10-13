@@ -252,7 +252,6 @@
    #:random-in-range
    #:float-precision-contagion
    #:range
-   #:si-prefix
    ;; Octets.
    #:octet
    #:octet-vector
@@ -423,7 +422,11 @@
    #:package-exports
    #:package-names
    #:package-name-keyword
-   #:find-external-symbol))
+   #:find-external-symbol
+   ;; Units.
+   #:si-prefix
+   #:human-size-formatter
+   #:format-human-size))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

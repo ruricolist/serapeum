@@ -23,3 +23,14 @@
   (is (equal "kilo" (si-prefix (expt 2 10))))
   (is (equal "kibi" (si-prefix (expt 2 10) :base 2)))
   (is (equal "yocto" (si-prefix (expt 10 -23)))))
+
+(test format-human-size
+  (is (equal "0" (format-human-size nil 0)))
+  (is (equal "0" (format-human-size nil 0 :flavor :iec)))
+  (is (equal "0" (format-human-size nil 0 :flavor :si)))
+  (is (equal "1 k" (format-human-size nil 1000)))
+  (is (equal "-1 k" (format-human-size nil -1000)))
+  (is (equal "1Ki" (format-human-size nil 1024 :flavor :iec)))
+  (is (equal "-1Ki" (format-human-size nil -1024 :flavor :iec)))
+  (is (equal "500 k" (format-human-size nil 500000 :flavor :si)))
+  (is (equal "-500 k" (format-human-size nil -500000 :flavor :si))))

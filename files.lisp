@@ -182,9 +182,7 @@ If SPACE is non-nil, include a space between the number and the
 prefix. (Defaults to T if FLAVOR is `:si'.)
 
 SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec',
-otherwise empty.
-
-Inspired by the function of the same name in Emacs."
+otherwise empty."
   (check-type file-size (integer 0 *))
   (if (zerop file-size)
       (format stream "0")
@@ -195,7 +193,9 @@ Inspired by the function of the same name in Emacs."
 
 (defun file-size-human-readable (file &key flavor space suffix stream)
   "Format the size of FILE (in octets) using `format-file-size-human-readable'.
-The size of file is found by `trivial-file-size:file-size-in-octets'."
+The size of file is found by `trivial-file-size:file-size-in-octets'.
+
+Inspired by the function of the same name in Emacs."
   (let ((file-size (file-size-in-octets file)))
     (format-file-size-human-readable
      stream

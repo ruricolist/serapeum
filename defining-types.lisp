@@ -92,8 +92,9 @@ make it immutable simply by switching out `defstruct' for
 There are only a few syntactic differences:
 
 1. To prevent accidentally inheriting mutable slots, and preserve its
-   own meaningfulness, `defstruct-read-only' only allows inheritance
-   from other classes defined using `defstruct-read-only'.
+   own usefulness as a marker of the programmer's intent,
+   `defstruct-read-only' only allows inheritance from other classes
+   defined using `defstruct-read-only'.
 
 2. The `:type' option may not be used.
 

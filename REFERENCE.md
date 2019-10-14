@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (37 files, 357 functions)
+# Function Listing For SERAPEUM (38 files, 363 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -37,6 +37,7 @@
 - [Dispatch Case](#dispatch-case)
 - [Range](#range)
 - [Generalized Arrays](#generalized-arrays)
+- [Units](#units)
 
 ## Macro Tools
 
@@ -623,8 +624,9 @@ make it immutable simply by switching out `defstruct` for
 
 There are only a few syntactic differences:
 
-1. To prevent accidentally inheriting mutable slots,
-   `defstruct-read-only` does not allow inheritance.
+1. To prevent accidentally inheriting mutable slots, and preserve its
+   own meaningfulness, `defstruct-read-only` only allows inheritance
+   from other classes defined using `defstruct-read-only`.
 
 2. The `:type` option may not be used.
 
@@ -653,7 +655,7 @@ immutable, whether in your own code or in code you are refactoring. In
 new code, however, you may sometimes prefer `defconstructor`, which is
 designed to facilitate working with immutable data.
 
-[View source](defining-types.lisp#L85)
+[View source](defining-types.lisp#L83)
 
 ### `(read-eval-prefix object stream)`
 
@@ -672,14 +674,14 @@ the string "#.".
 If `*print-readably*` is true, but `*read-eval*` is not true, signal
 an error.
 
-[View source](defining-types.lisp#L171)
+[View source](defining-types.lisp#L166)
 
 ### `(deconstruct x)`
 
 If X is a type defined with `defconstructor`, return its slots as
 multiple values.
 
-[View source](defining-types.lisp#L215)
+[View source](defining-types.lisp#L210)
 
 ### `(defconstructor type-name &body slots)`
 
@@ -768,7 +770,7 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](defining-types.lisp#L225)
+[View source](defining-types.lisp#L220)
 
 ### `(defunit name &optional docstring)`
 
@@ -778,11 +780,11 @@ A unit type is a type with only one instance.
 
 You can think of a unit type as a singleton without state.
 
-Unit types are used for many of the same purposes as quoted symbols
+Unit types are useful for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L470)
+[View source](defining-types.lisp#L430)
 
 ### `(defunion union &body variants)`
 
@@ -790,9 +792,13 @@ Define an algebraic data type.
 
 Each expression in VARIANTS is either a symbol (in which case it
 defines a unit type, as with `defunit`) or a list (in which case it
-defines a structure, as with `defconstructor`.
+defines a read-only structure, as with `defconstructor`).
 
-[View source](defining-types.lisp#L499)
+UNION is defined as a type equivalent to the disjunction of all the
+member types. A class is also defined, with the same name, but with
+angle brackets around it.
+
+[View source](defining-types.lisp#L474)
 
 ### `(match-of union expr &body clauses)`
 
@@ -812,7 +818,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L556)
+[View source](defining-types.lisp#L548)
 
 ## Binding
 
@@ -2280,6 +2286,36 @@ only cares about its name and type.
 
 [View source](files.lisp#L146)
 
+### `(format-file-size-human-readable stream file-size &key flavor space suffix)`
+
+Write FILE-SIZE, a file size in bytes, to STREAM, in human-readable form.
+
+STREAM is interpreted as by `format`.
+
+If FLAVOR is nil, kilobytes are 1024 bytes and SI prefixes are used.
+
+If FLAVOR is `:si`, kilobytes are 1000 bytes and SI prefixes are used.
+
+If FLAVOR is `:iec`, kilobytes are 1024 bytes and IEC prefixes (Ki,
+Mi, etc.) are used.
+
+If SPACE is non-nil, include a space between the number and the
+prefix. (Defaults to T if FLAVOR is `:si`.)
+
+SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec`,
+otherwise empty.
+
+[View source](files.lisp#L166)
+
+### `(file-size-human-readable file &key flavor space suffix stream)`
+
+Format the size of FILE (in octets) using `format-file-size-human-readable`.
+The size of file is found by `trivial-file-size:file-size-in-octets`.
+
+Inspired by the function of the same name in Emacs.
+
+[View source](files.lisp#L194)
+
 ## Symbols
 
 ### `(find-keyword string)`
@@ -2746,44 +2782,50 @@ This construct is very loosely inspired by impl blocks in Rust.
 
 ## Hooks
 
-### `(add-hook name fn &key append)`
+### `(add-hook hook fn &key append)`
 
-Add FN to the value of NAME, a hook.
+Add FN to the value of HOOK.
 
-[View source](hooks.lisp#L10)
+[View source](hooks.lisp#L6)
 
-### `(remove-hook name fn)`
+### `(remove-hook hook fn)`
 
-Remove fn from the symbol value of NAME.
+Remove FN from the symbol value of HOOK.
 
-[View source](hooks.lisp#L21)
+[View source](hooks.lisp#L16)
 
-### `(run-hooks &rest hookvars)`
+### `(run-hooks &rest hooks)`
 
-Run all the hooks in all the HOOKVARS.
+Run all the hooks in HOOKS.
 The variable `*hook*` is bound to the name of each hook as it is being
 run.
 
-[View source](hooks.lisp#L32)
+[View source](hooks.lisp#L26)
 
-### `(run-hook-with-args *hook* &rest args)`
+### `(run-hook hook)`
 
-Apply each function in the symbol value of HOOK to ARGS.
+Run the functions in HOOK.
 
-[View source](hooks.lisp#L44)
+[View source](hooks.lisp#L33)
 
-### `(run-hook-with-args-until-failure *hook* &rest args)`
+### `(run-hook-with-args hook &rest args)`
+
+Apply each function in HOOK to ARGS.
+
+[View source](hooks.lisp#L40)
+
+### `(run-hook-with-args-until-failure hook &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns nil.
 
-[View source](hooks.lisp#L53)
+[View source](hooks.lisp#L47)
 
-### `(run-hook-with-args-until-success *hook* &rest args)`
+### `(run-hook-with-args-until-success hook &rest args)`
 
 Like `run-hook-with-args`, but quit once a function returns
 non-nil.
 
-[View source](hooks.lisp#L61)
+[View source](hooks.lisp#L53)
 
 ## Fbind
 
@@ -3555,7 +3597,7 @@ From Q.
 
 [View source](sequences.lisp#L1282)
 
-### `(inconsistent-graph-constraints inconsistent-graph)`
+### `(inconsistent-graph-constraints x)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
@@ -4566,4 +4608,56 @@ Return the product of all of the elements of ARRAY, a generalized array.
 Operates pairwise for numerical stability.
 
 [View source](generalized-arrays.lisp#L334)
+
+## Units
+
+### `(si-prefix n &key base)`
+
+Given a number, return the prefix of the nearest SI unit.
+
+Three values are returned: the long form, the short form, and the
+multiplying factor.
+
+    (si-prefix 1001) => "kilo", "k", 1000d0
+
+BASE can be 1000, 10, 1024, or 2. 1000 is the default, and prefixes
+start at kilo and milli. Base 10 is mostly the same, except the
+prefixes centi, deci, deca and hecto are also used. Base 1024 uses the
+same prefixes as 1000, but with 1024 as the base, as in vulgar file
+sizes. Base 2 uses the IEC binary prefixes.
+
+[View source](units.lisp#L56)
+
+### `(human-size-formatter size &key flavor space)`
+
+Auxiliary function for formatting quantities human-readably.
+Returns two values: a format control and a list of arguments.
+
+This can be used to integrate the human-readable printing of
+quantities into larger format control strings using the recursive
+processing format directive (~?):
+
+    (multiple-value-bind (control args)
+        (human-size-formatter size)
+      (format t "~?" control args))
+
+[View source](units.lisp#L77)
+
+### `(format-human-size stream size &key flavor space)`
+
+Write SIZE to STREAM, in human-readable form.
+
+STREAM is interpreted as by `format`.
+
+If FLAVOR is `:si` (the default) the base is 1000 and SI prefixes are used.
+
+If FLAVOR is `:file`, the base is 1024 and SI prefixes are used.
+
+If FLAVOR is `:iec`, the base is 1024 bytes and IEC prefixes (Ki, Mi,
+etc.) are used.
+
+If SPACE is non-nil, include a space between the number and the
+prefix. (Defaults to T if FLAVOR is `:si`.)
+
+[View source](units.lisp#L109)
 

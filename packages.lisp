@@ -36,3 +36,16 @@ case an error is signaled."
   "Like `export', but also evaluated at compile time."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (export ,symbols ,@(and package-supplied? (list package)))))
+
+(defun export-only (export/s &optional (package *package*))
+  "Like EXPORT, but unexport any other, existing exports."
+  (let* ((new (ensure-list export/s))
+         (old (package-exports package))
+         (disallowed (set-difference old new)))
+    (unexport disallowed package)
+    (export new package)))
+
+(defmacro export-only-always (symbols &optional (package nil package-supplied?))
+  "Like `export-only', but also evaluated at compile time."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (export-only ,symbols ,@(and package-supplied? (list package)))))

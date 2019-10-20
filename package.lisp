@@ -423,6 +423,8 @@
    #:package-names
    #:package-name-keyword
    #:find-external-symbol
+   #:export-only
+   #:export-only-always
    #:export-always
    ;; Units.
    #:si-prefix

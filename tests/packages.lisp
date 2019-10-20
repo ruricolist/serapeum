@@ -32,3 +32,18 @@
   (is (null (find-external-symbol (string 'list) :serapeum.tests.p2)))
   (is (eql 'car
            (find-external-symbol (string 'car) :serapeum.tests.p2))))
+
+(defpackage :serapeum.tests.export-only
+  (:use))
+
+(test export-only
+  (let ((*package* (find-package :serapeum.tests.export-only)))
+    (multiple-value-bind (x y z)
+        (values-list (mapcar (op (intern (string _))) '(x y z)))
+      (unwind-protect
+           (progn
+             (export (list x y z))
+             (is (set-equal (package-exports) (list x y z)))
+             (export-only (list x y))
+             (is (set-equal (package-exports) (list x y))))
+        (unexport (package-exports))))))

@@ -423,6 +423,7 @@
    #:package-names
    #:package-name-keyword
    #:find-external-symbol
+   #:export-always
    ;; Units.
    #:si-prefix
    #:human-size-formatter

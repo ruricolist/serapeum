@@ -1,6 +1,6 @@
 (in-package :serapeum)
 
-(defun package-exports (package)
+(defun package-exports (&optional (package *package*))
   "Return a list of the symbols exported by PACKAGE."
   (loop for symbol being the external-symbols of package
         collect symbol))

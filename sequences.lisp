@@ -522,6 +522,13 @@ Items are assigned to the first predicate they match."
                              buckets)
                 (bucket-seq seq extra))))))
 
+(defconstructor agroup
+  "Auxiliary data structure for `assort'. A pair of an exemplar (to
+compare against) and a bucket of matching items. Note that while the
+agroup is immutable, the bucket itself is mutable."
+  (exemplar t)
+  (bucket t))
+
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
   "Return SEQ assorted by KEY.
 
@@ -535,20 +542,28 @@ You can think of `assort' as being akin to `remove-duplicates':
      ≡ (remove-duplicates list :from-end t)"
   (fbind (test)
     (with-key-fn (key)
-      (let ((groups (queue)))
+      (let ((groups (queue))
+            last-group)
         (with-specialized-buckets (seq)
           (do-subseq (item seq nil :start start :end end)
             (let ((kitem (key item)))
               (if-let ((group
-                        (cdr
-                         (find-if
-                          (lambda (group)
-                            (test kitem (car group)))
-                          (qlist groups)))))
-                (bucket-push seq item group)
-                (enq (cons kitem (make-bucket seq item)) groups))))
-          (mapcar-into (lambda (bucket)
-                         (bucket-seq seq (cdr bucket)))
+                        (if (match last-group
+                              ((agroup exemplar _)
+                               (test kitem exemplar)))
+                            last-group
+                            (find-if
+                             (lambda (exemplar)
+                               (test kitem exemplar))
+                             (qlist groups)
+                             :key #'agroup-exemplar))))
+                (progn
+                  (setf last-group group)
+                  (bucket-push seq item (agroup-bucket group)))
+                (enq (agroup kitem (make-bucket seq item))
+                     groups))))
+          (mapcar-into (lambda (group)
+                         (bucket-seq seq (agroup-bucket group)))
                        (qlist groups)))))))
 
 (defun list-runs (list start end key test)

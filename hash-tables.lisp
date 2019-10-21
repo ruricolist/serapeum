@@ -225,9 +225,22 @@ From Zetalisp."
                hash-table)))
 
 ;; Clojure
-(defun merge-tables (table &rest tables)
-  "Merge TABLE and TABLES, working from left to right.
-The resulting hash table has the same parameters as TABLE.
+(defun merge-tables! (table &rest tables)
+  (reduce (lambda (ht1 ht2)
+            (check-same-test ht1 ht2)
+            (do-hash-table (k v ht2)
+              (setf (gethash k ht1) v))
+            ht1)
+          tables
+          :initial-value table))
+
+(defun merge-tables (&rest tables)
+  "Merge TABLES, working from left to right.
+The resulting hash table has the same parameters as the first table.
+
+If no tables are given, an new, empty hash table is returned.
+
+If a single table is given, a copy of it is returned.
 
 If the same key is present in two tables, the value from the rightmost
 table is used.
@@ -237,23 +250,18 @@ All of the tables being merged must have the same value for
 
 Clojure's `merge'.
 "
-  (let ((size (max +hash-table-default-size+
-                   (reduce #'+ tables
-                           :key #'hash-table-count
-                           :initial-value (hash-table-count table)))))
-    (values
-     (apply #'merge-tables!
-            (copy-hash-table table :size size)
-            tables))))
-
-(defun merge-tables! (table &rest tables)
-  (reduce (lambda (ht1 ht2)
-            (check-same-test ht1 ht2)
-            (do-hash-table (k v ht2)
-              (setf (gethash k ht1) v))
-            ht1)
-          tables
-          :initial-value table))
+  (match tables
+    ((list) (make-hash-table))
+    ((list table) (copy-hash-table table))
+    ((list* table tables)
+     (let ((size (max +hash-table-default-size+
+                      (reduce #'+ tables
+                              :key #'hash-table-count
+                              :initial-value (hash-table-count table)))))
+       (values
+        (apply #'merge-tables!
+               (copy-hash-table table :size size)
+               tables))))))
 
 (defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
   "Return a table like TABLE, but with keys and values flipped.

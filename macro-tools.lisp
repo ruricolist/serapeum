@@ -739,7 +739,7 @@ If FORM cannot be reduced, return it unaltered.
 Also return a second value, T if the form was reduced, or nil
 otherwise.
 
-This is equivalent to testing if FORM is constant, then evaluting it,
+This is equivalent to testing if FORM is constant, then evaluating it,
 except that FORM is macro-expanded in ENV (taking compiler macros into
 account) before doing the test.
 

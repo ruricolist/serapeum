@@ -151,7 +151,6 @@
   (is (= 1 (string-count "foo" "fofoofo"))))
 
 (test string+
-  (is (not (eq (string+) (string+))))
   (is (equal "" (string+)))
   (is (equal "abc" (string+ "a" "b" "c")))
   (is (equal "12345" (string+ 1 2 3 4 5)))

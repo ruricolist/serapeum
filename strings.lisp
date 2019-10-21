@@ -681,14 +681,15 @@ Roughly equivalent to
 But with a compiler macro that can sometimes result in more efficient
 code."
   (declare (dynamic-extent args))
-  (let ((*print-pretty* nil))
-    (with-output-to-string (s)
-      (dolist (arg args)
-        (typecase arg
-          (string (write-string arg s))
-          (character (write-char arg s))
-          (symbol (write-string (symbol-name arg) s))
-          (t (princ arg s)))))))
+  (if (null args) ""
+      (let ((*print-pretty* nil))
+        (with-output-to-string (s)
+          (dolist (arg args)
+            (typecase arg
+              (string (write-string arg s))
+              (character (write-char arg s))
+              (symbol (write-string (symbol-name arg) s))
+              (t (princ arg s))))))))
 
 (defun simplify-args-for-string-plus (args &optional env)
   (reduce (lambda (x args)
@@ -735,8 +736,7 @@ code."
 (define-compiler-macro string+ (&whole call
                                        &environment env
                                        &rest args)
-  (if (null args)
-      `(make-string 0)
+  (if (null args) ""
       (let ((args (simplify-args-for-string-plus args env)))
         (if (> (length args) 20) call
             (if (= (length args) 1)

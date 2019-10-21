@@ -33,6 +33,17 @@
      (with-read-only-vars (*special*)
        (setf *special* nil)))))
 
+(defconstant +one+ 1)
+(test eval-if-constant
+  (is (eql 1 (eval-if-constant '+one+))))
+
+(defun permafoo () 'foo)
+(define-compiler-macro permafoo () 'foo)
+
+(test eval-if-constant/compiler-macro
+  (is-false (constantp '(foo)))
+  (is (eql 'foo (eval-if-constant '(permafoo)))))
+
 (test eval-if-constant-in-env
   (macrolet ((constant-value/env (x &environment env)
                (eval-if-constant x env)))

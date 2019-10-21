@@ -736,8 +736,10 @@ lambda list."
   "Try to reduce FORM to a constant, using ENV.
 If FORM cannot be reduced, return it unaltered.
 
-Also return a second value, T if the form was reduced, or nil
-otherwise.
+Also return a second value, T if the form could be reduced to a
+constant, or nil otherwise. \(Note that the second value may be T if
+FORM was already a constant; think of it as a \"green light\" to treat
+the value as a constant.)
 
 This is equivalent to testing if FORM is constant, then evaluating it,
 except that FORM is macro-expanded in ENV (taking compiler macros into
@@ -746,20 +748,27 @@ account) before doing the test.
 Note that this function may treat a form as constant which would not
 be recognized as such by `constantp', because we also expand compiler
 macros."
-  (cond ((constantp form)
-         (values (eval form) t))
-        ((and env (constantp form env))
-         ;; Use the implementation's expander via introspect-environment.
-         (let ((value (constant-form-value form env)))
-           (if (constantp value)
-               (values value t)
-               ;; It failed, let's try macroexpanding.
-               (eval-if-constant form nil))))
-        (t
-         (let ((exp (expand-macro-recursively form env)))
-           (if (constantp exp)
-               (values (eval exp) t)
-               (values form nil))))))
+  (labels ((eval-if-constant (form env)
+             (cond ((constantp form)
+                    (values (eval form) t))
+                   ((and env (constantp form env))
+                    ;; Use the implementation's expander via introspect-environment.
+                    (let ((value (constant-form-value form env)))
+                      (if (constantp value)
+                          (values value t)
+                          ;; Not every Lisp has a functioning
+                          ;; `constant-form-value', so if it failed,
+                          ;; it's still worth trying macroexpansion
+                          ;; (compiler macros too).
+                          (expand-and-retry form env))))
+                   (t (expand-and-retry form env))))
+           (expand-and-retry (form env)
+             (multiple-value-bind (exp exp?)
+                 (expand-macro-recursively form env)
+               (if (not exp?)
+                   (values form nil)
+                   (eval-if-constant exp env)))))
+    (eval-if-constant form env)))
 
 (defmacro declaim-maybe-inline-1 (fn)
   (declare (ignorable fn))

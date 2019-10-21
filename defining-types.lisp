@@ -367,7 +367,7 @@ some implementation tricks from `cl-algebraic-data-type'."
                         ,@(loop for (slot-name nil) in slots
                                 for reader in readers
                                 collect `(,slot-name (,reader ,orig))))
-             ,(fmt "Copy an instance of ~:@(~a~), optionally ~
+             ,(format nil "Copy an instance of ~:@(~a~), optionally ~
 overriding some or all of its slots." type-name)
              (declare (ignorable ,orig))
              ;; A copier without slots should be identity.

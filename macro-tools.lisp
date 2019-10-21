@@ -176,13 +176,13 @@ From Swank."
 (defun expand-macro-recursively (form &optional env)
   "Like `macroexpand', but also expand compiler macros.
 From Swank."
-  (labels ((expand (form)
+  (labels ((expand (form count)
              (multiple-value-bind (form expanded?)
                  (expand-macro form env)
                (if (not expanded?)
-                   form
-                   (expand form)))))
-    (expand form)))
+                   (values form (> count 0))
+                   (expand form (1+ count))))))
+    (expand form 0)))
 
 ;;;# Picking apart declarations
 

@@ -688,7 +688,6 @@ code."
             (typecase arg
               (string (write-string arg s))
               (character (write-char arg s))
-              (symbol (write-string (symbol-name arg) s))
               (t (princ arg s))))))))
 
 (defun simplify-args-for-string-plus (args &optional env)

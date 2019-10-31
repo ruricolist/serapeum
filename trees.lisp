@@ -10,7 +10,7 @@ Otherwise, return a fresh cons of X and Y."
       x-y
       (cons x y)))
 
-(defun walk-tree (fun tree &optional (tag nil tagp))
+(defun walk-tree (fun tree &key (tag nil tagp))
   "Call FUN in turn over each atom and cons of TREE.
 
 FUN can skip the current subtree with (throw TAG nil)."
@@ -32,7 +32,7 @@ FUN can skip the current subtree with (throw TAG nil)."
           (walk-tree tree))))
   (values))
 
-(defun map-tree (fun tree &optional (tag nil tagp))
+(defun map-tree (fun tree &key (tag nil tagp))
   "Walk FUN over TREE and build a tree from the results.
 
 The new tree may share structure with the old tree.

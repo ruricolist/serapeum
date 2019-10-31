@@ -14,5 +14,5 @@
                              (throw 'skip 'skipped)
                              subtree))
                        '((a (b) (c (skip-me d (e f)))))
-                       'skip)
+                       :tag 'skip)
              '((a (b) (c skipped))))))

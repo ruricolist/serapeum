@@ -118,7 +118,11 @@
                 ((:file "macro-tools")
                  (:file "types")
                  (:file "definitions")
-                 (:file "defining-types" :if-feature (:not :abcl))
+                 (:file "defining-types-aux"
+                  :if-feature (:not :abcl))
+                 (:file "defining-types"
+                  :if-feature (:not :abcl)
+                  :depends-on ("defining-types-aux"))
                  (:file "internal-definitions")
                  (:file "binding")
                  (:file "control-flow")

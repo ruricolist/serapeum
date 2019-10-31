@@ -80,21 +80,19 @@
          "(PERSON \"Common Lisp\" 33)"
          (princ-to-string person)))))
 
-(defunit zero)
-
 (test defunit
-  (is (eq* zero zero (eval 'zero)))
+  (is (eq* zero zero (eval 'zero) (get-zero)))
+  (is (eq* leaf leaf (eval 'leaf) (get-leaf)))
   (is (equal "#.ZERO"
              (with-standard-io-syntax
                (let ((*package* (find-package :serapeum.tests))
                      (*print-readably* t))
-                 (write-to-string zero))))))
-
-(defunion tree
-  leaf
-  (node (value integer)
-        (left tree)
-        (right tree)))
+                 (write-to-string zero)))))
+  (is (equal "#.LEAF"
+             (with-standard-io-syntax
+               (let ((*package* (find-package :serapeum.tests))
+                     (*print-readably* t))
+                 (write-to-string leaf))))))
 
 (defun count-nodes (tree)
   (match-of tree tree

@@ -428,6 +428,14 @@ overriding some or all of its slots." type-name)
           (read-eval-prefix object stream)
           (class-name (class-of object))))
 
+(defvar *units* (make-hash-table))
+
+(defun get-unit (name ctor)
+  (synchronized ('*units*)
+    (or (gethash name *units*)
+        (setf (gethash name *units*)
+              (funcall ctor)))))
+
 (defmacro defunit (name &optional docstring
                    &environment env)
   "Define a unit type.
@@ -451,12 +459,10 @@ own individual type."
                      (:print-function print-unit))
            ,@(unsplice docstring)))
        (defmethod make-load-form ((x ,name) &optional env)
-         (make-load-form-saving-slots x
-                                      :slot-names nil
-                                      :environment env))
+         '(get-unit ',name ',ctor))
        (defmethod %constructor= ((x ,name) (y ,name))
          t)
-       (defconst ,name (,ctor))
+       (defconst ,name (get-unit ',name ',ctor))
        (declaim-freeze-type ,name)
        (fmakunbound ',ctor)
        ',name)))

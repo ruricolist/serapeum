@@ -81,8 +81,10 @@
          (princ-to-string person)))))
 
 (test defunit
-  (is (eq* zero zero (eval 'zero) (get-zero)))
-  (is (eq* leaf leaf (eval 'leaf) (get-leaf)))
+  (is (eq* zero zero (eval 'zero)))
+  (is (eq* leaf leaf (eval 'leaf)))
+  (is (eq zero (get-zero)))
+  (is (eq leaf (get-leaf)))
   (is (equal "#.ZERO"
              (with-standard-io-syntax
                (let ((*package* (find-package :serapeum.tests))

@@ -35,7 +35,7 @@
                  (:file "definitions"
                   :depends-on ("iter"))
                  (:file "defining-types"
-                  :depends-on ("iter"))
+                  :depends-on ("iter" "threads"))
                  (:file "binding")
                  (:file "control-flow"
                   :depends-on ("definitions"))

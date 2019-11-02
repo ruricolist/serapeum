@@ -459,6 +459,7 @@ own individual type."
                      (:print-function print-unit))
            ,@(unsplice docstring)))
        (defmethod make-load-form ((x ,name) &optional env)
+         (declare (ignore env))
          '(get-unit ',name ',ctor))
        (defmethod %constructor= ((x ,name) (y ,name))
          t)

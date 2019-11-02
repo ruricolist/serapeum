@@ -291,12 +291,12 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
 
 (defparameter *vref-by-type*
   (stable-sort
-   '((simple-bit-vector . sbit)
-     (bit-vector . bit)
-     (string . char)
-     (simple-string . schar)
-     (simple-vector . svref)
-     (t . aref))
+   (list '(simple-bit-vector . sbit)
+         '(bit-vector . bit)
+         '(string . char)
+         '(simple-string . schar)
+         '(simple-vector . svref)
+         '(t . aref))
    #'proper-subtype-p
    :key #'car))
 

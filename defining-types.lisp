@@ -377,7 +377,7 @@ overriding some or all of its slots." type-name)
 
        ;; Define a load form.
        (defmethod make-load-form ((self ,type-name) &optional env)
-         (declare (ignorable self))
+         (declare (ignorable self env))
          (list ',type-name
                ,@(loop for reader in readers
                        collect `(quote-unless-constant (,reader self)

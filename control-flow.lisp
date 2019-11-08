@@ -325,7 +325,7 @@ Stands for “exhaustive if”."
                        'econd test-count))))
   (:documentation "An ECOND failed."))
 
-(defmacro econd (&body clauses)
+(defmacro econd (&rest clauses)
   "Like `cond', but signal an error of type `econd-failure' if no
 clause succeeds."
   (let ((test-count (length clauses)))

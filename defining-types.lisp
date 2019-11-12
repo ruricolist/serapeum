@@ -430,11 +430,14 @@ overriding some or all of its slots." type-name)
 
 (defvar *units* (make-hash-table))
 
-(defun get-unit (name ctor)
-  (synchronized ('*units*)
-    (or (gethash name *units*)
-        (setf (gethash name *units*)
-              (funcall ctor)))))
+(defun intern-unit (name &optional ctor)
+  (or (get name '%unit)
+      (synchronized (name)
+        (or (get name '%unit)
+            (progn
+              (assert ctor)
+              (setf (get name '%unit)
+                    (funcall ctor)))))))
 
 (defmacro defunit (name &optional docstring
                    &environment env)
@@ -458,13 +461,17 @@ own individual type."
                      (:predicate nil)
                      (:print-function print-unit))
            ,@(unsplice docstring)))
-       (defmethod make-load-form ((x ,name) &optional env)
-         (declare (ignore env))
-         '(get-unit ',name ',ctor))
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (defmethod make-load-form ((x ,name) &optional env)
+           (declare (ignore env))
+           '(intern-unit ',name)))
+       (eval-always
+         (intern-unit ',name ',ctor))
+       (define-symbol-macro ,name
+           (truly-the ,name (load-time-value (intern-unit ',name) t)))
+       (declaim-freeze-type ,name)
        (defmethod %constructor= ((x ,name) (y ,name))
          t)
-       (defconst ,name (get-unit ',name ',ctor))
-       (declaim-freeze-type ,name)
        (fmakunbound ',ctor)
        ',name)))
 

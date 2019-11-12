@@ -9,7 +9,7 @@
 the names of all accessors (including readers and writers)."
   (let (accessors)
     (dolist (slot slots)
-      (destructuring-bind (&key accessor reader writer)
+      (destructuring-bind (&key accessor reader writer &allow-other-keys)
           (rest (ensure-list slot))
         (when accessor (push accessor accessors))
         (when reader (push reader accessors))

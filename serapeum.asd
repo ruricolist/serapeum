@@ -91,7 +91,8 @@
                 :pathname ""
                 :serial nil
                 :components
-                ((:file "vector=")
+                ((:file "exporting")
+                 (:file "vector=")
                  (:file "mop")
                  (:file "internal-definitions")
                  (:file "tree-case")

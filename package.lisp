@@ -121,6 +121,8 @@
    #:nest
    #:sort-values
    #:eq* #:eql* #:equal* #:equalp*
+   #:recursion-forbidden
+   #:without-recursion
    ;; Threads.
    #:synchronized
    #:monitor

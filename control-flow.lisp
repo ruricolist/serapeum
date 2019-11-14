@@ -865,3 +865,24 @@ writing out the tests by hand."
 (define-variadic-equality equal* equal)
 
 (define-variadic-equality equalp* equalp)
+
+(define-condition recursion-forbidden (error)
+  ((form :initarg :form))
+  (:report (lambda (c s)
+             (with-slots (form) c
+               (format s "Forbidden recursion in form:~%~a" form)))))
+
+(defvar *recursions* nil)
+
+(defmacro without-recursion ((&key) &body body)
+  "If BODY calls itself, at any depth, signal a (continuable) error of
+type `recursion-forbidden'."
+  (with-unique-names (recursion-id)
+    `(progn
+       (when (member ',recursion-id *recursions*)
+         (cerror "Recurse anyway."
+                 'recursion-forbidden
+                 :form ',body))
+       (let ((*recursions* (cons ',recursion-id *recursions*)))
+         (declare (dynamic-extent *recursions*))
+         ,@body))))

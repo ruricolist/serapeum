@@ -6,17 +6,6 @@ env:
     - LISP=sbcl
     - LISP=ccl
 
-matrix:
-  allow-failures:
-    - env: LISP=ecl
-
-before_install:
-   # 32-bit libraries needed to run Allegro.
-   sudo dpkg --add-architecture i386
-   sudo apt-get update
-   sudo apt-get install libc6:i386
-   sudo apt-get install libgtk2.0-0:i386
-
 install:
   # Install cl-travis
   - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | bash

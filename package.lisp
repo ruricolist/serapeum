@@ -31,6 +31,7 @@
    #:+merge-tail-calls+
    #:require-body-for-splice
    #:require-form-for-eval
+   #:unparse-ordinary-lambda-list
    ;; Types.
    #:supertypep
    #:proper-subtype-p

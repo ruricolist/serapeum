@@ -835,3 +835,33 @@ E.g. `progn', `locally'.")
       exp
       (error "A single form was expected, but this appears to be a list of forms:~%~s"
              exp)))
+
+(defun unparse-ordinary-lambda-list (&optional required optional rest keywords aok? aux key?)
+  "Put together an ordinary lambda list from its constituent parts.
+
+This is the inverse of `alexandria:parse-ordinary-lambda-list'.
+
+    lambda-list
+    ≡ (multiple-value-call #'unparse-ordinary-lambda-list
+        (parse-ordinary-lambda-list lambda-list)"
+  (let ((optional
+          (mapcar (lambda (spec)
+                    (match spec
+                      ((list var init nil)
+                       (list var init))
+                      (otherwise spec)))
+                  optional))
+        (keywords
+          (mapcar (lambda (spec)
+                    (match spec
+                      ((list (list keyword-name name) init nil)
+                       (list (list keyword-name name) init))
+                      (otherwise spec)))
+                  keywords)))
+    `(,@required
+      ,@(and optional `(&optional ,@optional))
+      ,@(and rest `(&rest ,rest))
+      ,@(and (or key? keywords)
+             `(&key ,@keywords))
+      ,@(and aok? '(&allow-other-keys))
+      ,@(and aux `(&aux ,@aux)))))

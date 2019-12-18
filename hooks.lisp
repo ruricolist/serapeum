@@ -24,33 +24,26 @@
      ,@body))
 
 (defun run-hooks (&rest hooks)
-  "Run all the hooks in HOOKS.
+  "Run all the hooks in HOOKS, without arguments.
 The variable `*hook*' is bound to the name of each hook as it is being
 run."
   (dolist (*hook* hooks)
     (run-hook *hook*)))
 
-(defgeneric run-hook (hook)
-  (:documentation "Run the functions in HOOK.")
-  (:method ((*hook* symbol))
-    (dolist (fn (symbol-value *hook*))
-      (with-hook-restart
-        (funcall fn)))))
-
-(defgeneric run-hook-with-args (hook &rest args)
+(defgeneric run-hook (hook &rest args)
   (:documentation "Apply each function in HOOK to ARGS.")
   (:method ((*hook* symbol) &rest args)
     (dolist (fn (symbol-value *hook*))
       (with-hook-restart
         (apply fn args)))))
 
-(defgeneric run-hook-with-args-until-failure (hook &rest args)
+(defgeneric run-hook-until-failure (hook &rest args)
   (:documentation "Like `run-hook-with-args', but quit once a function returns nil.")
   (:method ((*hook* symbol) &rest args)
     (loop for fn in (symbol-value *hook*)
           always (apply fn args))))
 
-(defgeneric run-hook-with-args-until-success (hook &rest args)
+(defgeneric run-hook-until-success (hook &rest args)
   (:documentation "Like `run-hook-with-args', but quit once a function returns
 non-nil.")
   (:method ((*hook* symbol) &rest args)

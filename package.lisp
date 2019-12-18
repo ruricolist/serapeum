@@ -286,9 +286,9 @@
    #:remove-hook
    #:run-hooks
    #:run-hook
-   #:run-hook-with-args
-   #:run-hook-with-args-until-failure
-   #:run-hook-with-args-until-success
+   #:run-hook
+   #:run-hook-until-failure
+   #:run-hook-until-success
    ;; Fbind.
    #:fbind
    #:fbind*

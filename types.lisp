@@ -285,9 +285,12 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
+(defun policy> (env policy1 policy2)
+  (> (policy-quality policy1 env)
+     (policy-quality policy2 env)))
+
 (defun space-beats-speed? (env)
-  (> (policy-quality 'space env)
-     (policy-quality 'speed env)))
+  (policy> env 'space 'speed))
 
 (defparameter *vref-by-type*
   (stable-sort

@@ -430,6 +430,10 @@ Returns 1 when the environment cannot be accessed."
           1
           (error "Unknown policy quality ~s" quality))))
 
+(defun policy> (env policy1 policy2)
+  (> (policy-quality policy1 env)
+     (policy-quality policy2 env)))
+
 (defun variable-type (var &optional env)
   (if (fboundp 'trivial-cltl2:variable-information)
       (let ((alist (nth-value 2 (funcall 'trivial-cltl2:variable-information var env))))

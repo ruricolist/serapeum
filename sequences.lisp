@@ -255,7 +255,8 @@ versions of the bucket accessors.
 
 This is only likely to be worthwhile around a loop; if you're calling
 a bucket accessor once or twice the code bloat isn't worth it."
-  (if (policy> env 'space 'speed)
+  (if (or (policy> env 'space 'speed)
+          (policy> env 'compilation-speed 'speed))
       `(locally ,@body)
       (multiple-value-bind (body decls) (parse-body body)
         `(locally

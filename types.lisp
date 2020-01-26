@@ -421,8 +421,9 @@ Functions\", by Irène Durand and Robert Strandh."
                                types)))
     (cond ((null types)
            `(locally ,@body))
-          ((policy> env 'space 'speed)
-           (simple-style-warning "Not using type dispatch (space>speed).")
+          ((or (policy> env 'space 'speed)
+               (policy> env 'compilation-speed 'speed))
+           (simple-style-warning "Not using type dispatch due to optimize declarations.")
            `(locally ,@body))
           ;; The advantage of the CMUCL/SBCL way (I hope) is that the
           ;; compiler can decide /not/ to bother inlining if the type
@@ -492,7 +493,8 @@ added to ensure that TYPE itself is handled."
 
 (defmacro with-boolean (var &body body
                         &environment env)
-  (if (policy> env 'space 'speed)
+  (if (or (policy> env 'space 'speed)
+          (policy> env 'compilation-speed 'speed))
       `(locally ,@body)
       (multiple-value-bind (body decls) (parse-body body)
         `(with-read-only-vars (,var)
@@ -509,7 +511,8 @@ added to ensure that TYPE itself is handled."
                         &environment env)
   "Specialize BODY on the most common test functions."
   (check-type test symbol)
-  (if (policy> env 'space 'speed)
+  (if (or (policy> env 'space 'speed)
+          (policy> env 'compilation-speed 'speed))
       `(locally ,@body)
       `(cond ((eql ,test #'eq)
               (macrolet ((,test (x y) `(eq ,x ,y)))
@@ -533,7 +536,8 @@ added to ensure that TYPE itself is handled."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
      ,@(require-body-for-splice
-        (if (policy> env 'space 'speed)
+        (if (or (policy> env 'space 'speed)
+                (policy> env 'compilation-speed 'speed))
             `((macrolet ((,key (x) (list 'funcall ',key x)))
                 ,@body))
             `((cond ((eql ,key #'identity)

@@ -285,9 +285,6 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
           do (error "~s is not a subtype of ~s" subtype type))
   (type= type `(or ,@subtypes)))
 
-(defun space-beats-speed? (env)
-  (policy> env 'space 'speed))
-
 (defparameter *vref-by-type*
   (stable-sort
    (list '(simple-bit-vector . sbit)
@@ -424,7 +421,7 @@ Functions\", by Irène Durand and Robert Strandh."
                                types)))
     (cond ((null types)
            `(locally ,@body))
-          ((space-beats-speed? env)
+          ((policy> env 'space 'speed)
            (simple-style-warning "Not using type dispatch (space>speed).")
            `(locally ,@body))
           ;; The advantage of the CMUCL/SBCL way (I hope) is that the
@@ -495,7 +492,7 @@ added to ensure that TYPE itself is handled."
 
 (defmacro with-boolean (var &body body
                         &environment env)
-  (if (space-beats-speed? env)
+  (if (policy> env 'space 'speed)
       `(locally ,@body)
       (multiple-value-bind (body decls) (parse-body body)
         `(with-read-only-vars (,var)
@@ -512,7 +509,7 @@ added to ensure that TYPE itself is handled."
                         &environment env)
   "Specialize BODY on the most common test functions."
   (check-type test symbol)
-  (if (space-beats-speed? env)
+  (if (policy> env 'space 'speed)
       `(locally ,@body)
       `(cond ((eql ,test #'eq)
               (macrolet ((,test (x y) `(eq ,x ,y)))
@@ -536,7 +533,7 @@ added to ensure that TYPE itself is handled."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
      ,@(require-body-for-splice
-        (if (space-beats-speed? env)
+        (if (policy> env 'space 'speed)
             `((macrolet ((,key (x) (list 'funcall ',key x)))
                 ,@body))
             `((cond ((eql ,key #'identity)

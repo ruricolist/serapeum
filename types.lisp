@@ -535,7 +535,7 @@ added to ensure that TYPE itself is handled."
   "Specialize BODY on the most common key functions."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
-     ,@(require-body-for-splice
+     ,@(sane-body-for-splice
         (if (or (policy> env 'space 'speed)
                 (policy> env 'compilation-speed 'speed))
             `((macrolet ((,key (x) (list 'funcall ',key x)))

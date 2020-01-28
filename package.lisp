@@ -29,7 +29,7 @@
    #:parse-leading-keywords
    #:with-read-only-vars
    #:+merge-tail-calls+
-   #:require-body-for-splice
+   #:sane-body-for-splice
    #:require-form-for-eval
    #:unparse-ordinary-lambda-list
    ;; Types.

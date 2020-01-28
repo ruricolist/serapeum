@@ -60,12 +60,12 @@
   (signals error
     (require-form-for-eval (list '(+ 1 2)))))
 
-(test require-body-for-splice
+(test sane-body-for-splice
   (signals error
-    (require-body-for-splice '(progn)))
+    (sane-body-for-splice '(progn)))
   (signals error
-    (require-body-for-splice '(locally)))
+    (sane-body-for-splice '(locally)))
   (signals error
-    (require-body-for-splice 'x))
+    (sane-body-for-splice 'x))
   (finishes
-    (require-body-for-splice nil)))
+    (sane-body-for-splice nil)))

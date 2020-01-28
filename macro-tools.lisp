@@ -819,7 +819,7 @@ This may not work at all on some Lisps.")
   "Symbols that should not occur in the head of a list of forms.
 E.g. `progn', `locally'.")
 
-(defun require-body-for-splice (exp)
+(defun sane-body-for-splice (exp)
   "Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)"

@@ -649,7 +649,7 @@ them sane initialization values."
       ;; These functions aren't necessary, but they
       ;; make the expansion cleaner.
       (labels ((wrap-decls (body)
-                 (require-form-for-eval
+                 (sane-form-for-eval
                   (if decls
                       `(locally ,@decls
                          ,@body)

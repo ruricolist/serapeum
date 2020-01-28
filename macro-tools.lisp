@@ -829,7 +829,7 @@ E.g. `progn', `locally'.")
              exp)
       exp))
 
-(defun require-form-for-eval (exp)
+(defun sane-form-for-eval (exp)
   "Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact."
   (if (match exp

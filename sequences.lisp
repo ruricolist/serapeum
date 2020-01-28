@@ -89,9 +89,18 @@ part of the arguments to compare, and compares them using TEST."
        (do-vector (,var ,seq)
          ,@body))))
 
-(defmacro do-each ((var seq &optional return) &body body)
+(define-do-macro do-each/map ((var seq &optional return) &body body)
+  "The simple, out-of-line version."
+  (with-thunk (body var)
+    `(map nil ,body ,seq)))
+
+(defmacro do-each ((var seq &optional return) &body body &environment env)
   "Iterate over the elements of SEQ, a sequence.
 If SEQ is a list, this is equivalent to `dolist'."
+  (when (policy> env 'space 'speed)
+    (return-from do-each
+      `(do-each/map (,var ,seq ,@(unsplice return))
+         ,@body)))
   ;; We hoist the body and use sb-ext:muffle-conditions to prevent
   ;; SBCL from spamming us with code deletion notes. (It may also be
   ;; desirable in itself to avoid needless code duplication in Lisps

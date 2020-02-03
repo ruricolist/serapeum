@@ -12,9 +12,6 @@
   #+sb-package-locks (:implement :serapeum :serapeum/dispatch-case))
 (in-package :serapeum/generalized-arrays)
 
-;;; TODO Before this is merged we need to come up with some plausible
-;;; prefix for generalized array operations.
-
 (defsubst tally (array)
   "Return the total size of ARRAY, a generalized array.
 For a true array this is equivalent to `array-total-size'."

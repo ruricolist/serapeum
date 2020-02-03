@@ -459,7 +459,6 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
 (deftype single ()
   '(and sequence (satisfies single)))
 
-;;; TODO Export as soon as you think of a less cumbersome name.
 (defun only-elt (seq)
   "Return the only element of SEQ.
 If SEQ is empty, or contains more than one element, signal an error."

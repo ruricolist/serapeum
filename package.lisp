@@ -94,6 +94,7 @@
    #:ccase-of
    #:dispatch-case
    #:dispatch-case-let
+   #:dispatch-case-error
    #:destructuring-case-of
    #:destructuring-ccase-of
    #:destructuring-ecase-of

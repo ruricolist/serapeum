@@ -5,6 +5,34 @@
 
 (in-package :serapeum/dispatch-case)
 
+(define-condition dispatch-case-error (type-error)
+  ((matched-types :initarg :matched-types
+                  :reader dispatch-case-error-matched-types))
+  (:default-initargs :matched-types nil)
+  (:report (lambda (c s)
+             (with-slots (matched-types) c
+               (format s "Dispatch case failed after ~a step~:p~@[ (~{~a~^, ~})~]:~%"
+                       (length matched-types)
+                       matched-types)
+               (write (make-condition 'type-error
+                                      :datum (type-error-datum c)
+                                      :expected-type (type-error-expected-type c))
+                      :stream s)))))
+
+(define-symbol-macro matched-types ())
+
+(defmacro with-matched-type (type &body body &environment env)
+  (let ((matched-types (macroexpand-1 'matched-types env)))
+    `(symbol-macrolet ((matched-types ,(cons type matched-types)))
+       ,@body)))
+
+(defmacro dispatch-case-error (&key type datum &environment env)
+  (let ((matched-types (macroexpand-1 'matched-types env)))
+    `(error 'dispatch-case-error
+            :expected-type ,type
+            :datum ,datum
+            :matched-types ',(butlast matched-types))))
+
 (defun clause-leading-type (clause)
   (caar clause))
 
@@ -54,8 +82,12 @@ shadowed by previous clauses."
 (defmacro etypecase-of/no-shadows (type expr &body clauses
                                    &environment env)
   "Like `etypecase-of', but filter shadowed clauses."
-  `(etypecase-of ,type ,expr
-     ,@(remove-shadowed-clauses clauses env)))
+  (once-only (expr)
+    `(with-matched-type ,type
+       (typecase-of ,type ,expr
+         ,@(remove-shadowed-clauses clauses env)
+         (otherwise
+          (dispatch-case-error :type ',type :datum ,expr))))))
 
 (defun collect-fallthrough-clauses (branch more-branches &optional env)
   "Collect fallthrough clauses from MORE-BRANCHES into BRANCH."

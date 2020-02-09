@@ -3,6 +3,21 @@
 (def-suite dispatch-case :in serapeum)
 (in-suite dispatch-case)
 
+(test dispatch-case-error
+  (fbind ((fn
+           (lambda (x y)
+             (dispatch-case ((x integer) (y string))
+               ((integer string) t)))))
+    (is (fn 0 ""))
+    (signals serapeum/dispatch-case::dispatch-case-error
+      (fn "" 1))
+    (finishes
+      (princ
+       (nth-value 1
+         (ignore-errors
+          (fn "" 1)))
+       (make-broadcast-stream)))))
+
 (defpackage :serapeum.tests.dispatch-case-example
   (:use :cl :alexandria :serapeum
     :local-time)

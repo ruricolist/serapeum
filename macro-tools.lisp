@@ -454,6 +454,9 @@ and may or may not have an effect when used on special variables."
   (declare (ignorable env))
   (case uiop:*implementation-type*
     ((:ccl :sbcl :cmu :acl)
+     ;; The use of temps here, while it is ugly and annoying when
+     ;; debugging, is necessary to prevent symbol-macrolet from going
+     ;; into an infinite loop.
      (let* ((vars (loop for var in vars
                         unless (variable-special? var env)
                           collect var))

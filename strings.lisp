@@ -259,8 +259,7 @@ The definition of a word is the same as that used by
 
 Cf. `tokens'."
   (declare (string string)
-           (optimize speed)
-           (inline split-sequence-if-not))
+           (optimize speed))
   (values (split-sequence-if-not #'alphanumericp
                                  string
                                  :remove-empty-subseqs t

@@ -16,3 +16,20 @@
                        '((a (b) (c (skip-me d (e f)))))
                        :tag 'skip)
              '((a (b) (c skipped))))))
+
+(test traversal
+  (let ((tree '(a . (b . c))))
+    (flet ((sequentialize (tree traversal)
+             (collecting
+               (walk-tree #'collect
+                          tree
+                          :traversal traversal))))
+      (is (equal
+           '((a . (b . c)) a (b . c) b c)
+           (sequentialize tree :preorder)))
+      (is (equal
+           '(a (a . (b . c)) b (b . c) c)
+           (sequentialize tree :inorder)))
+      (is (equal
+           '(a b c (b . c) (a . (b . c)))
+           (sequentialize tree :postorder))))))

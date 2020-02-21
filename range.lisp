@@ -124,7 +124,8 @@ STOP by STEP."
             (if in-order?
                 `(integer ,low (,high))
                 `(integer (,low) ,high)))
-           (len (abs (truncate (- high low) step))))
+           (len (ceiling (abs (- high low))
+                         (abs step))))
     (values len element-type)))
 
 (defmacro with-int-vector ((var vect) &body body)

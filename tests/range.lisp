@@ -3,12 +3,16 @@
 (def-suite range :in serapeum)
 (in-suite range)
 
-(defmacro test-range (expr result)
+(defsubst range= (x y)
+  "Wrap vector= for better reporting from FiveAM."
+  (vector= x y :test #'=))
+
+(defmacro test-range (actual expected)
   `(progn
      (locally (declare (inline range))
-       (is (vector= ,expr ,result :test #'=)))
+       (is (range= ,expected ,actual)))
      (locally (declare (notinline range))
-       (is (vector= ,expr ,result :test #'=)))))
+       (is (range= ,expected ,actual)))))
 
 (test empty-range
   (test-range (range 0 0) #())
@@ -83,3 +87,14 @@
 
   (is (length= (range 0.4s0 0.8s0 0.2s0)
                (range 4/10 8/10 2/10))))
+
+(test int-range-step
+  (test-range (range -2 5 2)
+              #(-2 0 2 4))
+  (test-range (range 0 7 2)
+              #(0 2 4 6))
+  (test-range (range 5 -2 -2)
+              #(5 3 1 -1))
+
+  (test-range (range -2 6 3) #(-2 1 4))
+  (test-range (range -2 8 3) #(-2 1 4 7)))

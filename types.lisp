@@ -556,13 +556,4 @@ Based on an idea by Eric Naggum."
   (not (null x)))
 
 (define-compiler-macro true (x)
-  #+(or sbcl cmucl)
-  (with-unique-names (result)
-    ;; For SBCL at least, this is sufficent to eliminate the call to
-    ;; `true' if X is known to evaluate to a boolean.
-    `(let ((,result ,x))
-       (if (typep ,result 'boolean)
-           ,result
-           (if ,x t nil))))
-  #-(or sbcl cmucl)
   `(not (null ,x)))

@@ -203,3 +203,17 @@ Inspired by the function of the same name in Emacs."
      :flavor flavor
      :suffix suffix
      :space space)))
+
+
+(defmacro with-open-files (args &body body)
+  "A simple macro to open one or more files providing the streams for the BODY. The ARGS is a list of `(stream filespec options*)` as supplied to WITH-OPEN-FILE."
+  (case (length args)
+    ((0)
+     `(progn ,@body))
+    ((1)
+     `(with-open-file ,(first args) ,@body))
+    (t `(with-open-file ,(first args)
+	  (with-open-files
+	      ,(rest args) ,@body)))))
+
+

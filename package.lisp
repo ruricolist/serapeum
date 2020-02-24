@@ -200,6 +200,7 @@
    #:resolve-executable
    #:format-file-size-human-readable
    #:file-size-human-readable
+   #:with-open-files
    ;; Symbols.
    #:find-keyword
    #:bound-value

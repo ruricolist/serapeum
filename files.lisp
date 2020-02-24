@@ -1,5 +1,16 @@
 (in-package :serapeum)
 
+(defmacro with-open-files ((&rest args) &body body)
+  "A simple macro to open one or more files providing the streams for the BODY. The ARGS is a list of `(stream filespec options*)` as supplied to WITH-OPEN-FILE."
+  (case (length args)
+    ((0)
+     `(progn ,@body))
+    ((1)
+     `(with-open-file ,(first args) ,@body))
+    (t `(with-open-file ,(first args)
+	  (with-open-files
+	      ,(rest args) ,@body)))))
+
 (defun path-join (&rest pathnames)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built
@@ -93,19 +104,19 @@ as vectors."
                        :element-type 'octet
                        :initial-element 0)))
     (declare (inline make-buffer))
-    (with-input-from-file (file1 file1 :element-type 'octet)
-      (with-input-from-file (file2 file2 :element-type 'octet)
-        (and (= (file-length file1)
-                (file-length file2))
-             (loop with buffer1 = (make-buffer)
-                   with buffer2 = (make-buffer)
-                   for end1 = (read-sequence buffer1 file1)
-                   for end2 = (read-sequence buffer2 file2)
-                   until (or (zerop end1) (zerop end2))
-                   always (and (= end1 end2)
-                               (octet-vector= buffer1 buffer2
-                                              :end1 end1
-                                              :end2 end2))))))))
+    (with-open-files ((file1 file1 :element-type 'octet :direction :input)
+                      (file2 file2 :element-type 'octet :direction :input))
+      (and (= (file-length file1)
+              (file-length file2))
+           (loop with buffer1 = (make-buffer)
+                 with buffer2 = (make-buffer)
+                 for end1 = (read-sequence buffer1 file1)
+                 for end2 = (read-sequence buffer2 file2)
+                 until (or (zerop end1) (zerop end2))
+                 always (and (= end1 end2)
+                             (octet-vector= buffer1 buffer2
+                                            :end1 end1
+                                            :end2 end2)))))))
 
 (defun file-size (file &key (element-type '(unsigned-byte 8)))
   "The size of FILE, in units of ELEMENT-TYPE (defaults to bytes).
@@ -203,16 +214,3 @@ Inspired by the function of the same name in Emacs."
      :flavor flavor
      :suffix suffix
      :space space)))
-
-(defmacro with-open-files ((&rest args) &body body)
-  "A simple macro to open one or more files providing the streams for the BODY. The ARGS is a list of `(stream filespec options*)` as supplied to WITH-OPEN-FILE."
-  (case (length args)
-    ((0)
-     `(progn ,@body))
-    ((1)
-     `(with-open-file ,(first args) ,@body))
-    (t `(with-open-file ,(first args)
-	  (with-open-files
-	      ,(rest args) ,@body)))))
-
-

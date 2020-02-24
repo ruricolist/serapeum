@@ -31,3 +31,39 @@
   (is (equal "1000" (format-file-size-human-readable nil 1000)))
   (is (equal "1 k" (format-file-size-human-readable nil 1000 :flavor :si)))
   (is (equal "500 k" (format-file-size-human-readable nil 500000 :flavor :si))))
+
+(test file=
+  (let* ((file1 (asdf:system-relative-pathname "serapeum" "README.md"))
+         (file2
+           (uiop:with-temporary-file (:pathname p
+                                      :stream out
+                                      :element-type 'character
+                                      :direction :output
+                                      :keep t)
+             (write-string (read-file-into-string file1 :external-format :utf-8)
+                           out)
+             p))
+         (empty-file
+           (uiop:with-temporary-file (:pathname p
+                                      :keep t)
+             p))
+         (junk-file
+           (uiop:with-temporary-file (:pathname p
+                                      :stream out
+                                      :element-type 'character
+                                      :direction :output
+                                      :keep t)
+             (write-string
+              (shuffle
+               (read-file-into-string file1 :external-format :utf-8))
+              out)
+             p)))
+    (is (file= file1 file2))
+    (is (not (file= file1 empty-file)))
+    (is (not (file= file2 empty-file)))
+    (is (not (file= junk-file empty-file)))
+    (is (not (file= junk-file file1)))
+    (is (not (file= junk-file file2)))
+    (uiop:delete-file-if-exists file2)
+    (uiop:delete-file-if-exists empty-file)
+    (uiop:delete-file-if-exists junk-file)))

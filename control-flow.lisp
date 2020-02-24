@@ -634,6 +634,8 @@ Is equivalent to:
       (with-open-file (in file2 :direction output)
         ...))
 
+\(But see `with-open-files').
+
 If the outer macro has no arguments, you may omit the parentheses.
 
     (nest

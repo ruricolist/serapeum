@@ -6,11 +6,11 @@
 (in-package :serapeum/dispatch-case)
 
 (define-condition dispatch-case-error (type-error)
-  ((matched-types :initarg :matched-types
-                  :reader dispatch-case-error-matched-types))
+  ((matched-types-slot :initarg :matched-types
+                       :reader dispatch-case-error-matched-types))
   (:default-initargs :matched-types nil)
   (:report (lambda (c s)
-             (with-slots (matched-types) c
+             (with-slots ((matched-types matched-types-slot)) c
                (format s "Dispatch case failed after ~a step~:p~@[ (~{~a~^, ~})~]:~%"
                        (length matched-types)
                        matched-types)

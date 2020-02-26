@@ -69,3 +69,31 @@
     (sane-body-for-splice 'x))
   (finishes
     (sane-body-for-splice nil)))
+
+(defun my-plus (x y)
+  (+ x y))
+
+(define-modify-macro my-incf (&optional (delta 1)) my-plus)
+
+(define-post-modify-macro my-incf* (&optional (delta 1)) my-plus)
+
+(defclass foo ()
+  ((x :accessor x
+      :initform 42)))
+
+(let ((foo (make-instance 'foo)))
+  (my-incf* (x foo))
+  (x foo))
+
+(test post-modify-macro
+  (is (= 43
+         (let ((foo (make-instance 'foo)))
+           (my-incf (x foo))
+           (x foo))))
+  (is (= 43
+         (let ((foo (make-instance 'foo)))
+           (my-incf* (x foo))
+           (x foo))))
+  (is (= 42
+         (let ((x 42))
+           (my-incf* x)))))

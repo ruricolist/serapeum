@@ -373,9 +373,7 @@ Using `define-do-macro' takes care of all of this for you.
                     (multiple-value-bind (vars vals stores setter getter)
                         (get-setf-expansion ,ref ,env)
                       (with-gensyms (temp)
-                        `(let* ,`(,@(mapcar #'list
-                                            (mapcar #'car vars)
-                                            (mapcar #'car vals))
+                        `(let* ,`(,@(mapcar #'list vars vals)
                                   (,temp ,getter)
                                   (,(car stores) (,fn ,temp ,@args ,@(unsplice rest?))))
                            ,setter

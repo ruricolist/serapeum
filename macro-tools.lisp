@@ -435,8 +435,7 @@ Returns 1 when the environment cannot be accessed."
 (defun variable-type (var &optional env)
   (if (fboundp 'trivial-cltl2:variable-information)
       (let ((alist (nth-value 2 (funcall 'trivial-cltl2:variable-information var env))))
-        (or #-allegro (cdr (assoc 'type alist))
-            #+allegro (second (assoc 'type alist))
+        (or (cdr (assoc 'type alist))
             t))
       t))
 

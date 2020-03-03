@@ -303,14 +303,21 @@ Cf. `string-case'."
 
 (defmacro eif (&whole whole test then &optional (else nil else?))
   "Like `cl:if', but expects two branches.
-Stands for “exhaustive if”."
+
+If there is only one branch a warning is signaled.
+
+This macro is useful when writing explicit decision trees; it will
+warn you if you forget a branch.
+
+Short for “exhaustive if”."
   (unless else?
     (warn "Missing else-branch in eif form:~%~a"
           whole))
   `(if ,test ,then ,else))
 
 (defmacro eif-let (&whole whole binds &body (then &optional (else nil else?)))
-  "Like `alexandria:if-let', but expects two branches."
+  "Like `alexandria:if-let', but expects two branches.
+Compare `eif'."
   (unless else?
     (warn "Missing else-branch in eif-let form:~%~a"
           whole))

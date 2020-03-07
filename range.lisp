@@ -152,7 +152,7 @@ STOP by STEP."
   (let ((in-order? (<= start stop)))
     #+sbcl (declare (sb-ext:muffle-conditions sb-ext:code-deletion-note))
     (with-int-vector (vect vect)
-      (with-boolean in-order?
+      (with-boolean (in-order?)
         (nlet lp ((i 0)
                   (n start))
           (if (if in-order?

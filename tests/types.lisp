@@ -47,3 +47,11 @@
       (let ((key #'reverse))
         (serapeum::with-key-fn (key)
           (key "xyz"))))))
+
+(defmacro expansion-time-constant? (form &environment env)
+  (nth-value 1 (eval-if-constant form env)))
+
+(test with-boolean
+  (let ((x t))
+    (with-boolean (x)
+      (is-true (expansion-time-constant? x)))))

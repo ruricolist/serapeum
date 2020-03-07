@@ -217,7 +217,7 @@ If SEQ is a list, this is equivalent to `dolist'."
        (with-string-bucket (,seq)
          ,@body)
        (flet ((make-bucket (seq &optional (init nil initp))
-                (with-boolean initp
+                (with-boolean (initp)
                   (make-array (eif initp 1 0)
                               :element-type (array-element-type seq)
                               :adjustable t
@@ -646,7 +646,7 @@ size N, with no leftovers."
       (seq-dispatch seq
         (let ((seq (nthcdr start seq)))
           (if (null end)
-              (with-boolean even
+              (with-boolean (even)
                 (loop while seq
                       collect (loop for i below n
                                     for (elt . rest) on seq
@@ -657,7 +657,7 @@ size N, with no leftovers."
                                                 (uneven))))))
               (progn
                 (check-bounds-even start end)
-                (with-boolean even
+                (with-boolean (even)
                   (loop while seq
                         for i from start below end by n
                         collect
@@ -970,7 +970,7 @@ are left in no particular order."
   (let ((table (make-hash-table :test test))
         (i -1))
     (with-key-fn (key)
-      (with-boolean from-end
+      (with-boolean (from-end)
         (do-each (item seq)
           (if from-end
               (setf (gethash (key item) table) (incf i))

@@ -491,17 +491,23 @@ added to ensure that TYPE itself is handled."
 
 ;;; Are these worth exporting?
 
-(defmacro with-boolean (var &body body
-                        &environment env)
-  (if (or (policy> env 'space 'speed)
-          (policy> env 'compilation-speed 'speed))
-      `(locally ,@body)
-      (multiple-value-bind (body decls) (parse-body body)
-        `(with-read-only-vars (,var)
-           ,@decls
-           (if ,var
-               (progn ,@body)
-               (progn ,@body))))))
+(defmacro with-boolean ((var) &body body)
+  "Emit BODY twice: once for the case where VAR is true, once for the
+  case where VAR is false.
+
+This lets you write an algorithm naturally, testing the value of VAR
+as much as you like -- perhaps even in each iteration of a loop --
+knowing that VAR will only actually be tested once.
+
+Around each specialized body VAR is bound to a symbol macro whose
+value is `t' or `nil'. This ensures VAR cannot be rebound, and allows
+macros to recognize VAR as a constant."
+  (check-type var symbol)
+  `(if (assure boolean ,var)
+       (symbol-macrolet ((,var t))
+         ,@body)
+       (symbol-macrolet ((,var nil))
+         ,@body)))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var

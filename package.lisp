@@ -45,6 +45,7 @@
    #:output-stream
    #:with-type-dispatch
    #:vref
+   #:with-boolean
    #:with-subtype-dispatch
    #:with-string-dispatch
    #:with-vector-dispatch

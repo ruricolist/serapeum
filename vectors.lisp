@@ -37,7 +37,7 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS."
 
 (defun values-vector (vec)
   "Return the elements of VEC, a vector, as multiple values.
-This is to vectors what `vector-list' is to lists."
+This is to vectors what `values-list' is to lists."
   (declare (type vector vec))
   (generate-values-vector-case vec))
 

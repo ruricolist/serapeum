@@ -994,6 +994,7 @@ If N is longer than SEQ, SEQ is simply copied.
 
 If N is negative, then |N| elements are taken (in their original
 order) from the end of SEQ."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (declare (type signed-array-length n))
   (seq-dispatch seq
     (if (minusp n)
@@ -1012,6 +1013,7 @@ If N is greater than the length of SEQ, returns an empty sequence of
 the same type.
 
 If N is negative, then |N| elements are dropped from the end of SEQ."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (declare (type signed-array-length n))
   (seq-dispatch seq
     (if (minusp n)
@@ -1024,6 +1026,7 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
 (-> take-while (function sequence) sequence)
 (defsubst take-while (pred seq)
   "Return the prefix of SEQ for which PRED returns true."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (ldiff seq (member-if-not pred seq))
     (subseq seq 0 (position-if-not pred seq))))
@@ -1032,6 +1035,7 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
 (defsubst drop-while (pred seq)
   "Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (member-if-not pred seq)
     (subseq seq (position-if-not pred seq))))
@@ -1427,6 +1431,7 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
 (defsubst intersperse (new-elt seq)
   "Return a sequence like SEQ, but with NEW-ELT inserted between each
 element."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (intersperse/list new-elt seq)
     (intersperse/seq new-elt seq)))

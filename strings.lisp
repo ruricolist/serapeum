@@ -79,14 +79,14 @@ functions.
 satisfy `whitespacep'."
   (every #'whitespacep seq))
 
-(defun collapse-whitespace (string &key (space #\Space))
+(defun collapse-whitespace (string &key (space #\Space) stream)
   "Collapse runs of whitespace in STRING.
 Each run of space, newline, and other whitespace characters is
 replaced by a single space character (or SPACE, if that is specified)."
   (declare (inline position whitespacep))
   (check-type string string)
   (check-type space character)
-  (with-output-to-string (s)
+  (with-string (s stream)
     (with-string-dispatch () string
       (let ((len (length string)))
         (nlet rec ((i 0))

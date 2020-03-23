@@ -163,6 +163,7 @@
    #:once
    #:fnil
    ;; Trees.
+   #:reuse-cons
    #:occurs
    #:occurs-if
    #:prune

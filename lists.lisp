@@ -207,9 +207,9 @@ But the actual implementation is more efficient.
     (firstn 4 (iota 10))
     => (0 1 2 4)
 
-\(I do not why this extremely useful function did not make it into
-Common Lisp, unless it was deliberately left out as an exercise for
-Maclisp users.)"
+\(I do not know why this extremely useful function did not make it
+into Common Lisp, unless it was deliberately left out as an exercise
+for Maclisp users.)"
   ;; NB This is faster than the DO version in the Pitmanual.
   (loop repeat n for x in list collect x))
 

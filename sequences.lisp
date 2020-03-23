@@ -412,7 +412,7 @@ number of items to *keep*, not remove.
 (define-modify-macro filterf (pred &rest args)
   filter/swapped-arguments
   "Modify-macro for FILTER.
-The place designed by the first argument is set to th result of
+The place designed by the first argument is set to the result of
 calling FILTER with PRED, the place, and ARGS.")
 
 (defun keep (item seq &rest args &key (test #'eql) from-end key count

@@ -239,7 +239,9 @@ between calls."
             (throttle/memoized fn)
             (throttle/simple fn)))))
 
-(defmacro _once (fn)
+(define-train once (fn)
+  "Return a function that runs FN only once, caching the results
+forever."
   (with-unique-names (gfn)
     `(let ((,gfn (ensure-function ,fn))
            (cache '())
@@ -254,14 +256,6 @@ between calls."
                     cache (multiple-value-list (apply ,gfn args)))
             :not-first-run
               (return (values-list cache))))))))
-
-(defun once (fn)
-  "Return a function that runs FN only once, caching the results
-forever."
-  (_once fn))
-
-(define-compiler-macro once (fn)
-  `(_once ,fn))
 
 (defun juxt (&rest fns)
   "Clojure's `juxt'.

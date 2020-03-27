@@ -127,6 +127,7 @@
    #:recursion-forbidden
    #:without-recursion
    ;; Threads.
+   #:count-cpus
    #:synchronized
    #:monitor
    ;; Iteration.

@@ -1,5 +1,92 @@
 (in-package #:serapeum)
 
+(defun count-cpus-string (&key online)
+  (labels ((try (cmd)
+             (multiple-value-bind (s e r)
+                 (uiop:run-program cmd
+                                   :output :string
+                                   :ignore-error-status t)
+               (declare (ignore e))
+               (when (zerop r)
+                 (return-from count-cpus-string
+                   s))))
+           (try-for (vars fn)
+             (dolist (var vars)
+               (try (funcall fn var)))))
+    (handler-case
+        (cond
+          ((uiop:os-unix-p)
+           ;; Linux
+           (when (resolve-executable "nproc")
+             (try `("nproc" ,@(and (not online) '("--all")))))
+           ;; BSD, Darwin
+           (when (resolve-executable "sysctl")
+             (try-for
+              (if online
+                  '("hw.availcpu" "hw.activecpu" "hw.ncpuonline")
+                  '("hw.physicalcpu" "hw.ncpu" "hw.ncpufound"))
+              (lambda (v)
+                `("sysctl" "-n" ,v))))
+           ;; Unix
+           (when-let (exe
+                      (or (resolve-executable "getconf")
+                          ;; Has a built-in getconf!
+                          (resolve-executable "ksh93")))
+             (try-for
+              (if online
+                  '("_NPROCESSORS_ONLN"
+                    "NPROCESSORS_ONLN"
+                    "SC_NPROCESSORS_ONLN"
+                    "_SC_NPROCESSORS_ONLN")
+                  '("_NPROCESSORS_CONF"
+                    "NPROCESSORS_CONF"
+                    "SC_NPROCESSORS_CONF"
+                    "_SC_NPROCESSORS_CONF"))
+              (if (equal (pathname-name exe) "getconf")
+                  (lambda (v)
+                    `("getconf" ,v))
+                  (lambda (v)
+                    `("ksh93" "-c"
+                              ,(format nil "getconf ~a" v))))))
+           ;; Solaris?
+           (when (resolve-executable "psrinfo")
+             ;; TODO online?
+             (try '("psrinfo" "-p"))))
+          ((uiop:os-windows-p)
+           (when (resolve-executable "wmic")
+             (when-let* ((string
+                          (uiop:run-program
+                           `("wmic" "cpu" "get"
+                                    ,(if online
+                                         "NumberOfEnabledCore" ;sic
+                                         "NumberOfCores")
+                                    "/value")
+                           :output :string
+                           :ignore-error-status t))
+                         (num (some (lambda (part)
+                                      (every #'digit-char-p part))
+                                    (split-sequence #\= string))))
+               (return-from count-cpus-string
+                 num)))
+           (uiop:getenv "NUMBER_OF_PROCESSORS"))
+          (t nil))
+      (serious-condition ()
+        nil))))
+
+(defun count-cpus (&key (default 2) online)
+  "Try very hard to return a meaningful count of CPUs.
+If ONLINE is non-nil, try to return only the active CPUs.
+
+The second value is T if the number of processors could be queried,
+`nil' otherwise."
+  (let ((string (count-cpus-string :online online)))
+    (if string
+        (let ((int (parse-integer string :junk-allowed t)))
+          (if int
+              (values int t)
+              (values default nil)))
+        (values default nil))))
+
 ;;; NB We used to use non-recursive locks here, but it turns out all
 ;;; languages providing a `synchronized' keyword (Java, Objective-C,
 ;;; C#, D) use recursive locks, so that is what we use now.

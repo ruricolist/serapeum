@@ -87,7 +87,7 @@ From Clojure."
 (defmacro define-train (name args &body body)
   "Define a higher-order function and its compiler macro at once.
 
-When defining a higher-order function it is usually a good idea to
+When defining a higher-order function it is often a good idea to
 write a compiler macro so compilers can inline the resulting lambda
 form.
 
@@ -104,7 +104,7 @@ E.g., if `complement' did not exist, you could define it like so:
 
 Besides providing an implicit compiler macro, `define-train' also
 inserts the proper declarations to ensure the compiler recognizes the
-function arguments as functions.
+function arguments as functions, avoiding runtime type checks.
 
 The term \"train\" is from J."
   (multiple-value-bind (body decls docstring)

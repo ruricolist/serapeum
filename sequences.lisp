@@ -264,21 +264,18 @@ versions of the bucket accessors.
 
 This is only likely to be worthwhile around a loop; if you're calling
 a bucket accessor once or twice the code bloat isn't worth it."
-  (if (or (policy> env 'space 'speed)
-          (policy> env 'compilation-speed 'speed))
-      `(locally ,@body)
-      (multiple-value-bind (body decls) (parse-body body)
-        `(locally
-             (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-           ,@decls
-           (with-type-declarations-trusted ()
-             (seq-dispatch ,seq
-               (with-list-bucket (,seq)
-                 ,@body)
-               (with-vector-bucket (,seq)
-                 ,@body)
-               (with-sequence-bucket (,seq)
-                 ,@body)))))))
+  (multiple-value-bind (body decls) (parse-body body)
+    `(locally
+         (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+       ,@decls
+       (with-type-declarations-trusted ()
+         (seq-dispatch ,seq
+           (with-list-bucket (,seq)
+             ,@body)
+           (with-vector-bucket (,seq)
+             ,@body)
+           (with-sequence-bucket (,seq)
+             ,@body))))))
 
 ;;; Fallback versions for non-specialized code.
 

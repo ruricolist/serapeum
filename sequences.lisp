@@ -257,8 +257,7 @@ generic sequences just uses queues."
      (declare (inline make-bucket bucket-push bucket-seq))
      ,@body))
 
-(defmacro with-specialized-buckets ((seq) &body body
-                                    &environment env)
+(defmacro with-specialized-buckets ((seq) &body body)
   "Ensure BODY is run with the appropriate specialized, inlined
 versions of the bucket accessors.
 

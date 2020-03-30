@@ -76,9 +76,10 @@ raises an error is supplied."
             ,@args))))))
 
 (defun include+opts (opts)
-  (if-let (clause (find :include opts :key #'car-safe))
-    (values clause (remove clause opts))
-    (values nil opts)))
+  (flet ((car-safe (x) (if (consp x) (car x) x)))
+    (if-let (clause (find :include opts :key #'car-safe))
+      (values clause (remove clause opts))
+      (values nil opts))))
 
 (defmacro defstruct-read-only (name-and-opts &body slots
                                &environment env)

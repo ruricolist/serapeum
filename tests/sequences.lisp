@@ -123,6 +123,13 @@
   (is (equal "foo" (slice "foo" -0)))
   (is (equal "r" (slice "bar" -1))))
 
+(test setslice
+  (let* ((string "xyz")
+         (orig-string string))
+    (setf (slice string 1 -1) "a")
+    (is (equal string "xaz"))
+    (is (not (eq string orig-string)))))
+
 (test ordering
   (for-all ((vec (an-iota 1000)))
     (let ((vec (shuffle vec)))

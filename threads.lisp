@@ -1,74 +1,72 @@
 (in-package #:serapeum)
 
 (defun count-cpus-string (&key online)
-  (labels ((try (cmd)
+  (labels ((run (cmd)
              (multiple-value-bind (s e r)
                  (uiop:run-program cmd
                                    :output :string
                                    :ignore-error-status t)
                (declare (ignore e))
-               (when (zerop r)
+               (and (zerop r) s)))
+           (try (&rest results)
+             (loop for result in results do
+               (when (stringp result)
                  (return-from count-cpus-string
-                   s))))
-           (try-for (vars fn)
-             (dolist (var vars)
-               (try (funcall fn var)))))
+                   result)))))
     (handler-case
         (cond
           ((uiop:os-unix-p)
            ;; Linux
            (when (resolve-executable "nproc")
-             (try `("nproc" ,@(and (not online) '("--all")))))
+             (try (run `("nproc" ,@(and (not online) '("--all"))))))
            ;; BSD, Darwin
            (when (resolve-executable "sysctl")
-             (try-for
-              (if online
-                  '("hw.availcpu" "hw.activecpu" "hw.ncpuonline")
-                  '("hw.physicalcpu" "hw.ncpu" "hw.ncpufound"))
-              (lambda (v)
-                `("sysctl" "-n" ,v))))
+             (let ((vs
+                     (if online
+                         '("hw.availcpu" "hw.activecpu" "hw.ncpuonline")
+                         '("hw.physicalcpu" "hw.ncpu" "hw.ncpufound"))))
+               (dolist (v vs)
+                 (try (run `("sysctl" "-n" ,v))))))
            ;; Unix
            (when-let (exe
                       (or (resolve-executable "getconf")
                           ;; Has a built-in getconf!
                           (resolve-executable "ksh93")))
-             (try-for
-              (if online
-                  '("_NPROCESSORS_ONLN"
-                    "NPROCESSORS_ONLN"
-                    "SC_NPROCESSORS_ONLN"
-                    "_SC_NPROCESSORS_ONLN")
-                  '("_NPROCESSORS_CONF"
-                    "NPROCESSORS_CONF"
-                    "SC_NPROCESSORS_CONF"
-                    "_SC_NPROCESSORS_CONF"))
-              (if (equal (pathname-name exe) "getconf")
-                  (lambda (v)
-                    `("getconf" ,v))
-                  (lambda (v)
-                    `("ksh93" "-c"
-                              ,(format nil "getconf ~a" v))))))
+             (let ((vs
+                     (if online
+                         '("_NPROCESSORS_ONLN"
+                           "NPROCESSORS_ONLN"
+                           "SC_NPROCESSORS_ONLN"
+                           "_SC_NPROCESSORS_ONLN")
+                         '("_NPROCESSORS_CONF"
+                           "NPROCESSORS_CONF"
+                           "SC_NPROCESSORS_CONF"
+                           "_SC_NPROCESSORS_CONF"))))
+               (if (equal (pathname-name exe) "getconf")
+                   (dolist (v vs)
+                     (try (run `("getconf" ,v))))
+                   (dolist (v vs)
+                     (try (run
+                           `("ksh93" "-c"
+                                     ,(format nil "getconf ~a" v))))))))
            ;; Solaris?
            (when (resolve-executable "psrinfo")
              ;; TODO online?
-             (try '("psrinfo" "-p"))))
+             (try (run '("psrinfo" "-p")))))
           ((uiop:os-windows-p)
            (when (resolve-executable "wmic")
              (when-let* ((string
-                          (uiop:run-program
-                           `("wmic" "cpu" "get"
-                                    ,(if online
-                                         "NumberOfEnabledCore" ;sic
-                                         "NumberOfCores")
-                                    "/value")
-                           :output :string
-                           :ignore-error-status t))
+                          (run `("wmic" "cpu" "get"
+                                        ,(if online
+                                             "NumberOfEnabledCore" ;sic
+                                             "NumberOfCores")
+                                        "/value")))
                          (num (some (lambda (part)
                                       (every #'digit-char-p part))
                                     (split-sequence #\= string))))
                (return-from count-cpus-string
                  num)))
-           (uiop:getenv "NUMBER_OF_PROCESSORS"))
+           (try (uiop:getenvp "NUMBER_OF_PROCESSORS")))
           (t nil))
       (serious-condition ()
         nil))))

@@ -98,3 +98,6 @@
 
   (test-range (range -2 6 3) #(-2 1 4))
   (test-range (range -2 8 3) #(-2 1 4 7)))
+
+(test real-range
+  (test-range (range -1/4 2/4 2/4) #(-1/4 1/4)))

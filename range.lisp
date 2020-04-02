@@ -186,7 +186,7 @@ STOP by STEP."
          ;; starting point is sufficiently large, and the step is
          ;; sufficiently small, then the result may be identical to
          ;; the starting point.
-         (lret* ((len (max 1 (abs (floor (/ (- stop start) step)))))
+         (lret* ((len (max 1 (abs (ceiling (/ (- stop start) step)))))
                  (vect (make-array len :element-type ',type)))
            (loop for i from 0 below len
                  for n = (+ start (* step i))

@@ -4,6 +4,4 @@
 (in-suite threads)
 
 (test count-cpus
-  (is (> (count-cpus) 0))
-  (is (<= (count-cpus :online t)
-          (count-cpus))))
+      (is (> (count-cpus) 0)))

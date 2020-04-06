@@ -22,16 +22,16 @@
 (define-symbol-macro matched-types ())
 
 (defmacro with-matched-type (type &body body &environment env)
-  (let ((matched-types (macroexpand-1 'matched-types env)))
-    `(symbol-macrolet ((matched-types ,(cons type matched-types)))
+  (let ((%matched-types (macroexpand-1 'matched-types env)))
+    `(symbol-macrolet ((matched-types ,(cons type %matched-types)))
        ,@body)))
 
 (defmacro dispatch-case-error (&key type datum &environment env)
-  (let ((matched-types (macroexpand-1 'matched-types env)))
+  (let ((%matched-types (macroexpand-1 'matched-types env)))
     `(error 'dispatch-case-error
             :expected-type ,type
             :datum ,datum
-            :matched-types ',(butlast matched-types))))
+            :matched-types ',(butlast %matched-types))))
 
 (defun clause-leading-type (clause)
   (caar clause))

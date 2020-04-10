@@ -1569,6 +1569,23 @@ as long as SEQ is empty.
                 do (replace out seq :start1 offset)
                 finally (return out))))))
 
+(define-compiler-macro repeat-sequence (&whole call seq n &environment env)
+  (multiple-value-bind (seq constant?)
+      (eval-if-constant seq env)
+    (if (not constant?) call
+        (match seq
+          ((string c)
+           `(make-string ,n
+                         :initial-element ,c
+                         :element-type ',(array-element-type seq)))
+          ((vector x)
+           `(make-array (list ,n)
+                        :initial-element ,x
+                        :element-type ',(array-element-type seq)))
+          ((list x)
+           `(make-list ,n :initial-element ',x))
+          (otherwise call)))))
+
 (defun repeat-list (list n)
   (declare (optimize speed (safety 0)))
   (if (null list) nil

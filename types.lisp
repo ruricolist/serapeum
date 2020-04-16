@@ -27,13 +27,13 @@ As a shortcut, a quoted form among TYPES is expanded to an `eql' type specifier.
     (tuple 'function symbol)
     ≡ (tuple (eql function) symbol)
 
-The same shortcut works for keywords.
-    (tuple :name symbol)
-    ≡ (tuple (eql :name) symbol)"
+Literal keywords, numbers, and characters are also treated as `eql' type specifiers.
+    (tuple :name 1 #\a symbol)
+    ≡ (tuple (eql :name) (eql 1) (eql #\a) symbol)"
   (reduce (lambda (x y)
             (match x
               ((or (list 'quote form)
-                   (and form (type keyword)))
+                   (and form (type (or keyword number character))))
                (setf x `(eql ,form))))
             `(cons ,x ,y))
           types

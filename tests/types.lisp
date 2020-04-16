@@ -8,7 +8,14 @@
   (is (not (typep '() '(tuple null))))
   (is (typep '(1) '(tuple integer)))
   (is (not (typep '(1) '(tuple symbol))))
-  (is (typep '(1 :x #\c) '(tuple integer symbol character))))
+  (is (typep '(1 :x #\c) '(tuple integer symbol character)))
+  (is (typep '(1 2 3) '(tuple 1 2 3)))
+  (is (not (typep '(1 2 3) '(tuple 3 2 1))))
+  (is (typep '(#\c) '(tuple #\c)))
+  (is (typep (list :name 1 #\a 'x)
+             '(tuple :name 1 #\a symbol)))
+  (is (typep (list :name 1 #\a 'x)
+             '(tuple :name 1 #\a 'x))))
 
 (test supertypep
   (is (supertypep 'rational 'integer))

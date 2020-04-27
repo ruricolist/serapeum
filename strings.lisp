@@ -40,7 +40,7 @@ are considered whitespace."
       ((eql nil)
        (with-output-to-string (s)
          (fn s)))
-      ((and string (not simple-vector))
+      ((and string (not simple-string))
        (with-output-to-string (s stream)
          (fn s)))
       (stream (fn stream)))))

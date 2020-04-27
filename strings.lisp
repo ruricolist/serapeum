@@ -43,7 +43,7 @@ are considered whitespace."
       ((and string (not simple-string))
        (with-output-to-string (s stream)
          (fn s)))
-      (stream (fn stream)))))
+      (output-stream (fn stream)))))
 
 (defmacro with-string ((var &optional stream) &body body)
   "Bind VAR to the character stream designated by STREAM.

@@ -750,6 +750,8 @@ From APL."
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.
+That means, for each duplicate, the first occurrence will be the kept, and subsequent occurrences will be discarded.
+
 TEST defaults to `equal'.
 
 From Haskell."

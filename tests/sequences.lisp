@@ -80,6 +80,12 @@
   (is (equal '((1 2) (3 4 5 6 11 12 13))
              (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3)))))
 
+(test runs-compare-first
+  (is (seq= (runs #(10 2 3 10 4 5) :test #'>)
+            (runs '(10 2 3 10 4 5) :test #'>)))
+  (is (seq= (runs #(1 2 3 1 2 3) :test #'<)
+            (runs '(1 2 3 1 2 3) :test #'<))))
+
 (test batches
   (is (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
   (is (equal '("ab" "cd" "e") (batches "abcde" 2)))

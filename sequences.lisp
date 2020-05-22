@@ -574,6 +574,8 @@ You can think of `assort' as being akin to `remove-duplicates':
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
+    ;; This is a little more complicated than you might expect,
+    ;; because we need to keep hold of the first element of each list.
     (let ((runs
             (reduce
              (lambda (runs y)
@@ -581,23 +583,32 @@ You can think of `assort' as being akin to `remove-duplicates':
                    (list (list y))
                    (let ((x (caar runs)))
                      (if (test x y)
-                         (cons (cons y (car runs))
+                         (cons (list* x y (cdar runs))
                                (cdr runs))
                          (list* (list y)
-                                (nreverse (car runs))
+                                (cons (caar runs)
+                                      (nreverse (cdar runs)))
                                 (cdr runs))))))
              list
              :start start
              :end end
              :initial-value nil)))
-      (nreverse (cons (nreverse (car runs)) (cdr runs))))))
+      (nreverse (cons (cons (caar runs)
+                            (nreverse (cdar runs)))
+                      (cdr runs))))))
 
 (defun runs (seq &key (start 0) end (key #'identity) (test #'eql))
   "Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce'.
 
     (runs '(head tail head head tail))
-    => '((head) (tail) (head head) (tail))"
+    => '((head) (tail) (head head) (tail))
+
+The function TEST is called with the first element of the run as its
+first argument.
+
+    (runs '(1 2 3 1 2 3) :test #'<)
+    => ((1 2 3) (1 2 3))"
   (if (emptyp seq)
       (list seq)
       (seq-dispatch seq

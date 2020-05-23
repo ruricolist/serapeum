@@ -296,7 +296,7 @@ KEY defaults to `identity'."
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)
                                                       (key #'identity)
                                                       (strict t)
-                       &allow-other-keys)
+                                                      &allow-other-keys)
   "Return SET, a list considered as a set, as a hash table.
 This is the equivalent of Alexandria's `alist-hash-table' and
 `plist-hash-table' for a list that denotes a set.
@@ -315,7 +315,7 @@ values. That is, each element of SET is stored as if by
                   (values-list hash-table-args)
                   :test test
                   :size (length set))))
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (if (not strict)
           (dolist (item set)
             (setf (gethash (funcall key item) table) item))

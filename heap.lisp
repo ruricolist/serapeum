@@ -55,7 +55,7 @@ KEY and TEST are used to order the heap elements."
             (r (heap-right start))
             (size (length vec))
             largest)
-        (with-key-fn (key)
+        (with-item-key-function (key)
           (setf largest (if (and (< l size)
                                  (not (ge (key (aref vec start))
                                           (key (aref vec l)))))
@@ -75,7 +75,7 @@ KEY and TEST are used to order the heap elements."
   (let ((vec (heap-vector heap)))
     (fbind ((ge (heap-test heap)))
       (vector-push-extend nil vec)
-      (with-key-fn (key (heap-key heap))
+      (with-item-key-function (key (heap-key heap))
         (loop for i = (1- (length vec)) then parent-i
               for parent-i = (heap-parent i)
               while (and (> i 0)

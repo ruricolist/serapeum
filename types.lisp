@@ -536,9 +536,13 @@ macros to recognize VAR as a constant."
                   (macrolet ((,test (x y) (list 'funcall ',test x y)))
                     ,@body))))))
 
-(defmacro with-key-fn ((key &optional (key-form key))
-                       &body body &environment env)
-  "Specialize BODY on the most common key functions."
+(defmacro with-item-key-function ((key &optional (key-form key))
+                                  &body body &environment env)
+  "For each of the most common key functions used in sequences, emit a
+copy of BODY with KEY bound to a local macro that calls KEY-FORM.
+
+If current optimization declarations favor space over speed, or
+compilation speed over runtime speed, then BODY is only emitted once."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
      ,@(sane-body-for-splice

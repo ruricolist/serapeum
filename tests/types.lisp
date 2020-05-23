@@ -43,16 +43,16 @@
       ((assure list x)
        x)))))
 
-(test (with-key-fn :compile-at :run-time)
+(test (with-item-key-function :compile-at :run-time)
   (finishes
     (locally (declare (optimize (space 3) (speed 0)))
       (let ((key #'reverse))
-        (serapeum::with-key-fn (key)
+        (with-item-key-function (key)
           (key "xyz")))))
   (finishes
     (locally (declare (optimize (speed 3) (space 0)))
       (let ((key #'reverse))
-        (serapeum::with-key-fn (key)
+        (with-item-key-function (key)
           (key "xyz"))))))
 
 (defmacro expansion-time-constant? (form &environment env)

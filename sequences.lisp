@@ -366,7 +366,7 @@ Uses `replace' internally."
     ((> count (length seq)) (apply #'filter pred seq :count nil args))
     (t (fbind (pred)
          (let ((ret (make-bucket seq)))
-           (with-key-fn (key)
+           (with-item-key-function (key)
              (with-specialized-buckets (seq)
                (do-subseq (item seq nil :start start :end end :from-end from-end)
                  (when (pred (key item))
@@ -511,7 +511,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
-  (with-key-fn (key)
+  (with-item-key-function (key)
     (with-specialized-buckets (seq)
       (let ((buckets (loop for nil in preds collect (make-bucket seq)))
             (extra (make-bucket seq)))
@@ -546,7 +546,7 @@ You can think of `assort' as being akin to `remove-duplicates':
      (mapcar #'first (assort list))
      ≡ (remove-duplicates list :from-end t)"
   (fbind (test)
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (let ((groups (queue))
             last-group)
         (with-specialized-buckets (seq)
@@ -687,7 +687,7 @@ size N, with no leftovers."
                                acc)))))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
-                    &allow-other-keys)
+                                                   &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
@@ -700,7 +700,7 @@ From Clojure."
                  :size (values (floor (length seq) 2))
                  :test 'equal)))
     (declare (fixnum total))
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (if (typep seq 'bit-vector)
           (with-subtype-dispatch bit-vector (simple-bit-vector) seq
             (setf (gethash (key 0) table) (count 0 seq)
@@ -978,7 +978,7 @@ UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order."
   (let ((table (make-hash-table :test test))
         (i -1))
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (with-boolean (from-end)
         (do-each (item seq)
           (if from-end
@@ -1054,7 +1054,7 @@ false when called on the first element."
   "Return the index in VEC to insert ITEM and keep VEC sorted."
   (declare ((simple-array * (*)) vec))
   (fbind (pred)
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (let ((start 0)
             (end (length vec)))
         (declare (array-length start end))
@@ -1102,7 +1102,7 @@ The name is from Arc."
                                     :test #'test))
                    (i 0))
                (declare (array-length i))
-               (with-key-fn (key)
+               (with-item-key-function (key)
                  (do-each (elt seq)
                    (locally (declare (optimize speed))
                      (cond ((< i n)
@@ -1226,7 +1226,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0"
   (fbind (pred)
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (let (min max kmin kmax (init t))
         (flet ((update-extrema (x)
                  (if init
@@ -1306,7 +1306,7 @@ Useful when KEY is an expensive function (e.g. database access)."
   (let* ((vec
            ;; Vectors sort faster.
            (map 'vector
-                (with-key-fn (key)
+                (with-item-key-function (key)
                   (lambda (item)
                     (cons (key item) item)))
                 seq))
@@ -1731,7 +1731,7 @@ but don't actually need to realize the sequences."
 (defun list-collapse-duplicates (test key list)
   (declare (list list))
   (with-test-fn (test)
-    (with-key-fn (key)
+    (with-item-key-function (key)
       (nlet rec ((list list)
                  (acc '())
                  (last-result nil))
@@ -1757,7 +1757,7 @@ Repetitions that are not adjacent are left alone.
   (if (listp seq)
       (list-collapse-duplicates test key seq)
       (with-test-fn (test)
-        (with-key-fn (key)
+        (with-item-key-function (key)
           (with-specialized-buckets (seq)
             (let ((bucket (make-bucket seq))
                   (len (length seq)))

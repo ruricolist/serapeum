@@ -50,6 +50,7 @@
    #:with-string-dispatch
    #:with-vector-dispatch
    #:true
+   #:with-item-key-function
    ;; Definitions.
    #:defconst
    #:defsubst

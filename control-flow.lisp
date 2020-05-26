@@ -270,11 +270,15 @@ This uses Paul Khuong's `string-case' macro internally."
                  (and (stringp key)
                       (= (length key) 1)))
                keys)
-        `(and (= (length ,stringform) 1)
-              (case (aref ,stringform 0)
-                ,@(loop for (key . body) in clauses
-                        collect `(,(aref key 0) ,@body))
-                (t ,default)))
+        (with-unique-names (block)
+          `(block ,block
+             (and (= (length ,stringform) 1)
+                  (case (aref ,stringform 0)
+                    ,@(loop for (key . body) in clauses
+                            collect `(,(aref key 0)
+                                      (return-from ,block
+                                        (progn ,@body))))))
+             ,@default))
         `(string-case:string-case
              (,stringform
               :default (progn ,@default))

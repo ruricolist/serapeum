@@ -77,6 +77,10 @@
         ("c" 3)
         ("x" 4))))
 
+(test convert-string-case-to-case-with-default-clause
+  (is (equal "another"
+             (string-case "test" ("t" t) (t "another")))))
+
 (test econd
   (declare (optimize (speed 0) (safety 3)))
   (let ((n (random 10)))

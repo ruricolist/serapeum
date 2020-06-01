@@ -33,6 +33,13 @@
 (in-suite pad)
 
 (test pad-start
+  (is (equal "" (pad-start "" 0)))
+  (is (equal "string" (pad-start "string" 3 "x")))
+  (is (equal "string" (pad-start "string" 6 "x")))
+  (is (equal "xstring" (pad-start "string" 7 "x")))
+  (is (equal "xystring" (pad-start "string" 8 "xyz")))
+  (is (equal "string" (pad-start "string" 8 "")))
+  (is (equal "   string" (pad-start "string" 9)))
   (is (equal "abc" (pad-start "abc" 0)))
   (is (equal "abc" (pad-start "abc" 1)))
   (is (equal "abc" (pad-start "abc" 0 "")))

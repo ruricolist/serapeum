@@ -1,5 +1,8 @@
 (in-package :serapeum)
 
+(-> make ((or symbol class) &key &allow-other-keys)
+  (values standard-object &optional))
+
 (defsubst make (class &rest initargs &key &allow-other-keys)
   "Shorthand for `make-instance'.
 After Eulisp."

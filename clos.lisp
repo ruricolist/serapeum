@@ -9,11 +9,18 @@ After Eulisp."
   (declare (dynamic-extent initargs))
   (apply #'make-instance class initargs))
 
-(define-compiler-macro make (class &rest initargs &key &allow-other-keys)
-  (when (constantp class)
-    (unless (typep (eval class) '(or class symbol))
-      (warn "~s cannot designate a class" class)))
-  `(make-instance ,class ,@initargs))
+(define-compiler-macro make (class &rest initargs &key &allow-other-keys
+                                   &environment env)
+  (mvlet* ((maker `(make-instance ,class ,@initargs))
+           (designator constant? (eval-if-constant class env)))
+    (if constant?
+        (typecase designator
+          (symbol `(the ,designator ,maker))
+          (class `(the ,(class-name designator) ,maker))
+          (otherwise
+           (warn "~s cannot designate a class" class)
+           maker))
+        maker)))
 
 (defsubst class-name-of (x)
   "The class name of the class of X."

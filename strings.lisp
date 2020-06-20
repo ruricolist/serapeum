@@ -308,17 +308,216 @@ removed."
                   (reset)
                   (output-word token)))))))))
 
-(defun newline? (c)
-  (declare (character c))
-  (case c
-    (#.(remove-duplicates (list #\Newline #\Return #\Linefeed))
-     t)))
+(-> lines ((or null string)
+           &key
+           (:eol-style (or (member nil :cr :lf :crlf :ascii :unicode)
+                           function))
+           (:honor-crlf t)
+           (:keep-eols t))
+    (values (or null list) &optional))
+(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols)
+  "Return a list of the lines in STRING, stripped of any EOL characters
+and including the last nonempty line even if it has no EOL characters,
+or NIL if STRING is empty or NIL.
 
-(-> lines (string) list)
-(defun lines (string)
-  "A list of lines in STRING."
-  (declare (string string))
-  (values (split-sequence-if #'newline? string :remove-empty-subseqs t)))
+EOL-STYLE can be one of the following:
+
+- NIL, the default, which means split on #\\Newline.
+- :CR, which means split on CR, i.e., #\\Return.
+- :LF, which means split on LF, i.e., #\\Linefeed.
+- :CRLF, which means split on CRLF, i.e., #\\Return followed by
+  #\\Linefeed.
+- :ASCII, which means split on any of CR, LF, and CRLF.
+- :UNICODE, which means split on any of the newlines described in
+  Section 5.8, \"Newline Guidelines\", of the Unicode Standard,
+  available at http://www.unicode.org/versions/latest/.
+  These newlines are CR, LF, CRLF, next line, vertical tab, form feed,
+  line separator, and paragraph separator.
+- A predicate that accepts one CHARACTER and returns non-NIL if the
+  CHARACTER should be split on, NIL otherwise.
+
+:CR, :LF, :CRLF, and :ASCII assume that the Common Lisp implementation
+represents CHARACTERs internally as ASCII or one of its supersets
+\(e.g., extended ASCII), and :UNICODE assumes that it represents them
+internally as Unicode \(which is also a superset of ASCII).
+Additionally, all of the EOL-STYLEs just mentioned assume that #\\Newline
+is either #\\Return or #\\Linefeed \(which can be reasonably expected).
+
+If HONOR-CRLF is supplied, it overrides EOL-STYLE's interpretation of
+CRLF except if EOL-STYLE is NIL or :CRLF, in which case HONOR-CRLF has
+no effect.
+\(The :CRLF, :ASCII and :UNICODE EOL-STYLEs honor CRLF by default; the
+rest do not.)
+
+If KEEP-EOLS is non-NIL, LINES does not strip the EOL characters from
+the lines.
+
+Note that Common Lisp implementations may convert some or all of CR, LF,
+and CRLF to #\\Newline when reading from file streams, which causes
+LINES to split the contents of files differently across implementations.
+:CR, :LF, and :CRLF are suitable only when STRING's lines certainly end
+with the corresponding EOL character, but if STRING originates from a
+file stream, LINES splits nothing unless the corresponding EOL character
+is the same as #\\Newline, in which case LINES behaves as if EOL-STYLE
+were NIL \(and indeed NIL is preferable to :CR, :LF, and :CRLF, though
+not to :ASCII and :UNICODE).
+
+:UNICODE and :ASCII are the preferred EOL-STYLEs, the former to be
+maximally portable and correct, and the latter when Unicode is inapt.
+With either EOL-STYLE, LINES splits the entire contents of files
+correctly only when the Common Lisp implementation converts only CR,
+only LF, or all of CR, LF, and CRLF, to #\\Newline \(and when it
+converts only CR or only LF, #\\Newline must the same as the EOL
+character in question).
+Again with either EOL-STYLE, LINES splits the lines of files, read with
+READ-LINE, correctly only when the implementation converts only LF or
+all of CR, LF, and CRLF to #\\Newline \(which must be #\\Linefeed).
+\(Note the lack of the only-CR case when reading files line by line.)
+However, any incorrect behavior with :ASCII and :UNICODE is limited to
+LINES returning too many or too few empty lines.
+The former -- which is uncorrectable -- can occur when CR and LF are
+converted, but not CRLF, and the latter -- which can be corrected by
+supplying HONOR-CRLF as NIL -- when CR and CRLF are converted \(to
+#\\Return), but not LF, or when LF and CRLF are converted \(to
+#\\Linefeed), but not CR.
+
+For example, to split lines on LF and CRLF \(eschewing the recommended
+:ASCII and :UNICODE) when the Common Lisp implementation converts only
+LF to #\\Newline \(which must be #\\Linefeed), which is the same
+behavior as Rust's std::io::BufRead.lines
+\(https://doc.rust-lang.org/std/io/trait.BufRead.html#method.lines) and
+Go's bufio.ScanLines \(https://golang.org/pkg/bufio/#ScanLines):
+
+  #.(ecase #\\Newline (#\\Linefeed))
+  (let ((string (coerce '(#\\a #\\Return
+                          #\\b #\\Linefeed
+                          #\\c #\\Return #\\Linefeed
+                          #\\d)
+                        'string)))
+    (serapeum:lines string :eol-style :lf :honor-crlf t))
+  => (\"a^Mb\" \"c\" \"d\")
+  ;; where ^M is #\\Return.
+
+\(EOL-STYLE cannot be NIL here because otherwise HONOR-CRLF would have
+no effect.)
+
+To split lines in the same way as Python's str.splitlines
+\(https://docs.python.org/3/library/stdtypes.html#str.splitlines) when
+the Common Lisp implementation converts only CR, only LF, or all of CR,
+LF, and CRLF, to #\\Newline \(as previously described), but also keeping
+the EOL characters in order to know what they were:
+
+  #.(ecase #\\Newline ((#\\Return #\\Linefeed)))
+  ;; Omit file separator from the example because its textual
+  ;; representation (^\\) can confuse documentation browsers.
+  (let ((string (coerce '(#\\a #.(code-char #x001D)
+                          #\\b #.(code-char #x001E)
+                          #\\c)
+                        'string)))
+    (serapeum:lines
+     string
+     :eol-style (lambda (c)
+                  (serapeum:in
+                   c #\\Return #\\Linefeed
+                   #.(code-char #x000B)   ; #\\Vt (vertical tab)
+                   #\\Page                 ; Form feed
+                   #.(code-char #x001C)   ; #\\Fs (file separator)
+                   #.(code-char #x001D)   ; #\\Gs (group separator)
+                   #.(code-char #x001E)   ; #\\Rs (record separator)
+                   #.(code-char #x0085)   ; Next line
+                   #.(code-char #x2028)   ; #\\Line_Separator
+                   #.(code-char #x2029))) ; #\\Paragraph_Separator
+     :honor-crlf t
+     :keep-eols t))
+  => (\"a^]\" \"b^^\" \"c\")
+  ;; where ^] is group separator and ^^ is record separator.
+
+To omit empty lines \(thus uniformizing LINES's behavior across Common
+Lisp implementations):
+
+  #.(ecase #\\Newline ((#\\Return #\\Linefeed)))
+  (let ((string (coerce '(#\\a #\\b #\\c
+                          #\\Return #\\Return #\\Linefeed #\\Linefeed
+                          #\\z)
+                        'string)))
+    (delete-if #'uiop:emptyp (serapeum:lines string :eol-style :unicode)))
+  => (\"abc\" \"z\")
+
+To additionally omit lines consisting only of whitespace:
+
+  #.(ecase #\\Newline ((#\\Return #\\Linefeed)))
+  (let ((string (coerce '(#\\a #\\b #\\c
+                          #\\Return #\\Return #\\Linefeed #\\Linefeed
+                          #\\Space #\\Linefeed
+                          #\\Tab #\\Linefeed
+                          #\\z)
+                        'string)))
+    (delete-if #'uiop:emptyp
+               (mapcar #'serapeum:trim-whitespace
+                       (serapeum:lines string :eol-style :unicode))))
+  => (\"abc\" \"z\")"
+  (let* ((honor-crlf (cond ((not eol-style) nil)
+                           ((eql eol-style :crlf))
+                           (honor-crlf-p honor-crlf)
+                           ;; If HONOR-CRLF was supplied, it takes
+                           ;; precedence over these.
+                           ((in eol-style :ascii :unicode))))
+         ;; To honor CRLF, we must search for #\Return, but that does
+         ;; not necessarily mean that we should split on it.
+         (ignore-cr (in eol-style :lf :crlf))
+         (cr-p (lambda (c) (eql c #\Return)))
+         (cr-or-lf-p (lambda (c) (in c #\Return #\Linefeed)))
+         (eolp (etypecase eol-style
+                 ((or null keyword)
+                  (ecase eol-style
+                    ((nil) (lambda (c) (eql c #\Newline)))
+                    ((:cr :crlf) cr-p)
+                    (:lf (if honor-crlf
+                             cr-or-lf-p
+                             (lambda (c) (eql c #\Linefeed))))
+                    (:ascii cr-or-lf-p)
+                    (:unicode
+                     (lambda (c)
+                       (in c #\Return #\Linefeed
+                           #.(code-char #x0085) ; Next line
+                           #.(code-char #x000B) ; #\Vt (vertical tab)
+                           #\Page               ; Form feed
+                           #.(code-char #x2028) ; #\Line_Separator
+                           #.(code-char #x2029)))))) ; #\Paragraph_Separator
+                 (function
+                  (if (and honor-crlf
+                           ;; Do not split on #\Return if EOL-STYLE does
+                           ;; not already include it.
+                           (setf ignore-cr (not (funcall eol-style #\Return))))
+                      (disjoin eol-style cr-p)
+                      eol-style)))))
+    (flet ((next-eol (start) (position-if eolp string :start start)))
+      (do* ((length (length string))
+            (line nil (subseq string start
+                              (if keep-eols (1+ end) (- end crlf-offset))))
+            (lines nil (push line lines))
+            (start 0 (1+ end))
+            (end (next-eol start) (next-eol start))
+            (crlf-offset 0 0))
+           ((not end) (nreverse (if (emptyp (setf line (subseq string start)))
+                                    lines
+                                    (push line lines))))
+       again
+        (when (and (eql (char string end) #\Return)
+                   honor-crlf)
+          (let ((end+1 (1+ end)))
+            (if (< end+1 length)
+                (if (eql (char string end+1) #\Linefeed)
+                    (setf end end+1
+                          crlf-offset 1)
+                    (when ignore-cr
+                      (if (setf end (next-eol end+1))
+                          (go again)
+                          (return (nreverse (push (subseq string start)
+                                                  lines))))))
+                (when ignore-cr
+                  (return (nreverse (push (subseq string start)
+                                          lines)))))))))))
 
 (-> fmt ((or string function) &rest t) string)
 (defun fmt (control-string &rest args)

@@ -30,6 +30,99 @@
               (word-wrap "There is no way on god’s green earth I can perform that function, Will Robinson."
                          :column 40)))))
 
+(test lines
+  (let ((nl (string #\Newline))
+        (cr uiop:+cr+)
+        (lf uiop:+lf+)
+        (crlf uiop:+crlf+))
+
+    ;; General behavior and #\Newline tests.
+    (is (equal nil (lines nil)))
+    (is (equal nil (lines "")))
+    (is (equal '("") (lines nl)))
+    (is (equal '("abc") (lines "abc")))
+    (is (equal '("abc") (lines (concat "abc" nl))))
+    (is (equal '("" "abc") (lines (concat nl "abc"))))
+    (is (equal '("abc" "") (lines (concat "abc" nl nl))))
+
+    ;; ASCII EOL character and KEEP-EOLS tests.
+    ;;
+    ;; S and S1 are such that the body of LINES's DO* is exhaustively
+    ;; tested.
+    (let* ((s (concat "abc" lf crlf cr cr))
+           (s1 (concat s "z")))
+      (is (equal (list (concat "abc" lf) lf "")
+                 (lines s :eol-style :cr)))
+      (is (equal (list "abc" cr (concat cr cr))
+                 (lines s :eol-style :lf)))
+      (is (equal (list (concat "abc" lf) (concat cr cr))
+                 (lines s :eol-style :crlf)))
+      (is (equal (list (concat "abc" lf) (concat cr cr "z"))
+                 (lines s1 :eol-style :crlf)))
+      (is (equal '("abc" "" "" "")
+                 (lines s :eol-style :ascii)))
+      (is (equal '("abc" "" "" "" "z")
+                 (lines s1 :eol-style :ascii)))
+      (is (equal (list (concat "abc" lf) "" "")
+                 (lines s :eol-style :cr :honor-crlf t)))
+      (is (equal (list "abc" "" (concat cr cr))
+                 (lines s :eol-style :lf :honor-crlf t)))
+      (is (equal (list (concat "abc" lf) (concat cr cr))
+                 (lines s :eol-style :crlf :honor-crlf nil)))
+      (is (equal '("abc" "" "" "" "")
+                 (lines s :eol-style :ascii :honor-crlf nil)))
+      (is (equal (list (concat "abc" lf) crlf cr cr)
+                 (lines s :eol-style :ascii :keep-eols t)))
+
+      ;; EOL-STYLE predicate tests.
+      (let ((cr-p (lambda (c) (eql c #\Return)))
+            (lf-p (lambda (c) (eql c #\Linefeed))))
+        (is (equal (list (concat "abc" lf) lf "")
+                   (lines s :eol-style cr-p)))
+        (is (equal (list (concat  "abc" lf) "" "")
+                   (lines s :eol-style cr-p :honor-crlf t)))
+        (is (equal (list "abc" cr (concat cr cr))
+                   (lines s :eol-style lf-p)))
+        (is (equal (list "abc" "" (concat cr cr))
+                   (lines s :eol-style lf-p :honor-crlf t)))))
+
+    ;; Unicode EOL character tests.
+    (let ((nel (string #.(code-char #x0085)))
+          (vt (string #.(code-char #x000B)))
+          (ff (string #\Page))
+          (ls (string #.(code-char #x2028)))
+          (ps (string #.(code-char #x2029))))
+
+      ;; Standard EOL characters.
+      (let ((s (concat "a" cr "b" lf "c" crlf
+                       "d" nel "e" vt "f" ff
+                       "g" ls "h" ps "i")))
+        (is (equal '("a" "b" "c" "d" "e" "f" "g" "h" "i")
+                   (lines s :eol-style :unicode)))
+        (is (equal '("a" "b" "c" "" "d" "e" "f" "g" "h" "i")
+                   (lines s :eol-style :unicode :honor-crlf nil))))
+
+      ;; Nonstandard EOL characters.
+      (let ((fs (string #.(code-char #x001C)))
+            (gs (string #.(code-char #x001D)))
+            (rs (string #.(code-char #x001E))))
+        (is (equal '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l")
+                   (lines (concat "a" cr "b" lf "c" crlf
+                                  "d" vt "e" ff "f" fs
+                                  "g" gs "h" rs "i" nel
+                                  "j" ls "k" ps "l")
+                          :eol-style (lambda (c)
+                                       (in c #\Return #\Linefeed
+                                           #.(code-char #x000B)
+                                           #\Page
+                                           #.(code-char #x001C)
+                                           #.(code-char #x001D)
+                                           #.(code-char #x001E)
+                                           #.(code-char #x0085)
+                                           #.(code-char #x2028)
+                                           #.(code-char #x2029)))
+                          :honor-crlf t)))))))
+
 (test collapse-whitespace
   (is (equal (collapse-whitespace "") ""))
   (is (equal (collapse-whitespace " ") " "))

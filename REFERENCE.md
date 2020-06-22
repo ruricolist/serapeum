@@ -4113,15 +4113,15 @@ behavior as Rust's std::io::BufRead.lines
 (https://doc.rust-lang.org/std/io/trait.BufRead.html#method.lines) and
 Go's bufio.ScanLines (https://golang.org/pkg/bufio/#ScanLines):
 
-  #.(ecase #\Newline (#\Linefeed))
-  (let ((string (coerce '(#\a #\Return
-                          #\b #\Linefeed
-                          #\c #\Return #\Linefeed
-                          #\d)
-                        'string)))
-    (serapeum:lines string :eol-style :lf :honor-crlf t))
-  => ("a^Mb" "c" "d")
-  ;; where ^M is #\Return.
+    #.(ecase #\Newline (#\Linefeed))
+    (let ((string (coerce '(#\a #\Return
+                            #\b #\Linefeed
+                            #\c #\Return #\Linefeed
+                            #\d)
+                          'string)))
+      (serapeum:lines string :eol-style :lf :honor-crlf t))
+    => ("a^Mb" "c" "d")
+    ;; where ^M is #\Return.
 
 (EOL-STYLE cannot be NIL here because otherwise HONOR-CRLF would have
 no effect.)
@@ -4132,55 +4132,55 @@ the Common Lisp implementation converts only CR, only LF, or all of CR,
 LF, and CRLF, to #\Newline (as previously described), but also keeping
 the EOL characters in order to know what they were:
 
-  #.(ecase #\Newline ((#\Return #\Linefeed)))
-  ;; Omit file separator from the example because its textual
-  ;; representation (^\) can confuse documentation browsers.
-  (let ((string (coerce '(#\a #.(code-char #x001D)
-                          #\b #.(code-char #x001E)
-                          #\c)
-                        'string)))
-    (serapeum:lines
-     string
-     :eol-style (lambda (c)
-                  (serapeum:in
-                   c #\Return #\Linefeed
-                   #.(code-char #x000B)   ; #\Vt (vertical tab)
-                   #\Page                 ; Form feed
-                   #.(code-char #x001C)   ; #\Fs (file separator)
-                   #.(code-char #x001D)   ; #\Gs (group separator)
-                   #.(code-char #x001E)   ; #\Rs (record separator)
-                   #.(code-char #x0085)   ; Next line
-                   #.(code-char #x2028)   ; #\Line_Separator
-                   #.(code-char #x2029))) ; #\Paragraph_Separator
-     :honor-crlf t
-     :keep-eols t))
-  => ("a^]" "b^^" "c")
-  ;; where ^] is group separator and ^^ is record separator.
+    #.(ecase #\Newline ((#\Return #\Linefeed)))
+    ;; Omit file separator from the example because its textual
+    ;; representation (^\) can confuse documentation browsers.
+    (let ((string (coerce '(#\a #.(code-char #x001D)
+                            #\b #.(code-char #x001E)
+                            #\c)
+                          'string)))
+      (serapeum:lines
+       string
+       :eol-style (lambda (c)
+                    (serapeum:in
+                     c #\Return #\Linefeed
+                     #.(code-char #x000B)   ; #\Vt (vertical tab)
+                     #\Page                 ; Form feed
+                     #.(code-char #x001C)   ; #\Fs (file separator)
+                     #.(code-char #x001D)   ; #\Gs (group separator)
+                     #.(code-char #x001E)   ; #\Rs (record separator)
+                     #.(code-char #x0085)   ; Next line
+                     #.(code-char #x2028)   ; #\Line_Separator
+                     #.(code-char #x2029))) ; #\Paragraph_Separator
+       :honor-crlf t
+       :keep-eols t))
+    => ("a^]" "b^^" "c")
+    ;; where ^] is group separator and ^^ is record separator.
 
 To omit empty lines (thus uniformizing LINES's behavior across Common
 Lisp implementations):
 
-  #.(ecase #\Newline ((#\Return #\Linefeed)))
-  (let ((string (coerce '(#\a #\b #\c
-                          #\Return #\Return #\Linefeed #\Linefeed
-                          #\z)
-                        'string)))
-    (delete-if #'uiop:emptyp (serapeum:lines string :eol-style :unicode)))
-  => ("abc" "z")
+    #.(ecase #\Newline ((#\Return #\Linefeed)))
+    (let ((string (coerce '(#\a #\b #\c
+                            #\Return #\Return #\Linefeed #\Linefeed
+                            #\z)
+                          'string)))
+      (delete-if #'uiop:emptyp (serapeum:lines string :eol-style :unicode)))
+    => ("abc" "z")
 
 To additionally omit lines consisting only of whitespace:
 
-  #.(ecase #\Newline ((#\Return #\Linefeed)))
-  (let ((string (coerce '(#\a #\b #\c
-                          #\Return #\Return #\Linefeed #\Linefeed
-                          #\Space #\Linefeed
-                          #\Tab #\Linefeed
-                          #\z)
-                        'string)))
-    (delete-if #'uiop:emptyp
-               (mapcar #'serapeum:trim-whitespace
-                       (serapeum:lines string :eol-style :unicode))))
-  => ("abc" "z")
+    #.(ecase #\Newline ((#\Return #\Linefeed)))
+    (let ((string (coerce '(#\a #\b #\c
+                            #\Return #\Return #\Linefeed #\Linefeed
+                            #\Space #\Linefeed
+                            #\Tab #\Linefeed
+                            #\z)
+                          'string)))
+      (delete-if #'uiop:emptyp
+                 (mapcar #'serapeum:trim-whitespace
+                         (serapeum:lines string :eol-style :unicode))))
+    => ("abc" "z")
 
 [View source](strings.lisp#L318)
 

@@ -416,17 +416,13 @@ Like a dyadic fork, but F is omitted."
      (funcall ,g (funcall ,h x y))))
 
 (defun fnil (fn &rest defaults)
-  "Take a function, FN, and a number of DEFAULTS.
-With no defaults, return FN.
+  "Return a function that ORs its arguments with DEFAULTS.
 
-Otherwise, wrap FN with special handling for nil as an argument. If
-the first argument to the returned function is nil, then the first
-argument in DEFAULTS is substituted in the call to FN; if the second
-argument to the returned function is nil, then the second argument in
-DEFAULTS is substituted; and so on until we run out of DEFAULTS.
+If the first argument is nil, then the first default in DEFAULTS is
+used instead; if the second argument is nil, then the second default
+in DEFAULTS is used instead; and so on until we run out of DEFAULTS.
 
-The minimum arity of the returned function is equal to DEFAULTS, plus
-a rest argument.
+The minimum arity is equal to the length of DEFAULTS.
 
 This has a compiler macro for reasonable efficiency.
 

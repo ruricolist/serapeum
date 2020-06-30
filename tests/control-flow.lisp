@@ -97,3 +97,12 @@
     (signals econd-failure
       (econd
         ((> n 10) (assert nil))))))
+
+(test nix
+  (let ((x 1) (y 2) (z 3))
+    (is (equal '(1 2 3)
+               (multiple-value-list
+                (nix x y z))))
+    (is (null x))
+    (is (null y))
+    (is (null z))))

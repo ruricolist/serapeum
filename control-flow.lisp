@@ -502,11 +502,7 @@ macro expansion!\""
   "Like `comment'."
   `(comment ,@body))
 
-(defmacro nix (place &environment env)
-  "Set PLACE to nil and return the old value of PLACE.
-
-This may be more efficient than (shiftf place nil), because it only
-sets PLACE when it is not already null."
+(defmacro nix-1 (place &environment env)
   (multiple-value-bind (vars vals new setter getter)
       (get-setf-expansion place env)
     `(let* (,@(mapcar #'list vars vals)
@@ -515,6 +511,17 @@ sets PLACE when it is not already null."
             (prog1 ,(car new)
               (setq ,(car new) nil)
               ,setter)))))
+
+(defmacro nix (&rest places)
+  "Set PLACES to nil and return the old value(s) of PLACES.
+
+If there is more than one PLACE, return their old values as multiple values.
+
+This may be more efficient than (shiftf place nil), because it only
+sets PLACE when it is not already null."
+  `(values
+    ,@(loop for place in places
+            collect `(nix-1 ,place))))
 
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/cyWz2Vyd70M/wYPKr24OEYMJ
 (defmacro ensure (place &body newval

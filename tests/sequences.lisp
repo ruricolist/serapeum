@@ -271,6 +271,19 @@
   (is (equal "" (drop -4 "foo")))
   (is (equal "f" (drop -2 "foo"))))
 
+(test drop-prefix
+  (let ((seq "x"))
+    (is (eql seq (drop-prefix ":" seq)))
+    (is (eql seq (drop-prefix '(#\:) seq)))
+    (is (eql seq (drop-prefix #(#\:) seq)))
+    (is (eql seq (drop-prefix "" seq)))
+    (is (eql seq (drop-prefix nil seq))))
+  (is (equal " world" (drop-prefix "hello" "hello world")))
+  (is (equal " world" (drop-prefix '(#\h #\e #\l #\l #\o) "hello world")))
+  (is (equal " world" (drop-prefix #(#\h #\e #\l #\l #\o) "hello world")))
+  (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
+  (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3)))))
+
 (test seq=
   (is (seq= '() ""))
   (is (seq= #() ""))

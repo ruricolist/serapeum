@@ -413,6 +413,7 @@
    #:split-sequence-if-not
    #:take-while
    #:drop-while
+   #:drop-prefix
    #:seq=
    #:tree-case
    #:tree-ecase

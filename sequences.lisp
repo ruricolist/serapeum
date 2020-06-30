@@ -1049,6 +1049,28 @@ false when called on the first element."
     (member-if-not pred seq)
     (subseq seq (position-if-not pred seq))))
 
+(-> drop-prefix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun drop-prefix (prefix seq &key (test #'eql))
+  "If SEQ starts with PREFIX, remove it."
+  (cond ((emptyp prefix) seq)
+        ((starts-with-subseq prefix seq :test test)
+         (drop (length prefix) seq))
+        (t seq)))
+
+(-> ensure-prefix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun ensure-prefix (prefix seq &key (test #'eql))
+  "Return a sequence like SEQ, but starting with PREFIX.
+If SEQ already starts with PREFIX, return SEQ."
+  (if (starts-with-subseq prefix seq :test test)
+      seq
+      (seq-dispatch seq
+        (concatenate 'list prefix seq)
+        (concatenate `(simple-array ,(array-element-type seq))
+                     prefix seq)
+        (concatenate (type-of seq) prefix seq))))
+
 ;;;# `bestn'
 (defun bisect-left (vec item pred &key key)
   "Return the index in VEC to insert ITEM and keep VEC sorted."

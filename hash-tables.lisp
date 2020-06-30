@@ -70,7 +70,13 @@ If the number of KEYS-AND-VALUES is odd, then the first argument is
 understood as the test.
 
      (gethash \"string\" (dict \"string\" t)) => t
-     (gethash \"string\" (dict 'eq \"string\" t)) => nil"
+     (gethash \"string\" (dict 'eq \"string\" t)) => nil
+
+Note that `dict' can also be used for destructuring (with Trivia).
+
+    (match (dict :x 1)
+      ((dict :x x) x))
+    => 1"
   (let* ((length (length keys-and-values))
          (test (if (oddp length)
                    (pop keys-and-values)
@@ -93,6 +99,23 @@ understood as the test.
               `(setf ,@(loop for (key value . nil) on keys-and-values by #'cddr
                              append `((gethash ,key ,ht) ,value)))))
          ,ht))))
+
+(defpattern dict (&rest keys-and-values)
+  "A destructuring pattern for hash tables."
+  (multiple-value-bind (test keys-and-values)
+      (if (oddp (length keys-and-values))
+          (values (first keys-and-values)
+                  (rest keys-and-values))
+          (values nil keys-and-values))
+    (with-unique-names (it)
+      `(trivia:guard1 (,it :type hash-table)
+                      (hash-table-p ,it)
+                      ,@(and test
+                             `((trivia:guard1 ,it
+                                              (eql ',test (hash-table-test ,it)))))
+                      ,@(loop for (k pat . nil) on keys-and-values by #'cddr
+                              collect `(gethash ,k ,it)
+                              collect pat)))))
 
 (defun dict* (dict &rest args)
   "Merge new bindings into DICT.

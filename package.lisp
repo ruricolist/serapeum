@@ -103,6 +103,7 @@
    #:string-case
    #:string-ecase
    #:case-using
+   #:ecase-using
    #:select
    #:selector
    #:eif

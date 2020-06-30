@@ -25,6 +25,16 @@
      ((nil) t)
      (t nil))))
 
+(test ecase-using
+  (signals error
+    (ecase-using #'char= #\y
+      (#\x t)))
+  (signals error
+    (ecase-using #'char #\y))
+  (is (eql t
+           (ecase-using #'char= #\x
+             (#\x t)))))
+
 (test cond-every
   (is (null (cond-every)))
   (is (eql (cond-every (t 1) (otherwise 2)) 1))

@@ -258,6 +258,17 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
                                     ,@body))
                   (t ,@default)))))))
 
+(defmacro ecase-using (pred keyform &body clauses)
+  "Exhaustive variant of `case-using'."
+  (once-only (keyform)
+    `(case-using ,pred ,keyform
+       ,@clauses
+       (otherwise
+        (error "~s fell through ~a with ~s"
+               ,keyform
+               'ecase-using
+               ',pred)))))
+
 (define-case-macro string-case (stringform &body clauses)
     (:default default)
   "Efficient `case'-like macro with string keys.

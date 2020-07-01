@@ -2,6 +2,8 @@
 
 (defsubst make (class &rest initargs &key &allow-other-keys)
   "Shorthand for `make-instance'.
+Unlike `make-instance', this is not a generic function, so it can do compile-time sanity checking.
+
 After Eulisp."
   (declare (dynamic-extent initargs))
   (apply #'make-instance class initargs))

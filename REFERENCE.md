@@ -1,4 +1,4 @@
-# Function Listing For SERAPEUM (38 files, 373 functions)
+# Function Listing For SERAPEUM (38 files, 375 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -1113,6 +1113,12 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 
 [View source](control-flow.lisp#L231)
 
+### `(ecase-using pred keyform &body clauses)`
+
+Exhaustive variant of `case-using`.
+
+[View source](control-flow.lisp#L261)
+
 ### `(string-case stringform &body clauses)`
 
 Efficient `case`-like macro with string keys.
@@ -1121,7 +1127,7 @@ Note that string matching is always case-sensitive.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L261)
+[View source](control-flow.lisp#L272)
 
 ### `(string-ecase stringform &body clauses)`
 
@@ -1131,7 +1137,7 @@ Note that string matching is always case-sensitive.
 
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L292)
+[View source](control-flow.lisp#L303)
 
 ### `(eif test then &optional (else nil else?))`
 
@@ -1144,21 +1150,21 @@ warn you if you forget a branch.
 
 Short for “exhaustive if”.
 
-[View source](control-flow.lisp#L308)
+[View source](control-flow.lisp#L319)
 
 ### `(eif-let binds &body (then &optional (else nil else?)))`
 
 Like `alexandria:if-let`, but expects two branches.
 Compare `eif`.
 
-[View source](control-flow.lisp#L322)
+[View source](control-flow.lisp#L333)
 
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L339)
+[View source](control-flow.lisp#L350)
 
 ### `(cond-let var &body clauses)`
 
@@ -1170,13 +1176,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L348)
+[View source](control-flow.lisp#L359)
 
 ### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L369)
+[View source](control-flow.lisp#L380)
 
 ### `(cond-every &body clauses)`
 
@@ -1194,7 +1200,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L382)
+[View source](control-flow.lisp#L393)
 
 ### `(bcond &body clauses)`
 
@@ -1221,19 +1227,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L415)
+[View source](control-flow.lisp#L426)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L468)
+[View source](control-flow.lisp#L479)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L474)
+[View source](control-flow.lisp#L485)
 
 ### `(comment &body body)`
 
@@ -1245,22 +1251,24 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L480)
+[View source](control-flow.lisp#L491)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L490)
+[View source](control-flow.lisp#L501)
 
-### `(nix place)`
+### `(nix &rest places)`
 
-Set PLACE to nil and return the old value of PLACE.
+Set PLACES to nil and return the old value(s) of PLACES.
+
+If there is more than one PLACE, return their old values as multiple values.
 
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L494)
+[View source](control-flow.lisp#L515)
 
 ### `(ensure place &body newval)`
 
@@ -1274,14 +1282,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L509)
+[View source](control-flow.lisp#L527)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L541)
+[View source](control-flow.lisp#L559)
 
 ### `(~> needle &rest holes)`
 
@@ -1295,14 +1303,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L608)
+[View source](control-flow.lisp#L626)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L622)
+[View source](control-flow.lisp#L640)
 
 ### `(nest &rest things)`
 
@@ -1336,7 +1344,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L629)
+[View source](control-flow.lisp#L647)
 
 ### `(select keyform &body clauses)`
 
@@ -1356,7 +1364,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L665)
+[View source](control-flow.lisp#L683)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1366,7 +1374,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L684)
+[View source](control-flow.lisp#L702)
 
 ### `(sort-values pred &rest values)`
 
@@ -1378,7 +1386,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L803)
+[View source](control-flow.lisp#L821)
 
 ### `(eq* &rest xs)`
 
@@ -1396,7 +1404,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L874)
+[View source](control-flow.lisp#L892)
 
 ### `(eql* &rest xs)`
 
@@ -1414,7 +1422,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L876)
+[View source](control-flow.lisp#L894)
 
 ### `(equal* &rest xs)`
 
@@ -1432,7 +1440,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L878)
+[View source](control-flow.lisp#L896)
 
 ### `(equalp* &rest xs)`
 
@@ -1450,14 +1458,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L880)
+[View source](control-flow.lisp#L898)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L890)
+[View source](control-flow.lisp#L908)
 
 ## Threads
 
@@ -2071,6 +2079,12 @@ understood as the test.
      (gethash "string" (dict "string" t)) => t
      (gethash "string" (dict 'eq "string" t)) => nil
 
+Note that `dict` can also be used for destructuring (with Trivia).
+
+    (match (dict :x 1)
+      ((dict :x x) x))
+    => 1
+
 [View source](hash-tables.lisp#L61)
 
 ### `(dict* dict &rest args)`
@@ -2078,7 +2092,7 @@ understood as the test.
 Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'.
 
-[View source](hash-tables.lisp#L97)
+[View source](hash-tables.lisp#L120)
 
 ### `(dictq &rest keys-and-values)`
 
@@ -2086,7 +2100,7 @@ A literal hash table.
 Like `dict`, but the keys and values are implicitly quoted, and the
 hash table is inlined as a literal object.
 
-[View source](hash-tables.lisp#L104)
+[View source](hash-tables.lisp#L127)
 
 ### `(href table &rest keys)`
 
@@ -2095,14 +2109,14 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (href (dict :x 1) :x) => x
     (href (dict :x (dict :y 2)) :x :y)  => y
 
-[View source](hash-tables.lisp#L110)
+[View source](hash-tables.lisp#L133)
 
 ### `(href-default default table &rest keys)`
 
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L119)
+[View source](hash-tables.lisp#L142)
 
 ### `(@ table &rest keys)`
 
@@ -2111,7 +2125,7 @@ A concise way of doings lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => x
     (@ (dict :x (dict :y 2)) :x :y)  => y 
 
-[View source](hash-tables.lisp#L157)
+[View source](hash-tables.lisp#L180)
 
 ### `(pophash key hash-table)`
 
@@ -2121,7 +2135,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L182)
+[View source](hash-tables.lisp#L205)
 
 ### `(swaphash key value hash-table)`
 
@@ -2131,7 +2145,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L193)
+[View source](hash-tables.lisp#L216)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -2141,14 +2155,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L203)
+[View source](hash-tables.lisp#L226)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L217)
+[View source](hash-tables.lisp#L240)
 
 ### `(merge-tables &rest tables)`
 
@@ -2168,7 +2182,7 @@ All of the tables being merged must have the same value for
 Clojure's `merge`.
 
 
-[View source](hash-tables.lisp#L237)
+[View source](hash-tables.lisp#L260)
 
 ### `(flip-hash-table table &key test key)`
 
@@ -2194,7 +2208,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L266)
+[View source](hash-tables.lisp#L289)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2208,7 +2222,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L296)
+[View source](hash-tables.lisp#L319)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2217,7 +2231,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L328)
+[View source](hash-tables.lisp#L351)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2225,7 +2239,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L339)
+[View source](hash-tables.lisp#L362)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -2256,7 +2270,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L349)
+[View source](hash-tables.lisp#L372)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2264,14 +2278,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L440)
+[View source](hash-tables.lisp#L463)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L448)
+[View source](hash-tables.lisp#L471)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2284,7 +2298,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L455)
+[View source](hash-tables.lisp#L478)
 
 ## Files
 
@@ -2752,6 +2766,8 @@ Has a compiler macro.
 ### `(make class &rest initargs &key &allow-other-keys)`
 
 Shorthand for `make-instance`.
+Unlike `make-instance`, this is not a generic function, so it can do compile-time sanity checking.
+
 After Eulisp.
 
 [View source](clos.lisp#L3)
@@ -2760,21 +2776,21 @@ After Eulisp.
 
 The class name of the class of X.
 
-[View source](clos.lisp#L15)
+[View source](clos.lisp#L17)
 
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L19)
+[View source](clos.lisp#L21)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L26)
+[View source](clos.lisp#L28)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -2860,7 +2876,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L36)
+[View source](clos.lisp#L38)
 
 ## Hooks
 
@@ -3569,6 +3585,12 @@ false when called on the first element.
 
 [View source](sequences.lisp#L1044)
 
+### `(drop-prefix prefix seq &key test)`
+
+If SEQ starts with PREFIX, remove it.
+
+[View source](sequences.lisp#L1054)
+
 ### `(bestn n seq pred &key key memo)`
 
 Partial sorting.
@@ -3580,7 +3602,7 @@ only ever called once per element.
 
 The name is from Arc.
 
-[View source](sequences.lisp#L1069)
+[View source](sequences.lisp#L1091)
 
 ### `(nth-best n seq pred &key key)`
 
@@ -3596,14 +3618,14 @@ Or even
 
 But uses a selection algorithm for better performance than either.
 
-[View source](sequences.lisp#L1117)
+[View source](sequences.lisp#L1139)
 
 ### `(nth-best! n seq pred &key key)`
 
 Destructive version of `nth-best`.
 Note that this function requires that SEQ be a vector.
 
-[View source](sequences.lisp#L1134)
+[View source](sequences.lisp#L1156)
 
 ### `(reshuffle seq &key element-type)`
 
@@ -3619,7 +3641,7 @@ returned is T, if SEQ is not a vector. If SEQ is a vector, then the
 element type of the vector returned is the same as the as the element
 type of SEQ.
 
-[View source](sequences.lisp#L1173)
+[View source](sequences.lisp#L1195)
 
 ### `(sort-new seq pred &key key element-type)`
 
@@ -3632,13 +3654,13 @@ a form that can be sorted efficiently.)
 
 ELEMENT-TYPE is interpreted as for `reshuffle`.
 
-[View source](sequences.lisp#L1195)
+[View source](sequences.lisp#L1217)
 
 ### `(stable-sort-new seq pred &key key element-type)`
 
 Like `sort-new`, but sort as if by `stable-sort` instead of `sort`.
 
-[View source](sequences.lisp#L1215)
+[View source](sequences.lisp#L1237)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3648,7 +3670,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L1222)
+[View source](sequences.lisp#L1244)
 
 ### `(halves seq &optional split)`
 
@@ -3664,20 +3686,20 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L1263)
+[View source](sequences.lisp#L1285)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1297)
+[View source](sequences.lisp#L1319)
 
 ### `(dsu-sort-new seq fn &key key stable)`
 
 Like `dsu-sort`, but returning a new vector.
 
-[View source](sequences.lisp#L1304)
+[View source](sequences.lisp#L1326)
 
 ### `(deltas seq &optional fn)`
 
@@ -3697,14 +3719,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1319)
+[View source](sequences.lisp#L1341)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1343)
+[View source](sequences.lisp#L1365)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3735,14 +3757,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1380)
+[View source](sequences.lisp#L1402)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1440)
+[View source](sequences.lisp#L1462)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3786,14 +3808,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1470)
+[View source](sequences.lisp#L1492)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1512)
+[View source](sequences.lisp#L1534)
 
 ### `(repeat-sequence seq n)`
 
@@ -3817,7 +3839,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1552)
+[View source](sequences.lisp#L1574)
 
 ### `(seq= &rest xs)`
 
@@ -3826,7 +3848,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1634)
+[View source](sequences.lisp#L1656)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -3848,7 +3870,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1698)
+[View source](sequences.lisp#L1720)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -3859,7 +3881,7 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1750)
+[View source](sequences.lisp#L1772)
 
 ## Strings
 

@@ -2,4 +2,4 @@
   (:use #:cl #:alexandria #:serapeum #:FiveAM
     #:serapeum/generalized-arrays)
   (:shadow #:test)
-  (:export #:run-tests))
+  (:export #:run-tests #:serapeum))

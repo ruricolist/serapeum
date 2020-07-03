@@ -158,4 +158,6 @@
                  (:file "range")
                  (:file "generalized-arrays")
                  (:file "quicklisp")
-                 (:file "units")))))
+                 (:file "units")
+                 (:module "contrib"
+                  :components ((:file "hooks")))))))

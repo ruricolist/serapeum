@@ -289,6 +289,7 @@
    #:topmost-object-class
    ;; Hooks.
    #:*hook*
+   #:with-hook-restart
    #:add-hook
    #:remove-hook
    #:run-hooks

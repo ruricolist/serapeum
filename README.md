@@ -3,6 +3,7 @@
 
 - [Overview](#overview)
 - [Commentary](#commentary)
+    - [A note about strings](#a-note-about-strings)
     - [Dividing sequences](#dividing-sequences)
     - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
     - [Internal definitions](#internal-definitions)
@@ -466,6 +467,14 @@ metaclass. This is much better demonstrated than explained:
 Note that, since the topmost object is usually a standard class, there
 is a `validate-superclass` method which allows an instance of
 `topmost-object-class` to inherit from a standard class.
+
+# Contributions
+
+The contrib/ directory holds large contributions to Serapeum (ones that add a lot of new exports). 
+
+## Hooks
+
+The package `:serapeum/contrib/hooks` holds an enhanced implementation of hooks (extension points) contributed by the maintainers of the [Nyxt](https://nyxt.atlas.engineer/) web browser. This is fully compatible with the existing Serapeum functions for hooks (`add-hook`, `run-hook`, etc.).
 
 # Function reference
 

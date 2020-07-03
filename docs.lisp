@@ -37,13 +37,7 @@ This saves needless updates to the documentation."
                      comp)
            append (asdf-components c)))))
 
-(defun package-external-symbols (package)
-  (collecting
-    (do-external-symbols (s package)
-      (when (eql (symbol-package s) package)
-        (collect s)))))
-
-(defun function-reference-data (package-name &optional (system-name package-name))
+(defun function-reference-data (package-name system-name)
   (let* ((package (find-package package-name))
          (data (collect-reference-data package))
          (system (asdf:find-system system-name))
@@ -90,11 +84,13 @@ This saves needless updates to the documentation."
         ((find-class s nil) :type)
         (t :function)))
 
-(defun render-function-reference-as-markdown (package-name &key stream (system-name package-name))
+(defun render-function-reference-as-markdown (package-names system-name &key stream)
   (labels ((render (stream)
-             (let ((data (function-reference-data package-name system-name)))
+             (let ((data
+                     (mappend (op (function-reference-data _ system-name))
+                              (ensure-list package-names))))
                (format stream "# Function Listing For ~a (~d files, ~d functions)~2%"
-                       package-name
+                       system-name
                        (length data)
                        (reduce #'+ data :key (op (length (cdr _)))))
                ;; Table of contents
@@ -106,7 +102,8 @@ This saves needless updates to the documentation."
                ;; Each file.
                (loop for (file . defs) in data do
                  (let (*print-pretty*) ;Keep long arg lists from overflowing.
-                   (format stream "~&## ~a~2%" (pathname-title file)))
+                   (format stream "~&## ~a~2%"
+                           (pathname-title file)))
                  (let ((intro-file
                          (merge-pathnames
                           (make-pathname :type "md")
@@ -122,7 +119,7 @@ This saves needless updates to the documentation."
                                                      (getf def :documentation)
                                                      "`\\1`"))
                           (*print-case* :downcase)
-                          (*package* (find-package package-name)))
+                          (*package* (symbol-package (getf def :name))))
                      (format stream "~&### `~a`~2%~a~2%[View source](~a#L~a)~2%"
                              (cons (getf def :name) (getf def :args))
                              docs
@@ -150,7 +147,8 @@ This saves needless updates to the documentation."
 
 (defun update-function-reference ()
   (render-function-reference-as-markdown
-   :serapeum
+   '(:serapeum :serapeum.exporting :serapeum/contrib/hooks)
+   "serapeum"
    :stream (asdf:system-relative-pathname :serapeum "REFERENCE.md")))
 
 (update-function-reference)

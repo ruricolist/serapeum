@@ -147,7 +147,7 @@ This saves needless updates to the documentation."
 
 (defun update-function-reference ()
   (render-function-reference-as-markdown
-   '(:serapeum :serapeum.exporting :serapeum/contrib/hooks)
+   '(:serapeum :serapeum.exporting :serapeum/generalized-arrays :serapeum/contrib/hooks)
    "serapeum"
    :stream (asdf:system-relative-pathname :serapeum "REFERENCE.md")))
 

@@ -820,6 +820,7 @@ like the first argument to `format'."
                       :stream stream
                       :count 1))
 
+(-> chomp (string &optional list) string)
 (defun chomp (string
               &optional
                 (suffixes '#.(sort

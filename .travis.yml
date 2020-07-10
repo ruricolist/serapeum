@@ -8,7 +8,7 @@ env:
 
 install:
   # Install cl-travis
-  - curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | bash
+  - curl https://raw.githubusercontent.com/ruricolist/cl-travis/master/install.sh | bash
 
 script:
   - cl -l fiveam -l serapeum -l serapeum/tests

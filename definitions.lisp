@@ -183,6 +183,8 @@ Name from Emacs Lisp."
   "Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression."
+  (when (stringp form)
+    (rotatef form docstring))
   (with-gensyms (value)
     `(progn
        (defun ,name ,args

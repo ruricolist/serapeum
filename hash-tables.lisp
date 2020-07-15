@@ -131,10 +131,10 @@ hash table is inlined as a literal object."
   (apply #'dict keys-and-values))
 
 (defloop href (table &rest keys)
-  "A concise way of doings lookups in (potentially nested) hash tables.
+  "A concise way of doing lookups in (potentially nested) hash tables.
 
-    (href (dict :x 1) :x) => x
-    (href (dict :x (dict :y 2)) :x :y)  => y"
+    (href (dict :x 1) :x) => 1
+    (href (dict :x (dict :y 2)) :x :y)  => 2"
   (cond ((endp keys) table)
         ((single keys) (gethash (car keys) table))
         (t (apply #'href (gethash (car keys) table) (cdr keys)))))
@@ -178,10 +178,10 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
   `(setf ,(expand-href table keys) ,value))
 
 (defun @ (table &rest keys)
-  "A concise way of doings lookups in (potentially nested) hash tables.
+  "A concise way of doing lookups in (potentially nested) hash tables.
 
-    (@ (dict :x 1) :x) => x
-    (@ (dict :x (dict :y 2)) :x :y)  => y "
+    (@ (dict :x 1) :x) => 1
+    (@ (dict :x (dict :y 2)) :x :y)  => 2 "
   (apply #'href table keys))
 
 (defun (setf @) (value table key &rest keys)

@@ -2106,10 +2106,10 @@ hash table is inlined as a literal object.
 
 ### `(href table &rest keys)`
 
-A concise way of doings lookups in (potentially nested) hash tables.
+A concise way of doing lookups in (potentially nested) hash tables.
 
-    (href (dict :x 1) :x) => x
-    (href (dict :x (dict :y 2)) :x :y)  => y
+    (href (dict :x 1) :x) => 1
+    (href (dict :x (dict :y 2)) :x :y)  => 2
 
 [View source](hash-tables.lisp#L133)
 
@@ -2122,10 +2122,10 @@ As soon as one of KEYS fails to match, DEFAULT is returned.
 
 ### `(@ table &rest keys)`
 
-A concise way of doings lookups in (potentially nested) hash tables.
+A concise way of doing lookups in (potentially nested) hash tables.
 
-    (@ (dict :x 1) :x) => x
-    (@ (dict :x (dict :y 2)) :x :y)  => y 
+    (@ (dict :x 1) :x) => 1
+    (@ (dict :x (dict :y 2)) :x :y)  => 2
 
 [View source](hash-tables.lisp#L180)
 

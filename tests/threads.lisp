@@ -5,3 +5,6 @@
 
 (test count-cpus
       (is (> (count-cpus) 0)))
+
+(test synchronized-no-body
+  (is (null (synchronized ()))))

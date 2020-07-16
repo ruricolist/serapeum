@@ -120,7 +120,8 @@ object created (as the argument to `bt:make-recursive-lock')."
       (with-gensyms (lock)
         `(let ((,lock ,form))
            (bt:with-recursive-lock-held (,lock)
-             ,@body))))))
+             ;; On some Lisps this would return T if empty.
+             ,@(or body '(nil))))))))
 
 (defgeneric monitor (object)
   (:documentation "Return a unique lock associated with OBJECT."))

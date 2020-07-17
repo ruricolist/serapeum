@@ -14,7 +14,9 @@
                     (resolve-executable "clip.exe"))))
         ((uiop:os-unix-p)
          (is-true (resolve-executable "sh"))
-         (is (equal
+         ;; ECL needs `pathname-equal' here; the two file names have
+         ;; different versions.
+         (is (uiop:pathname-equal
               (pathname
                (chomp
                 (uiop:run-program '("sh" "-c" "command -v sh")

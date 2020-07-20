@@ -16,7 +16,10 @@ Otherwise, return a vector with X as its sole element."
             :fill-pointer 3
             :initial-contents (list 1 2 3))
 
-The fill pointer is placed after the last element in INITIAL-CONTENTS."
+The fill pointer is placed after the last element in INITIAL-CONTENTS.
+
+As a constructor this also has a matching definition as a Trivia
+pattern for destructing."
   (declare (dynamic-extent initial-contents))
   (let ((len (length initial-contents)))
     (make-array len

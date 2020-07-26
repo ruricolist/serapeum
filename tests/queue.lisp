@@ -38,3 +38,11 @@
                 (let ((item (deq q)))
                   (undeq item q)
                   q)))))))
+
+(test setf-front
+  (let ((q (queue)))
+    (setf (front q) 1)
+    (is (equal 1 (front q))))
+  (let ((q (queue 2 2)))
+    (setf (front q) 1)
+    (is (equal '(1 2) (qlist q)))))

@@ -41,7 +41,8 @@ The rest of the API:
 - `queuep' Test for a queue
 - `qlen' Like `(length (qlist ...))'
 - `clear-queue' Clear the queue
-- `front' Like to `(car (qlist ...))'
+- `front' Like `(car (qlist ...))'
+- `queue-back' Get the last element of the queue
 - `queue-empty-p' Test if the queue is empty
 - `qappend' Non-destructively join a list to the end of the queue
 
@@ -140,15 +141,22 @@ This is called `undeq' because it can be used to undo a `deq'."
         (push item (cdr q))
         (enq item queue))))
 
+(-> queue-empty-p (queue) boolean)
+(defun queue-empty-p (queue)
+  "Is QUEUE empty?"
+  (not (qlist queue)))
+
 (-> front (queue) t)
 (defun front (queue)
   "The first element in QUEUE."
   (first (qlist queue)))
 
-(-> queue-empty-p (queue) boolean)
-(defun queue-empty-p (queue)
-  "Is QUEUE empty?"
-  (not (qlist queue)))
+(defun (setf front) (value queue)
+  (if (queue-empty-p queue)
+      (enq value queue)
+      (setf (car (qlist queue))
+            value))
+  value)
 
 (-> qconc (queue list) queue)
 (defun qconc (queue list)

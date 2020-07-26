@@ -1,4 +1,4 @@
-# Function Listing For serapeum (40 files, 406 functions)
+# Function Listing For serapeum (40 files, 407 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -633,14 +633,14 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L195)
+[View source](definitions.lisp#L197)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L205)
+[View source](definitions.lisp#L207)
 
 ## Defining Types
 
@@ -1494,7 +1494,7 @@ object created (as the argument to `bt:make-recursive-lock`).
 
 Return a unique lock associated with OBJECT.
 
-[View source](threads.lisp#L125)
+[View source](threads.lisp#L126)
 
 ## Iter
 
@@ -2125,7 +2125,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned.
 A concise way of doing lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => 1
-    (@ (dict :x (dict :y 2)) :x :y)  => 2
+    (@ (dict :x (dict :y 2)) :x :y)  => 2 
 
 [View source](hash-tables.lisp#L180)
 
@@ -2470,38 +2470,38 @@ Test for a queue.
 
 Build a new queue with INITIAL-CONTENTS.
 
-[View source](queue.lisp#L71)
+[View source](queue.lisp#L72)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
-[View source](queue.lisp#L90)
+[View source](queue.lisp#L91)
 
 ### `(qlen queue)`
 
 The number of items in QUEUE.
 
-[View source](queue.lisp#L98)
+[View source](queue.lisp#L99)
 
 ### `(qlist queue)`
 
 A list of the items in QUEUE.
 Does not cons.
 
-[View source](queue.lisp#L103)
+[View source](queue.lisp#L104)
 
 ### `(enq item queue)`
 
 Insert ITEM at the end of QUEUE.
 
-[View source](queue.lisp#L109)
+[View source](queue.lisp#L110)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
-[View source](queue.lisp#L118)
+[View source](queue.lisp#L119)
 
 ### `(undeq item queue)`
 
@@ -2513,33 +2513,39 @@ queue (like pushing to an ordinary list.
 
 This is called `undeq` because it can be used to undo a `deq`.
 
-[View source](queue.lisp#L130)
-
-### `(front queue)`
-
-The first element in QUEUE.
-
-[View source](queue.lisp#L144)
+[View source](queue.lisp#L131)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
-[View source](queue.lisp#L149)
+[View source](queue.lisp#L145)
+
+### `(front queue)`
+
+The first element in QUEUE.
+
+[View source](queue.lisp#L150)
+
+### `(qback queue)`
+
+Get the last element of a queue.
+
+[View source](queue.lisp#L162)
 
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L154)
+[View source](queue.lisp#L175)
 
 ### `(qappend queue list)`
 
 Append the elements of LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L165)
+[View source](queue.lisp#L186)
 
 ## Box
 
@@ -4358,13 +4364,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L823)
+[View source](strings.lisp#L824)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L852)
+[View source](strings.lisp#L853)
 
 ### `(string+ &rest args)`
 
@@ -4378,7 +4384,7 @@ Roughly equivalent to
 But with a compiler macro that can sometimes result in more efficient
 code.
 
-[View source](strings.lisp#L871)
+[View source](strings.lisp#L872)
 
 ## Vectors
 
@@ -4401,6 +4407,9 @@ Succinct constructor for adjustable vectors with fill pointers.
 
 The fill pointer is placed after the last element in INITIAL-CONTENTS.
 
+As a constructor this also has a matching definition as a Trivia
+pattern for destructing.
+
 [View source](vectors.lisp#L10)
 
 ### `(values-vector vec)`
@@ -4408,7 +4417,7 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS.
 Return the elements of VEC, a vector, as multiple values.
 This is to vectors what `values-list` is to lists.
 
-[View source](vectors.lisp#L38)
+[View source](vectors.lisp#L41)
 
 ### `(pad-start vec length &optional pad)`
 
@@ -4437,7 +4446,7 @@ VEC, so PAD must satisfy that element type.
 
 Loosely inspired by ECMA.
 
-[View source](vectors.lisp#L67)
+[View source](vectors.lisp#L70)
 
 ### `(pad-end vec length &optional pad)`
 
@@ -4445,7 +4454,7 @@ Pad VEC, a vector, to LENGTH, using PAD.
 Like `pad-start`, but padding is addded to the end, rather than the
 beginning.
 
-[View source](vectors.lisp#L122)
+[View source](vectors.lisp#L125)
 
 ### `(vector-conc-extend vector new-elements &optional extension)`
 
@@ -4455,7 +4464,7 @@ each element on NEW-ELEMENTS, but should be faster.
 
 Returns VECTOR.
 
-[View source](vectors.lisp#L173)
+[View source](vectors.lisp#L176)
 
 ## Vector=
 

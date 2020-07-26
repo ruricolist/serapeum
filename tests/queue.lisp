@@ -41,8 +41,37 @@
 
 (test setf-front
   (let ((q (queue)))
+    (is (null (front q)))
     (setf (front q) 1)
-    (is (equal 1 (front q))))
+    (is (equal 1 (front q)))
+    (is (equal '(1) (qlist q))))
   (let ((q (queue 2 2)))
     (setf (front q) 1)
+    (is (eql (front q) 1))
     (is (equal '(1 2) (qlist q)))))
+
+(test qback
+  (let ((q (queue)))
+    (is (null (qback q)))
+    (enq 1 q)
+    (is (eql 1 (qback q))))
+  (let ((q (queue 1)))
+    (is (eql 1 (qback q)))
+    (is (equal '(1) (qlist q)))))
+
+(test setf-qback
+  (let ((q (queue)))
+    (is (null (qback q)))
+    (setf (qback q) 1)
+    (is (eql 1 (qback q)))
+    (is (equal '(1) (qlist q))))
+  (let ((q (queue 1)))
+    (is (eql 1 (qback q)))
+    (setf (qback q) 2)
+    (is (eql 2 (qback q)))
+    (is (equal '(2) (qlist q))))
+  (let ((q (queue 1 2)))
+    (is (eql 2 (qback q)))
+    (setf (qback q) 3)
+    (is (eql 3 (qback q)))
+    (is (equal '(1 3) (qlist q)))))

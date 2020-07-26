@@ -219,6 +219,7 @@
    #:deq
    #:undeq
    #:front
+   #:qback
    #:qlen
    #:qlist
    #:qconc

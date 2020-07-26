@@ -42,7 +42,7 @@ The rest of the API:
 - `qlen' Like `(length (qlist ...))'
 - `clear-queue' Clear the queue
 - `front' Like `(car (qlist ...))'
-- `queue-back' Get the last element of the queue
+- `qback' Get the last element of the queue
 - `queue-empty-p' Test if the queue is empty
 - `qappend' Non-destructively join a list to the end of the queue
 
@@ -155,6 +155,19 @@ This is called `undeq' because it can be used to undo a `deq'."
   (if (queue-empty-p queue)
       (enq value queue)
       (setf (car (qlist queue))
+            value))
+  value)
+
+(-> qback (queue) t)
+(defun qback (queue)
+  "Get the last element of a queue."
+  (unless (queue-empty-p queue)
+    (caar (queue-cons queue))))
+
+(defun (setf qback) (value queue)
+  (if (queue-empty-p queue)
+      (enq value queue)
+      (setf (caar (queue-cons queue))
             value))
   value)
 

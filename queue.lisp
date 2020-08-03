@@ -133,7 +133,7 @@ Does not cons."
 For an empty queue, this does the same thing as ENQ.
 
 For a queue with elements, this adds a new element onto the front of
-queue (like pushing to an ordinary list.
+queue (like pushing to an ordinary list).
 
 This is called `undeq' because it can be used to undo a `deq'."
   (let ((q (queue-cons queue)))

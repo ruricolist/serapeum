@@ -907,14 +907,17 @@ acceptable to SUBSEQ."
   (declare (type signed-array-index start)
            (type signed-array-length end)
            (type array-index len))
-  (values (if (minusp start)
-              (max 0 (+ len start))
-              start)
-          (if (null end)
-              nil
-              (if (minusp end)
-                  (max 0 (+ len end))
-                  end))))
+  (let* ((start
+           (if (minusp start)
+               (max 0 (+ len start))
+               (min start len)))
+         (end
+           (if (null end)
+               nil
+               (if (minusp end)
+                   (max 0 (+ len end))
+                   (min len end)))))
+    (values start (max start end))))
 
 (-> slice
     (sequence signed-array-index &optional (or null signed-array-length))
@@ -924,6 +927,14 @@ acceptable to SUBSEQ."
 Both START and END accept negative bounds.
 
      (slice \"string\" -3 -1) => \"in\"
+
+A call to `slice' where the first argument is positive and the second argument is negative is equivalent to chaining two calls to `drop':
+
+    (drop -1 (drop 3 \"string\")) = \"in\"
+
+If the bounds cross in the middle, the result is an empty string:
+
+    (slice \"x\" 1 -1) => \"\"
 
 Setf of `slice' is like setf of `ldb': afterwards, the place being set
 holds a new sequence which is not EQ to the old."

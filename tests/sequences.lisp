@@ -129,7 +129,19 @@
   (is (equal "foo" (slice "foo" -0)))
   (is (equal "" (slice "" -1)))
   (is (equal "" (slice "" 0 -1)))
-  (is (equal "" (slice "" -1 -1))))
+  (is (equal "" (slice "" -1 -1)))
+  (is (equal "" (slice "x" 1 -1)))
+  (for-all ((start (an-index))
+            (end (an-index))
+            (string
+             (lambda ()
+               (whichever "" "x" "string"))))
+    (is (equal (drop (- end)
+                     (drop start string))
+               (slice string start (- end))))
+    (is (equal (drop start
+                     (drop (- end) string))
+               (slice string start (- end))))))
 
 (test setslice
   (let* ((string "xyz")

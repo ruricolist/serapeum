@@ -23,6 +23,10 @@
         (5am:*on-failure* :debug))
     (run! test)))
 
+(defun an-index ()
+  (lambda ()
+    (random array-dimension-limit)))
+
 (defun a-fixnum ()
   (lambda ()
     (random-in-range most-negative-fixnum most-positive-fixnum)))

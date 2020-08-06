@@ -127,7 +127,9 @@
 (test slice
   (is (equal "in" (slice "string" -3 -1)))
   (is (equal "foo" (slice "foo" -0)))
-  (is (equal "r" (slice "bar" -1))))
+  (is (equal "" (slice "" -1)))
+  (is (equal "" (slice "" 0 -1)))
+  (is (equal "" (slice "" -1 -1))))
 
 (test setslice
   (let* ((string "xyz")

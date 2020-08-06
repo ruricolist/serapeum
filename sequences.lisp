@@ -908,12 +908,12 @@ acceptable to SUBSEQ."
            (type signed-array-length end)
            (type array-index len))
   (values (if (minusp start)
-              (+ len start)
+              (max 0 (+ len start))
               start)
           (if (null end)
               nil
               (if (minusp end)
-                  (+ len end)
+                  (max 0 (+ len end))
                   end))))
 
 (-> slice

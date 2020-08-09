@@ -930,7 +930,8 @@ Both START and END accept negative bounds.
 
 A call to `slice' where the first argument is positive and the second argument is negative is equivalent to chaining two calls to `drop':
 
-    (drop -1 (drop 3 \"string\")) = \"in\"
+    (drop 3 (drop -1 \"string\")) = \"in\"
+    (slice \"string\" 3 -1)       = \"in\"
 
 If the bounds cross in the middle, the result is an empty string:
 

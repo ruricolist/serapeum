@@ -127,7 +127,7 @@ Does not cons."
       (setf (car q) q))
     (car items)))
 
-(-> undeq (t queue) t)
+(-> undeq (t queue) queue)
 (defun undeq (item queue)
   "Add an item to the front of QUEUE.
 For an empty queue, this does the same thing as ENQ.
@@ -139,7 +139,8 @@ This is called `undeq' because it can be used to undo a `deq'."
   (let ((q (queue-cons queue)))
     (if (cdr q)
         (push item (cdr q))
-        (enq item queue))))
+        (enq item queue))
+    queue))
 
 (-> queue-empty-p (queue) boolean)
 (defun queue-empty-p (queue)

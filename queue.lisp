@@ -32,6 +32,10 @@ Remove an item with `deq':
 
     (deq (queue 1 2 3)) => 3
 
+Prepend an item with `undeq':
+
+    (qlist (undeq 1 (queue 2 3))) => '(1 2 3)
+
 To (destructively) join a list to the end of the queue, use `qconc':
 
     (qconc (queue 1 2 3) '(4 5 6)) => #<QUEUE (1 2 3 4 5 6)>
@@ -45,6 +49,11 @@ The rest of the API:
 - `qback' Get the last element of the queue
 - `queue-empty-p' Test if the queue is empty
 - `qappend' Non-destructively join a list to the end of the queue
+
+Note that support for both `deq' and `undeq' means that a queue is
+also effectively a stack. (But not quite a double-ended queue: you can
+push to either end, and pop from the front, but you can't pop from the
+end.)
 
 The idea is that *collecting* is something we do often enough to
 justifying making *collectors* (queues) first-class."

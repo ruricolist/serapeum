@@ -148,6 +148,7 @@
                  (:file "octets")
                  (:file "time")
                  (:file "clos")
+                 (:file "mop")
                  (:file "hooks")
                  (:file "fbind")
                  (:file "lists")

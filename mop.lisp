@@ -38,6 +38,13 @@
                          (make-method ,around-form)))
           around-form))))
 
+(setf (documentation 'standard/context 'method-combination)
+      "A method combination which extends the standard method combination with support `:context` qualifiers. Context methods are executed before around methods, and in least-specific–first order.
+
+Context methods are intended to set up a dynamic context that all specializations for subclasses can take for granted.
+
+In many cases context methods can simplify implementation by avoiding the need to have a separate, internal wrapper function for a generic function exposed for extension.")
+
 
 
 ;;; Cf. http://www.cliki.net/MOP%20design%20patterns

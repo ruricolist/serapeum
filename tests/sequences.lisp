@@ -73,8 +73,12 @@
   (is (equal (assort "How Now Brown Cow" :key #'upper-case-p)
              '("HNBC" "ow ow rown ow"))))
 
+(test assort-partial-order
+  (is (equal (assort '(1 2 1 2 1 2) :test #'<=)
+             '((1 1) (2 2 1 2)))))
+
 (test assort-simple-vector
-  (finishes (assort (coerce #(1 2 3) 'simple-vector))))
+      (finishes (assort (coerce #(1 2 3) 'simple-vector))))
 
 (test runs
   (is (equal '((1 2) (3 4 5 6 11 12 13))

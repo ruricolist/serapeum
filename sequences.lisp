@@ -541,10 +541,20 @@ agroup is immutable, the bucket itself is mutable."
              :key (lambda (n) (mod n 3)))
      => '((0 3 6 9) (1 4 7) (2 5 8))
 
-You can think of `assort' as being akin to `remove-duplicates':
+Groups are ordered as encountered. This property means you could, in
+principle, use `assort' to implement `remove-duplicates' by taking the
+first element of each group:
 
      (mapcar #'first (assort list))
-     ≡ (remove-duplicates list :from-end t)"
+     ≡ (remove-duplicates list :from-end t)
+
+However, if TEST is ambiguous (a partial order), and an element could
+qualify as a member of more than one group, then it is not guaranteed
+that it will end up in the leftmost group that it could be a member
+of.
+
+    (assort '(1 2 1 2 1 2) :test #'<=)
+    => '((1 1) (2 2 1 2))"
   (fbind (test)
     (with-item-key-function (key)
       (let ((groups (queue))

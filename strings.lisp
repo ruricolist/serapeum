@@ -313,12 +313,15 @@ removed."
            (:eol-style (or (member nil :cr :lf :crlf :ascii :unicode)
                            function))
            (:honor-crlf t)
-           (:keep-eols t))
+           (:keep-eols t)
+           (:count (or null (integer 0 *))))
     (values (or null list) &optional))
-(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols)
+(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols count)
   "Return a list of the lines in STRING, stripped of any EOL characters
 and including the last nonempty line even if it has no EOL characters,
 or NIL if STRING is empty or NIL.
+
+If COUNT is provided, only the first COUNT lines are returned.
 
 EOL-STYLE can be one of the following:
 
@@ -496,12 +499,17 @@ To additionally omit lines consisting only of whitespace:
             (line nil (subseq string start
                               (if keep-eols (1+ end) (- end crlf-offset))))
             (lines nil (push line lines))
+            (line-count 0 (1+ line-count))
             (start 0 (1+ end))
             (end (next-eol start) (next-eol start))
             (crlf-offset 0 0))
-           ((not end) (nreverse (if (emptyp (setf line (subseq string start)))
-                                    lines
-                                    (push line lines))))
+           ((or (not end)
+                (eql line-count count))
+            (if (eql line-count count)
+                (nreverse lines)
+                (nreverse (if (emptyp (setf line (subseq string start)))
+                              lines
+                              (cons line lines)))))
        again
         (when (and (eql (char string end) #\Return)
                    honor-crlf)

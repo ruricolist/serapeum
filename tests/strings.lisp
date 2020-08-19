@@ -123,6 +123,16 @@
                                            #.(code-char #x2029)))
                           :honor-crlf t)))))))
 
+(test lines/count
+  (is (null (lines "" :count 50)))
+  (is (null (lines "" :count 0)))
+  (is (null (lines (fmt "x~%y") :count 0)))
+  (is (equal '("x") (lines (fmt "x") :count 1)))
+  (is (equal '("x") (lines (fmt "x") :count 2)))
+  (is (equal '("x") (lines (fmt "x~%y") :count 1)))
+  (is (equal '("x" "y") (lines (fmt "x~%y") :count 2)))
+  (is (equal '("x" "y") (lines (fmt "x~%y") :count 50))))
+
 (test collapse-whitespace
   (is (equal (collapse-whitespace "") ""))
   (is (equal (collapse-whitespace " ") " "))

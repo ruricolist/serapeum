@@ -6,19 +6,28 @@
 
 (defmacro serapeum.exporting:defclass (name supers &body (slots . options))
   "Like `defclass', but implicitly export the name of the class and
-the names of all accessors (including readers and writers)."
-  (let (accessors)
+the names of all accessors (including readers and writers).
+
+You can specify `:export nil' in the definition of a slot to prevent
+its accessors from being exported."
+  (let ((slots (mapcar #'ensure-list slots))
+        accessors)
     (dolist (slot slots)
-      (destructuring-bind (&key accessor reader writer &allow-other-keys)
-          (rest (ensure-list slot))
-        (when accessor (push accessor accessors))
-        (when reader (push reader accessors))
-        (when writer (push writer accessors))))
+      (destructuring-bind (&key accessor reader writer (export t)
+                           &allow-other-keys)
+          (rest slot)
+        (when export
+          (when accessor (push accessor accessors))
+          (when reader (push reader accessors))
+          (when writer (push writer accessors)))))
     (setf accessors (remove-duplicates accessors))
     `(progn
        (export-always ',(cons name accessors))
        (defclass ,name ,supers
-         ,slots
+         ,(mapcar (lambda (slot)
+                    (cons (first slot)
+                          (remove-from-plist (rest slot) :export)))
+           slots)
          ,@options))))
 
 (defmacro serapeum.exporting:define-values (values &body (expr))

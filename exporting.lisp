@@ -31,6 +31,7 @@ its accessors from being exported."
          ,@options))))
 
 (defmacro serapeum.exporting:define-values (values &body (expr))
+  "Like `define-values', with implicit export of VALUES."
   `(progn
      (export-always ',values)
      (define-values ,values ,expr)))
@@ -44,6 +45,8 @@ its accessors from being exported."
          (export-always '(,exporter-name)
              (find-package :serapeum.exporting))
          (defmacro ,exporter-name (&whole ,whole ,@lambda-list)
+           ,(fmt "Like `~(~a~)', with implicit export of ~:@(~a~)."
+                macro-name name-sym)
            (declare (ignore ,@(set-difference (flatten (rest lambda-list))
                                               lambda-list-keywords)))
            (list 'progn

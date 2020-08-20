@@ -1,4 +1,4 @@
-# Function Listing For serapeum (40 files, 407 functions)
+# Function Listing For serapeum (40 files, 420 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -4975,7 +4975,88 @@ prefix. (Defaults to T if FLAVOR is `:si`.)
 Like `defclass`, but implicitly export the name of the class and
 the names of all accessors (including readers and writers).
 
+You can specify `:export nil' in the definition of a slot to prevent
+its accessors from being exported.
+
 [View source](exporting.lisp#L7)
+
+### `(define-values values &body (expr))`
+
+Like `define-values`, with implicit export of VALUES.
+
+[View source](exporting.lisp#L33)
+
+### `(def var &body (&optional val docs))`
+
+Like `def`, with implicit export of VAR.
+
+[View source](exporting.lisp#L56)
+
+### `(define-symbol-macro symbol expansion)`
+
+Like `define-symbol-macro`, with implicit export of SYMBOL.
+
+[View source](exporting.lisp#L58)
+
+### `(deftype name lamda-list &body body)`
+
+Like `deftype`, with implicit export of NAME.
+
+[View source](exporting.lisp#L60)
+
+### `(defconst symbol init &optional docstring)`
+
+Like `defconst`, with implicit export of SYMBOL.
+
+[View source](exporting.lisp#L62)
+
+### `(defconstant name value &optional doc)`
+
+Like `defconstant`, with implicit export of NAME.
+
+[View source](exporting.lisp#L64)
+
+### `(defvar var &optional val doc)`
+
+Like `defvar`, with implicit export of VAR.
+
+[View source](exporting.lisp#L66)
+
+### `(defparameter var val &optional doc)`
+
+Like `defparameter`, with implicit export of VAR.
+
+[View source](exporting.lisp#L68)
+
+### `(defun name lambda-list &body body)`
+
+Like `defun`, with implicit export of NAME.
+
+[View source](exporting.lisp#L70)
+
+### `(defalias name &body body)`
+
+Like `defalias`, with implicit export of NAME.
+
+[View source](exporting.lisp#L72)
+
+### `(defmacro name &body body)`
+
+Like `defmacro`, with implicit export of NAME.
+
+[View source](exporting.lisp#L74)
+
+### `(defgeneric name lambda-list &body options)`
+
+Like `defgeneric`, with implicit export of NAME.
+
+[View source](exporting.lisp#L76)
+
+### `(defmethod name &body args)`
+
+Like `defmethod`, with implicit export of NAME.
+
+[View source](exporting.lisp#L78)
 
 ## Hooks
 

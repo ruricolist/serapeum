@@ -79,7 +79,7 @@ Description of the handler.  This is purely informative.")
    (fn :initarg :fn
      :accessor fn
      :type function
-     :initform nil
+     :initform (required-argument 'fn)
      :documentation "
 The handler function.  It can be an anonymous function.")
    (handler-type :initarg :handler-type

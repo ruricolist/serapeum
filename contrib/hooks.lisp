@@ -10,6 +10,8 @@
                 #:run-hook
                 #:run-hook-until-failure
                 #:run-hook-until-success)
+  (:import-from #:alexandria
+                #:required-argument)
   (:export
    #:*hook*
    #:add-hook

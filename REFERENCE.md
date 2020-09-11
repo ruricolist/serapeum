@@ -384,6 +384,10 @@ type with the `use-value` restart.
 Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref`.)
 
+Using `values` types is supported, with caveats:
+- The types of `&rest` arguments are not currently checked.
+- Types defined with `deftype` that expand into values types may not be checked in some Lisps.
+
 From ISLISP.
 
 [View source](types.lisp#L153)
@@ -393,14 +397,14 @@ From ISLISP.
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L190)
+[View source](types.lisp#L230)
 
 ### `(supertypep supertype type &optional env)`
 
 Is SUPERTYPE a supertype of TYPE?
 That is, is TYPE a subtype of SUPERTYPE?
 
-[View source](types.lisp#L222)
+[View source](types.lisp#L262)
 
 ### `(proper-subtype-p subtype type &optional env)`
 
@@ -408,7 +412,7 @@ Is SUBTYPE a proper subtype of TYPE?
 
 This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
 
-[View source](types.lisp#L228)
+[View source](types.lisp#L268)
 
 ### `(proper-supertype-p supertype type &optional env)`
 
@@ -417,7 +421,7 @@ Is SUPERTYPE a proper supertype of TYPE?
 That is, is it true that every value of TYPE is also of type
 SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
 
-[View source](types.lisp#L252)
+[View source](types.lisp#L292)
 
 ### `(vref vec index)`
 
@@ -427,7 +431,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L304)
+[View source](types.lisp#L344)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -478,7 +482,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L367)
+[View source](types.lisp#L407)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -487,19 +491,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L463)
+[View source](types.lisp#L503)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L476)
+[View source](types.lisp#L516)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L486)
+[View source](types.lisp#L526)
 
 ### `(with-boolean (var) &body body)`
 
@@ -514,7 +518,7 @@ Around each specialized body VAR is bound to a symbol macro whose
 value is `t` or `nil`. This ensures VAR cannot be rebound, and allows
 macros to recognize VAR as a constant.
 
-[View source](types.lisp#L494)
+[View source](types.lisp#L534)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -524,7 +528,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L539)
+[View source](types.lisp#L579)
 
 ### `(true x)`
 
@@ -533,7 +537,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L561)
+[View source](types.lisp#L601)
 
 ## Definitions
 
@@ -5064,116 +5068,116 @@ Like `defmethod`, with implicit export of NAME.
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(fn handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(handler-type handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(description handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(place handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(name handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L64)
+[View source](contrib/hooks.lisp#L66)
 
 ### `(handlers hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L157)
+[View source](contrib/hooks.lisp#L159)
 
 ### `(disabled-handlers hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L157)
+[View source](contrib/hooks.lisp#L159)
 
 ### `(combination hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L157)
+[View source](contrib/hooks.lisp#L159)
 
 ### `(default-combine-hook hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L191)
+[View source](contrib/hooks.lisp#L193)
 
 ### `(combine-hook-until-failure hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L200)
+[View source](contrib/hooks.lisp#L202)
 
 ### `(combine-hook-until-success hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L215)
+[View source](contrib/hooks.lisp#L217)
 
 ### `(combine-composed-hook hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L226)
+[View source](contrib/hooks.lisp#L228)
 
 ### `(find-handler handler-or-name handlers)`
 
 Return handler matching HANDLER-OR-NAME in HANDLERS sequence.
 
-[View source](contrib/hooks.lisp#L251)
+[View source](contrib/hooks.lisp#L253)
 
 ### `(run-hook-with-args-until-failure hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L301)
+[View source](contrib/hooks.lisp#L303)
 
 ### `(run-hook-with-args-until-success hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L306)
+[View source](contrib/hooks.lisp#L308)
 
 ### `(disable-hook hook &rest handlers)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L327)
+[View source](contrib/hooks.lisp#L329)
 
 ### `(enable-hook hook &rest handlers)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L332)
+[View source](contrib/hooks.lisp#L334)
 
 ### `(define-hook hook-type name &key object handlers disabled-handlers combination)`
 
 Return a globally-accessible hook.
 The hook can be accessed with `find-hook` at (list NAME OBJECT).
 
-[View source](contrib/hooks.lisp#L344)
+[View source](contrib/hooks.lisp#L346)
 
 ### `(find-hook name &optional object)`
 
@@ -5183,7 +5187,7 @@ The following examples return different hooks:
 - (find-hook 'foo-hook 'bar-class)
 - (find-hook 'foo-hook (make-instance 'bar-class))
 
-[View source](contrib/hooks.lisp#L358)
+[View source](contrib/hooks.lisp#L360)
 
 ### `(define-hook-type name type)`
 
@@ -5200,13 +5204,13 @@ The function make-hook-NAME is created.  It is similar to (make-instance
 'hook-NAME ...) except that named functions are also accepted.  Named functions
 will be automatically encapsulated with make-handler-NAME.
 
-[View source](contrib/hooks.lisp#L376)
+[View source](contrib/hooks.lisp#L378)
 
 ### `(make-handler-void fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L429)
+[View source](contrib/hooks.lisp#L431)
 
 ### `(make-hook-void &key handlers combination)`
 
@@ -5214,7 +5218,7 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-VOID.
 
-[View source](contrib/hooks.lisp#L429)
+[View source](contrib/hooks.lisp#L431)
 
 ### `(make-hook-string->string &key handlers combination)`
 
@@ -5222,13 +5226,13 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-STRING->STRING.
 
-[View source](contrib/hooks.lisp#L430)
+[View source](contrib/hooks.lisp#L432)
 
 ### `(make-handler-string->string fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L430)
+[View source](contrib/hooks.lisp#L432)
 
 ### `(make-hook-number->number &key handlers combination)`
 
@@ -5236,13 +5240,13 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-NUMBER->NUMBER.
 
-[View source](contrib/hooks.lisp#L431)
+[View source](contrib/hooks.lisp#L433)
 
 ### `(make-handler-number->number fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L431)
+[View source](contrib/hooks.lisp#L433)
 
 ### `(make-hook-any &key handlers combination)`
 
@@ -5250,11 +5254,11 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-ANY.
 
-[View source](contrib/hooks.lisp#L432)
+[View source](contrib/hooks.lisp#L434)
 
 ### `(make-handler-any fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L432)
+[View source](contrib/hooks.lisp#L434)
 

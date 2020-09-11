@@ -43,6 +43,34 @@
       ((assure list x)
        x)))))
 
+(test assure-values
+  (is (equal '(1 2)
+             (multiple-value-list
+              (assure (values integer integer)
+                (values 1 2)))))
+  (signals type-error
+    (assure (values integer integer)
+      (values 1 "2")))
+  (is (equal '(1 2)
+             (multiple-value-list
+              (assure (values integer integer &optional integer)
+                (values 1 2)))))
+  (signals type-error
+   (assure (values integer integer &optional integer)
+     (values 1 2 "3")))
+  (is (equal '(1 2 3 4 5)
+             (multiple-value-list
+              (assure (values integer &rest integer)
+                (values 1 2 3 4 5)))))
+  (signals type-error
+    (assure (values integer &rest integer)
+      (values "1" 2 3 4 5)))
+  ;; Aspirational
+  ;; (signals type-error
+  ;;   (assure (values integer &rest integer)
+  ;;     (values 1 2 3 4 "5")))
+  )
+
 (test (with-item-key-function :compile-at :run-time)
   (finishes
     (locally (declare (optimize (space 3) (speed 0)))

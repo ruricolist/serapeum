@@ -166,26 +166,66 @@ type with the `use-value' restart.
 Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
-From ISLISP."
-  ;; The type nil contains nothing, so it renders the form
-  ;; meaningless.
-  (assert (not (subtypep type-spec nil)))
-  (let ((exp (macroexpand form env)))
-    ;; A constant expression.
-    (when (constantp exp)
-      (let ((val (constant-form-value exp)))
-        (unless (typep val type-spec)
-          (warn "Constant expression ~s is not of type ~a"
-                form type-spec))))
-    ;; A variable.
-    (when (symbolp exp)
-      (let ((declared-type (variable-type exp env)))
-        (unless (subtypep type-spec declared-type)
-          (warn "Required type ~a is not a subtypep of declared type ~a"
-                type-spec declared-type)))))
+Using `values' types is supported, with caveats:
+- The types of `&rest' arguments are not currently checked.
+- Types defined with `deftype' that expand into values types may not be checked in some Lisps.
 
-  ;; `values' is hand-holding for SBCL.
-  `(the ,type-spec (values (require-type ,form ',type-spec))))
+From ISLISP."
+  (match (typexpand type-spec env)
+    ((list* 'values typespecs)
+     `(assure-values ,typespecs ,form))
+    (otherwise
+     ;; The type nil contains nothing, so it renders the form
+     ;; meaningless.
+     (assert (not (subtypep type-spec nil)))
+     (let ((exp (macroexpand form env)))
+       ;; A constant expression.
+       (when (constantp exp)
+         (let ((val (constant-form-value exp)))
+           (unless (typep val type-spec)
+             (warn "Constant expression ~s is not of type ~a"
+                   form type-spec))))
+       ;; A variable.
+       (when (symbolp exp)
+         (let ((declared-type (variable-type exp env)))
+           (unless (subtypep type-spec declared-type)
+             (warn "Required type ~a is not a subtypep of declared type ~a"
+                   type-spec declared-type)))))
+     ;; `values' is hand-holding for SBCL.
+     `(the ,type-spec (values (require-type ,form ',type-spec))))))
+
+(defmacro assure-values (typespecs &body (form))
+  (flet ((lambda-list-keyword? (x)
+           (member x lambda-list-keywords)))
+    (let* ((types (remove-if #'lambda-list-keyword? typespecs))
+           (lambda-list
+             (loop for spec in typespecs
+                   if (lambda-list-keyword? spec)
+                     collect spec
+                   else collect (gensym))))
+      (multiple-value-bind (required optional rest?)
+          (parse-ordinary-lambda-list lambda-list)
+        (let ((optional
+                (loop for (arg default nil) in optional
+                      for supplied? = (gensym)
+                      collect `(,arg ,default ,supplied?))))
+          `(multiple-value-call
+               (lambda (,@required
+                   ,@(and optional `(&optional ,@optional))
+                   ,@(and rest? `(&rest ,rest?)))
+                 (multiple-value-call #'values
+                   ,@(loop for arg in required
+                           for type in types
+                           collect `(assure ,type ,arg))
+                   ,@(let ((types (nthcdr (length required) types)))
+                       (loop for (arg nil arg-supplied?) in optional
+                             for type in types
+                             collect `(if ,arg-supplied?
+                                          (assure ,type ,arg)
+                                          (values))))
+                   ,@(and rest?
+                          `((values-list ,rest?)))))
+             ,form))))))
 
 (defmacro assuref (place type-spec)
   "Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates

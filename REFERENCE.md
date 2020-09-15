@@ -585,6 +585,11 @@ you don’t have to +cage+ your constants.
 The constant is only redefined on re-evaluation if INIT has a
 different literal representation than the old value.
 
+A constant defined with `defconst` is guaranteed to be available as
+soon as it has been defined (for example, for use with reader macros
+later in the same file). This is not guaranteed to be portably true
+for `defconstant`.
+
 The name is from Emacs Lisp.
 
 [View source](definitions.lisp#L90)
@@ -603,7 +608,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L114)
+[View source](definitions.lisp#L119)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -620,7 +625,7 @@ we must make it assignable (which is what `notinline` means).
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L136)
+[View source](definitions.lisp#L141)
 
 ### `(defplace name args &body (form &optional docstring))`
 
@@ -628,7 +633,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L182)
+[View source](definitions.lisp#L187)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -637,14 +642,14 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L197)
+[View source](definitions.lisp#L202)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L207)
+[View source](definitions.lisp#L212)
 
 ## Defining Types
 
@@ -2312,7 +2317,7 @@ HASH-TABLE argument.
 
 A simple macro to open one or more files providing the streams for the BODY. The ARGS is a list of `(stream filespec options*)` as supplied to WITH-OPEN-FILE.
 
-[View source](files.lisp#L3)
+[View source](files.lisp#L35)
 
 ### `(path-join &rest pathnames)`
 
@@ -2331,7 +2336,7 @@ directories; you have to do that yourself.
     (path-join "dir1" "dir2" "file") -> #p"file"
     (path-join "dir1/" "dir2/" "file") -> #p"dir1/dir2/file"
 
-[View source](files.lisp#L14)
+[View source](files.lisp#L46)
 
 ### `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
@@ -2340,20 +2345,20 @@ Read STREAM and write the contents into PATHNAME.
 STREAM will be closed afterwards, so wrap it with
 `make-concatenated-stream` if you want it left open.
 
-[View source](files.lisp#L35)
+[View source](files.lisp#L67)
 
 ### `(write-file-into-stream pathname output &key if-does-not-exist external-format)`
 
 Write the contents of FILE into STREAM.
 
-[View source](files.lisp#L49)
+[View source](files.lisp#L81)
 
 ### `(file= file1 file2 &key buffer-size)`
 
 Compare FILE1 and FILE2 octet by octet, (possibly) using buffers
 of BUFFER-SIZE.
 
-[View source](files.lisp#L59)
+[View source](files.lisp#L91)
 
 ### `(file-size file &key element-type)`
 
@@ -2365,14 +2370,14 @@ resulting stream.
 If all you want is to read the file's size in octets from its
 metadata, consider `trivial-file-size:file-size-in-octets` instead.
 
-[View source](files.lisp#L121)
+[View source](files.lisp#L153)
 
 ### `(exe p)`
 
 If P, a pathname designator, has no extension, then, on Windows
 only, add an extension of `.exe`.
 
-[View source](files.lisp#L137)
+[View source](files.lisp#L169)
 
 ### `(resolve-executable p)`
 
@@ -2386,7 +2391,7 @@ Note that this function does not check the current directory (even on
 Windows) and it does not care if P is already an absolute pathname: it
 only cares about its name and type.
 
-[View source](files.lisp#L157)
+[View source](files.lisp#L189)
 
 ### `(format-file-size-human-readable stream file-size &key flavor space suffix)`
 
@@ -2407,7 +2412,7 @@ prefix. (Defaults to T if FLAVOR is `:si`.)
 SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec`,
 otherwise empty.
 
-[View source](files.lisp#L177)
+[View source](files.lisp#L209)
 
 ### `(file-size-human-readable file &key flavor space suffix stream)`
 
@@ -2416,7 +2421,7 @@ The size of file is found by `trivial-file-size:file-size-in-octets`.
 
 Inspired by the function of the same name in Emacs.
 
-[View source](files.lisp#L205)
+[View source](files.lisp#L237)
 
 ## Symbols
 

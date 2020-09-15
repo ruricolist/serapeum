@@ -96,6 +96,11 @@ you don’t have to +cage+ your constants.
 The constant is only redefined on re-evaluation if INIT has a
 different literal representation than the old value.
 
+A constant defined with `defconst' is guaranteed to be available as
+soon as it has been defined (for example, for use with reader macros
+later in the same file). This is not guaranteed to be portably true
+for `defconstant'.
+
 The name is from Emacs Lisp."
   (let ((backing-var (symbolicate '#:+storage-for-deflex-var- symbol '+)))
     `(eval-when (:compile-toplevel :load-toplevel :execute)

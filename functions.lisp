@@ -451,3 +451,25 @@ From Clojure."
                           for temp in temps
                           collect `(or ,arg ,temp))
                   ,rest))))))
+
+;;; TODO Export these once they have better names.
+
+(define-train unruffle (fn)
+  "Return a function that takes a single argument, a list, and
+applies FN to it.
+
+Wraps a variadic function so it takes a list of arguments instead."
+  (with-unique-names (list)
+    `(lambda (,list)
+       (declare (list ,list))
+       (apply ,fn ,list))))
+
+(define-train ruffle (fn)
+  "Return a function that takes any number of arguments and calls FN
+on them as a list.
+
+Wraps a function that expects a single argument, a list, so it can be
+used variadically."
+  (with-unique-names (args)
+    `(lambda (&rest ,args)
+       (funcall ,fn ,args))))

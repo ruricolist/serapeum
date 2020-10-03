@@ -272,7 +272,7 @@ result."
            :operands (list low high)))
   (if-let (type (random-range-type low high))
     `(locally (declare (notinline random-in-range))
-       (truly-the ,type
+       (truly-the (values ,type &optional)
          (random-in-range ,low ,high)))
     call))
 

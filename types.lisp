@@ -596,7 +596,7 @@ compilation speed over runtime speed, then BODY is only emitted once."
                     (t (macrolet ((,key (x) (list 'funcall ',key x)))
                          ,@body))))))))
 
-(declaim (ftype (function (t) boolean) true))
+(declaim (ftype (function (t) (values boolean &optional)) true))
 (declaim (inline true))
 (defun true (x)
   "Coerce X to a boolean.

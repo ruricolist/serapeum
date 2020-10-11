@@ -160,7 +160,7 @@ From Emacs Lisp."
              (mapconcat/list fun seq separator stream)
              (mapconcat/seq fun seq separator stream)))))))
 
-(defun string-join (strings &optional (separator "") &key stream end)
+(defun string-join (strings separator &key stream end)
   "Like `(mapconcat #'string STRINGS (string SEPARATOR))'."
   (with-string (s stream)
     (mapconcat #'string strings (string separator)

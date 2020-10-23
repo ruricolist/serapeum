@@ -380,6 +380,7 @@
    #:runs
    #:batches
    #:assort
+   #:iota
    #:single
    #:only-elt
    #:frequencies

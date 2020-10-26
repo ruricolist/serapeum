@@ -334,3 +334,28 @@
   (is (seq= '(1 2 1)
             (collapse-duplicates #(1 1 2 2 1 1))
             (collapse-duplicates '(1 1 2 2 1 1)))))
+
+(test toposort
+  (local
+    (def dem-bones '((toe foot)
+                     (foot heel)
+                     (heel ankle)
+                     (ankle shin)
+                     (shin knee)
+                     (knee back)
+                     (back shoulder)
+                     (shoulder neck)
+                     (neck head)))
+    (def shuffle (reshuffle (mapcar #'car dem-bones)))
+    (is (not (seq= shuffle dem-bones)))
+    (is (every #'eql
+               (mapcar #'car dem-bones)
+               (sort shuffle (toposort dem-bones))))))
+
+(test toposort-equal
+  (let ((inconsistent-constraints '(("x" "y") ("y" "x"))))
+    (finishes
+      (let ((constraints (leaf-map #'copy-seq inconsistent-constraints)))
+        (toposort constraints :test #'eql)))
+    (signals inconsistent-graph
+      (toposort inconsistent-constraints :test #'equal))))

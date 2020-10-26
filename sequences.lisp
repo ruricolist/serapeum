@@ -1403,21 +1403,28 @@ Cf. `toposort'.")
   (declare (ignore constraints))
   (first min-elts))
 
-(defun tsort (elts constraints tie-breaker)
+(defun tsort (elts constraints tie-breaker &key (test #'eql))
   "Do the initial topological sort."
+  (declare (function test tie-breaker))
   (loop while elts
         for min-elts = (or (remove-if
                             (lambda (x)
                               (member x constraints
-                                      :key #'second))
+                                      :key #'second
+                                      :test test))
                             elts)
-                           (error 'inconsistent-graph
-                                  :constraints constraints))
+                           (if (null elts)
+                               (loop-finish)
+                               (error 'inconsistent-graph
+                                      :constraints constraints)))
         for choice = (if (null (rest min-elts))
                          (first min-elts)
                          (funcall tie-breaker min-elts (reverse results)))
-        do (removef elts choice)
-           (removef constraints choice :test #'member)
+        do (removef elts choice :test test)
+           (removef constraints choice
+                    :test
+                    (lambda (x ys)
+                      (member x ys :test test)))
         collect choice into results
         finally (return results)))
 
@@ -1452,8 +1459,8 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering'."
   ;; Adapted from AMOP.
-  (let ((elts (remove-duplicates (flatten constraints))))
-    (ordering (tsort elts constraints tie-breaker)
+  (let ((elts (remove-duplicates (flatten constraints) :test test)))
+    (ordering (tsort elts constraints tie-breaker :test test)
               :test test
               :unordered-to-end unordered-to-end
               :from-end from-end)))

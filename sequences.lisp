@@ -1671,15 +1671,16 @@ as long as SEQ is empty.
          (n n)
          (len-out (* len n)))
     (declare (array-index len n len-out))
-    (with-vector-dispatch (bit-vector simple-bit-vector (simple-array character (*)))
-                          vec
+    (with-simple-vector-dispatch
+        (simple-bit-vector (simple-array character (*)))
+        (vec from to)
       (let ((out (make-array len-out :element-type (array-element-type vec))))
-        (nlet rec ((n n) (offset 0))
+        (nlet rec ((n n) (offset from))
           (declare (array-index n offset))
           (if (zerop n)
               out
               (progn
-                (replace out vec :start1 offset)
+                (replace out vec :start1 offset :start2 from :end2 to)
                 (rec (1- n) (+ offset len)))))))))
 
 (labels ((%seq= (x y)

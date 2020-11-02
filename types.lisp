@@ -529,6 +529,28 @@ added to ensure that TYPE itself is handled."
   `(with-subtype-dispatch vector (simple-vector ,@types) ,var
      ,@body))
 
+(defmacro with-simple-vector-dispatch ((&rest types)
+                                       (var
+                                        start
+                                        end)
+                                       &body body)
+  "Like `with-vector-dispatch' but on implementations that support it, the underlying simple vector of a displaced array is first dereferenced, so the type is guaranteed to be a subtype of simple-array (but not actually `simple-vector`).
+
+START and END are the offset of the original vector's data in the array it is displaced to."
+  (let ((inner
+          `(with-subtype-dispatch (simple-array * (*))
+               ;; Always specialize for simple vectors.
+               (simple-vector ,@types) ,var
+             ,@body)))
+    (if (or #+(or sbcl cmu scl openmcl allegro) t)
+        `(babel-encodings:with-simple-vector ((,var ,var)
+                                              (,start 0)
+                                              (,end (length ,var)))
+           ,inner)
+        `(let ((,start )
+               (,end (length ,var)))
+           ,inner))))
+
 ;;; Are these worth exporting?
 
 (defmacro with-boolean ((var) &body body)

@@ -49,6 +49,7 @@
    #:with-subtype-dispatch
    #:with-string-dispatch
    #:with-vector-dispatch
+   #:with-simple-vector-dispatch
    #:true
    #:with-item-key-function
    ;; Definitions.

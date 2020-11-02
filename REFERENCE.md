@@ -1,4 +1,4 @@
-# Function Listing For serapeum (40 files, 420 functions)
+# Function Listing For serapeum (40 files, 421 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -505,6 +505,14 @@ Like `with-subtype-dispatch` with an overall type of `vector`.
 
 [View source](types.lisp#L526)
 
+### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
+
+Like `with-vector-dispatch` but on implementations that support it, the underlying simple vector of a displaced array is first dereferenced, so the type is guaranteed to be a subtype of simple-array (but not actually `simple-vector`).
+
+START and END are the offset of the original vector's data in the array it is displaced to.
+
+[View source](types.lisp#L532)
+
 ### `(with-boolean (var) &body body)`
 
 Emit BODY twice: once for the case where VAR is true, once for the
@@ -518,7 +526,7 @@ Around each specialized body VAR is bound to a symbol macro whose
 value is `t` or `nil`. This ensures VAR cannot be rebound, and allows
 macros to recognize VAR as a constant.
 
-[View source](types.lisp#L534)
+[View source](types.lisp#L556)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -528,7 +536,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L579)
+[View source](types.lisp#L601)
 
 ### `(true x)`
 
@@ -537,7 +545,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L601)
+[View source](types.lisp#L623)
 
 ## Definitions
 
@@ -3799,14 +3807,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1424)
+[View source](sequences.lisp#L1431)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1484)
+[View source](sequences.lisp#L1491)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3850,14 +3858,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1514)
+[View source](sequences.lisp#L1521)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1556)
+[View source](sequences.lisp#L1563)
 
 ### `(repeat-sequence seq n)`
 
@@ -3881,7 +3889,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1596)
+[View source](sequences.lisp#L1603)
 
 ### `(seq= &rest xs)`
 
@@ -3890,7 +3898,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1678)
+[View source](sequences.lisp#L1686)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -3912,7 +3920,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1742)
+[View source](sequences.lisp#L1750)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -3923,7 +3931,7 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1794)
+[View source](sequences.lisp#L1802)
 
 ## Strings
 

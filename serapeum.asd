@@ -22,6 +22,7 @@
                "global-vars"
                "trivial-file-size"
                "trivial-macroexpand-all"
+               "babel"
                (:feature :abcl (:require :extensible-sequences)))
   :serial t
   :components ((:file "package")

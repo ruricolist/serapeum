@@ -494,3 +494,64 @@ HASH-TABLE argument."
            (setf (gethash key hash-table) datum))
          keys data)
     hash-table))
+
+(defparameter *pretty-print-hash-table* nil "If non-nil, pretty-print hash tables with a represention that can be read back in. It uses the print-object method on hash-tables, which is not standard compliant.
+
+You can also use `toggle-pretty-print-hash-table'.")
+
+(defun pretty-print-hash-table (ht &optional (stream *standard-output*))
+  "Pretty print the hash-table HT to STREAM.
+
+  Ported from RUTILS."
+  (let ((*print-pretty* t)
+        (i 0))
+    (pprint-logical-block (stream nil)
+      (pprint-newline :fill stream)
+      (princ "(dict " stream)
+      (unless (eq (hash-table-test ht) 'equal)
+        (princ #\' stream)
+        (princ (hash-table-test ht) stream))
+      (pprint-indent :block 2 stream)
+      (block nil
+        (maphash (lambda (k v)
+                   (pprint-newline :mandatory stream)
+                   (when (and *print-length* (> (incf i) *print-length*))
+                     (princ "..." stream)
+                     (return))
+                   (when (and k (listp k)) (princ #\' stream))
+                   (if (typep k 'hash-table)
+                       (pretty-print-hash-table k stream)
+                       (prin1 k stream))
+                   (princ " " stream)
+                   (when (and v (listp v)) (princ #\' stream))
+                   (if (typep v 'hash-table)
+                       (pretty-print-hash-table v stream)
+                       (prin1 v stream)))
+                 ht))
+      (pprint-indent :block 1 stream)
+      (pprint-newline :mandatory stream)
+      (princ ") " stream)))
+  ht)
+
+(let ((default-method (ignore-errors (find-method
+                                      #'print-object nil '(hash-table t))))
+      toggled)
+  (defun toggle-pretty-print-hash-table (&optional (on nil explicit))
+    "Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default method.
+    If ON is set explicitly, turn on literal printing (T), otherwise use the default (NIL).
+
+    Ported from RUTILS."
+    (let ((off (if explicit on (not toggled))))
+      (if off
+          (progn
+            (defmethod print-object ((obj hash-table) stream)
+              (pretty-print-hash-table obj stream))
+            (setf toggled t))
+          (progn (remove-method #'print-object
+                                (find-method #'print-object nil '(hash-table t)))
+                 (unless (null default-method)
+                   (add-method #'print-object default-method))
+                 (setf toggled nil))))))
+
+(when *pretty-print-hash-table*
+  (toggle-pretty-print-hash-table t))

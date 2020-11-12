@@ -347,6 +347,7 @@ symbol)."
                                 collect `(,var
                                           (&rest args)
                                           (list* 'funcall ',temp args))))
+             (comment "Macro bindings for functions that are never called.")
              ,@body))))))
 
 (defmacro fbind* (bindings &body body &environment env)

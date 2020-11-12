@@ -2106,6 +2106,33 @@ Note that `dict` can also be used for destructuring (with Trivia).
 
 [View source](hash-tables.lisp#L61)
 
+### Pretty-print hash-tables `pretty-print-hash-table`, `toggle-pretty-print-hash-table`
+
+Hash-tables can be printed prettily, and readably, by using
+`pretty-print-hash-table` or by toggling this feature on and off with
+`toggle-pretty-print-hash-table`.
+
+```
+(dict :a 1 :b 2 :c 3)
+;; =>
+(dict
+  :A 1
+  :B 2
+  :C 3
+ )
+```
+
+Note that it uses the method `print-object` specialized on
+hash-tables, which is not officially supported by the standard.
+
+You can enable this behavior by default in your init file:
+
+```lisp
+(setf *pretty-print-hash-table* t)
+```
+
+From RUTILS.
+
 ### `(dict* dict &rest args)`
 
 Merge new bindings into DICT.

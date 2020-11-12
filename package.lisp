@@ -198,6 +198,9 @@
    #:make-hash-table-function
    #:delete-from-hash-table
    #:pairhash
+   #:pretty-print-hash-table
+   #:toggle-pretty-print-hash-table
+   #:*pretty-print-hash-table*
    ;; Pathnames.
    #:wild-pathname
    #:non-wild-pathname

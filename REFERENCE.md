@@ -1,4 +1,4 @@
-# Function Listing For serapeum (40 files, 421 functions)
+# Function Listing For serapeum (40 files, 425 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -2001,6 +2001,25 @@ From Clojure.
 
 [View source](functions.lisp#L418)
 
+### `(variadic->unary fn)`
+
+Return a function that takes a single argument, a list, and
+applies VARIADIC to it.
+
+Practically equivalent to `(curry #'apply VARIADIC arguments...)'.
+
+[View source](functions.lisp#L457)
+
+### `(unary->variadic fn)`
+
+Return a function that takes any number of arguments and calls FN
+on them as a list.
+
+Wraps a function that expects a single argument, a list, so it can be
+used variadically.
+
+[View source](functions.lisp#L467)
+
 ## Trees
 
 ### `(reuse-cons x y x-y)`
@@ -2105,33 +2124,6 @@ Note that `dict` can also be used for destructuring (with Trivia).
     => 1
 
 [View source](hash-tables.lisp#L61)
-
-### Pretty-print hash-tables `pretty-print-hash-table`, `toggle-pretty-print-hash-table`
-
-Hash-tables can be printed prettily, and readably, by using
-`pretty-print-hash-table` or by toggling this feature on and off with
-`toggle-pretty-print-hash-table`.
-
-```
-(dict :a 1 :b 2 :c 3)
-;; =>
-(dict
-  :A 1
-  :B 2
-  :C 3
- )
-```
-
-Note that it uses the method `print-object` specialized on
-hash-tables, which is not officially supported by the standard.
-
-You can enable this behavior by default in your init file:
-
-```lisp
-(setf *pretty-print-hash-table* t)
-```
-
-From RUTILS.
 
 ### `(dict* dict &rest args)`
 
@@ -2345,6 +2337,39 @@ want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
 [View source](hash-tables.lisp#L478)
+
+### `(pretty-print-hash-table ht &optional stream)`
+
+Pretty print the hash-table HT to STREAM.
+
+```
+(pretty-print-hash-table (dict :a 1 :b 2 :c 3))
+;; =>
+(dict
+  :A 1
+  :B 2
+  :C 3
+ )
+```
+
+If you want to always pretty print hash tables, you can set this in your init file:
+
+``` lisp
+(toggle-pretty-print-hash-table)
+```
+
+  Ported from RUTILS.
+
+[View source](hash-tables.lisp#L498)
+
+### `(toggle-pretty-print-hash-table &optional on)`
+
+Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default method.
+    If ON is set explicitly, turn on literal printing (T), otherwise use the default (NIL).
+
+    Ported from RUTILS.
+
+[View source](hash-tables.lisp#L548)
 
 ## Files
 
@@ -2996,7 +3021,7 @@ symbol).
 
 Like `fbind`, but creates bindings sequentially.
 
-[View source](fbind.lisp#L352)
+[View source](fbind.lisp#L353)
 
 ### `(fbindrec bindings &body body)`
 
@@ -3005,14 +3030,14 @@ Like `fbind`, but creates recursive bindings.
 The consequences of referring to one binding in the expression that
 generates another are undefined.
 
-[View source](fbind.lisp#L440)
+[View source](fbind.lisp#L441)
 
 ### `(fbindrec* bindings &body body)`
 
 Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
-[View source](fbind.lisp#L483)
+[View source](fbind.lisp#L484)
 
 ## Reader
 
@@ -4041,7 +4066,7 @@ From Emacs Lisp.
 
 [View source](strings.lisp#L141)
 
-### `(string-join strings &optional separator)`
+### `(string-join strings separator)`
 
 Like `(mapconcat #'string STRINGS (string SEPARATOR))'.
 

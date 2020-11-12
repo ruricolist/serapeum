@@ -452,19 +452,19 @@ From Clojure."
                           collect `(or ,arg ,temp))
                   ,rest))))))
 
-;;; TODO Export these once they have better names.
+;;; TODO It would be better if these had shorter names.
 
-(define-train unruffle (fn)
+(define-train variadic->unary (fn)
   "Return a function that takes a single argument, a list, and
-applies FN to it.
+applies VARIADIC to it.
 
-Wraps a variadic function so it takes a list of arguments instead."
+Practically equivalent to `(curry #'apply VARIADIC arguments...)'."
   (with-unique-names (list)
     `(lambda (,list)
        (declare (list ,list))
        (apply ,fn ,list))))
 
-(define-train ruffle (fn)
+(define-train unary->variadic (fn)
   "Return a function that takes any number of arguments and calls FN
 on them as a list.
 

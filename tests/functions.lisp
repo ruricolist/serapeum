@@ -126,3 +126,13 @@
     (is (every #'numberp
                (mapcar (fnil #'1+ 0)
                        '(1 2 nil 4 6))))))
+
+(test variadic->unary
+  (is (= (max 1 2 3)
+         (funcall (variadic->unary #'max) '(1 2 3))))
+  (is (= (*)
+         (funcall (variadic->unary #'*) nil))))
+
+(test unary->variadic
+  (is (= 1 (funcall (unary->variadic #'first) 1 2 3)))
+  (is (= 3 (funcall (unary->variadic #'length) 1 2 3))))

@@ -162,6 +162,8 @@
    #:juxt
    #:nth-arg
    #:partial
+   #:unary->variadic
+   #:variadic->unary
    #:throttle
    #:trampoline
    #:once

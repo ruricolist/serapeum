@@ -495,12 +495,24 @@ HASH-TABLE argument."
          keys data)
     hash-table))
 
-(defparameter *pretty-print-hash-table* nil "If non-nil, pretty-print hash tables with a represention that can be read back in. It uses the print-object method on hash-tables, which is not standard compliant.
-
-You can also use `toggle-pretty-print-hash-table'.")
-
 (defun pretty-print-hash-table (ht &optional (stream *standard-output*))
   "Pretty print the hash-table HT to STREAM.
+
+```
+\(pretty-print-hash-table (dict :a 1 :b 2 :c 3))
+;; =>
+\(dict
+  :A 1
+  :B 2
+  :C 3
+ )
+```
+
+If you want to always pretty print hash tables, you can set this in your init file:
+
+``` lisp
+\(toggle-pretty-print-hash-table)
+```
 
   Ported from RUTILS."
   (let ((*print-pretty* t)
@@ -533,9 +545,7 @@ You can also use `toggle-pretty-print-hash-table'.")
       (princ ") " stream)))
   ht)
 
-(let ((default-method (ignore-errors (find-method
-                                      #'print-object nil '(hash-table t))))
-      toggled)
+(let (toggled)
   (defun toggle-pretty-print-hash-table (&optional (on nil explicit))
     "Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default method.
     If ON is set explicitly, turn on literal printing (T), otherwise use the default (NIL).
@@ -544,14 +554,7 @@ You can also use `toggle-pretty-print-hash-table'.")
     (let ((off (if explicit on (not toggled))))
       (if off
           (progn
-            (defmethod print-object ((obj hash-table) stream)
-              (pretty-print-hash-table obj stream))
+            (set-pprint-dispatch 'hash-table (flip #'pretty-print-hash-table))
             (setf toggled t))
-          (progn (remove-method #'print-object
-                                (find-method #'print-object nil '(hash-table t)))
-                 (unless (null default-method)
-                   (add-method #'print-object default-method))
+          (progn (set-pprint-dispatch 'hash-table nil)
                  (setf toggled nil))))))
-
-(when *pretty-print-hash-table*
-  (toggle-pretty-print-hash-table t))

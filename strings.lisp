@@ -764,6 +764,13 @@ but without consing."
                                (compare-segment left right))
               until (>= right end))))))
 
+(-> string-replace-all
+  (string string string
+          &key (:start array-index)
+          (:end (or null array-index))
+          (:stream t)
+          (:count (or null array-index)))
+  (values string &optional))
 (defun string-replace-all (old string new &key (start 0) end stream count)
   "Do search-and-replace for constant strings.
 
@@ -790,10 +797,8 @@ like the first argument to `format'."
   (declare ((or null array-index) start)
            ((or array-length null) end)
            ;; Can't be more matches than characters.
-           ((or array-length null) count))
-  (check-type old string)
-  (check-type new string)
-  (check-type string string)
+           ((or array-length null) count)
+           (string old new string))
   (let ((start (or start 0))
         (new (simplify-string new))
         (old (simplify-string old)))
@@ -847,8 +852,8 @@ carriage return, or a literal carriage return followed by a literal
 line feed.
 
 Takes care that the longest suffix is always removed first."
-  (check-type string string)
-  (check-type suffixes list)
+  (declare (string string)
+           (list suffixes))
   (reduce (lambda (string sep)
             (if (string$= sep string)
                 (subseq string 0 (- (length string) (length sep)))

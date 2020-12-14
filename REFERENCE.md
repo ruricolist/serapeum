@@ -1,4 +1,4 @@
-# Function Listing For serapeum (40 files, 425 functions)
+# Function Listing For serapeum (41 files, 427 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -39,6 +39,7 @@
 - [Generalized Arrays](#generalized-arrays)
 - [Units](#units)
 - [Exporting](#exporting)
+- [Docs](#docs)
 - [Hooks](#hooks)
 
 ## Macro Tools
@@ -4436,13 +4437,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L767)
+[View source](strings.lisp#L774)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L823)
+[View source](strings.lisp#L828)
 
 ### `(chomp string &optional suffixes)`
 
@@ -4454,13 +4455,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L832)
+[View source](strings.lisp#L837)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L861)
+[View source](strings.lisp#L866)
 
 ### `(string+ &rest args)`
 
@@ -4474,7 +4475,7 @@ Roughly equivalent to
 But with a compiler macro that can sometimes result in more efficient
 code.
 
-[View source](strings.lisp#L880)
+[View source](strings.lisp#L885)
 
 ## Vectors
 
@@ -5126,6 +5127,42 @@ Like `defgeneric`, with implicit export of NAME.
 Like `defmethod`, with implicit export of NAME.
 
 [View source](exporting.lisp#L78)
+
+## Docs
+
+### `(render-function-reference-as-markdown package-names system-name &key stream)`
+
+Renders API reference for given `PACKAGE-NAMES` of system named `SYSTEM-NAME`.
+
+`STREAM` argument can be nil, stream, string or a pathname.
+
+If it is a stream, then output will be written to that stream.
+
+If it is nil, then the functio will return output as a string.
+In case of string or a pathname, output will be rendered into the
+file with that name, superseding it if it is already exists.
+
+[View source](docs.lisp#L85)
+
+### `(update-function-reference filename system &optional packages)`
+
+A short hand for calling `RENDER-FUNCTION-REFERENCE-AS-MARKDOWN`.
+
+It accepts a short `FILENAME` and the result will be written to the `SYSTEM``s folder.
+
+Also, you can omit `PACKAGES` if your system provides only one package with the
+same name.
+
+Example usage:
+
+    (ql:quickload :serapeum/docs)
+    (serapeum.docs:update-function-reference
+        "REFERENCE.md"
+        :my-system)
+
+
+
+[View source](docs.lisp#L155)
 
 ## Hooks
 

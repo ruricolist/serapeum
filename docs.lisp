@@ -1,8 +1,5 @@
 (in-package #:cl-user)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (ql:quickload '(:serapeum :cl-ppcre :swank) :silent t))
-
 (defpackage #:serapeum.docs
   (:use #:cl #:alexandria #:serapeum)
   (:import-from #:swank/backend #:find-source-location)
@@ -84,7 +81,17 @@ This saves needless updates to the documentation."
         ((find-class s nil) :type)
         (t :function)))
 
+
 (defun render-function-reference-as-markdown (package-names system-name &key stream)
+  "Renders API reference for given `PACKAGE-NAMES` of system named `SYSTEM-NAME`.
+
+`STREAM` argument can be nil, stream, string or a pathname.
+
+If it is a stream, then output will be written to that stream.
+
+If it is nil, then the functio will return output as a string.
+In case of string or a pathname, output will be rendered into the
+file with that name, superseding it if it is already exists."
   (labels ((render (stream)
              (let ((data
                      (mappend (op (function-reference-data _ system-name))
@@ -145,11 +152,25 @@ This saves needless updates to the documentation."
 (defun pathname-title (file)
   (fmt "~{~:(~a~)~^ ~}" (split-sequence #\- (pathname-name file))))
 
-(defun update-function-reference ()
-  (render-function-reference-as-markdown
-   '(:serapeum :serapeum.exporting :serapeum/contrib/hooks)
-   "serapeum"
-   :stream (asdf:system-relative-pathname :serapeum "REFERENCE.md")))
+(defun update-function-reference (filename system &optional packages)
+  "A short hand for calling `RENDER-FUNCTION-REFERENCE-AS-MARKDOWN`.
 
-(update-function-reference)
-(uiop:quit)
+It accepts a short `FILENAME` and the result will be written to the `SYSTEM`'s folder.
+
+Also, you can omit `PACKAGES` if your system provides only one package with the
+same name."
+  (check-type system keyword)
+  (check-type filename string)
+
+  ;; If packages aren't provided, consider there is only
+  ;; one package with the same name as the system.
+  (unless packages
+    (setf packages
+          (list system)))
+  
+  (render-function-reference-as-markdown
+   packages
+   (string-downcase
+    (symbol-name system))
+   :stream (asdf:system-relative-pathname system filename)))
+

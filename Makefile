@@ -10,7 +10,10 @@ all: REFERENCE.md
 	pandoc $< -o $@
 
 REFERENCE.md: $(source_files) $(wildcard $(source_files:.lisp=.md))
-	$(CCL) --load docs.lisp
+	CL_SOURCE_REGISTRY=`pwd`/ $(CCL) \
+           --eval '(ql:quickload :serapeum/docs)' \
+           --eval '(serapeum.docs:update-function-reference "REFERENCE.md" :serapeum (list :serapeum :serapeum.exporting :serapeum.docs :serapeum/contrib/hooks))' \
+           --eval '(uiop:quit)'
 
 .PHONY: test-sbcl test-ccl test-ecl test
 

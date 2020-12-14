@@ -5153,6 +5153,15 @@ It accepts a short `FILENAME` and the result will be written to the `SYSTEM``s f
 Also, you can omit `PACKAGES` if your system provides only one package with the
 same name.
 
+Example usage:
+
+    (ql:quickload :serapeum/docs)
+    (serapeum.docs:update-function-reference
+        "REFERENCE.md"
+        :my-system)
+
+
+
 [View source](docs.lisp#L155)
 
 ## Hooks

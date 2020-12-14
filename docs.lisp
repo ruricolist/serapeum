@@ -158,7 +158,16 @@ file with that name, superseding it if it is already exists."
 It accepts a short `FILENAME` and the result will be written to the `SYSTEM`'s folder.
 
 Also, you can omit `PACKAGES` if your system provides only one package with the
-same name."
+same name.
+
+Example usage:
+
+    (ql:quickload :serapeum/docs)
+    (serapeum.docs:update-function-reference
+        \"REFERENCE.md\"
+        :my-system)
+
+"
   (check-type system keyword)
   (check-type filename string)
 

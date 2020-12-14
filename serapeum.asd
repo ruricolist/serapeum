@@ -163,3 +163,11 @@
                  (:file "units")
                  (:module "contrib"
                   :components ((:file "hooks")))))))
+
+(defsystem "serapeum/docs"
+  :description "Serapeum's documentation generator."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :depends-on ("serapeum" "cl-ppcre" "swank")
+  :serial t
+  :components ((:file "docs")))

@@ -9,7 +9,8 @@
   "If possible, extract the name from X, a function designator."
   (match x
     (`(function ,name) name)
-    (otherwise x)))
+    (`(quote ,name) name)
+    (otherwise nil)))
 
 (defmacro rebinding-functions (bindings &body body)
   "Like `rebinding', but specifically for functions.

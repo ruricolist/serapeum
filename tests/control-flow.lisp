@@ -85,18 +85,45 @@
         ("a" 1)
         ("b" 2)
         ("c" 3)
+        ("x" 4)))
+  ;; Distinguish case of "all strings are length 1"
+  ;; and otherwise.
+  (is (= 2)
+      (string-case "bb"
+        ("a" 1)
+        ("bb" 2)
+        ("c" 3)
         ("x" 4))))
+
+(test string-ecase-error
+ (signals error
+    (string-ecase "x" ("a" 1) ("b" 2))))
 
 (test convert-string-case-to-case-with-default-clause
   (is (equal "another"
              (string-case "test" ("t" t) (t "another")))))
+
+(test eif
+  (let ((*error-output* (make-broadcast-stream)))
+    (is (not (null (nth-value 1 (compile nil '(lambda (x y) (eif x y)))))))))
+
+(test eif-let
+  (is (eql :a (if-let ((x :a)) x :b)))
+  (is (eql :b (if-let ((x nil)) x :b)))
+  (let ((*error-output* (make-broadcast-stream)))
+    (is (not (null (nth-value 1 (compile nil '(lamda (a b) (if-let ((x a)) b)))))))))
 
 (test econd
   (declare (optimize (speed 0) (safety 3)))
   (let ((n (random 10)))
     (signals econd-failure
       (econd
-        ((> n 10) (assert nil))))))
+       ((> n 10) (assert nil))))))
+
+(test cond-let
+  (is (eql (cond-let x (10 x) (t 0)) 10))
+  (is (eql (cond-let x (nil x) (:a x)) :a))
+  (is (eql (cond-let x (nil x) (t x)) nil)))
 
 (test nix
   (let ((x 1) (y 2) (z 3))

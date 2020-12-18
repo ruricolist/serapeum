@@ -228,8 +228,7 @@ Note that the otherwise clauses must also be a list:
 to collect KEYPLACE and try again."
   (expand-destructuring-case-of type keyplace body 'ccase-of))
 
-(define-case-macro case-using (pred keyform &body clauses)
-    (:default default)
+(defmacro case-using (pred keyform &body clauses)
   "ISLISP's case-using.
 
      (case-using #'eql x ...)
@@ -237,26 +236,31 @@ to collect KEYPLACE and try again."
 
 Note that, no matter the predicate, the keys are not evaluated. (But see `selector'.)
 
+The PRED form is evaluated.
+
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause."
   (case (extract-function-name pred)
     (eql
      `(case ,keyform
-        ,@clauses
-        (otherwise ,default)))
+        ,@clauses))
+    ;; TODO Check that this isn't rebound in the environment. (Not a
+    ;; concern on SBCL as the package is locked there.)
     (string=
-     (let ((keys (mapcar #'car clauses)))
-       (assert (every #'stringp keys)))
      `(string-case ,keyform
-        ,@clauses
-        (otherwise ,default)))
-    (t (once-only (keyform)
-         (rebinding-functions (pred)
-           `(cond ,@(loop for (key . body) in clauses
-                          collect `((funcall ,pred ,keyform ',key)
-                                    ,@body))
-                  (t ,@default)))))))
+        ,@clauses))
+    (t `(case-using-aux ,pred ,keyform
+          ,@clauses))))
+
+(define-case-macro case-using-aux (pred keyform &body clauses)
+    (:default default)
+  (once-only (keyform)
+    (rebinding-functions (pred)
+      `(cond ,@(loop for (key . body) in clauses
+                     collect `((funcall ,pred ,keyform ',key)
+                               ,@body))
+             (t ,@default)))))
 
 (defmacro ecase-using (pred keyform &body clauses)
   "Exhaustive variant of `case-using'."

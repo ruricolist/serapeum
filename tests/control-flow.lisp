@@ -16,9 +16,29 @@
              (("bar") 2))))
 
   (is-true
+   (occurs 'string-case
+           (macroexpand-1
+            '(case-using #'string= "bar"
+              (("foo") 1)
+              (("bar") 2)))))
+  (is-true
+   (occurs 'string-case
+           (macroexpand-1
+            '(case-using 'string= "bar"
+              (("foo") 1)
+              (("bar") 2)))))
+
+  (is-true
    (case-using #'eql 'x
      (x t)
      (t nil)))
+
+  (is-true
+   (occurs 'case
+           (macroexpand-1
+            '(case-using #'eql 'x
+              (x t)
+              (t nil)))))
 
   (is-true
    (case-using #'eql nil

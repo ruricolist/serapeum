@@ -1,0 +1,153 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp
+  (ql:quickload '(log4cl)
+                :silent t))
+
+(defpackage :script.build-docs
+  (:use :cl))
+(in-package :script.build-docs)
+
+
+(define-condition unable-to-proceed (simple-error)
+  ((message :initarg :message
+            :reader get-message))
+  (:report (lambda (condition stream)
+             (format stream (get-message condition)))))
+
+
+(define-condition subprocess-error-with-output (uiop::subprocess-error)
+  ((stdout :initarg :stdout :reader subprocess-error-stdout)
+   (stderr :initarg :stderr :reader subprocess-error-stderr))
+  (:report (lambda (condition stream)
+             (format stream "Subprocess ~@[~S~% ~]~@[with command ~S~% ~]exited with error~@[ code ~D ~]~@[ and this text at stderr:~% ~S~]"
+                     (uiop:subprocess-error-process condition)
+                     (uiop:subprocess-error-command condition)
+                     (uiop:subprocess-error-code condition)
+                     (subprocess-error-stderr condition))
+             )))
+
+(defun run (command &key (raise t))
+  "Runs command and returns it's stdout stderr and code.
+
+If there was an error, raises subprocess-error-with-output, but this
+behaviour could be overriden by keyword argument ``:raise t``."
+  
+  (multiple-value-bind (stdout stderr code)
+      (uiop:run-program command
+                        :output '(:string :stripped t)
+                        :error-output '(:string :stripped t)
+                        :ignore-error-status t)
+    
+    (when (and raise
+               (not (eql code 0)))
+      (error 'subprocess-error-with-output
+             :stdout stdout
+             :stderr stderr
+             :code code
+             :command command))
+    (values stdout stderr code)))
+
+
+(defun build-docs ()
+  (log:info "Building documentation in ./docs/")
+  
+  (uiop:run-program "make docs"))
+
+
+
+(defun git (&rest commands)
+  "Calls git command in gh-pages repository."
+  
+  (let ((command (apply #'concatenate 'string
+                        "git "
+                        commands)))
+        
+    (log:info "Running" command)
+    (run command)))
+
+
+(defun git-repository-was-changed-p ()
+  ;; if git status returns something, then repository have uncommitted changes
+  (> (length (git "status --porcelain"))
+     0))
+
+
+(defun get-git-upstream ()
+  ;; taken from http://stackoverflow.com/a/9753364/70293
+  (let ((upstream (run "git rev-parse --abbrev-ref --symbolic-full-name @{u}" :raise nil)))
+    (when (> (length upstream)
+           0)
+      (subseq upstream
+              0
+              (search "/" upstream)))))
+
+
+(defun get-origin-to-push ()
+  (let ((upstream (get-git-upstream)))
+
+    (cond
+      (upstream
+       ;; If there is already some remote upstream, then use it
+       (run (concatenate 'string "git remote get-url " upstream)))
+      ;; If we are running inside github actions
+      ((uiop:getenv "GITHUB_ACTIONS")
+       (unless (uiop:getenv "GITHUB_TOKEN")
+         (error 'unable-to-proceed
+                :message "Please, provide GITHUB_TOKEN environment variable."))
+       (format nil "https://~A:~A@github.com/~A"
+               (uiop:getenv "GITHUB_ACTOR")
+               (uiop:getenv "GITHUB_TOKEN")
+               (uiop:getenv "GITHUB_REPOSITORY")))
+      ;; otherwise make it from travis secret token and repo slug
+      (t
+       (let ((repo-slug (uiop:getenv "TRAVIS_REPO_SLUG"))
+             (repo-token (uiop:getenv "GH_REPO_TOKEN")))
+
+         (unless (and repo-slug repo-token)
+           (error 'unable-to-proceed
+                  :message "Current branch does not track any upstream and there is no TRAVIS_REPO_SLUG and GH_REPO_TOKEN env variables. Where to push gh-pages branch?"))
+
+         (format nil "https://~A@github.com/~A"
+                 repo-token
+                 repo-slug))))))  
+
+
+(defun push-to-gh ()
+  (log:info "Pushing changes to GitHub")
+
+  ;; Recreate "origin" to include username and token
+  (git "remote remove origin")
+  (git "remote add origin "
+       (get-origin-to-push))
+
+  (git "add -u")
+  
+  (cond
+    ((git-repository-was-changed-p)
+     (when (uiop:getenv "GITHUB_ACTIONS")
+       (git "config --global user.name \"github-actions[bot]\"")
+       (git "config --global user.email \"actions@github.com\""))
+     (git "commit -m 'Update docs'")
+
+     (git "push origin HEAD"))
+    ;; or
+    (t (log:info "Everything is up to date."))))
+
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (log:config :debug)
+  (log:info "Building documentation")
+  
+  (handler-bind ((error (lambda (condition)
+                          (uiop:print-condition-backtrace condition :stream *error-output*)
+                          (uiop:quit 1))))
+    (build-docs)
+    (when (uiop:getenv "GITHUB_ACTIONS")
+      (push-to-gh))))

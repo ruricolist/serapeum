@@ -54,13 +54,13 @@ respects the current read table.
 The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
 in every other macro.
 
-[View source](macro-tools.lisp#L50)
+[View source](macro-tools.lisp#L51)
 
 ### `(unique-name x)`
 
 Alias for `string-gensym`.
 
-[View source](macro-tools.lisp#L62)
+[View source](macro-tools.lisp#L63)
 
 ### `(unsplice form)`
 
@@ -87,7 +87,7 @@ You can simply write:
 
 From Lparallel.
 
-[View source](macro-tools.lisp#L74)
+[View source](macro-tools.lisp#L75)
 
 ### `(with-thunk (var &rest args) &body body)`
 
@@ -133,21 +133,21 @@ It is also possible to construct a "thunk" with arguments.
 
 Someday this may have a better name.
 
-[View source](macro-tools.lisp#L104)
+[View source](macro-tools.lisp#L105)
 
 ### `(expand-macro form &optional env)`
 
 Like `macroexpand-1`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L167)
+[View source](macro-tools.lisp#L168)
 
 ### `(expand-macro-recursively form &optional env)`
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L176)
+[View source](macro-tools.lisp#L177)
 
 ### `(partition-declarations xs declarations &optional env)`
 
@@ -159,19 +159,19 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
 
-[View source](macro-tools.lisp#L189)
+[View source](macro-tools.lisp#L190)
 
 ### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
-[View source](macro-tools.lisp#L275)
+[View source](macro-tools.lisp#L276)
 
 ### `(callf2 function arg1 place &rest args)`
 
 Like CALLF, but with the place as the second argument.
 
-[View source](macro-tools.lisp#L284)
+[View source](macro-tools.lisp#L285)
 
 ### `(define-do-macro name binds &body body)`
 
@@ -209,13 +209,13 @@ Using `define-do-macro` takes care of all of this for you.
                    ,@body)
                  ,hash-table))
 
-[View source](macro-tools.lisp#L293)
+[View source](macro-tools.lisp#L294)
 
 ### `(define-post-modify-macro name lambda-list function &optional documentation)`
 
 Like `define-modify-macro`, but arranges to return the original value.
 
-[View source](macro-tools.lisp#L357)
+[View source](macro-tools.lisp#L358)
 
 ### `(parse-leading-keywords body)`
 
@@ -225,7 +225,7 @@ arguments, and the rest of the body.
 Inline keywords are like the keyword arguments to individual cases in
 `restart-case`.
 
-[View source](macro-tools.lisp#L385)
+[View source](macro-tools.lisp#L386)
 
 ### `(with-read-only-vars (&rest vars) &body body)`
 
@@ -238,7 +238,7 @@ signal a warning at compile time, and an error at run time.
 Depending on your Lisp implementation this may or may not do anything,
 and may or may not have an effect when used on special variables.
 
-[View source](macro-tools.lisp#L442)
+[View source](macro-tools.lisp#L443)
 
 ### `(define-case-macro name macro-args params &body macro-body)`
 
@@ -302,13 +302,13 @@ could define it almost trivially using `define-case-macro`:
                  collect `((eql ,expr ,key) ,@body))
          (t ,@body)))
 
-[View source](macro-tools.lisp#L488)
+[View source](macro-tools.lisp#L489)
 
 ### `(case-failure expr keys)`
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L719)
+[View source](macro-tools.lisp#L720)
 
 ### `(eval-if-constant form &optional env)`
 
@@ -328,7 +328,7 @@ Note that this function may treat a form as constant which would not
 be recognized as such by `constantp`, because we also expand compiler
 macros.
 
-[View source](macro-tools.lisp#L740)
+[View source](macro-tools.lisp#L741)
 
 ### `(sane-body-for-splice exp)`
 
@@ -336,14 +336,14 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)
 
-[View source](macro-tools.lisp#L822)
+[View source](macro-tools.lisp#L823)
 
 ### `(sane-form-for-eval exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
 
-[View source](macro-tools.lisp#L832)
+[View source](macro-tools.lisp#L833)
 
 ### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
 
@@ -355,7 +355,7 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
     ≡ (multiple-value-call #'unparse-ordinary-lambda-list
         (parse-ordinary-lambda-list lambda-list)
 
-[View source](macro-tools.lisp#L844)
+[View source](macro-tools.lisp#L845)
 
 ## Types
 
@@ -1127,6 +1127,8 @@ ISLISP's case-using.
 
 Note that, no matter the predicate, the keys are not evaluated. (But see `selector`.)
 
+The PRED form is evaluated.
+
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause.
@@ -1137,7 +1139,7 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 
 Exhaustive variant of `case-using`.
 
-[View source](control-flow.lisp#L261)
+[View source](control-flow.lisp#L265)
 
 ### `(string-case stringform &body clauses)`
 
@@ -1147,7 +1149,7 @@ Note that string matching is always case-sensitive.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L272)
+[View source](control-flow.lisp#L276)
 
 ### `(string-ecase stringform &body clauses)`
 
@@ -1157,7 +1159,7 @@ Note that string matching is always case-sensitive.
 
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L303)
+[View source](control-flow.lisp#L307)
 
 ### `(eif test then &optional (else nil else?))`
 
@@ -1170,21 +1172,21 @@ warn you if you forget a branch.
 
 Short for “exhaustive if”.
 
-[View source](control-flow.lisp#L319)
+[View source](control-flow.lisp#L323)
 
 ### `(eif-let binds &body (then &optional (else nil else?)))`
 
 Like `alexandria:if-let`, but expects two branches.
 Compare `eif`.
 
-[View source](control-flow.lisp#L333)
+[View source](control-flow.lisp#L337)
 
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L350)
+[View source](control-flow.lisp#L354)
 
 ### `(cond-let var &body clauses)`
 
@@ -1196,13 +1198,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L359)
+[View source](control-flow.lisp#L363)
 
 ### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L380)
+[View source](control-flow.lisp#L384)
 
 ### `(cond-every &body clauses)`
 
@@ -1220,7 +1222,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L393)
+[View source](control-flow.lisp#L397)
 
 ### `(bcond &body clauses)`
 
@@ -1247,19 +1249,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L426)
+[View source](control-flow.lisp#L430)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L479)
+[View source](control-flow.lisp#L483)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L485)
+[View source](control-flow.lisp#L489)
 
 ### `(comment &body body)`
 
@@ -1271,13 +1273,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L491)
+[View source](control-flow.lisp#L495)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L501)
+[View source](control-flow.lisp#L505)
 
 ### `(nix &rest places)`
 
@@ -1288,7 +1290,7 @@ If there is more than one PLACE, return their old values as multiple values.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L515)
+[View source](control-flow.lisp#L519)
 
 ### `(ensure place &body newval)`
 
@@ -1302,14 +1304,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L527)
+[View source](control-flow.lisp#L531)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L559)
+[View source](control-flow.lisp#L563)
 
 ### `(~> needle &rest holes)`
 
@@ -1323,14 +1325,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L626)
+[View source](control-flow.lisp#L630)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L640)
+[View source](control-flow.lisp#L644)
 
 ### `(nest &rest things)`
 
@@ -1364,7 +1366,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L647)
+[View source](control-flow.lisp#L651)
 
 ### `(select keyform &body clauses)`
 
@@ -1384,7 +1386,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L683)
+[View source](control-flow.lisp#L687)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1394,7 +1396,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L702)
+[View source](control-flow.lisp#L706)
 
 ### `(sort-values pred &rest values)`
 
@@ -1406,7 +1408,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L821)
+[View source](control-flow.lisp#L825)
 
 ### `(eq* &rest xs)`
 
@@ -1424,7 +1426,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L892)
+[View source](control-flow.lisp#L896)
 
 ### `(eql* &rest xs)`
 
@@ -1442,7 +1444,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L894)
+[View source](control-flow.lisp#L898)
 
 ### `(equal* &rest xs)`
 
@@ -1460,7 +1462,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L896)
+[View source](control-flow.lisp#L900)
 
 ### `(equalp* &rest xs)`
 
@@ -1478,14 +1480,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L898)
+[View source](control-flow.lisp#L902)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L908)
+[View source](control-flow.lisp#L912)
 
 ## Threads
 

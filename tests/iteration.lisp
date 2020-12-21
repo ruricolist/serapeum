@@ -36,3 +36,7 @@
              (multiple-value-list
               (with-collectors (x y z)
                 (x 1) (y 2) (z 3))))))
+
+(test summing
+  (is-true (equal 6 (summing (sum 1) (sum 2) (sum 3))))
+  (is-true (equal 16 (summing 10 (sum 1) (sum 5)))))

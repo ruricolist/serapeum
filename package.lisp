@@ -1,4 +1,11 @@
 ;;;; package.lisp
+(defpackage #:serapeum.sum
+  (:use)
+  ;; Create this in another package than SERAPEUM
+  ;; to prevent SBCL package locking from keeping
+  ;; SUM being defined in a FLET
+  (:export #:sum))
+
 (defpackage #:serapeum
   (:use :cl :alexandria :split-sequence :parse-number
         :named-readtables :tcr.parse-declarations-1.0)
@@ -8,6 +15,7 @@
                 :typexpand :typexpand-1)
   (:import-from :trivia :match :ematch :defpattern)
   (:import-from :trivial-file-size :file-size-in-octets)
+  (:import-from :serapeum.sum :sum)
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)
   (:export

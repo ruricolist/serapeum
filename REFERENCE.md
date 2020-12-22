@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 427 functions)
+# Function Listing For serapeum (41 files, 426 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -4973,13 +4973,6 @@ Array theory calls this operation `list`, but the MOA operation is
 identical and has a more distinctive name.
 
 [View source](generalized-arrays.lisp#L181)
-
-### `(sum array)`
-
-Return the sum of all of the elements of ARRAY, a generalized array.
-Operates pairwise for numerical stability.
-
-[View source](generalized-arrays.lisp#L320)
 
 ### `(prod array)`
 

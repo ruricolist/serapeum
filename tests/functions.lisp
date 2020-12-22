@@ -3,6 +3,40 @@
 (def-suite functions :in serapeum)
 (in-suite functions)
 
+(test eqs
+  (is-true (funcall (eqs :a) :a))
+  (is-false (funcall (eqs :a) :b))
+  (locally (declare (notinline eqs))
+    (is-true (funcall (eqs :a) :a))
+    (is-false (funcall (eqs :a) :b))))
+
+(test eqls
+  (is-true (funcall (eqls 1) 1))
+  (is-false (funcall (eqls 1) 2))
+  (locally (declare (notinline eqls))
+    (is-true (funcall (eqls 1) 1))
+    (is-false (funcall (eqls 1) 2))))
+
+(test equals
+  (is-true (funcall (equals (list 1)) (list 1)))
+  (is-false (funcall (equals (list 1)) (list 2)))
+  (locally (declare (notinline equals))
+    (is-true (funcall (equals (list 1)) (list 1)))
+    (is-false (funcall (equals (list 1)) (list 2)))))
+
+(test partial
+  (is (equal '(:a :b :c :d) (funcall (partial #'list) :a :b :c :d)))
+  (is (equal '(:a :b :c :d) (funcall (partial #'list :a) :b :c :d)))
+  (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b) :c :d)))
+  (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b :c) :d)))
+  (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b :c :d))))
+  (locally (declare (notinline partial))
+    (is (equal '(:a :b :c :d) (funcall (partial #'list) :a :b :c :d)))
+    (is (equal '(:a :b :c :d) (funcall (partial #'list :a) :b :c :d)))
+    (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b) :c :d)))
+    (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b :c) :d)))
+    (is (equal '(:a :b :c :d) (funcall (partial #'list :a :b :c :d))))))
+
 (test juxt
   (is (equal (funcall (juxt #'remove-if-not #'remove-if)
                       #'evenp
@@ -12,7 +46,18 @@
   (is (equal (funcall (juxt #'+ #'max #'min) 2 3 5 1 6 4)
              '(21 6 1))))
 
+(test juxt-notinline
+  (locally (declare (notinline juxt))
+    (is (equal (funcall (juxt #'remove-if-not #'remove-if)
+                        #'evenp
+                        '(1 2 4 3 5 6))
+               '((2 4 6) (1 3 5))))
+
+    (is (equal (funcall (juxt #'+ #'max #'min) 2 3 5 1 6 4)
+               '(21 6 1)))))
+
 (test dynamic-closure
+  (is (= 17 (funcall (dynamic-closure () (constantly 17)))))
   (let ((fn (lambda ()
               (write-string "Hello")
               (get-output-stream-string *standard-output*))))
@@ -96,6 +141,7 @@
                (multiple-value-list (funcall fn))))))
 
 (test fnil
+  (is-false (funcall (fnil (constantly nil))))
   (fbind* ((say-hello
             (lambda (name)
               (string+ "Hello " name)))
@@ -136,3 +182,37 @@
 (test unary->variadic
   (is (= 1 (funcall (unary->variadic #'first) 1 2 3)))
   (is (= 3 (funcall (unary->variadic #'length) 1 2 3))))
+
+(test nth-arg
+  (is (= 3 (funcall (nth-arg 2) 1 2 3 4)))
+  (is (= 3
+         (locally (declare (notinline nth-arg))
+           (funcall (nth-arg 2) 1 2 3 4)))))
+
+(test distinct
+  (let* ((d (distinct)))
+    (flet ((f (x) (multiple-value-list (funcall d x))))
+      (is (equal '(1 t) (f 1)))
+      (is (equal '(nil nil) (f 1)))
+      (is (equal '(2 t) (f 2))))))
+
+(test flip
+  (is (equal '(:b :a) (funcall (flip #'list) :a :b)))
+  (locally (declare (notinline flip))
+    (is (equal '(:b :a) (funcall (flip #'list) :a :b)))))
+
+(test capped-fork
+  (is (equal 15 (funcall (capped-fork (partial #'+ 2) (partial #'+ 3)) 10)))
+  (is (equal '(:a (:b t :c) :d)
+             (locally (declare (notinline capped-fork))
+               (funcall (capped-fork (lambda (x) (list :a x :d))
+                                     (lambda (y) (list :b y :c)))
+                        t)))))
+(test capped-fork2
+  (is (equal 35 (funcall (capped-fork2 (partial #'+ 2) (partial #'+ 3)) 10 20)))
+  (is (equal '(:a (:b 17 :c 25 :e) :d)
+             (locally (declare (notinline capped-fork))
+               (funcall (capped-fork2 (lambda (x) (list :a x :d))
+                                      (lambda (y z) (list :b y :c z :e)))
+                        17 25)))))
+

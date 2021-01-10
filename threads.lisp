@@ -1,8 +1,7 @@
 (in-package #:serapeum)
 
-(defun count-cpus-string ()
+(defun count-cpus-string (&key online)
   (labels ((run (cmd)
-             "Run CMD, return its output as a string if it succeeds."
              (multiple-value-bind (s e r)
                  (uiop:run-program cmd
                                    :output :string
@@ -10,7 +9,6 @@
                (declare (ignore e))
                (and (zerop r) s)))
            (try (&rest results)
-             "If there is a string in RESULTS, return it."
              (loop for result in results do
                (when (stringp result)
                  (return-from count-cpus-string
@@ -20,35 +18,48 @@
           ((uiop:os-unix-p)
            ;; Linux
            (when (resolve-executable "nproc")
-             (try (run '("nproc" "--all"))))
+             (try (run `("nproc" ,@(and (not online) '("--all"))))))
            ;; BSD, Darwin
            (when (resolve-executable "sysctl")
-             (let ((vs '("hw.physicalcpu" "hw.ncpu" "hw.ncpufound")))
+             (let ((vs
+                     (if online
+                         '("hw.availcpu" "hw.activecpu" "hw.ncpuonline")
+                         '("hw.physicalcpu" "hw.ncpu" "hw.ncpufound"))))
                (dolist (v vs)
                  (try (run `("sysctl" "-n" ,v))))))
            ;; Unix
-           (let ((vs
-                   '("_NPROCESSORS_CONF"
-                     "NPROCESSORS_CONF"
-                     "SC_NPROCESSORS_CONF"
-                     "_SC_NPROCESSORS_CONF")))
-             (cond ((resolve-executable "getconf")
-                    (dolist (v vs)
-                      (try (run `("getconf" ,v)))))
-                   ;; Has a built-in getconf!
-                   ((resolve-executable "ksh93")
-                    (dolist (v vs)
-                      (try (run
-                            `("ksh93" "-c"
-                                      ,(format nil "getconf ~a" v))))))))
+           (when-let (exe
+                      (or (resolve-executable "getconf")
+                          ;; Has a built-in getconf!
+                          (resolve-executable "ksh93")))
+             (let ((vs
+                     (if online
+                         '("_NPROCESSORS_ONLN"
+                           "NPROCESSORS_ONLN"
+                           "SC_NPROCESSORS_ONLN"
+                           "_SC_NPROCESSORS_ONLN")
+                         '("_NPROCESSORS_CONF"
+                           "NPROCESSORS_CONF"
+                           "SC_NPROCESSORS_CONF"
+                           "_SC_NPROCESSORS_CONF"))))
+               (if (equal (pathname-name exe) "getconf")
+                   (dolist (v vs)
+                     (try (run `("getconf" ,v))))
+                   (dolist (v vs)
+                     (try (run
+                           `("ksh93" "-c"
+                                     ,(format nil "getconf ~a" v))))))))
            ;; Solaris?
            (when (resolve-executable "psrinfo")
+             ;; TODO online?
              (try (run '("psrinfo" "-p")))))
           ((uiop:os-windows-p)
            (when (resolve-executable "wmic")
              (when-let* ((string
                           (run `("wmic" "cpu" "get"
-                                        "NumberOfCores"
+                                        ,(if online
+                                             "NumberOfEnabledCore" ;sic
+                                             "NumberOfCores")
                                         "/value")))
                          (num (some (lambda (part)
                                       (every #'digit-char-p part))
@@ -60,12 +71,13 @@
       (serious-condition ()
         nil))))
 
-(defun count-cpus (&key (default 2))
+(defun count-cpus (&key (default 2) online)
   "Try very hard to return a meaningful count of CPUs.
+If ONLINE is non-nil, try to return only the active CPUs.
 
 The second value is T if the number of processors could be queried,
 `nil' otherwise."
-  (let ((string (count-cpus-string)))
+  (let ((string (count-cpus-string :online online)))
     (if string
         (let ((int (parse-integer string :junk-allowed t)))
           (if int

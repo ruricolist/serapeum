@@ -1491,14 +1491,15 @@ type `recursion-forbidden`.
 
 ## Threads
 
-### `(count-cpus &key default)`
+### `(count-cpus &key default online)`
 
 Try very hard to return a meaningful count of CPUs.
+If ONLINE is non-nil, try to return only the active CPUs.
 
 The second value is T if the number of processors could be queried,
 `nil` otherwise.
 
-[View source](threads.lisp#L63)
+[View source](threads.lisp#L74)
 
 ### `(synchronized (&optional (object nil objectp)) &body body)`
 
@@ -1508,13 +1509,13 @@ If no OBJECT is provided, run BODY as an anonymous critical section.
 If BODY begins with a literal string, attach the string to the lock
 object created (as the argument to `bt:make-recursive-lock`).
 
-[View source](threads.lisp#L109)
+[View source](threads.lisp#L121)
 
 ### `(monitor object)`
 
 Return a unique lock associated with OBJECT.
 
-[View source](threads.lisp#L126)
+[View source](threads.lisp#L138)
 
 ## Iter
 

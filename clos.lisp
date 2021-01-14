@@ -14,6 +14,11 @@ After Eulisp."
       (warn "~s cannot designate a class" class)))
   `(make-instance ,class ,@initargs))
 
+(defpattern make (class &rest initargs)
+  (ematch class
+    ((list 'quote class-name)
+     `(,class-name ,@initargs))))
+
 (defsubst class-name-of (x)
   "The class name of the class of X."
   (class-name (class-of x)))

@@ -2857,21 +2857,21 @@ After Eulisp.
 
 The class name of the class of X.
 
-[View source](clos.lisp#L17)
+[View source](clos.lisp#L22)
 
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L21)
+[View source](clos.lisp#L26)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L28)
+[View source](clos.lisp#L33)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -2957,7 +2957,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L38)
+[View source](clos.lisp#L43)
 
 ## Hooks
 

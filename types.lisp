@@ -18,6 +18,12 @@
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))
 
+(deftype nor (&rest types)
+  `(not (or ,@types)))
+
+(defpattern nor (&rest patterns)
+  `(not (or ,@patterns)))
+
 (deftype tuple (&rest types)
   "A proper list where each element has the same type as the corresponding element in TYPES.
 

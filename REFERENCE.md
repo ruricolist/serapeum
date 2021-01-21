@@ -1366,7 +1366,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L651)
+[View source](control-flow.lisp#L659)
 
 ### `(select keyform &body clauses)`
 
@@ -1386,7 +1386,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L687)
+[View source](control-flow.lisp#L694)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1396,7 +1396,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L706)
+[View source](control-flow.lisp#L713)
 
 ### `(sort-values pred &rest values)`
 
@@ -1408,7 +1408,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L825)
+[View source](control-flow.lisp#L832)
 
 ### `(eq* &rest xs)`
 
@@ -1426,7 +1426,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L896)
+[View source](control-flow.lisp#L903)
 
 ### `(eql* &rest xs)`
 
@@ -1444,7 +1444,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L898)
+[View source](control-flow.lisp#L905)
 
 ### `(equal* &rest xs)`
 
@@ -1462,7 +1462,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L900)
+[View source](control-flow.lisp#L907)
 
 ### `(equalp* &rest xs)`
 
@@ -1480,14 +1480,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L902)
+[View source](control-flow.lisp#L909)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L912)
+[View source](control-flow.lisp#L919)
 
 ## Threads
 

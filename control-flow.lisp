@@ -648,6 +648,14 @@ instead of the first."
               (lambda (needle hole)
                 (append1 hole needle))))
 
+(defun expand-nest (things)
+  "Helper function for `nest'."
+  (reduce (lambda (outer inner)
+            (let ((outer (ensure-list outer)))
+              `(,@outer ,inner)))
+          things
+          :from-end t))
+
 (defmacro nest (&rest things)
   "Like ~>>, but backward.
 
@@ -678,11 +686,10 @@ If the outer macro has no arguments, you may omit the parentheses.
         ...)
 
 From UIOP, based on a suggestion by Marco Baringer."
-  (reduce (lambda (outer inner)
-            (let ((outer (ensure-list outer)))
-              `(,@outer ,inner)))
-          things
-          :from-end t))
+  (expand-nest things))
+
+(defpattern nest (&rest things)
+  (expand-nest things))
 
 (defmacro select (keyform &body clauses)
   "Like `case', but with evaluated keys.

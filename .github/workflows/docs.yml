@@ -20,7 +20,6 @@ jobs:
         env:
           LISP: ccl-bin
         run: |
-          apt install -y libcurl3-gnutls
           curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
           echo /home/runner/.roswell/bin >> $GITHUB_PATH
       - name: Create a wrapper to run CCL

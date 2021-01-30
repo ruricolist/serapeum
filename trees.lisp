@@ -149,19 +149,28 @@ Return a new tree possibly sharing structure with TREE."
       (walk-tree #'walker tree :traversal traversal))))
 
 (defun prune-if (test tree &key (key #'identity))
-  "Remove any atoms satisfying TEST from TREE."
+  "Remove any atoms satisfying TEST from TREE.
+
+Pruning is defined \"modulo flatten\": you should get the same result
+from pruning, and then flattening, that you would get from flattening,
+and then filtering.
+
+Also note that pruning is not defined for trees containing improper
+lists."
   #.+merge-tail-calls+
   (ensuring-functions (key test)
-    (labels ((prune (tree acc)
+    (labels ((cons* (car cdr)
+               (if (funcall test (funcall key car))
+                   cdr
+                   (cons car cdr)))
+             (prune (tree acc)
                (cond ((null tree)
                       (nreverse acc))
                      ((consp (car tree))
                       (prune (cdr tree)
-                             (cons (prune (car tree) nil) acc)))
+                             (cons* (prune (car tree) nil) acc)))
                      (t (prune (cdr tree)
-                               (if (funcall test (funcall key (car tree)))
-                                   acc
-                                   (cons (car tree) acc)))))))
+                               (cons* (car tree) acc))))))
       (prune tree nil))))
 
 (defun occurs (leaf tree &key (key #'identity) (test #'eql) (traversal :preorder))
@@ -173,7 +182,8 @@ Return a new tree possibly sharing structure with TREE."
         (occurs-if #'test tree :key key :traversal traversal)))))
 
 (defun prune (leaf tree &key (key #'identity) (test #'eql))
-  "Remove LEAF from TREE wherever it occurs."
+  "Remove LEAF from TREE wherever it occurs.
+See `prune-if' for more information."
   (ensuring-functions (test)
     (flet ((test (x) (funcall test leaf x)))
       (declare (dynamic-extent #'test))

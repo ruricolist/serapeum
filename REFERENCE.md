@@ -366,7 +366,7 @@ Declaim the ftype of FUNCTION from ARGS to VALUES.
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L50)
+[View source](types.lisp#L56)
 
 ### `(assure type-spec &body (form))`
 
@@ -391,21 +391,21 @@ Using `values` types is supported, with caveats:
 
 From ISLISP.
 
-[View source](types.lisp#L153)
+[View source](types.lisp#L159)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L230)
+[View source](types.lisp#L236)
 
 ### `(supertypep supertype type &optional env)`
 
 Is SUPERTYPE a supertype of TYPE?
 That is, is TYPE a subtype of SUPERTYPE?
 
-[View source](types.lisp#L262)
+[View source](types.lisp#L268)
 
 ### `(proper-subtype-p subtype type &optional env)`
 
@@ -413,7 +413,7 @@ Is SUBTYPE a proper subtype of TYPE?
 
 This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
 
-[View source](types.lisp#L268)
+[View source](types.lisp#L274)
 
 ### `(proper-supertype-p supertype type &optional env)`
 
@@ -422,7 +422,7 @@ Is SUPERTYPE a proper supertype of TYPE?
 That is, is it true that every value of TYPE is also of type
 SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
 
-[View source](types.lisp#L292)
+[View source](types.lisp#L298)
 
 ### `(vref vec index)`
 
@@ -432,7 +432,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L344)
+[View source](types.lisp#L350)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -483,7 +483,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L407)
+[View source](types.lisp#L413)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -492,19 +492,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L503)
+[View source](types.lisp#L509)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L516)
+[View source](types.lisp#L522)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L526)
+[View source](types.lisp#L532)
 
 ### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
 
@@ -512,7 +512,7 @@ Like `with-vector-dispatch` but on implementations that support it, the underlyi
 
 START and END are the offset of the original vector's data in the array it is displaced to.
 
-[View source](types.lisp#L532)
+[View source](types.lisp#L538)
 
 ### `(with-boolean (var) &body body)`
 
@@ -527,7 +527,7 @@ Around each specialized body VAR is bound to a symbol macro whose
 value is `t` or `nil`. This ensures VAR cannot be rebound, and allows
 macros to recognize VAR as a constant.
 
-[View source](types.lisp#L556)
+[View source](types.lisp#L562)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -537,7 +537,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L601)
+[View source](types.lisp#L607)
 
 ### `(true x)`
 
@@ -546,7 +546,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L623)
+[View source](types.lisp#L629)
 
 ## Definitions
 
@@ -1366,7 +1366,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L651)
+[View source](control-flow.lisp#L659)
 
 ### `(select keyform &body clauses)`
 
@@ -1386,7 +1386,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L687)
+[View source](control-flow.lisp#L694)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1396,7 +1396,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L706)
+[View source](control-flow.lisp#L713)
 
 ### `(sort-values pred &rest values)`
 
@@ -1408,7 +1408,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L825)
+[View source](control-flow.lisp#L832)
 
 ### `(eq* &rest xs)`
 
@@ -1426,7 +1426,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L896)
+[View source](control-flow.lisp#L903)
 
 ### `(eql* &rest xs)`
 
@@ -1444,7 +1444,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L898)
+[View source](control-flow.lisp#L905)
 
 ### `(equal* &rest xs)`
 
@@ -1462,7 +1462,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L900)
+[View source](control-flow.lisp#L907)
 
 ### `(equalp* &rest xs)`
 
@@ -1480,14 +1480,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L902)
+[View source](control-flow.lisp#L909)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L912)
+[View source](control-flow.lisp#L919)
 
 ## Threads
 

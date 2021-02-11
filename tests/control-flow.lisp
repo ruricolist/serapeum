@@ -176,18 +176,19 @@
 (test example
   (is-false (example "This is a comment")))
 
+(defvar *e*)
+
 (test ensure
   (let ((x 1))
     (is (= 1 (ensure x 0))))
-  (let ((*e* 1))
-    (declare (special *e*))
-    (is (= 1 *e*))
-    (is (= 1 (ensure *e* 0)))
-    (makunbound '*e*)
-    (is (= 2 (ensure *e* 2)))
-    (makunbound '*e*)
-    (is (= 1 (incf (ensure *e* 0))))
-    (is (= 1 *e*))))
+  (setf *e* 1)
+  (is (= 1 *e*))
+  (is (= 1 (ensure *e* 0)))
+  (makunbound '*e*)
+  (is (= 2 (ensure *e* 2)))
+  (makunbound '*e*)
+  (is (= 1 (incf (ensure *e* 0))))
+  (is (= 1 *e*)))
 
 (test ensure2
   (let ((table (make-hash-table)))

@@ -549,7 +549,7 @@ Cf. `ensure2'."
              (when ,(first stores)
                ,setter))))))
 
-(define-setf-expander ensure (place &body newval &environment env)
+(define-setf-expander ensure (place &rest newval &environment env)
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     (values vars
@@ -575,7 +575,7 @@ value like `gethash'."
                    (progn ,@newval)
                  ,setter)))))))
 
-(define-setf-expander ensure2 (place &body newval &environment env)
+(define-setf-expander ensure2 (place &rest newval &environment env)
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     (values vars

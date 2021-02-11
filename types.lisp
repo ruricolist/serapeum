@@ -553,8 +553,9 @@ START and END are the offset of the original vector's data in the array it is di
                                               (,start 0)
                                               (,end (length ,var)))
            ,inner)
-        `(let ((,start )
-               (,end (length ,var)))
+        `(let* ((,var ,var)
+                (,start 0)
+                (,end (length ,var)))
            ,inner))))
 
 ;;; Are these worth exporting?

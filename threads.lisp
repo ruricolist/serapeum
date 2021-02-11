@@ -85,13 +85,6 @@ The second value is T if the number of processors could be queried,
               (values default nil)))
         (values default nil))))
 
-;;; NB We used to use non-recursive locks here, but it turns out all
-;;; languages providing a `synchronized' keyword (Java, Objective-C,
-;;; C#, D) use recursive locks, so that is what we use now.
-
-(eval-when (:compile-toplevel :load-toplevel)
-  (defconstant +lock-class+ (class-of (bt:make-recursive-lock))))
-
 ;;; We need more space for locks than you might expect. In, say, Java,
 ;;; only a handful of locks exist at a time. But in Lisp I often use
 ;;; `synchronized' on symbols, which of course are rarely \(if ever)
@@ -138,7 +131,11 @@ object created (as the argument to `bt:make-recursive-lock')."
 (defgeneric monitor (object)
   (:documentation "Return a unique lock associated with OBJECT."))
 
-(defmethod monitor ((object #.+lock-class+))
+;;; NB We used to use non-recursive locks here, but it turns out all
+;;; languages providing a `synchronized' keyword (Java, Objective-C,
+;;; C#, D) use recursive locks, so that is what we use now.
+
+(defmethod monitor ((object #.(class-of (bt:make-recursive-lock))))
   object)
 
 (defmethod monitor ((object t))

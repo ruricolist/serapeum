@@ -498,13 +498,11 @@ Functions\", by Irène Durand and Robert Strandh."
               (etypecase ,var
                 ,@(loop for type in types
                         collect `(,type
-                                  ;; Overkill?
-                                  (locally (declare (type ,type ,var))
-                                    (let ((,var ,var))
-                                      (declare (type ,type ,var))
-                                      (with-read-only-vars (,var)
-                                        (with-vref ,type
-                                          ,@body))))))))))))
+                                  (let ((,var ,var))
+                                    (declare (type ,type ,var))
+                                    (with-read-only-vars (,var)
+                                      (with-vref ,type
+                                        ,@body)))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)

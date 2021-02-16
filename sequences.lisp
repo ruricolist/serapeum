@@ -1060,7 +1060,9 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (ldiff seq (member-if-not pred seq))
-    (subseq seq 0 (position-if-not pred seq))))
+    (let ((end (position-if-not pred seq)))
+      (if end (subseq seq 0 end)
+          seq))))
 
 (-> drop-while (function sequence) sequence)
 (defsubst drop-while (pred seq)
@@ -1069,7 +1071,9 @@ false when called on the first element."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (member-if-not pred seq)
-    (subseq seq (position-if-not pred seq))))
+    (let ((start (position-if-not pred seq)))
+      (if start (subseq seq start)
+          seq))))
 
 (-> drop-prefix (sequence sequence &key (:test (or symbol function)))
   sequence)

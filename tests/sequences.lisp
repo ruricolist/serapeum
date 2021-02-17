@@ -285,7 +285,7 @@
   (is (equal "foo" (take -5 "foo"))))
 
 (test take-while
-  (is (= "" (take-while #'whitespacep ""))))
+  (is (equal "" (take-while #'whitespacep ""))))
 
 (test drop
   (is (equal "" (drop -3 "foo")))
@@ -293,7 +293,7 @@
   (is (equal "f" (drop -2 "foo"))))
 
 (test drop-while
-  (is (= "" (drop-while #'whitespacep ""))))
+  (is (equal "" (drop-while #'whitespacep ""))))
 
 (test drop-prefix
   (let ((seq "x"))

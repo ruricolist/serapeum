@@ -1084,6 +1084,15 @@ false when called on the first element."
          (drop (length prefix) seq))
         (t seq)))
 
+(-> drop-suffix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun drop-suffix (suffix seq &key (test #'eql))
+  "If SEQ ends with SUFFIX, remove it."
+  (cond ((emptyp suffix) seq)
+        ((ends-with-subseq suffix seq :test test)
+         (drop (- (length suffix)) seq))
+        (t seq)))
+
 (-> ensure-prefix (sequence sequence &key (:test (or symbol function)))
   sequence)
 (defun ensure-prefix (prefix seq &key (test #'eql))
@@ -1093,9 +1102,24 @@ If SEQ already starts with PREFIX, return SEQ."
       seq
       (seq-dispatch seq
         (concatenate 'list prefix seq)
-        (concatenate `(simple-array ,(array-element-type seq))
+        (concatenate `(simple-array ,(array-element-type seq)
+                                    (*))
                      prefix seq)
         (concatenate (type-of seq) prefix seq))))
+
+(-> ensure-suffix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun ensure-suffix (suffix seq &key (test #'eql))
+  "Return a sequence like SEQ, but ending with SUFFIX.
+If SEQ already ends with SUFFIX, return SEQ."
+  (if (ends-with-subseq suffix seq :test test)
+      seq
+      (seq-dispatch seq
+        (concatenate 'list seq suffix)
+        (concatenate `(simple-array ,(array-element-type seq)
+                                    (*))
+                     seq suffix)
+        (concatenate (type-of seq) seq suffix))))
 
 ;;;# `bestn'
 (defun bisect-left (vec item pred &key key)

@@ -437,6 +437,8 @@
    #:drop-while
    #:drop-prefix
    #:ensure-prefix
+   #:drop-suffix
+   #:ensure-suffix
    #:seq=
    #:tree-case
    #:tree-ecase

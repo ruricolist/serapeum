@@ -308,6 +308,29 @@
   (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
   (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3)))))
 
+(test ensure-prefix
+  (is (equal "x" (ensure-prefix "x" "")))
+  (is (equal "x" (ensure-prefix "x" "x")))
+  (is (equal "xy" (ensure-prefix "x" "y"))))
+
+(test drop-suffix
+  (let ((seq "x"))
+    (is (eql seq (drop-suffix ":" seq)))
+    (is (eql seq (drop-suffix '(#\:) seq)))
+    (is (eql seq (drop-suffix #(#\:) seq)))
+    (is (eql seq (drop-suffix "" seq)))
+    (is (eql seq (drop-suffix nil seq))))
+  (is (equal "hello " (drop-suffix "world" "hello ")))
+  (is (equal "hello " (drop-suffix '(#\w #\o #\r #\l #\d) "hello world")))
+  (is (equal "hello " (drop-suffix #(#\w #\o #\r #\l #\d) "hello world")))
+  (is (equalp #(0 1 2) (drop-suffix #(3) #(0 1 2 3))))
+  (is (equalp #(0 1 2) (drop-suffix '(3) #(0 1 2 3)))))
+
+(test ensure-suffix
+  (is (equal "x" (ensure-suffix "x" "")))
+  (is (equal "x" (ensure-suffix "x" "x")))
+  (is (equal "yx" (ensure-suffix "x" "y"))))
+
 (test seq=
   (is (seq= '() ""))
   (is (seq= #() ""))

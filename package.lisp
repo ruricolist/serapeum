@@ -408,6 +408,7 @@
    #:longer
    #:longest
    #:ordering
+   #:bisect-left
    #:bestn
    #:nth-best
    #:nth-best!

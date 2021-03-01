@@ -534,7 +534,8 @@ agroup is immutable, the bucket itself is mutable."
   (exemplar t)
   (bucket t))
 
-(defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
+(defun assort (seq &key (key #'identity) (test #'eql) (start 0) end hash
+                     &aux (orig-test test))
   "Return SEQ assorted by KEY.
 
      (assort (iota 10)
@@ -554,32 +555,43 @@ that it will end up in the leftmost group that it could be a member
 of.
 
     (assort '(1 2 1 2 1 2) :test #'<=)
-    => '((1 1) (2 2 1 2))"
+    => '((1 1) (2 2 1 2))
+
+The default algorithm used by `assort' is, in the worst case, O(n) in
+the number of groups. If HASH is specified, then a hash table is used
+instead. However TEST must be acceptable as the `:test' argument to
+`make-hash-table'."
   (fbind (test)
     (with-item-key-function (key)
-      (let ((groups (queue))
-            last-group)
-        (with-specialized-buckets (seq)
-          (do-subseq (item seq nil :start start :end end)
-            (let ((kitem (key item)))
-              (if-let ((group
-                        (if (match last-group
-                              ((agroup exemplar _)
-                               (test kitem exemplar)))
-                            last-group
-                            (find-if
-                             (lambda (exemplar)
-                               (test kitem exemplar))
-                             (qlist groups)
-                             :key #'agroup-exemplar))))
-                (progn
-                  (setf last-group group)
-                  (bucket-push seq item (agroup-bucket group)))
-                (enq (agroup kitem (make-bucket seq item))
-                     groups))))
-          (mapcar-into (lambda (group)
-                         (bucket-seq seq (agroup-bucket group)))
-                       (qlist groups)))))))
+      (with-boolean (hash)
+        (let ((groups (queue))
+              (table (and hash (make-hash-table :test orig-test)))
+              last-group)
+          (with-specialized-buckets (seq)
+            (do-subseq (item seq nil :start start :end end)
+              (let ((kitem (key item)))
+                (if-let ((group
+                          (if (match last-group
+                                ((agroup exemplar _)
+                                 (test kitem exemplar)))
+                              last-group
+                              (if hash
+                                  (gethash kitem table)
+                                  (find-if
+                                   (lambda (exemplar)
+                                     (test kitem exemplar))
+                                   (qlist groups)
+                                   :key #'agroup-exemplar)))))
+                  (progn
+                    (setf last-group group)
+                    (bucket-push seq item (agroup-bucket group)))
+                  (let ((new-group (agroup kitem (make-bucket seq item))))
+                    (when hash
+                      (setf (gethash kitem table) new-group))
+                    (enq new-group groups)))))
+            (mapcar-into (lambda (group)
+                           (bucket-seq seq (agroup-bucket group)))
+                         (qlist groups))))))))
 
 (defun list-runs (list start end key test)
   (fbind ((test (key-test key test)))

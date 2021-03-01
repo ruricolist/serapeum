@@ -567,10 +567,10 @@ as much as you like -- perhaps even in each iteration of a loop --
 knowing that VAR will only actually be tested once.
 
 Around each specialized body VAR is bound to a symbol macro whose
-value is `t' or `nil'. This ensures VAR cannot be rebound, and allows
-macros to recognize VAR as a constant."
+value is `t' or `nil'. This allows macros to recognize VAR as a
+constant."
   (check-type var symbol)
-  `(if (assure boolean ,var)
+  `(if ,var
        (symbol-macrolet ((,var t))
          ,@body)
        (symbol-macrolet ((,var nil))

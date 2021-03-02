@@ -4,15 +4,18 @@
   "Shorthand for `make-instance'.
 Unlike `make-instance', this is not a generic function, so it can do compile-time sanity checking.
 
+Also unlike `make-instance', is defined to always return a single
+value.
+
 After Eulisp."
   (declare (dynamic-extent initargs))
-  (apply #'make-instance class initargs))
+  (values (apply #'make-instance class initargs)))
 
 (define-compiler-macro make (class &rest initargs &key &allow-other-keys)
   (when (constantp class)
     (unless (typep (eval class) '(or class symbol))
       (warn "~s cannot designate a class" class)))
-  `(make-instance ,class ,@initargs))
+  `(values (make-instance ,class ,@initargs)))
 
 (defpattern make (class &rest initargs)
   (ematch class

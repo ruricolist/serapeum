@@ -178,13 +178,14 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))"
   (let ((dict (make-hash-table :test test))
-        (key (ensure-function key)))
+        (key-fn (ensure-function key)))
     (lambda (arg)
-      (if (nth-value 1 (gethash arg dict))
-          (values nil nil)
-          (values (setf (gethash arg dict)
-                        (funcall key arg))
-                  t)))))
+      (let ((key (funcall key-fn arg)))
+        (if (nth-value 1 (gethash key dict))
+            (values nil nil)
+            (values (setf (gethash key dict)
+                          arg)
+                    t))))))
 
 (defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.

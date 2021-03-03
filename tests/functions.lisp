@@ -196,6 +196,10 @@
       (is (equal '(nil nil) (f 1)))
       (is (equal '(2 t) (f 2))))))
 
+(test distinct/key
+  (is (equal '(0 1)
+             (filter-map (distinct :key #'evenp) (iota 10)))))
+
 (test flip
   (is (equal '(:b :a) (funcall (flip #'list) :a :b)))
   (locally (declare (notinline flip))

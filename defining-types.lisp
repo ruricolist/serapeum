@@ -321,10 +321,8 @@ some implementation tricks from `cl-algebraic-data-type'."
                                    type-name)))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
-         (conc-name
-           (symbolicate type-name '-))
          (readers
-           (mapcar (curry #'symbolicate conc-name)
+           (mapcar (curry #'symbolicate type-name '-)
                    slot-names))
          (copier-name (symbolicate 'copy- type-name)))
     `(progn
@@ -337,7 +335,6 @@ some implementation tricks from `cl-algebraic-data-type'."
            (,type-name
             ,@(unsplice (and super `(:include ,super)))
             (:constructor ,constructor ,slot-names)
-            (:conc-name ,conc-name)
             (:predicate nil)
             (:print-function
              (lambda (object stream depth)

@@ -513,13 +513,13 @@ angle brackets around it."
        (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
          (symbol-macrolet ((serapeum.unlocked:%union ,super))
            (declare #+sbcl (sb-ext:enable-package-locks %union))
+           (deftype ,union ()
+             ,@(unsplice docstring)
+             '(or ,@types))
            ,@(loop for type in units
                 collect `(defunit ,type))
            ,@(loop for (type . slots) in ctors
                 collect `(defconstructor ,type ,@slots))
-           (deftype ,union ()
-             ,@(unsplice docstring)
-             '(or ,@types))
            (declaim-freeze-type ,super)
            ',union)))))
 

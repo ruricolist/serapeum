@@ -1121,7 +1121,7 @@ If SEQ already starts with PREFIX, return SEQ."
 
 (-> ensure-suffix (sequence sequence &key (:test (or symbol function)))
   sequence)
-(defun ensure-suffix (suffix seq &key (test #'eql))
+(defun ensure-suffix (seq suffix &key (test #'eql))
   "Return a sequence like SEQ, but ending with SUFFIX.
 If SEQ already ends with SUFFIX, return SEQ."
   (if (ends-with-subseq suffix seq :test test)

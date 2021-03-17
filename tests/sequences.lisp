@@ -335,9 +335,9 @@
   (is (equalp #(0 1 2) (drop-suffix '(3) #(0 1 2 3)))))
 
 (test ensure-suffix
-  (is (equal "x" (ensure-suffix "x" "")))
+  (is (equal "x" (ensure-suffix "" "x")))
   (is (equal "x" (ensure-suffix "x" "x")))
-  (is (equal "yx" (ensure-suffix "x" "y"))))
+  (is (equal "yx" (ensure-suffix "y" "x"))))
 
 (test seq=
   (is (seq= '() ""))

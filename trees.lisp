@@ -173,11 +173,11 @@ lists."
                                (cons* (car tree) acc))))))
       (prune tree nil))))
 
-(defun occurs (leaf tree &key (key #'identity) (test #'eql) (traversal :preorder))
-  "Is LEAF present in TREE?"
+(defun occurs (node tree &key (key #'identity) (test #'eql) (traversal :preorder))
+  "Is NODE present in TREE?"
   (nth-value 1
     (ensuring-functions (test)
-      (flet ((test (x) (funcall test leaf x)))
+      (flet ((test (x) (funcall test node x)))
         (declare (dynamic-extent #'test))
         (occurs-if #'test tree :key key :traversal traversal)))))
 

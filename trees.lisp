@@ -38,7 +38,6 @@ case SUBTREE will be used as the value of the subtree.
 
 TRAVERSE can be one of `:preorder', `:postorder', or `:inorder'. The
 default is `:preorder'."
-  #.+merge-tail-calls+
   (ecase traversal
     (:preorder (map-tree/preorder fun tree tag tagp))
     (:postorder (map-tree/postorder fun tree tag tagp))
@@ -114,7 +113,6 @@ default is `:preorder'."
 
 (defun leaf-walk (fun tree)
   "Call FUN on each leaf of TREE."
-  #.+merge-tail-calls+
   (let ((fun (ensure-function fun)))
     (labels ((leaf-walk (fun tree)
                (declare (function fun))
@@ -122,6 +120,7 @@ default is `:preorder'."
                       (funcall fun tree))
                      (t (leaf-walk fun (car tree))
                         (leaf-walk fun (cdr tree))))))
+      #.+merge-tail-calls+
       (leaf-walk fun tree)))
   (values))
 
@@ -129,12 +128,12 @@ default is `:preorder'."
 (defun leaf-map (fn tree)
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
-  #.+merge-tail-calls+
   (let ((fn (ensure-function fn)))
     (flet ((map-fn (x)
              (if (listp x)
                  x
                  (funcall fn x))))
+      #.+merge-tail-calls+
       (declare (dynamic-extent #'map-fn))
       (map-tree #'map-fn tree))))
 
@@ -157,7 +156,6 @@ and then filtering.
 
 Also note that pruning is not defined for trees containing improper
 lists."
-  #.+merge-tail-calls+
   (ensuring-functions (key test)
     (labels ((cons* (car cdr)
                (if (funcall test (funcall key car))
@@ -171,6 +169,7 @@ lists."
                              (cons* (prune (car tree) nil) acc)))
                      (t (prune (cdr tree)
                                (cons* (car tree) acc))))))
+      #.+merge-tail-calls+
       (prune tree nil))))
 
 (defun occurs (node tree &key (key #'identity) (test #'eql) (traversal :preorder))

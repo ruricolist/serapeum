@@ -58,7 +58,8 @@ In many cases context methods can simplify implementation by avoiding the need t
 (defmethod print-object ((self topmost-object-class) stream)
   (print-unreadable-object (self stream :type t :identity t)
     (with-slots (topmost-class) self
-      (format stream "~a" topmost-class))))
+      (format stream "~a" topmost-class)))
+  self)
 
 (defmethod validate-superclass ((class1 topmost-object-class)
                                 (class2 standard-class))

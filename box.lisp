@@ -41,7 +41,8 @@ recognize boxes using a type or predicate."
 
 (defmethod print-object ((self box) stream)
   (print-unreadable-object (self stream :type t :identity t)
-    (format stream "~a" (unbox self))))
+    (format stream "~a" (unbox self)))
+  self)
 
 (defmethod make-load-form ((self box) &optional env)
   (declare (ignore env))

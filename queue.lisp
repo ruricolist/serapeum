@@ -70,7 +70,8 @@ justifying making *collectors* (queues) first-class."
         (format stream "#.")
         (print-object `(queue ,@(qlist queue)) stream))
       (print-unreadable-object (queue stream :type t)
-        (format stream "~a" (qlist queue)))))
+        (format stream "~a" (qlist queue))))
+  queue)
 
 (defmethod make-load-form ((queue queue) &optional env)
   (declare (ignore env))

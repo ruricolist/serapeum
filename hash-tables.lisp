@@ -488,8 +488,8 @@ Cf. `delete-from-plist' in Alexandria."
 (defun pairhash (keys data &optional hash-table)
   "Like `pairlis', but for a hash table.
 
-Unlike `pairlis', KEYS and DATA are only required to be sequences, not
-lists.
+Unlike `pairlis', KEYS and DATA are only required to be sequences (of
+the same length), not lists.
 
 By default, the hash table returned uses `eql' as its tests. If you
 want a different test, make the table yourself and pass it as the
@@ -499,6 +499,8 @@ HASH-TABLE argument."
               (make-hash-table :size (max (length keys)
                                           +hash-table-default-size+)))))
     (declare (hash-table hash-table))
+    (unless (length= keys data)
+      (error "Arguments to pairhash must be of the same length."))
     (map nil
          (lambda (key datum)
            (setf (gethash key hash-table) datum))

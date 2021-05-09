@@ -474,3 +474,30 @@ used variadically."
   (with-unique-names (args)
     `(lambda (&rest ,args)
        (funcall ,fn ,args))))
+
+(defun mvconstantly (&rest values)
+  "Like `constantly', but returns all of VALUES as multiple values.
+If there are not VALUES, returns nothing."
+  (cond ((null values)
+         (lambda (&rest args)
+           (declare (ignore args))
+           (values)))
+        ((null (cdr values))
+         (constantly (car values)))
+        (t
+         (lambda (&rest args)
+           (declare (ignore args))
+           (values-list values)))))
+
+(define-compiler-macro mvconstantly (&rest values)
+  (cond ((null values)
+         `(lambda (&rest args)
+            (declare (ignore args))
+            (values)))
+        ((null (cdr values))
+         `(constantly ,(car values)))
+        (t
+         (let ((temps (make-gensym-list (length values))))
+           `(lambda (&rest args &aux ,@(mapcar #'list temps values))
+              (declare (ignore args))
+              (values ,@temps))))))

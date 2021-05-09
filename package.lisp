@@ -176,6 +176,7 @@
    #:trampoline
    #:once
    #:fnil
+   #:mvconstantly
    ;; Trees.
    #:reuse-cons
    #:occurs

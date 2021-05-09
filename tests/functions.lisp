@@ -220,3 +220,18 @@
                                       (lambda (y z) (list :b y :c z :e)))
                         17 25)))))
 
+(test mvconstantly ()
+  (macrolet ((test-body ()
+               `(progn
+                  (is (null (multiple-value-list
+                             (funcall (mvconstantly)))))
+                  (is (equal '(1)
+                             (multiple-value-list
+                              (funcall (mvconstantly 1)))))
+                  (is
+                   (equal '(1 2)
+                          (multiple-value-list
+                           (funcall (mvconstantly 1 2))))))))
+    (test-body)
+    (locally (declare (notinline mvconstantly))
+      (test-body))))

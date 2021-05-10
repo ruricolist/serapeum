@@ -497,6 +497,8 @@ If there are not VALUES, returns nothing."
         ((null (cdr values))
          `(constantly ,(car values)))
         (t
+         #+cmucl `(constantly ,values)
+         #-cmucl
          (let ((temps (make-gensym-list (length values))))
            `(let ,(mapcar #'list temps values)
               (lambda (&rest args)

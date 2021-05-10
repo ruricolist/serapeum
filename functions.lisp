@@ -498,6 +498,7 @@ If there are not VALUES, returns nothing."
          `(constantly ,(car values)))
         (t
          (let ((temps (make-gensym-list (length values))))
-           `(lambda (&rest args &aux ,@(mapcar #'list temps values))
-              (declare (ignore args))
-              (values ,@temps))))))
+           `(let ,(mapcar #'list temps values)
+              (lambda (&rest args)
+                (declare (ignore args))
+                (values ,@temps)))))))

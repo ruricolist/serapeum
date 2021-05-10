@@ -231,7 +231,13 @@
                   (is
                    (equal '(1 2)
                           (multiple-value-list
-                           (funcall (mvconstantly 1 2))))))))
+                           (funcall (mvconstantly 1 2)))))
+                  (is (equal '(1 1 1 1)
+                             (let* ((x 0) (y 0)
+                                    (fn (mvconstantly (incf x) (incf y))))
+                               (multiple-value-call #'list
+                                (funcall fn)
+                                (funcall fn))))))))
     (test-body)
     (locally (declare (notinline mvconstantly))
       (test-body))))

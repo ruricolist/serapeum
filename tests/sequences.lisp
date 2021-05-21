@@ -90,13 +90,37 @@
 
 (test runs
   (is (equal '((1 2) (3 4 5 6 11 12 13))
-             (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3)))))
+             (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
+  (is (equal '((1 2))
+             (runs '(1 2 3 4 5 6 11 12 13)
+                   :key (rcurry #'< 3)
+                   :count 1))))
 
 (test runs-compare-first
   (is (seq= (runs #(10 2 3 10 4 5) :test #'>)
             (runs '(10 2 3 10 4 5) :test #'>)))
+  (is (seq= (runs #(10 2 3 10 4 5) :test #'> :count 0)
+            (runs '(10 2 3 10 4 5) :test #'> :count 0)))
+  (is (seq= (runs #(10 2 3 10 4 5) :test #'> :count 1)
+            (runs '(10 2 3 10 4 5) :test #'> :count 1)))
   (is (seq= (runs #(1 2 3 1 2 3) :test #'<)
-            (runs '(1 2 3 1 2 3) :test #'<))))
+            (runs '(1 2 3 1 2 3) :test #'<)))
+  (is (seq= (runs #(1 2 3 1 2 3) :test #'< :count 0)
+            (runs '(1 2 3 1 2 3) :test #'< :count 0)))
+  (is (seq= (runs #(1 2 3 1 2 3) :test #'< :count 1)
+            (runs '(1 2 3 1 2 3) :test #'< :count 1))))
+
+(test runs-count
+  (is (null (runs '() :count 0)))
+  (is (emptyp (runs #() :count 0)))
+  (is (equal '((head) (tail tail))
+             (runs '(head tail tail head head tail) :count 2)))
+  (for-all ((i (lambda () (random 100)))
+            (j (lambda () (random 10))))
+    (let* ((ns (shuffle (range i)))
+           (ns-list (coerce ns 'list)))
+      (is (>= j (length (runs ns :test #'< :count j))))
+      (is (>= j (length (runs ns-list :test #'< :count j)))))))
 
 (test batches
   (is (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))

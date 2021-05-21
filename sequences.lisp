@@ -593,33 +593,48 @@ instead. However TEST must be acceptable as the `:test' argument to
                            (bucket-seq seq (agroup-bucket group)))
                          (qlist groups))))))))
 
-(defun list-runs (list start end key test)
+(defun list-runs (list start end key test count)
+  (declare ((and fixnum unsigned-byte) count))
+  (when (zerop count)
+    (return-from list-runs nil))
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
     ;; This is a little more complicated than you might expect,
     ;; because we need to keep hold of the first element of each list.
     (let ((runs
-            (reduce
-             (lambda (runs y)
-               (if (null runs)
-                   (list (list y))
-                   (let ((x (caar runs)))
-                     (if (test x y)
-                         (cons (list* x y (cdar runs))
-                               (cdr runs))
-                         (list* (list y)
-                                (cons (caar runs)
-                                      (nreverse (cdar runs)))
-                                (cdr runs))))))
-             list
-             :start start
-             :end end
-             :initial-value nil)))
+            (nlet rec ((runs nil)
+                       (count count)
+                       (list
+                        (nthcdr start
+                                (if end
+                                    (ldiff list (nthcdr (- end start) list))
+                                    list))))
+              (if (endp list) runs
+                  (let ((y (car list)))
+                    (if (null runs)
+                        (rec (list (list y))
+                             count
+                             (cdr list))
+                        (let ((x (caar runs)))
+                          (if (test x y)
+                              (rec (cons (list* x y (cdar runs))
+                                         (cdr runs))
+                                   count
+                                   (rest list))
+                              (if (zerop (1- count))
+                                  runs
+                                  (rec (list* (list y)
+                                              (cons (caar runs)
+                                                    (nreverse (cdar runs)))
+                                              (cdr runs))
+                                       (1- count)
+                                       (rest list)))))))))))
       (nreverse (cons (cons (caar runs)
                             (nreverse (cdar runs)))
                       (cdr runs))))))
 
-(defun runs (seq &key (start 0) end (key #'identity) (test #'eql))
+(defun runs (seq &key (start 0) end (key #'identity) (test #'eql)
+                   (count most-positive-fixnum))
   "Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce'.
 
@@ -630,25 +645,33 @@ The function TEST is called with the first element of the run as its
 first argument.
 
     (runs '(1 2 3 1 2 3) :test #'<)
-    => ((1 2 3) (1 2 3))"
-  (if (emptyp seq)
-      (list seq)
-      (seq-dispatch seq
-        (list-runs seq start end key test)
-        (fbind ((test (key-test key test)))
-          (declare (dynamic-extent #'test))
-          (collecting*
-            (nlet runs ((start start))
-              (let* ((elt (elt seq start))
-                     (pos (position-if-not (partial #'test elt)
-                                           seq
-                                           :start (1+ start)
-                                           :end end)))
-                (if (null pos)
-                    (collect (subseq seq start end))
-                    (progn
-                      (collect (subseq seq start pos))
-                      (runs pos))))))))))
+    => ((1 2 3) (1 2 3))
+
+The COUNT argument limits how many runs are returned.
+
+    (runs '(head tail tail head head tail) :count 2)
+    => '((head) (tail tail))"
+  (declare ((and fixnum unsigned-byte) count))
+  (cond ((zerop count) (list))
+        ((emptyp seq) (list seq))
+        (t (seq-dispatch seq
+             (list-runs seq start end key test count)
+             (fbind ((test (key-test key test)))
+               (declare (dynamic-extent #'test))
+               (collecting*
+                 (nlet runs ((start start)
+                             (count count))
+                   (when (plusp count)
+                     (let* ((elt (elt seq start))
+                            (pos (position-if-not (partial #'test elt)
+                                                  seq
+                                                  :start (1+ start)
+                                                  :end end)))
+                       (if (null pos)
+                           (collect (subseq seq start end))
+                           (progn
+                             (collect (subseq seq start pos))
+                             (runs pos (1- count)))))))))))))
 
 (defun batches (seq n &key (start 0) end even)
   "Return SEQ in batches of N elements.

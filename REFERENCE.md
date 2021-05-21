@@ -3490,7 +3490,7 @@ instead. However TEST must be acceptable as the `:test` argument to
 
 [View source](sequences.lisp#L537)
 
-### `(runs seq &key start end key test)`
+### `(runs seq &key start end key test count)`
 
 Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce`.
@@ -3504,7 +3504,12 @@ first argument.
     (runs '(1 2 3 1 2 3) :test #'<)
     => ((1 2 3) (1 2 3))
 
-[View source](sequences.lisp#L622)
+The COUNT argument limits how many runs are returned.
+
+    (runs '(head tail tail head head tail) :count 2)
+    => '((head) (tail tail))
+
+[View source](sequences.lisp#L636)
 
 ### `(batches seq n &key start end even)`
 
@@ -3516,7 +3521,7 @@ Return SEQ in batches of N elements.
 If EVEN is non-nil, then SEQ must be evenly divisible into batches of
 size N, with no leftovers.
 
-[View source](sequences.lisp#L653)
+[View source](sequences.lisp#L676)
 
 ### `(frequencies seq &rest hash-table-args &key key &allow-other-keys)`
 
@@ -3525,7 +3530,7 @@ As a second value, return the length of SEQ.
 
 From Clojure.
 
-[View source](sequences.lisp#L711)
+[View source](sequences.lisp#L734)
 
 ### `(scan fn seq &rest args &key from-end start end initial-value &allow-other-keys)`
 
@@ -3551,7 +3556,7 @@ This is sometimes called a "prefix sum", "cumulative sum", or
 
 From APL.
 
-[View source](sequences.lisp#L736)
+[View source](sequences.lisp#L759)
 
 ### `(nub seq &rest args &key start end key test)`
 
@@ -3562,7 +3567,7 @@ TEST defaults to `equal`.
 
 From Haskell.
 
-[View source](sequences.lisp#L784)
+[View source](sequences.lisp#L807)
 
 ### `(gcp seqs &key test)`
 
@@ -3570,7 +3575,7 @@ The greatest common prefix of SEQS.
 
 If there is no common prefix, return NIL.
 
-[View source](sequences.lisp#L797)
+[View source](sequences.lisp#L820)
 
 ### `(gcs seqs &key test)`
 
@@ -3578,7 +3583,7 @@ The greatest common suffix of SEQS.
 
 If there is no common suffix, return NIL.
 
-[View source](sequences.lisp#L814)
+[View source](sequences.lisp#L837)
 
 ### `(of-length length)`
 
@@ -3588,35 +3593,35 @@ length LENGTH.
     (funcall (of-length 3) '(1 2 3)) => t
     (funcall (of-length 1) '(1 2 3)) => nil
 
-[View source](sequences.lisp#L833)
+[View source](sequences.lisp#L856)
 
 ### `(length< &rest seqs)`
 
 Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L848)
+[View source](sequences.lisp#L871)
 
 ### `(length> &rest seqs)`
 
 Is each length-designator in SEQS longer than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L854)
+[View source](sequences.lisp#L877)
 
 ### `(length>= &rest seqs)`
 
 Is each length-designator in SEQS longer or as long as the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L880)
+[View source](sequences.lisp#L903)
 
 ### `(length<= &rest seqs)`
 
 Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer.
 
-[View source](sequences.lisp#L885)
+[View source](sequences.lisp#L908)
 
 ### `(longer x y)`
 
@@ -3624,13 +3629,13 @@ Return the longer of X and Y.
 
 If X and Y are of equal length, return X.
 
-[View source](sequences.lisp#L890)
+[View source](sequences.lisp#L913)
 
 ### `(longest seqs)`
 
 Return the longest seq in SEQS.
 
-[View source](sequences.lisp#L915)
+[View source](sequences.lisp#L938)
 
 ### `(slice seq start &optional end)`
 
@@ -3651,7 +3656,7 @@ If the bounds cross in the middle, the result is an empty string:
 Setf of `slice` is like setf of `ldb`: afterwards, the place being set
 holds a new sequence which is not EQ to the old.
 
-[View source](sequences.lisp#L947)
+[View source](sequences.lisp#L970)
 
 ### `(ordering seq &key unordered-to-end from-end test key)`
 
@@ -3675,7 +3680,7 @@ the original ordering. By default they are sorted first but, if
 UNORDERED-TO-END is true, they are sorted last. In either case, they
 are left in no particular order.
 
-[View source](sequences.lisp#L990)
+[View source](sequences.lisp#L1013)
 
 ### `(take n seq)`
 
@@ -3687,7 +3692,7 @@ If N is longer than SEQ, SEQ is simply copied.
 If N is negative, then |N| elements are taken (in their original
 order) from the end of SEQ.
 
-[View source](sequences.lisp#L1032)
+[View source](sequences.lisp#L1055)
 
 ### `(drop n seq)`
 
@@ -3699,52 +3704,52 @@ the same type.
 
 If N is negative, then |N| elements are dropped from the end of SEQ.
 
-[View source](sequences.lisp#L1051)
+[View source](sequences.lisp#L1074)
 
 ### `(take-while pred seq)`
 
 Return the prefix of SEQ for which PRED returns true.
 
-[View source](sequences.lisp#L1070)
+[View source](sequences.lisp#L1093)
 
 ### `(drop-while pred seq)`
 
 Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element.
 
-[View source](sequences.lisp#L1080)
+[View source](sequences.lisp#L1103)
 
 ### `(drop-prefix prefix seq &key test)`
 
 If SEQ starts with PREFIX, remove it.
 
-[View source](sequences.lisp#L1092)
+[View source](sequences.lisp#L1115)
 
 ### `(drop-suffix suffix seq &key test)`
 
 If SEQ ends with SUFFIX, remove it.
 
-[View source](sequences.lisp#L1101)
+[View source](sequences.lisp#L1124)
 
 ### `(ensure-prefix prefix seq &key test)`
 
 Return a sequence like SEQ, but starting with PREFIX.
 If SEQ already starts with PREFIX, return SEQ.
 
-[View source](sequences.lisp#L1110)
+[View source](sequences.lisp#L1133)
 
 ### `(ensure-suffix seq suffix &key test)`
 
 Return a sequence like SEQ, but ending with SUFFIX.
 If SEQ already ends with SUFFIX, return SEQ.
 
-[View source](sequences.lisp#L1124)
+[View source](sequences.lisp#L1147)
 
 ### `(bisect-left vec item pred &key key)`
 
 Return the index in VEC to insert ITEM and keep VEC sorted.
 
-[View source](sequences.lisp#L1137)
+[View source](sequences.lisp#L1160)
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -3757,7 +3762,7 @@ only ever called once per element.
 
 The name is from Arc.
 
-[View source](sequences.lisp#L1153)
+[View source](sequences.lisp#L1176)
 
 ### `(nth-best n seq pred &key key)`
 
@@ -3773,14 +3778,14 @@ Or even
 
 But uses a selection algorithm for better performance than either.
 
-[View source](sequences.lisp#L1201)
+[View source](sequences.lisp#L1224)
 
 ### `(nth-best! n seq pred &key key)`
 
 Destructive version of `nth-best`.
 Note that this function requires that SEQ be a vector.
 
-[View source](sequences.lisp#L1218)
+[View source](sequences.lisp#L1241)
 
 ### `(reshuffle seq &key element-type)`
 
@@ -3796,7 +3801,7 @@ returned is T, if SEQ is not a vector. If SEQ is a vector, then the
 element type of the vector returned is the same as the as the element
 type of SEQ.
 
-[View source](sequences.lisp#L1257)
+[View source](sequences.lisp#L1280)
 
 ### `(sort-new seq pred &key key element-type)`
 
@@ -3809,13 +3814,13 @@ a form that can be sorted efficiently.)
 
 ELEMENT-TYPE is interpreted as for `reshuffle`.
 
-[View source](sequences.lisp#L1279)
+[View source](sequences.lisp#L1302)
 
 ### `(stable-sort-new seq pred &key key element-type)`
 
 Like `sort-new`, but sort as if by `stable-sort` instead of `sort`.
 
-[View source](sequences.lisp#L1299)
+[View source](sequences.lisp#L1322)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3825,7 +3830,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L1306)
+[View source](sequences.lisp#L1329)
 
 ### `(halves seq &optional split)`
 
@@ -3841,20 +3846,20 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L1347)
+[View source](sequences.lisp#L1370)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1381)
+[View source](sequences.lisp#L1404)
 
 ### `(dsu-sort-new seq fn &key key stable)`
 
 Like `dsu-sort`, but returning a new vector.
 
-[View source](sequences.lisp#L1388)
+[View source](sequences.lisp#L1411)
 
 ### `(deltas seq &optional fn)`
 
@@ -3874,14 +3879,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1403)
+[View source](sequences.lisp#L1426)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1427)
+[View source](sequences.lisp#L1450)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3912,14 +3917,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1471)
+[View source](sequences.lisp#L1494)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1531)
+[View source](sequences.lisp#L1554)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3963,14 +3968,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1561)
+[View source](sequences.lisp#L1584)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1603)
+[View source](sequences.lisp#L1626)
 
 ### `(repeat-sequence seq n)`
 
@@ -3994,7 +3999,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1643)
+[View source](sequences.lisp#L1666)
 
 ### `(seq= &rest xs)`
 
@@ -4003,7 +4008,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1726)
+[View source](sequences.lisp#L1749)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4025,7 +4030,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1790)
+[View source](sequences.lisp#L1813)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4036,7 +4041,7 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1842)
+[View source](sequences.lisp#L1865)
 
 ## Strings
 

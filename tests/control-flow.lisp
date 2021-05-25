@@ -202,6 +202,28 @@
         (let ((y (+ x 3))))
         (is (equal '(1 4) (list x y)))))
 
+(test nest-pattern
+  (is-true
+   (match '(1 2 3 4)
+     ((nest (cons 1)
+            (cons 2)
+            (cons 3)
+            (list 4))
+      t))))
+
+(test arrow-pattern
+  (is-true
+   (match '(1 2 3 4)
+     ((~>> '(4)
+           (cons 3)
+           (cons 2)
+           (cons 1))
+      t)))
+  (is-true
+   (match '(t)
+     ((~> x list)
+      x))))
+
 (test select
   (is-true
    (select Pi

@@ -3,6 +3,12 @@
 (def-suite binding :in serapeum)
 (in-suite binding)
 
+(test let1-match
+  (is (equal '(1 2 3)
+             (match (list 2 3)
+               ((let1 x 1 (list y z))
+                (list x y z))))))
+
 (test lret
   (is (equal 1 (lret () 1)))
   (is (equal 2

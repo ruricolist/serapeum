@@ -23,6 +23,9 @@ This may be pronounced with equal propriety as \"let-one\" or
      (with-read-only-vars (,var)
        ,@body)))
 
+(defpattern let1 (var expr &rest body)
+  `(and (trivia:<> ,var ,expr) ,@body))
+
 ;;; `lret'
 
 (defmacro lret-aux (let (&rest bindings) &body body)

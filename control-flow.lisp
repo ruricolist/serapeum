@@ -627,6 +627,11 @@ value like `gethash'."
                            `(,hole ,needle)))
                     ,@(rest holes)))))
 
+(defun check-no-underscores (holes)
+  (loop for hole in holes
+        when (find '_ (ensure-list hole))
+          do (error "Arrow macros with underscores cannot be used as patterns: ~a" hole)))
+
 (defmacro ~> (needle &rest holes)
   "Threading macro from Clojure (by way of Racket).
 
@@ -641,12 +646,20 @@ first."
               (lambda (needle hole)
                 (list* (car hole) needle (cdr hole)))))
 
+(defpattern ~> (needle &rest holes)
+  (check-no-underscores holes)
+  (macroexpand-1 `(~> ,needle ,@holes)))
+
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
   (thread-aux '~>> needle holes
               (lambda (needle hole)
                 (append1 hole needle))))
+
+(defpattern ~>> (needle &rest holes)
+  (check-no-underscores holes)
+  (macroexpand-1 `(~>> ,needle ,@holes)))
 
 (defun expand-nest (things)
   "Helper function for `nest'."

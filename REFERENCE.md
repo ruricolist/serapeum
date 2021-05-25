@@ -908,13 +908,13 @@ forgetting to return it).
 
 Cf. `aprog1` in Anaphora.
 
-[View source](binding.lisp#L41)
+[View source](binding.lisp#L44)
 
 ### `(lret* (&rest bindings) &body body)`
 
 Cf. `lret`.
 
-[View source](binding.lisp#L68)
+[View source](binding.lisp#L71)
 
 ### `(letrec (&rest bindings) &body body)`
 
@@ -925,7 +925,7 @@ another, and themselves.
 Note that `letrec` only binds variables: it can define recursive
 functions, but can't bind them as functions. (But see `fbindrec`.)
 
-[View source](binding.lisp#L93)
+[View source](binding.lisp#L96)
 
 ### `(letrec* (&rest bindings) &body body)`
 
@@ -934,7 +934,7 @@ See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*`.
 
-[View source](binding.lisp#L103)
+[View source](binding.lisp#L106)
 
 ### `(receive formals expr &body body)`
 
@@ -955,7 +955,7 @@ returned by EXPR, as if by `multiple-value-list`.
 
 From Scheme (SRFI-8).
 
-[View source](binding.lisp#L111)
+[View source](binding.lisp#L114)
 
 ### `(mvlet* (&rest bindings) &body body)`
 
@@ -980,13 +980,13 @@ the motivation:
 
 Note that declarations work just like `let*`.
 
-[View source](binding.lisp#L168)
+[View source](binding.lisp#L171)
 
 ### `(mvlet (&rest bindings) &body body)`
 
 Parallel (`let`-like) version of `mvlet*`.
 
-[View source](binding.lisp#L227)
+[View source](binding.lisp#L230)
 
 ### `(and-let* (&rest clauses) &body body)`
 
@@ -1008,7 +1008,7 @@ false.
 
 Also, this version makes the bindings immutable.
 
-[View source](binding.lisp#L263)
+[View source](binding.lisp#L266)
 
 ## Control Flow
 
@@ -1325,14 +1325,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L630)
+[View source](control-flow.lisp#L635)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L644)
+[View source](control-flow.lisp#L653)
 
 ### `(nest &rest things)`
 
@@ -1366,7 +1366,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L659)
+[View source](control-flow.lisp#L672)
 
 ### `(select keyform &body clauses)`
 
@@ -1386,7 +1386,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L694)
+[View source](control-flow.lisp#L707)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1396,7 +1396,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L713)
+[View source](control-flow.lisp#L726)
 
 ### `(sort-values pred &rest values)`
 
@@ -1408,7 +1408,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L832)
+[View source](control-flow.lisp#L845)
 
 ### `(eq* &rest xs)`
 
@@ -1426,7 +1426,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L903)
+[View source](control-flow.lisp#L916)
 
 ### `(eql* &rest xs)`
 
@@ -1444,7 +1444,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L905)
+[View source](control-flow.lisp#L918)
 
 ### `(equal* &rest xs)`
 
@@ -1462,7 +1462,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L907)
+[View source](control-flow.lisp#L920)
 
 ### `(equalp* &rest xs)`
 
@@ -1480,14 +1480,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L909)
+[View source](control-flow.lisp#L922)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L919)
+[View source](control-flow.lisp#L932)
 
 ## Threads
 

@@ -1892,3 +1892,12 @@ Repetitions that are not adjacent are left alone.
                              (progn
                                (bucket-push seq elt bucket)
                                (rec (1+ i) new-key)))))))))))))
+
+(defun same (key-fn seq &key (test #'eql) (start 0) end)
+  "Return true if KEY-FN returns the same value for any/all members of LIST."
+  (let (init val)
+    (do-subseq (item seq t :start start :end end)
+      (if (null init)
+          (setf val (funcall key-fn item) init t)
+          (unless (funcall test val (funcall key-fn item))
+            (return-from same nil))))))

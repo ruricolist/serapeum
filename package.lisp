@@ -448,6 +448,7 @@
    #:char-ecase
    #:do-splits
    #:collapse-duplicates
+   #:same
    ;; Generalized arrays.
    #:shape
    #:reshape

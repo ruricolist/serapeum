@@ -1895,9 +1895,11 @@ Repetitions that are not adjacent are left alone.
 
 (defun same (key-fn seq &key (test #'eql) (start 0) end)
   "Return true if KEY-FN returns the same value for any/all members of LIST."
-  (let (init val)
-    (do-subseq (item seq t :start start :end end)
-      (if (null init)
-          (setf val (funcall key-fn item) init t)
-          (unless (funcall test val (funcall key-fn item))
-            (return-from same nil))))))
+  (fbind (key-fn)
+    (with-test-fn (test)
+      (let (init val)
+        (do-subseq (item seq t :start start :end end)
+          (if (null init)
+              (setf val (key-fn item) init t)
+              (unless (test val (key-fn item))
+                (return-from same nil))))))))

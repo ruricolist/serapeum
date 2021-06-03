@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 431 functions)
+# Function Listing For serapeum (41 files, 432 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -4042,6 +4042,12 @@ Repetitions that are not adjacent are left alone.
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
 [View source](sequences.lisp#L1865)
+
+### `(same key-fn seq &key test start end)`
+
+Return true if KEY-FN returns the same value for any/all members of LIST.
+
+[View source](sequences.lisp#L1896)
 
 ## Strings
 

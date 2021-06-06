@@ -218,7 +218,7 @@ for Maclisp users.)"
 Uses a non-recursive algorithm."
   (unless (setp set)
     (error "Not a set: ~a" set))
-  (loop for i below (expt (length set) 2)
+  (loop for i below (expt 2 (length set))
         collect (loop for j from 0
                       for x in set
                       when (logbitp j i)

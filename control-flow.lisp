@@ -228,8 +228,7 @@ Note that the otherwise clauses must also be a list:
 to collect KEYPLACE and try again."
   (expand-destructuring-case-of type keyplace body 'ccase-of))
 
-(define-case-macro case-using (pred keyform &body clauses)
-    (:default default)
+(defmacro case-using (pred keyform &body clauses)
   "ISLISP's case-using.
 
      (case-using #'eql x ...)
@@ -237,26 +236,31 @@ to collect KEYPLACE and try again."
 
 Note that, no matter the predicate, the keys are not evaluated. (But see `selector'.)
 
+The PRED form is evaluated.
+
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause."
   (case (extract-function-name pred)
     (eql
      `(case ,keyform
-        ,@clauses
-        (otherwise ,default)))
+        ,@clauses))
+    ;; TODO Check that this isn't rebound in the environment. (Not a
+    ;; concern on SBCL as the package is locked there.)
     (string=
-     (let ((keys (mapcar #'car clauses)))
-       (assert (every #'stringp keys)))
      `(string-case ,keyform
-        ,@clauses
-        (otherwise ,default)))
-    (t (once-only (keyform)
-         (rebinding-functions (pred)
-           `(cond ,@(loop for (key . body) in clauses
-                          collect `((funcall ,pred ,keyform ',key)
-                                    ,@body))
-                  (t ,@default)))))))
+        ,@clauses))
+    (t `(case-using-aux ,pred ,keyform
+          ,@clauses))))
+
+(define-case-macro case-using-aux (pred keyform &body clauses)
+    (:default default)
+  (once-only (keyform)
+    (rebinding-functions (pred)
+      `(cond ,@(loop for (key . body) in clauses
+                     collect `((funcall ,pred ,keyform ',key)
+                               ,@body))
+             (t ,@default)))))
 
 (defmacro ecase-using (pred keyform &body clauses)
   "Exhaustive variant of `case-using'."
@@ -545,7 +549,7 @@ Cf. `ensure2'."
              (when ,(first stores)
                ,setter))))))
 
-(define-setf-expander ensure (place &body newval &environment env)
+(define-setf-expander ensure (place &rest newval &environment env)
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     (values vars
@@ -571,7 +575,7 @@ value like `gethash'."
                    (progn ,@newval)
                  ,setter)))))))
 
-(define-setf-expander ensure2 (place &body newval &environment env)
+(define-setf-expander ensure2 (place &rest newval &environment env)
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     (values vars
@@ -623,6 +627,11 @@ value like `gethash'."
                            `(,hole ,needle)))
                     ,@(rest holes)))))
 
+(defun check-no-underscores (holes)
+  (loop for hole in holes
+        when (find '_ (ensure-list hole))
+          do (error "Arrow macros with underscores cannot be used as patterns: ~a" hole)))
+
 (defmacro ~> (needle &rest holes)
   "Threading macro from Clojure (by way of Racket).
 
@@ -637,12 +646,28 @@ first."
               (lambda (needle hole)
                 (list* (car hole) needle (cdr hole)))))
 
+(defpattern ~> (needle &rest holes)
+  (check-no-underscores holes)
+  (macroexpand-1 `(~> ,needle ,@holes)))
+
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
   (thread-aux '~>> needle holes
               (lambda (needle hole)
                 (append1 hole needle))))
+
+(defpattern ~>> (needle &rest holes)
+  (check-no-underscores holes)
+  (macroexpand-1 `(~>> ,needle ,@holes)))
+
+(defun expand-nest (things)
+  "Helper function for `nest'."
+  (reduce (lambda (outer inner)
+            (let ((outer (ensure-list outer)))
+              `(,@outer ,inner)))
+          things
+          :from-end t))
 
 (defmacro nest (&rest things)
   "Like ~>>, but backward.
@@ -674,11 +699,10 @@ If the outer macro has no arguments, you may omit the parentheses.
         ...)
 
 From UIOP, based on a suggestion by Marco Baringer."
-  (reduce (lambda (outer inner)
-            (let ((outer (ensure-list outer)))
-              `(,@outer ,inner)))
-          things
-          :from-end t))
+  (expand-nest things))
+
+(defpattern nest (&rest things)
+  (expand-nest things))
 
 (defmacro select (keyform &body clauses)
   "Like `case', but with evaluated keys.

@@ -67,3 +67,9 @@
          (set-hash-table '(x y z)))))
   (signals error
     (set-hash-table '(x x y z))))
+
+(test pairhash
+  (is (equalp (pairhash '(1 2 3) '(4 5 6))
+              (dict 'eql 1 4 2 5 3 6)))
+  (signals error
+    (pairhash '(1 2) '(3))))

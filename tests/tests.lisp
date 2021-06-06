@@ -50,3 +50,13 @@
 (defvar-unbound *special*
   "Always-unbound special variable for testing.")
 (makunbound '*special*)
+
+(defmacro with-notinline (syms &body body)
+  "Expand body into two copies, one in which the SYMS
+   are declared notinline and one in which they are not.
+   This is useful for writing tests for functions
+   that also have a compiler macro."
+  `(progn
+     ,@body
+     (locally (declare (notinline ,@syms))
+       ,@body)))

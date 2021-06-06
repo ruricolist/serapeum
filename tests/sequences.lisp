@@ -69,8 +69,15 @@
                     :key (lambda (x)
                            (mod x 3)))
             '((0 3 6 9) (1 4 7) (2 5 8))))
+  (is (seq= (assort (range 10)
+                    :key (lambda (x)
+                           (mod x 3))
+                    :hash t)
+            '((0 3 6 9) (1 4 7) (2 5 8))))
 
   (is (equal (assort "How Now Brown Cow" :key #'upper-case-p)
+             '("HNBC" "ow ow rown ow")))
+  (is (equal (assort "How Now Brown Cow" :key #'upper-case-p :hash t)
              '("HNBC" "ow ow rown ow"))))
 
 (test assort-partial-order
@@ -78,17 +85,42 @@
              '((1 1) (2 2 1 2)))))
 
 (test assort-simple-vector
-      (finishes (assort (coerce #(1 2 3) 'simple-vector))))
+  (finishes (assort (coerce #(1 2 3) 'simple-vector)))
+  (finishes (assort (coerce #(1 2 3) 'simple-vector)) :hash t))
 
 (test runs
   (is (equal '((1 2) (3 4 5 6 11 12 13))
-             (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3)))))
+             (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
+  (is (equal '((1 2))
+             (runs '(1 2 3 4 5 6 11 12 13)
+                   :key (rcurry #'< 3)
+                   :count 1))))
 
 (test runs-compare-first
   (is (seq= (runs #(10 2 3 10 4 5) :test #'>)
             (runs '(10 2 3 10 4 5) :test #'>)))
+  (is (seq= (runs #(10 2 3 10 4 5) :test #'> :count 0)
+            (runs '(10 2 3 10 4 5) :test #'> :count 0)))
+  (is (seq= (runs #(10 2 3 10 4 5) :test #'> :count 1)
+            (runs '(10 2 3 10 4 5) :test #'> :count 1)))
   (is (seq= (runs #(1 2 3 1 2 3) :test #'<)
-            (runs '(1 2 3 1 2 3) :test #'<))))
+            (runs '(1 2 3 1 2 3) :test #'<)))
+  (is (seq= (runs #(1 2 3 1 2 3) :test #'< :count 0)
+            (runs '(1 2 3 1 2 3) :test #'< :count 0)))
+  (is (seq= (runs #(1 2 3 1 2 3) :test #'< :count 1)
+            (runs '(1 2 3 1 2 3) :test #'< :count 1))))
+
+(test runs-count
+  (is (null (runs '() :count 0)))
+  (is (emptyp (runs #() :count 0)))
+  (is (equal '((head) (tail tail))
+             (runs '(head tail tail head head tail) :count 2)))
+  (for-all ((i (lambda () (random 100)))
+            (j (lambda () (random 10))))
+    (let* ((ns (shuffle (range i)))
+           (ns-list (coerce ns 'list)))
+      (is (>= j (length (runs ns :test #'< :count j))))
+      (is (>= j (length (runs ns-list :test #'< :count j)))))))
 
 (test batches
   (is (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
@@ -284,10 +316,16 @@
   (is (equal "fo" (take 2 "foo")))
   (is (equal "foo" (take -5 "foo"))))
 
+(test take-while
+  (is (equal "" (take-while #'whitespacep ""))))
+
 (test drop
   (is (equal "" (drop -3 "foo")))
   (is (equal "" (drop -4 "foo")))
   (is (equal "f" (drop -2 "foo"))))
+
+(test drop-while
+  (is (equal "" (drop-while #'whitespacep ""))))
 
 (test drop-prefix
   (let ((seq "x"))
@@ -301,6 +339,29 @@
   (is (equal " world" (drop-prefix #(#\h #\e #\l #\l #\o) "hello world")))
   (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
   (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3)))))
+
+(test ensure-prefix
+  (is (equal "x" (ensure-prefix "x" "")))
+  (is (equal "x" (ensure-prefix "x" "x")))
+  (is (equal "xy" (ensure-prefix "x" "y"))))
+
+(test drop-suffix
+  (let ((seq "x"))
+    (is (eql seq (drop-suffix ":" seq)))
+    (is (eql seq (drop-suffix '(#\:) seq)))
+    (is (eql seq (drop-suffix #(#\:) seq)))
+    (is (eql seq (drop-suffix "" seq)))
+    (is (eql seq (drop-suffix nil seq))))
+  (is (equal "hello " (drop-suffix "world" "hello ")))
+  (is (equal "hello " (drop-suffix '(#\w #\o #\r #\l #\d) "hello world")))
+  (is (equal "hello " (drop-suffix #(#\w #\o #\r #\l #\d) "hello world")))
+  (is (equalp #(0 1 2) (drop-suffix #(3) #(0 1 2 3))))
+  (is (equalp #(0 1 2) (drop-suffix '(3) #(0 1 2 3)))))
+
+(test ensure-suffix
+  (is (equal "x" (ensure-suffix "" "x")))
+  (is (equal "x" (ensure-suffix "x" "x")))
+  (is (equal "yx" (ensure-suffix "y" "x"))))
 
 (test seq=
   (is (seq= '() ""))
@@ -359,3 +420,34 @@
         (toposort constraints :test #'eql)))
     (signals inconsistent-graph
       (toposort inconsistent-constraints :test #'equal))))
+
+(test same
+  ;; See #88.
+  (is-true (same #'length '((1 2 3) (a b c) (foo bar baz))))
+  (is-true (same (distinct) '(1 2 3) :test (op (and _ _))))
+  (is-false (same (distinct) '(1 1) :test (op (and _ _))))
+  (is-true
+   (same (juxt #'first #'second #'third)
+         (make-list 3 :initial-element '(1 2 3))
+         :test #'equal))
+  (is-false (same #'numberp '(a 3 4 5)))
+  (is-true (same #'numberp '(3 4 5 6)))
+  (is-false (same #'numberp '(3 4 5 a)))
+  (is-true (same #'numberp nil))
+  (signals error
+    (same #'numberp t))
+  (is-true (same #'null nil))
+  (is-true (same #'symbolp nil))
+  (is-true (same #'numberp '(1)))
+  (is-true (same #'symbolp '(a)))
+  ;; Exercise: This is correct, but why?
+  (is-true (same #'numberp '(a)))
+  ;; Same exercise.
+  (is-true (same #'oddp '(2 4 6 8 10)))
+  (is-false (same #'oddp '(2 4 6 8 9 10)))
+  (is-true (same #'null '(nil nil nil nil nil)))
+  (is-true (same #'symbolp '(a b c d e f)))
+  (is-false (same #'symbolp `(a b c d e f ,pi)))
+  ;; Works on vectors too.
+  (is-false (same #'numberp #(a 3 4 5)))
+  (is-true (same #'numberp #(3 4 5 6))))

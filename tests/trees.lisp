@@ -33,3 +33,22 @@
       (is (equal
            '(a b c (b . c) (a . (b . c)))
            (sequentialize tree :postorder))))))
+
+(def prune-trees
+  '((((2 1) 5) (3 10) 8)
+    (((4 1) 25) (9 100) 64)
+    ((a (b) (c (skip-me d (e f)))))
+    ((a (b) (c skipped)))
+    (a (b c))
+    ((a (b c)) a (b c) b c)
+    (a (a (b c)) b (b c) c)
+    (a b c (b c) (a (b c)))))
+
+(test prune-flatten
+  (dolist (tree prune-trees)
+    (let ((elt (random-elt (flatten tree))))
+      (is (equal (remove elt (flatten tree))
+                 (flatten (prune elt tree)))))))
+
+(test prune-null
+  (is (equal '(2) (prune-if #'null '(2 (nil))))))

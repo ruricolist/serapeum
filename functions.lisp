@@ -178,13 +178,14 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))"
   (let ((dict (make-hash-table :test test))
-        (key (ensure-function key)))
+        (key-fn (ensure-function key)))
     (lambda (arg)
-      (if (nth-value 1 (gethash arg dict))
-          (values nil nil)
-          (values (setf (gethash arg dict)
-                        (funcall key arg))
-                  t)))))
+      (let ((key (funcall key-fn arg)))
+        (if (nth-value 1 (gethash key dict))
+            (values nil nil)
+            (values (setf (gethash key dict)
+                          arg)
+                    t))))))
 
 (defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.
@@ -473,3 +474,33 @@ used variadically."
   (with-unique-names (args)
     `(lambda (&rest ,args)
        (funcall ,fn ,args))))
+
+(defun mvconstantly (&rest values)
+  "Like `constantly', but returns all of VALUES as multiple values.
+If there are not VALUES, returns nothing."
+  (cond ((null values)
+         (lambda (&rest args)
+           (declare (ignore args))
+           (values)))
+        ((null (cdr values))
+         (constantly (car values)))
+        (t
+         (lambda (&rest args)
+           (declare (ignore args))
+           (values-list values)))))
+
+(define-compiler-macro mvconstantly (&rest values)
+  (cond ((null values)
+         `(lambda (&rest args)
+            (declare (ignore args))
+            (values)))
+        ((null (cdr values))
+         `(constantly ,(car values)))
+        (t
+         #+cmucl `(constantly ,values)
+         #-cmucl
+         (let ((temps (make-gensym-list (length values))))
+           `(let ,(mapcar #'list temps values)
+              (lambda (&rest args)
+                (declare (ignore args))
+                (values ,@temps)))))))

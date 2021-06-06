@@ -58,6 +58,7 @@ TABLE, but empty."
 ;; tables made with `dict' are never going to in size, so we size them
 ;; to their contents.
 
+(-> dict (&rest t) hash-table)
 (defun dict (&rest keys-and-values)
   "A concise constructor for hash tables.
 
@@ -117,6 +118,7 @@ Note that `dict' can also be used for destructuring (with Trivia).
                               collect `(gethash ,k ,it)
                               collect pat)))))
 
+(-> dict* (hash-table &rest t) hash-table)
 (defun dict* (dict &rest args)
   "Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'."
@@ -130,15 +132,18 @@ Like `dict', but the keys and values are implicitly quoted, and the
 hash table is inlined as a literal object."
   (apply #'dict keys-and-values))
 
+(-> href (hash-table &rest t) (values t boolean &optional))
 (defloop href (table &rest keys)
   "A concise way of doing lookups in (potentially nested) hash tables.
 
     (href (dict :x 1) :x) => 1
     (href (dict :x (dict :y 2)) :x :y)  => 2"
-  (cond ((endp keys) table)
+  (cond ((endp keys) (values table t))
         ((single keys) (gethash (car keys) table))
         (t (apply #'href (gethash (car keys) table) (cdr keys)))))
 
+
+(-> href-default (t hash-table &rest t) (values t boolean &optional))
 (defun href-default (default table &rest keys)
   "Like `href', with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned."
@@ -202,6 +207,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
   (define-compiler-macro (setf @) (value table key &rest keys)
     `(setf ,(expand-@ table (cons key keys)) ,value)))
 
+(-> pophash (t hash-table) (values t boolean &optional))
 (defun pophash (key hash-table)
   "Lookup KEY in HASH-TABLE, return its value, and remove it.
 
@@ -213,6 +219,7 @@ From Zetalisp."
     (when present? (remhash key hash-table))
     (values value present?)))
 
+(-> swaphash (t t hash-table) (values t boolean &optional))
 (defun swaphash (key value hash-table)
   "Set KEY and VALUE in HASH-TABLE, returning the old values of KEY.
 
@@ -237,6 +244,7 @@ From Guile."
                     (setf prior (funcall fn k v prior))
                     (return prior))))))))
 
+(-> maphash-return (function hash-table) t)
 (defun maphash-return (fn hash-table)
   "Like MAPHASH, but collect and return the values from FN.
 From Zetalisp."
@@ -475,11 +483,13 @@ Cf. `delete-from-plist' in Alexandria."
     (dolist (key keys)
       (remhash key table))))
 
+(-> pairhash (sequence sequence &optional (or null hash-table))
+  hash-table)
 (defun pairhash (keys data &optional hash-table)
   "Like `pairlis', but for a hash table.
 
-Unlike `pairlis', KEYS and DATA are only required to be sequences, not
-lists.
+Unlike `pairlis', KEYS and DATA are only required to be sequences (of
+the same length), not lists.
 
 By default, the hash table returned uses `eql' as its tests. If you
 want a different test, make the table yourself and pass it as the
@@ -489,6 +499,8 @@ HASH-TABLE argument."
               (make-hash-table :size (max (length keys)
                                           +hash-table-default-size+)))))
     (declare (hash-table hash-table))
+    (unless (length= keys data)
+      (error "Arguments to pairhash must be of the same length."))
     (map nil
          (lambda (key datum)
            (setf (gethash key hash-table) datum))

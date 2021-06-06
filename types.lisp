@@ -18,6 +18,12 @@
   "A whole number. Equivalent to `(integer 0 *)'."
   '(integer 0 *))
 
+(deftype nor (&rest types)
+  `(not (or ,@types)))
+
+(defpattern nor (&rest patterns)
+  `(not (or ,@patterns)))
+
 (deftype tuple (&rest types)
   "A proper list where each element has the same type as the corresponding element in TYPES.
 
@@ -492,13 +498,11 @@ Functions\", by Irène Durand and Robert Strandh."
               (etypecase ,var
                 ,@(loop for type in types
                         collect `(,type
-                                  ;; Overkill?
-                                  (locally (declare (type ,type ,var))
-                                    (let ((,var ,var))
-                                      (declare (type ,type ,var))
-                                      (with-read-only-vars (,var)
-                                        (with-vref ,type
-                                          ,@body))))))))))))
+                                  (let ((,var ,var))
+                                    (declare (type ,type ,var))
+                                    (with-read-only-vars (,var)
+                                      (with-vref ,type
+                                        ,@body)))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)
@@ -547,8 +551,9 @@ START and END are the offset of the original vector's data in the array it is di
                                               (,start 0)
                                               (,end (length ,var)))
            ,inner)
-        `(let ((,start )
-               (,end (length ,var)))
+        `(let* ((,var ,var)
+                (,start 0)
+                (,end (length ,var)))
            ,inner))))
 
 ;;; Are these worth exporting?
@@ -562,10 +567,10 @@ as much as you like -- perhaps even in each iteration of a loop --
 knowing that VAR will only actually be tested once.
 
 Around each specialized body VAR is bound to a symbol macro whose
-value is `t' or `nil'. This ensures VAR cannot be rebound, and allows
-macros to recognize VAR as a constant."
+value is `t' or `nil'. This allows macros to recognize VAR as a
+constant."
   (check-type var symbol)
-  `(if (assure boolean ,var)
+  `(if ,var
        (symbol-macrolet ((,var t))
          ,@body)
        (symbol-macrolet ((,var nil))

@@ -534,7 +534,8 @@ agroup is immutable, the bucket itself is mutable."
   (exemplar t)
   (bucket t))
 
-(defun assort (seq &key (key #'identity) (test #'eql) (start 0) end)
+(defun assort (seq &key (key #'identity) (test #'eql) (start 0) end hash
+                     &aux (orig-test test))
   "Return SEQ assorted by KEY.
 
      (assort (iota 10)
@@ -554,60 +555,86 @@ that it will end up in the leftmost group that it could be a member
 of.
 
     (assort '(1 2 1 2 1 2) :test #'<=)
-    => '((1 1) (2 2 1 2))"
+    => '((1 1) (2 2 1 2))
+
+The default algorithm used by `assort' is, in the worst case, O(n) in
+the number of groups. If HASH is specified, then a hash table is used
+instead. However TEST must be acceptable as the `:test' argument to
+`make-hash-table'."
   (fbind (test)
     (with-item-key-function (key)
-      (let ((groups (queue))
-            last-group)
-        (with-specialized-buckets (seq)
-          (do-subseq (item seq nil :start start :end end)
-            (let ((kitem (key item)))
-              (if-let ((group
-                        (if (match last-group
-                              ((agroup exemplar _)
-                               (test kitem exemplar)))
-                            last-group
-                            (find-if
-                             (lambda (exemplar)
-                               (test kitem exemplar))
-                             (qlist groups)
-                             :key #'agroup-exemplar))))
-                (progn
-                  (setf last-group group)
-                  (bucket-push seq item (agroup-bucket group)))
-                (enq (agroup kitem (make-bucket seq item))
-                     groups))))
-          (mapcar-into (lambda (group)
-                         (bucket-seq seq (agroup-bucket group)))
-                       (qlist groups)))))))
+      (with-boolean (hash)
+        (let ((groups (queue))
+              (table (and hash (make-hash-table :test orig-test)))
+              last-group)
+          (with-specialized-buckets (seq)
+            (do-subseq (item seq nil :start start :end end)
+              (let ((kitem (key item)))
+                (if-let ((group
+                          (if (match last-group
+                                ((agroup exemplar _)
+                                 (test kitem exemplar)))
+                              last-group
+                              (if hash
+                                  (gethash kitem table)
+                                  (find-if
+                                   (lambda (exemplar)
+                                     (test kitem exemplar))
+                                   (qlist groups)
+                                   :key #'agroup-exemplar)))))
+                  (progn
+                    (setf last-group group)
+                    (bucket-push seq item (agroup-bucket group)))
+                  (let ((new-group (agroup kitem (make-bucket seq item))))
+                    (when hash
+                      (setf (gethash kitem table) new-group))
+                    (enq new-group groups)))))
+            (mapcar-into (lambda (group)
+                           (bucket-seq seq (agroup-bucket group)))
+                         (qlist groups))))))))
 
-(defun list-runs (list start end key test)
+(defun list-runs (list start end key test count)
+  (declare ((and fixnum unsigned-byte) count))
+  (when (zerop count)
+    (return-from list-runs nil))
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
     ;; This is a little more complicated than you might expect,
     ;; because we need to keep hold of the first element of each list.
     (let ((runs
-            (reduce
-             (lambda (runs y)
-               (if (null runs)
-                   (list (list y))
-                   (let ((x (caar runs)))
-                     (if (test x y)
-                         (cons (list* x y (cdar runs))
-                               (cdr runs))
-                         (list* (list y)
-                                (cons (caar runs)
-                                      (nreverse (cdar runs)))
-                                (cdr runs))))))
-             list
-             :start start
-             :end end
-             :initial-value nil)))
+            (nlet rec ((runs nil)
+                       (count count)
+                       (list
+                        (nthcdr start
+                                (if end
+                                    (ldiff list (nthcdr (- end start) list))
+                                    list))))
+              (if (endp list) runs
+                  (let ((y (car list)))
+                    (if (null runs)
+                        (rec (list (list y))
+                             count
+                             (cdr list))
+                        (let ((x (caar runs)))
+                          (if (test x y)
+                              (rec (cons (list* x y (cdar runs))
+                                         (cdr runs))
+                                   count
+                                   (rest list))
+                              (if (zerop (1- count))
+                                  runs
+                                  (rec (list* (list y)
+                                              (cons (caar runs)
+                                                    (nreverse (cdar runs)))
+                                              (cdr runs))
+                                       (1- count)
+                                       (rest list)))))))))))
       (nreverse (cons (cons (caar runs)
                             (nreverse (cdar runs)))
                       (cdr runs))))))
 
-(defun runs (seq &key (start 0) end (key #'identity) (test #'eql))
+(defun runs (seq &key (start 0) end (key #'identity) (test #'eql)
+                   (count most-positive-fixnum))
   "Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce'.
 
@@ -618,25 +645,33 @@ The function TEST is called with the first element of the run as its
 first argument.
 
     (runs '(1 2 3 1 2 3) :test #'<)
-    => ((1 2 3) (1 2 3))"
-  (if (emptyp seq)
-      (list seq)
-      (seq-dispatch seq
-        (list-runs seq start end key test)
-        (fbind ((test (key-test key test)))
-          (declare (dynamic-extent #'test))
-          (collecting*
-            (nlet runs ((start start))
-              (let* ((elt (elt seq start))
-                     (pos (position-if-not (partial #'test elt)
-                                           seq
-                                           :start (1+ start)
-                                           :end end)))
-                (if (null pos)
-                    (collect (subseq seq start end))
-                    (progn
-                      (collect (subseq seq start pos))
-                      (runs pos))))))))))
+    => ((1 2 3) (1 2 3))
+
+The COUNT argument limits how many runs are returned.
+
+    (runs '(head tail tail head head tail) :count 2)
+    => '((head) (tail tail))"
+  (declare ((and fixnum unsigned-byte) count))
+  (cond ((zerop count) (list))
+        ((emptyp seq) (list seq))
+        (t (seq-dispatch seq
+             (list-runs seq start end key test count)
+             (fbind ((test (key-test key test)))
+               (declare (dynamic-extent #'test))
+               (collecting*
+                 (nlet runs ((start start)
+                             (count count))
+                   (when (plusp count)
+                     (let* ((elt (elt seq start))
+                            (pos (position-if-not (partial #'test elt)
+                                                  seq
+                                                  :start (1+ start)
+                                                  :end end)))
+                       (if (null pos)
+                           (collect (subseq seq start end))
+                           (progn
+                             (collect (subseq seq start pos))
+                             (runs pos (1- count)))))))))))))
 
 (defun batches (seq n &key (start 0) end even)
   "Return SEQ in batches of N elements.
@@ -1060,7 +1095,9 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (ldiff seq (member-if-not pred seq))
-    (subseq seq 0 (position-if-not pred seq))))
+    (let ((end (position-if-not pred seq)))
+      (if end (subseq seq 0 end)
+          seq))))
 
 (-> drop-while (function sequence) sequence)
 (defsubst drop-while (pred seq)
@@ -1069,7 +1106,9 @@ false when called on the first element."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (member-if-not pred seq)
-    (subseq seq (position-if-not pred seq))))
+    (let ((start (position-if-not pred seq)))
+      (if start (subseq seq start)
+          seq))))
 
 (-> drop-prefix (sequence sequence &key (:test (or symbol function)))
   sequence)
@@ -1078,6 +1117,15 @@ false when called on the first element."
   (cond ((emptyp prefix) seq)
         ((starts-with-subseq prefix seq :test test)
          (drop (length prefix) seq))
+        (t seq)))
+
+(-> drop-suffix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun drop-suffix (suffix seq &key (test #'eql))
+  "If SEQ ends with SUFFIX, remove it."
+  (cond ((emptyp suffix) seq)
+        ((ends-with-subseq suffix seq :test test)
+         (drop (- (length suffix)) seq))
         (t seq)))
 
 (-> ensure-prefix (sequence sequence &key (:test (or symbol function)))
@@ -1089,26 +1137,41 @@ If SEQ already starts with PREFIX, return SEQ."
       seq
       (seq-dispatch seq
         (concatenate 'list prefix seq)
-        (concatenate `(simple-array ,(array-element-type seq))
+        (concatenate `(simple-array ,(array-element-type seq)
+                                    (*))
                      prefix seq)
         (concatenate (type-of seq) prefix seq))))
+
+(-> ensure-suffix (sequence sequence &key (:test (or symbol function)))
+  sequence)
+(defun ensure-suffix (seq suffix &key (test #'eql))
+  "Return a sequence like SEQ, but ending with SUFFIX.
+If SEQ already ends with SUFFIX, return SEQ."
+  (if (ends-with-subseq suffix seq :test test)
+      seq
+      (seq-dispatch seq
+        (concatenate 'list seq suffix)
+        (concatenate `(simple-array ,(array-element-type seq)
+                                    (*))
+                     seq suffix)
+        (concatenate (type-of seq) seq suffix))))
 
 ;;;# `bestn'
 (defun bisect-left (vec item pred &key key)
   "Return the index in VEC to insert ITEM and keep VEC sorted."
-  (declare ((simple-array * (*)) vec))
   (fbind (pred)
     (with-item-key-function (key)
-      (let ((start 0)
-            (end (length vec)))
-        (declare (array-length start end))
-        (let ((kitem (key item)))
-          (loop while (< start end) do
-            (let ((mid (floor (+ start end) 2)))
-              (if (pred (key (svref vec mid)) kitem)
-                  (setf start (1+ mid))
-                  (setf end mid)))
-                finally (return start)))))))
+      (with-vector-dispatch () vec
+        (let ((start 0)
+              (end (length vec)))
+          (declare (array-length start end))
+          (let ((kitem (key item)))
+            (loop while (< start end) do
+              (let ((mid (floor (+ start end) 2)))
+                (if (pred (key (vref vec mid)) kitem)
+                    (setf start (1+ mid))
+                    (setf end mid)))
+                  finally (return start))))))))
 
 (defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.
@@ -1829,3 +1892,14 @@ Repetitions that are not adjacent are left alone.
                              (progn
                                (bucket-push seq elt bucket)
                                (rec (1+ i) new-key)))))))))))))
+
+(defun same (key-fn seq &key (test #'eql) (start 0) end)
+  "Return true if KEY-FN returns the same value for any/all members of LIST."
+  (fbind (key-fn)
+    (with-test-fn (test)
+      (let (init val)
+        (do-subseq (item seq t :start start :end end)
+          (if (null init)
+              (setf val (key-fn item) init t)
+              (unless (test val (key-fn item))
+                (return-from same nil))))))))

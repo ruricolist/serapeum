@@ -497,26 +497,31 @@ angle brackets around it."
          (units (filter #'atom variants))
          (types (append units (mapcar #'first ctors)))
          (super (symbolicate '< union '>)))
-    ;; NB The declarations are not currently used, due to an SBCL bug.
-    `(locally (declare #+sbcl (sb-ext:disable-package-locks %union))
-       (symbol-macrolet ((serapeum.unlocked:%union ,super))
-         (declare #+sbcl (sb-ext:enable-package-locks %union))
-         (eval-when (:compile-toplevel :load-toplevel :execute)
-           (defstruct (,super
-                        (:constructor nil)
-                        (:copier nil)
-                        (:predicate nil)
-                        (:include %read-only-struct))
-             ,@(unsplice docstring)))
-         ,@(loop for type in units
-                 collect `(defunit ,type))
-         ,@(loop for (type . slots) in ctors
-                 collect `(defconstructor ,type ,@slots))
-         (deftype ,union ()
-           ,@(unsplice docstring)
-           '(or ,@types))
-         (declaim-freeze-type ,super)
-         ',union))))
+    ;; CCL (and maybe other lisps) evaluates `(:include)' options at
+    ;; macroexpansion time and does some environment augmenting and checking
+    ;; that fails to account for our `env-super' trick.
+    ;; So define the abstract base struct via a `progn' at the toplevel.
+    `(progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (defstruct (,super
+                      (:constructor nil)
+                      (:copier nil)
+                      (:predicate nil)
+                      (:include %read-only-struct))
+           ,@(unsplice docstring)))
+       ;; NB The declarations are not currently used, due to an SBCL bug.
+       (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
+         (symbol-macrolet ((serapeum.unlocked:%union ,super))
+           (declare #+sbcl (sb-ext:enable-package-locks %union))
+           ,@(loop for type in units
+                collect `(defunit ,type))
+           ,@(loop for (type . slots) in ctors
+                collect `(defconstructor ,type ,@slots))
+           (deftype ,union ()
+             ,@(unsplice docstring)
+             '(or ,@types))
+           (declaim-freeze-type ,super)
+           ',union)))))
 
 (declaim (ftype (function (t t) (values t t))))
 (defun pattern-type (pattern union)

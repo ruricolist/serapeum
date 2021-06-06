@@ -3,16 +3,97 @@
 (def-suite numbers :in serapeum)
 (in-suite numbers)
 
+(test fixnump
+  (with-notinline (fixnump)
+    (is (fixnump 0))
+    (is (fixnump most-negative-fixnum))
+    (is (fixnump most-positive-fixnum))
+    (is (not (fixnump (1- most-negative-fixnum))))
+    (is (not (fixnump (1+ most-positive-fixnum))))))
+
+(test finc
+  (let ((x 0))
+    (is (eql (finc x) 0))
+    (is (eql x 1))
+    (is (eql (finc x 12) 1))
+    (is (eql x 13))))
+
+(test fdec
+  (let ((x 100))
+    (is (eql (fdec x) 100))
+    (is (eql x 99))
+    (is (eql (fdec x 17) 99))
+    (is (eql x 82))))
+
 (test parse-float
-  ;; Clinger 1990.
-  (is-true
-   (= (parse-float "1.448997445238699" :type 'double-float)
-      1.4489974452386990d0)))
+  (with-notinline (parse-float)
+    ;; Clinger 1990.
+    (is-true
+     (= (parse-float "1.448997445238699" :type 'double-float)
+        1.4489974452386990d0))
+    (is-true (eql (parse-float "1" :type 'double-float) 1.0d0))
+    (is-true (eql (parse-float "21" :start 1 :type 'double-float) 1.0d0))
+    (is-true (eql (parse-float "1.0d0") 1.0d0))
+    (is-true (eql (parse-float "1.0D0") 1.0D0))
+    (is-true (eql (parse-float "1.0s0") 1.0s0))
+    (is-true (eql (parse-float "1.0S0") 1.0S0))
+    (is-true (eql (parse-float "1.0e0") 1.0e0))
+    (is-true (eql (parse-float "1.0E0") 1.0E0))
+    (is-true (eql (parse-float "1.0f0") 1.0f0))
+    (is-true (eql (parse-float "1.0F0") 1.0F0))
+    (is-true (eql (parse-float "1.0l0") 1.0l0))
+    (is-true (eql (parse-float "1.0L0") 1.0L0))
+    (is-true (eql (parse-float "1.0d+1") 1.0d1))
+    (is-true (eql (parse-float "20.0d-1") 2.0d0))
+    (is-true (eql (parse-float "2x" :type 'double-float :junk-allowed t)
+                  2.0d0))
+    (signals error (parse-float "2x"))
+    (is-true (eql (parse-float "2.0x" :type 'double-float :junk-allowed t)
+                  2.0d0))
+    (signals error (parse-float "2.0x"))
+    (is-true (eql (parse-float "1.0d0x" :junk-allowed t) 1.0d0))
+    (signals error (parse-float "1.0d0x"))
+    (is-true (eql (parse-float "20.0d-1x" :junk-allowed t) 2.0d0))
+    (is-true (eql (parse-float "" :junk-allowed t :type 'double-float)
+                  0.0d0))
+    (signals error (parse-float ""))
+    (is-true (eql (parse-float "+1.0d0") 1.0d0))
+    (is-true (eql (parse-float "-1.0d0") -1.0d0))
+    (is-true (eql (parse-float "x" :junk-allowed t :type 'double-float)
+                  0.0d0))
+    (signals error (parse-float "x"))
+    ))
+
+(test round-to
+  (with-notinline (round-to)
+    (is (eql 20 (round-to 15 10)))))
 
 (test unbits
-  (is-true
-   (let ((n (random most-positive-fixnum)))
-     (= n (unbits (bits n))))))
+  (let ((r (loop repeat 20 collect (random most-positive-fixnum))))
+    (is-true
+     (equal r (mapcar (lambda (i) (unbits (bits i))) r)))
+    (is-true
+     (equal r (mapcar (lambda (i) (unbits (bits i :big-endian t)
+                                          :big-endian t))
+                      r)))))
+
+(test shrink
+  (with-notinline (shrink)
+    (is (eql (shrink 10 1/2) 5))))
+
+(test grow
+  (with-notinline (grow)
+    (is (eql (grow 17 2) 51))))
+
+(test shrinkf
+  (let ((x 10))
+    (is (eql (shrinkf x 1/2) 5))
+    (is (eql x 5))))
+
+(test growf
+  (let ((x 17))
+    (is (eql (growf x 2) 51))
+    (is (eql x 51))))
 
 (test random-in-range
   (is
@@ -27,8 +108,30 @@
     (is (<= -100 n))
     (is (> 1 n)))
 
+  (for-all ((n (lambda () (random-in-range 1 -100))))
+    (is (<= -100 n))
+    (is (> 1 n)))
+
+  (with-notinline (random-in-range)
+    (for-all ((n (lambda () (random-in-range 1 -100))))
+      (is (<= -100 n))
+      (is (> 1 n))))
+
+  (let ((hi 10))
+    (for-all ((n (lambda () (random-in-range -1000 hi))))
+      (is (<= -1000 n))
+      (is (> hi n))))
+
+  (let ((lo -10)
+        (hi  200))
+    (for-all ((n (lambda () (random-in-range lo hi))))
+      (is (<= lo n))
+      (is (> hi n))))
+
   (signals error
     (eval '(random-in-range 1 1)))
+  (signals error
+    (funcall (compile nil '(lambda () (random-in-range 1 1)))))
 
   (signals error
     (locally (declare (notinline random-in-range))

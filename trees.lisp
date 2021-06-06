@@ -38,7 +38,6 @@ case SUBTREE will be used as the value of the subtree.
 
 TRAVERSE can be one of `:preorder', `:postorder', or `:inorder'. The
 default is `:preorder'."
-  #.+merge-tail-calls+
   (ecase traversal
     (:preorder (map-tree/preorder fun tree tag tagp))
     (:postorder (map-tree/postorder fun tree tag tagp))
@@ -114,7 +113,6 @@ default is `:preorder'."
 
 (defun leaf-walk (fun tree)
   "Call FUN on each leaf of TREE."
-  #.+merge-tail-calls+
   (let ((fun (ensure-function fun)))
     (labels ((leaf-walk (fun tree)
                (declare (function fun))
@@ -122,6 +120,7 @@ default is `:preorder'."
                       (funcall fun tree))
                      (t (leaf-walk fun (car tree))
                         (leaf-walk fun (cdr tree))))))
+      #.+merge-tail-calls+
       (leaf-walk fun tree)))
   (values))
 
@@ -129,12 +128,12 @@ default is `:preorder'."
 (defun leaf-map (fn tree)
   "Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE."
-  #.+merge-tail-calls+
   (let ((fn (ensure-function fn)))
     (flet ((map-fn (x)
              (if (listp x)
                  x
                  (funcall fn x))))
+      #.+merge-tail-calls+
       (declare (dynamic-extent #'map-fn))
       (map-tree #'map-fn tree))))
 
@@ -149,31 +148,41 @@ Return a new tree possibly sharing structure with TREE."
       (walk-tree #'walker tree :traversal traversal))))
 
 (defun prune-if (test tree &key (key #'identity))
-  "Remove any atoms satisfying TEST from TREE."
-  #.+merge-tail-calls+
+  "Remove any atoms satisfying TEST from TREE.
+
+Pruning is defined \"modulo flatten\": you should get the same result
+from pruning, and then flattening, that you would get from flattening,
+and then filtering.
+
+Also note that pruning is not defined for trees containing improper
+lists."
   (ensuring-functions (key test)
-    (labels ((prune (tree acc)
+    (labels ((cons* (car cdr)
+               (if (funcall test (funcall key car))
+                   cdr
+                   (cons car cdr)))
+             (prune (tree acc)
                (cond ((null tree)
                       (nreverse acc))
                      ((consp (car tree))
                       (prune (cdr tree)
-                             (cons (prune (car tree) nil) acc)))
+                             (cons* (prune (car tree) nil) acc)))
                      (t (prune (cdr tree)
-                               (if (funcall test (funcall key (car tree)))
-                                   acc
-                                   (cons (car tree) acc)))))))
+                               (cons* (car tree) acc))))))
+      #.+merge-tail-calls+
       (prune tree nil))))
 
-(defun occurs (leaf tree &key (key #'identity) (test #'eql) (traversal :preorder))
-  "Is LEAF present in TREE?"
+(defun occurs (node tree &key (key #'identity) (test #'eql) (traversal :preorder))
+  "Is NODE present in TREE?"
   (nth-value 1
     (ensuring-functions (test)
-      (flet ((test (x) (funcall test leaf x)))
+      (flet ((test (x) (funcall test node x)))
         (declare (dynamic-extent #'test))
         (occurs-if #'test tree :key key :traversal traversal)))))
 
 (defun prune (leaf tree &key (key #'identity) (test #'eql))
-  "Remove LEAF from TREE wherever it occurs."
+  "Remove LEAF from TREE wherever it occurs.
+See `prune-if' for more information."
   (ensuring-functions (test)
     (flet ((test (x) (funcall test leaf x)))
       (declare (dynamic-extent #'test))

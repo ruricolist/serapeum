@@ -642,7 +642,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L187)
+[View source](definitions.lisp#L186)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -651,14 +651,14 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L202)
+[View source](definitions.lisp#L201)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L212)
+[View source](definitions.lisp#L211)
 
 ## Defining Types
 

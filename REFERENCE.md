@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 432 functions)
+# Function Listing For serapeum (41 files, 433 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -2891,6 +2891,16 @@ If X is a class, it designates itself.
 
 [View source](clos.lisp#L36)
 
+### `(slot-value-safe instance slot-name)`
+
+Like `slot-value`, but doesn't signal errors.
+Returns three values:
+1. The slot's value (or nil),
+2. A boolean that is T if the slot exists and is bound,
+3. A boolean that is T if the slot exists.
+
+[View source](clos.lisp#L48)
+
 ### `(defmethods class (self . slots) &body body)`
 
 Concisely define methods that specialize on the same class.
@@ -2975,7 +2985,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L46)
+[View source](clos.lisp#L64)
 
 ## Hooks
 

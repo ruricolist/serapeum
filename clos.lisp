@@ -41,6 +41,24 @@ If X is a class, it designates itself."
     (symbol (find-class x nil env))
     (t nil)))
 
+(declaim (inline slot-value-safe))
+(declaim (ftype (function (t symbol)
+                          (values t boolean boolean &optional))
+                slot-bound-value))
+(defun slot-value-safe (instance slot-name)
+  "Like `slot-value', but doesn't signal errors.
+Returns three values:
+1. The slot's value (or nil),
+2. A boolean that is T if the slot exists and is bound,
+3. A boolean that is T if the slot exists."
+  (declare (symbol slot-name))
+  (cond ((not (slot-exists-p instance slot-name))
+         (values nil nil nil))
+        ((not (slot-boundp instance slot-name))
+         (values nil nil t))
+        (t (values (slot-value instance slot-name)
+                   t t))))
+
 
 
 (defmacro defmethods (class (self . slots) &body body)

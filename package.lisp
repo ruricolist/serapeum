@@ -306,6 +306,7 @@
    #:find-class-safe
    #:make
    #:defmethods
+   #:slot-value-safe
    ;; MOP.
    #:standard/context
    #:topmost-object-class

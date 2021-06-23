@@ -27,3 +27,24 @@
     (is (eql 'x (clos-example-1 object)))
     (is (eql 'x (clos-example-2 object)))
     (is (eql 'x (clos-example-3 object)))))
+
+(defclass has-no-slots () ())
+
+(defclass has-foo-slot ()
+  ((foo :initarg :foo)))
+
+(test slot-value-safe
+  (is (equal '(nil nil nil)
+             (multiple-value-list
+              (slot-value-safe (make 'has-no-slots) 'foo))))
+  (is (equal '(nil nil t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot) 'foo))))
+  (is (equal '(nil t t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot :foo nil)
+                               'foo))))
+  (is (equal '(:foo t t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot :foo :foo)
+                               'foo)))))

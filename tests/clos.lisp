@@ -1,5 +1,4 @@
 (in-package :serapeum.tests)
-
 (def-suite clos :in serapeum)
 (in-suite clos)
 
@@ -33,6 +32,15 @@
 (defclass has-foo-slot ()
   ((foo :initarg :foo)))
 
+(defclass has-foo-slot/default ()
+  ((foo :initarg :foo)))
+
+(defmethod slot-unbound
+    ((class t)
+     (instance has-foo-slot/default)
+     (slot-name (eql 'foo)))
+  (setf (slot-value instance 'foo) :foo))
+
 (test slot-value-safe
   (is (equal '(nil nil nil)
              (multiple-value-list
@@ -47,4 +55,12 @@
   (is (equal '(:foo t t)
              (multiple-value-list
               (slot-value-safe (make 'has-foo-slot :foo :foo)
+                               'foo))))
+  (is (equal '(:foo t t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot/default :foo :foo)
+                               'foo))))
+  (is (equal '(:foo nil t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot/default)
                                'foo)))))

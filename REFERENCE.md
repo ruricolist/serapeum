@@ -2896,8 +2896,12 @@ If X is a class, it designates itself.
 Like `slot-value`, but doesn't signal errors.
 Returns three values:
 1. The slot's value (or nil),
-2. A boolean that is T if the slot exists and is bound,
+2. A boolean that is T if the slot exists and *was* bound,
 3. A boolean that is T if the slot exists.
+
+Note that this function does call `slot-value`, so if there is a
+method on `slot-unbound` for the class it will be invoked. In this
+case the second value will still be `nil`, however.
 
 [View source](clos.lisp#L48)
 
@@ -2985,7 +2989,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L64)
+[View source](clos.lisp#L71)
 
 ## Hooks
 

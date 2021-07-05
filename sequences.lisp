@@ -387,6 +387,7 @@ number of items to *keep*, not remove.
 
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)"
+  (declare (dynamic-extent pred))
   (if count
       (apply #'filter/counted pred seq args)
       (apply #'remove-if-not pred seq args)))
@@ -397,6 +398,7 @@ number of items to *keep*, not remove.
                                       &key count
                                       &allow-other-keys)
   "In the absence of COUNT, expand directly to `remove-if-not'."
+  (declare (dynamic-extent pred))
   (if (null count)
       `(remove-if-not ,pred ,seq ,@args)
       decline))
@@ -428,6 +430,7 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
      (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
      => '((x 1) (x 3))"
   (declare (ignore from-end key))
+  (declare (dynamic-extent key test))
   (let ((args (remove-from-plist args :test)))
     (if (null count)
         (apply #'remove item seq :test-not test args)
@@ -493,6 +496,7 @@ the sequence; `partition` always returns the “true” elements first.
 
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
+  (declare (dynamic-extent pred key))
   (fbind ((test (compose pred (canonicalize-key key))))
     (let ((pass (make-bucket seq))
           (fail (make-bucket seq)))
@@ -511,6 +515,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
+  (declare (dynamic-extent preds key))
   (with-item-key-function (key)
     (with-specialized-buckets (seq)
       (let ((buckets (loop for nil in preds collect (make-bucket seq)))
@@ -561,6 +566,7 @@ The default algorithm used by `assort' is, in the worst case, O(n) in
 the number of groups. If HASH is specified, then a hash table is used
 instead. However TEST must be acceptable as the `:test' argument to
 `make-hash-table'."
+  (declare (dynamic-extent key test))
   (fbind (test)
     (with-item-key-function (key)
       (with-boolean (hash)
@@ -652,6 +658,7 @@ The COUNT argument limits how many runs are returned.
     (runs '(head tail tail head head tail) :count 2)
     => '((head) (tail tail))"
   (declare ((and fixnum unsigned-byte) count))
+  (declare (dynamic-extent key test))
   (cond ((zerop count) (list))
         ((emptyp seq) (list seq))
         (t (seq-dispatch seq
@@ -732,11 +739,12 @@ size N, with no leftovers."
                                acc)))))))))
 
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
-                                                   &allow-other-keys)
+                    &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
 From Clojure."
+  (declare (dynamic-extent key))
   (let ((total 0)
         ;; Using multiple-value-call lets us specify defaults while
         ;; still ensuring the caller can override them.
@@ -784,6 +792,7 @@ This is sometimes called a \"prefix sum\", \"cumulative sum\", or
 \"inclusive scan\".
 
 From APL."
+  (declare (dynamic-extent fn))
   (fbind (fn)
     (if (= start end)
         (if initial-value-supplied?

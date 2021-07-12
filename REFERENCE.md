@@ -2637,17 +2637,17 @@ Return the queue.
 
 ## Box
 
-### `(box value)`
+### `(unbox box)`
+
+The value in the box X.
+
+[View source](box.lisp#L4)
+
+### `(box unbox)`
 
 Box a value.
 
 [View source](box.lisp#L4)
-
-### `(unbox x)`
-
-The value in the box X.
-
-[View source](box.lisp#L26)
 
 ## Numbers
 

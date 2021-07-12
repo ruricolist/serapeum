@@ -109,7 +109,12 @@
   :description "Test suite for Serapeum."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
-  :depends-on ("serapeum" "fiveam" "local-time")
+  :depends-on ("serapeum"
+               "fiveam"
+               "local-time"
+               (:feature
+                (:or :allegro :ccl :clasp :ecl :lispworks :mezzano :sbcl)
+                "atomics"))
   :perform (test-op (o c) (symbol-call :serapeum.tests :run-tests))
   :pathname "tests/"
   :serial t

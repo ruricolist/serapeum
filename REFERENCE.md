@@ -1053,7 +1053,7 @@ Equivalent to (not (and ...)).
 Like `etypecase-of`, but may, and must, have an `otherwise` clause
 in case X is not of TYPE.
 
-[View source](control-flow.lisp#L136)
+[View source](control-flow.lisp#L151)
 
 ### `(etypecase-of type x &body body)`
 
@@ -1061,13 +1061,13 @@ Like `etypecase` but, at compile time, warn unless each clause in
 BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
 partition of TYPE.
 
-[View source](control-flow.lisp#L149)
+[View source](control-flow.lisp#L164)
 
 ### `(case-of type x &body clauses)`
 
 Like `case` but may, and must, have an `otherwise` clause.
 
-[View source](control-flow.lisp#L161)
+[View source](control-flow.lisp#L176)
 
 ### `(ecase-of type x &body body)`
 
@@ -1075,19 +1075,19 @@ Like `ecase` but, given a TYPE (which should be defined as `(member
 ...)`), warn, at compile time, unless the keys in BODY are all of TYPE
 and, taken together, they form an exhaustive partition of TYPE.
 
-[View source](control-flow.lisp#L173)
+[View source](control-flow.lisp#L188)
 
 ### `(ctypecase-of type keyplace &body body)`
 
 Like `etypecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
 
-[View source](control-flow.lisp#L185)
+[View source](control-flow.lisp#L200)
 
 ### `(ccase-of type keyplace &body body)`
 
 Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
 
-[View source](control-flow.lisp#L190)
+[View source](control-flow.lisp#L205)
 
 ### `(destructuring-ecase-of type expr &body body)`
 
@@ -1099,7 +1099,7 @@ TYPE is a designator for a type, which should be defined as `(member
 symbol at the head of each of the destructuring lists in BODY form an
 exhaustive partition of TYPE, and warns if it is not so.
 
-[View source](control-flow.lisp#L208)
+[View source](control-flow.lisp#L223)
 
 ### `(destructuring-case-of type expr &body body)`
 
@@ -1109,14 +1109,14 @@ Note that the otherwise clauses must also be a list:
 
     ((otherwise &rest args) ...)
 
-[View source](control-flow.lisp#L218)
+[View source](control-flow.lisp#L233)
 
 ### `(destructuring-ccase-of type keyplace &body body)`
 
 Like `destructuring-case-of`, but providing a `store-value` restart
 to collect KEYPLACE and try again.
 
-[View source](control-flow.lisp#L226)
+[View source](control-flow.lisp#L241)
 
 ### `(case-using pred keyform &body clauses)`
 
@@ -1133,13 +1133,13 @@ This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 ...) for the default clause.
 
-[View source](control-flow.lisp#L231)
+[View source](control-flow.lisp#L246)
 
 ### `(ecase-using pred keyform &body clauses)`
 
 Exhaustive variant of `case-using`.
 
-[View source](control-flow.lisp#L265)
+[View source](control-flow.lisp#L280)
 
 ### `(string-case stringform &body clauses)`
 
@@ -1149,7 +1149,7 @@ Note that string matching is always case-sensitive.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L276)
+[View source](control-flow.lisp#L291)
 
 ### `(string-ecase stringform &body clauses)`
 
@@ -1159,7 +1159,7 @@ Note that string matching is always case-sensitive.
 
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L307)
+[View source](control-flow.lisp#L322)
 
 ### `(eif test then &optional (else nil else?))`
 
@@ -1172,21 +1172,21 @@ warn you if you forget a branch.
 
 Short for “exhaustive if”.
 
-[View source](control-flow.lisp#L323)
+[View source](control-flow.lisp#L338)
 
 ### `(eif-let binds &body (then &optional (else nil else?)))`
 
 Like `alexandria:if-let`, but expects two branches.
 Compare `eif`.
 
-[View source](control-flow.lisp#L337)
+[View source](control-flow.lisp#L352)
 
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L354)
+[View source](control-flow.lisp#L369)
 
 ### `(cond-let var &body clauses)`
 
@@ -1198,13 +1198,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L363)
+[View source](control-flow.lisp#L378)
 
 ### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L384)
+[View source](control-flow.lisp#L399)
 
 ### `(cond-every &body clauses)`
 
@@ -1222,7 +1222,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L397)
+[View source](control-flow.lisp#L412)
 
 ### `(bcond &body clauses)`
 
@@ -1249,19 +1249,19 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L430)
+[View source](control-flow.lisp#L445)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L483)
+[View source](control-flow.lisp#L498)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L489)
+[View source](control-flow.lisp#L504)
 
 ### `(comment &body body)`
 
@@ -1273,13 +1273,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L495)
+[View source](control-flow.lisp#L510)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L505)
+[View source](control-flow.lisp#L520)
 
 ### `(nix &rest places)`
 
@@ -1290,7 +1290,7 @@ If there is more than one PLACE, return their old values as multiple values.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L519)
+[View source](control-flow.lisp#L534)
 
 ### `(ensure place &body newval)`
 
@@ -1304,14 +1304,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L531)
+[View source](control-flow.lisp#L546)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L563)
+[View source](control-flow.lisp#L578)
 
 ### `(~> needle &rest holes)`
 
@@ -1325,14 +1325,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L635)
+[View source](control-flow.lisp#L650)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L653)
+[View source](control-flow.lisp#L668)
 
 ### `(nest &rest things)`
 
@@ -1366,7 +1366,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L672)
+[View source](control-flow.lisp#L687)
 
 ### `(select keyform &body clauses)`
 
@@ -1386,7 +1386,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L707)
+[View source](control-flow.lisp#L722)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1396,7 +1396,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L726)
+[View source](control-flow.lisp#L741)
 
 ### `(sort-values pred &rest values)`
 
@@ -1408,7 +1408,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L845)
+[View source](control-flow.lisp#L860)
 
 ### `(eq* &rest xs)`
 
@@ -1426,7 +1426,7 @@ equivalent under `EQ`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L916)
+[View source](control-flow.lisp#L931)
 
 ### `(eql* &rest xs)`
 
@@ -1444,7 +1444,7 @@ equivalent under `EQL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L918)
+[View source](control-flow.lisp#L933)
 
 ### `(equal* &rest xs)`
 
@@ -1462,7 +1462,7 @@ equivalent under `EQUAL`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L920)
+[View source](control-flow.lisp#L935)
 
 ### `(equalp* &rest xs)`
 
@@ -1480,14 +1480,14 @@ equivalent under `EQUALP`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L922)
+[View source](control-flow.lisp#L937)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L932)
+[View source](control-flow.lisp#L947)
 
 ## Threads
 

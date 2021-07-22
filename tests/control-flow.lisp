@@ -56,6 +56,33 @@
         (is (equal :a val))
         (is-true warn)))))
 
+(deftype explodable-type ()
+  '(or x (or y z) (member :x :y)))
+
+(deftype explodable-member-type ()
+  '(member :x :y :z))
+
+(test explode-type
+  (is (type= nil '(member)))
+  ;; A member type with no arguments is impossible.
+  (is (equal '(nil) (serapeum::explode-type '(member) nil)))
+  (is (set-equal
+       (serapeum::explode-type '(member :x :y :z) nil)
+       '((eql :x) (eql :y) (eql :z))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type 'explodable-member-type nil)
+       '((eql :x) (eql :y) (eql :z))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type '(or x (or y z) (member :x :y)) nil)
+       '(x y z (eql :x) (eql :y))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type 'explodable-type nil)
+       '(x y z (eql :x) (eql :y))
+       :test #'equal)))
+
 (test etypecase-of
   (is (= 2
          (eval '(etypecase-of integer 0 ((integer 1) 1) ((integer -1 0) 2)))))

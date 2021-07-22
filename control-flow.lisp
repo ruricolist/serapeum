@@ -49,16 +49,33 @@ From Arc."
         (values nil sure)
         (subtypep type2 type1 env))))
 
-(defun describe-non-exhaustive-match (stream partition type env)
-  (assert (not (same-type? partition type)))
+(defun explode-type (type env)
+  "Extract the individual types from a type defined as a disjunction.
+TYPE could be the actual disjunction, or the name of the type.
+
+If TYPE is not a disjunction, just return TYPE as a list.
+
+Note that `member' types are disjunctions:
+
+    (explode-type (member :x :y :z) nil)
+    => ((eql :x) (:eql y) (eql :z))"
   (labels ((explode-type (type)
              (match type
-               ((list* 'or subtypes) subtypes)
+               ((list* 'or subtypes)
+                (mappend #'explode-type subtypes))
                ((list* 'member subtypes)
-                (loop for subtype in subtypes collect `(eql ,subtype)))))
+                ;; Remember (member) is also the bottom type.
+                (if (null subtypes) (list nil)
+                    (mappend #'explode-type
+                             (loop for subtype in subtypes
+                                   collect `(eql ,subtype)))))
+               (otherwise (list type)))))
+    (explode-type (typexpand type env))))
 
-           (extra-types (partition)
-             (loop for subtype in (explode-type partition)
+(defun describe-non-exhaustive-match (stream partition type env)
+  (assert (not (same-type? partition type)))
+  (labels ((extra-types (partition)
+             (loop for subtype in (explode-type partition env)
                    unless (subtypep subtype type env)
                      collect subtype))
 
@@ -67,11 +84,9 @@ From Arc."
                (format stream "~&There are extra types: ~s" et)))
 
            (missing-types (partition)
-             (multiple-value-bind (exp exp?) (typexpand type env)
-               (and exp?
-                    (set-difference (explode-type exp)
-                                    (explode-type partition)
-                                    :test #'type=))))
+             (remove-if (lambda (type)
+                          (subtypep type partition env))
+                        (explode-type type env)))
 
            (format-missing-types (stream partition)
              (when-let (mt (missing-types partition))

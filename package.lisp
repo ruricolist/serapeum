@@ -411,6 +411,7 @@
    #:longest
    #:ordering
    #:bisect-left
+   #:bisect-right
    #:bestn
    #:nth-best
    #:nth-best!

@@ -451,3 +451,11 @@
   ;; Works on vectors too.
   (is-false (same #'numberp #(a 3 4 5)))
   (is-true (same #'numberp #(3 4 5 6))))
+
+(test bisect-left
+  (is (eql 1 (bisect-left #(1 2 2 3 5) 2 #'<)))
+  (is (eql 1 (bisect-left #(#\A #\Z #\a #\z) #\B #'char<))))
+
+(test bisect-right
+  (is (eql 3 (bisect-right #(1 2 2 3 5) 2 #'<)))
+  (is (eql 2 (bisect-right #(#\A #\Z #\a #\z) #\Z #'char<))))

@@ -1166,21 +1166,39 @@ If SEQ already ends with SUFFIX, return SEQ."
         (concatenate (type-of seq) seq suffix))))
 
 ;;;# `bestn'
-(defun bisect-left (vec item pred &key key)
-  "Return the index in VEC to insert ITEM and keep VEC sorted."
+(defun bisect-left (vec item pred &key key (start 0) (end (length vec)))
+  "Return the index in VEC to insert ITEM and keep VEC sorted.
+
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the left of that existing item."
+  (declare (array-length start end))
   (fbind (pred)
     (with-item-key-function (key)
       (with-vector-dispatch () vec
-        (let ((start 0)
-              (end (length vec)))
-          (declare (array-length start end))
-          (let ((kitem (key item)))
-            (loop while (< start end) do
-              (let ((mid (floor (+ start end) 2)))
-                (if (pred (key (vref vec mid)) kitem)
-                    (setf start (1+ mid))
-                    (setf end mid)))
-                  finally (return start))))))))
+        (let ((kitem (key item)))
+          (loop while (< start end) do
+            (let ((mid (floor (+ start end) 2)))
+              (if (pred (key (vref vec mid)) kitem)
+                  (setf start (1+ mid))
+                  (setf end mid)))
+                finally (return start)))))))
+
+(defun bisect-right (vec item pred &key key (start 0) (end (length vec)))
+  "Return the index in VEC to insert ITEM and keep VEC sorted.
+
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the right of that existing item."
+  (declare (array-length start end))
+  (fbind (pred)
+    (with-item-key-function (key)
+      (with-vector-dispatch () vec
+        (let ((kitem (key item)))
+          (loop while (< start end) do
+            (let ((mid (floor (+ start end) 2)))
+              (if (pred kitem (key (vref vec mid)))
+                  (setf end mid)
+                  (setf start (1+ mid))))
+                finally (return start)))))))
 
 (defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.

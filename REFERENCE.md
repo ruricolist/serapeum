@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 433 functions)
+# Function Listing For serapeum (41 files, 434 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -3759,11 +3759,23 @@ If SEQ already ends with SUFFIX, return SEQ.
 
 [View source](sequences.lisp#L1156)
 
-### `(bisect-left vec item pred &key key)`
+### `(bisect-left vec item pred &key key start end)`
 
 Return the index in VEC to insert ITEM and keep VEC sorted.
 
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the left of that existing item.
+
 [View source](sequences.lisp#L1169)
+
+### `(bisect-right vec item pred &key key start end)`
+
+Return the index in VEC to insert ITEM and keep VEC sorted.
+
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the right of that existing item.
+
+[View source](sequences.lisp#L1186)
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -3776,7 +3788,7 @@ only ever called once per element.
 
 The name is from Arc.
 
-[View source](sequences.lisp#L1185)
+[View source](sequences.lisp#L1203)
 
 ### `(nth-best n seq pred &key key)`
 
@@ -3792,14 +3804,14 @@ Or even
 
 But uses a selection algorithm for better performance than either.
 
-[View source](sequences.lisp#L1233)
+[View source](sequences.lisp#L1251)
 
 ### `(nth-best! n seq pred &key key)`
 
 Destructive version of `nth-best`.
 Note that this function requires that SEQ be a vector.
 
-[View source](sequences.lisp#L1250)
+[View source](sequences.lisp#L1268)
 
 ### `(reshuffle seq &key element-type)`
 
@@ -3815,7 +3827,7 @@ returned is T, if SEQ is not a vector. If SEQ is a vector, then the
 element type of the vector returned is the same as the as the element
 type of SEQ.
 
-[View source](sequences.lisp#L1289)
+[View source](sequences.lisp#L1307)
 
 ### `(sort-new seq pred &key key element-type)`
 
@@ -3828,13 +3840,13 @@ a form that can be sorted efficiently.)
 
 ELEMENT-TYPE is interpreted as for `reshuffle`.
 
-[View source](sequences.lisp#L1311)
+[View source](sequences.lisp#L1329)
 
 ### `(stable-sort-new seq pred &key key element-type)`
 
 Like `sort-new`, but sort as if by `stable-sort` instead of `sort`.
 
-[View source](sequences.lisp#L1331)
+[View source](sequences.lisp#L1349)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -3844,7 +3856,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L1338)
+[View source](sequences.lisp#L1356)
 
 ### `(halves seq &optional split)`
 
@@ -3860,20 +3872,20 @@ If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
 the left.
 
-[View source](sequences.lisp#L1379)
+[View source](sequences.lisp#L1397)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1413)
+[View source](sequences.lisp#L1431)
 
 ### `(dsu-sort-new seq fn &key key stable)`
 
 Like `dsu-sort`, but returning a new vector.
 
-[View source](sequences.lisp#L1420)
+[View source](sequences.lisp#L1438)
 
 ### `(deltas seq &optional fn)`
 
@@ -3893,14 +3905,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1435)
+[View source](sequences.lisp#L1453)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1459)
+[View source](sequences.lisp#L1477)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -3931,14 +3943,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1503)
+[View source](sequences.lisp#L1521)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1563)
+[View source](sequences.lisp#L1581)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -3982,14 +3994,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1593)
+[View source](sequences.lisp#L1611)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1635)
+[View source](sequences.lisp#L1653)
 
 ### `(repeat-sequence seq n)`
 
@@ -4013,7 +4025,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1675)
+[View source](sequences.lisp#L1693)
 
 ### `(seq= &rest xs)`
 
@@ -4022,7 +4034,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1758)
+[View source](sequences.lisp#L1776)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4044,7 +4056,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1822)
+[View source](sequences.lisp#L1840)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4055,13 +4067,13 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1874)
+[View source](sequences.lisp#L1892)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L1905)
+[View source](sequences.lisp#L1923)
 
 ## Strings
 

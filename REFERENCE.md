@@ -2891,7 +2891,7 @@ If X is a class, it designates itself.
 
 [View source](clos.lisp#L36)
 
-### `(slot-value-safe instance slot-name)`
+### `(slot-value-safe instance slot-name &optional default)`
 
 Like `slot-value`, but doesn't signal errors.
 Returns three values:
@@ -2989,7 +2989,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L71)
+[View source](clos.lisp#L75)
 
 ## Hooks
 

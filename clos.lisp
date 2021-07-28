@@ -45,7 +45,7 @@ If X is a class, it designates itself."
 (declaim (ftype (function (t symbol)
                           (values t boolean boolean &optional))
                 slot-bound-value))
-(defun slot-value-safe (instance slot-name)
+(defun slot-value-safe (instance slot-name &optional default)
   "Like `slot-value', but doesn't signal errors.
 Returns three values:
 1. The slot's value (or nil),
@@ -57,14 +57,18 @@ method on `slot-unbound' for the class it will be invoked. In this
 case the second value will still be `nil', however."
   (declare (symbol slot-name))
   (if (not (slot-exists-p instance slot-name))
-      (values nil nil nil)
+      (values default nil nil)
       (let ((boundp (and (slot-boundp instance slot-name) t)))
         (handler-case
             (values (slot-value instance slot-name)
                     boundp
                     t)
           (unbound-slot ()
-            (values nil nil t))))))
+            (values default nil t))))))
+
+(defsetf slot-value-safe (instance slot-name &optional default) (value)
+  (declare (ignore default))
+  `(setf (slot-value ,instance ,slot-name) ,value))
 
 
 

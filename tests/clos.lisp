@@ -29,6 +29,9 @@
 
 (defclass has-no-slots () ())
 
+(defclass has-count-slot ()
+  ((count)))
+
 (defclass has-foo-slot ()
   ((foo :initarg :foo)))
 
@@ -45,9 +48,15 @@
   (is (equal '(nil nil nil)
              (multiple-value-list
               (slot-value-safe (make 'has-no-slots) 'foo))))
+  (is (equal '(0 nil nil)
+             (multiple-value-list
+              (slot-value-safe (make 'has-no-slots) 'foo 0))))
   (is (equal '(nil nil t)
              (multiple-value-list
               (slot-value-safe (make 'has-foo-slot) 'foo))))
+  (is (equal '(0 nil t)
+             (multiple-value-list
+              (slot-value-safe (make 'has-foo-slot) 'foo 0))))
   (is (equal '(nil t t)
              (multiple-value-list
               (slot-value-safe (make 'has-foo-slot :foo nil)
@@ -64,3 +73,8 @@
              (multiple-value-list
               (slot-value-safe (make 'has-foo-slot/default)
                                'foo)))))
+
+(test setf-slot-value-safe
+  (let ((c (make 'has-count-slot)))
+    (incf (slot-value-safe c 'count 0))
+    (is (eql (slot-value c 'count) 1))))

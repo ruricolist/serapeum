@@ -531,7 +531,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
         (i 0))
     (pprint-logical-block (stream nil)
       (pprint-newline :fill stream)
-      (princ "(dict " stream)
+      (format stream "(~s " 'dict)
       (unless (eq (hash-table-test ht) 'equal)
         (princ #\' stream)
         (princ (hash-table-test ht) stream))

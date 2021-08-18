@@ -1202,7 +1202,7 @@ returned is to the right of that existing item."
 
 (defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.
-Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
+Equivalent to (take N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
 With MEMO, use a decorate-sort-undecorate transform to ensure KEY is

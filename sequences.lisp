@@ -738,6 +738,8 @@ size N, with no leftovers."
                          (cons (subseq seq i (min (+ i n) end))
                                acc)))))))))
 
+(-> frequencies (sequence &key (:key function) &allow-other-keys)
+  (values hash-table array-length))
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
                     &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.

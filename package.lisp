@@ -247,6 +247,7 @@
    #:qappend
    #:queue-empty-p
    #:clear-queue
+   #:copy-queue
    ;; Boxes.
    #:box
    #:unbox

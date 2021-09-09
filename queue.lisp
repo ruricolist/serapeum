@@ -7,6 +7,7 @@
 (declaim (inline make-queue queuep))
 
 (defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
+                  (:copier nil)
                   (:predicate queuep))
   "Basic cons queues, with an implementation based on PAIP and the
 original Norvig & Waters paper, and an API mostly borrowed from Arc.
@@ -202,3 +203,8 @@ Return the queue."
       ;; it than to access the queue for each element.
       (qconc queue (copy-list list))
       queue))
+
+(-> copy-queue (queue) (values queue &optional))
+(defun copy-queue (queue)
+  "Copy QUEUE as another queue."
+  (qappend (queue) (qlist queue)))

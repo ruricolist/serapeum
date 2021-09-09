@@ -75,3 +75,12 @@
     (setf (qback q) 3)
     (is (eql 3 (qback q)))
     (is (equal '(1 3) (qlist q)))))
+
+(test copy-queue
+  (let* ((q1 (queue 1 2 3))
+         (q2 (copy-queue q1)))
+    (is (not (eq (qlist q1) (qlist q2))))
+    (enq 4 q1)
+    (enq 2 q2)
+    (is (equal (qlist q1) '(1 2 3 4)))
+    (is (equal (qlist q2) '(1 2 3 2)))))

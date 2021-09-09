@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 434 functions)
+# Function Listing For serapeum (41 files, 435 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -2558,38 +2558,38 @@ Test for a queue.
 
 Build a new queue with INITIAL-CONTENTS.
 
-[View source](queue.lisp#L82)
+[View source](queue.lisp#L83)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
-[View source](queue.lisp#L101)
+[View source](queue.lisp#L102)
 
 ### `(qlen queue)`
 
 The number of items in QUEUE.
 
-[View source](queue.lisp#L109)
+[View source](queue.lisp#L110)
 
 ### `(qlist queue)`
 
 A list of the items in QUEUE.
 Does not cons.
 
-[View source](queue.lisp#L114)
+[View source](queue.lisp#L115)
 
 ### `(enq item queue)`
 
 Insert ITEM at the end of QUEUE.
 
-[View source](queue.lisp#L120)
+[View source](queue.lisp#L121)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
-[View source](queue.lisp#L129)
+[View source](queue.lisp#L130)
 
 ### `(undeq item queue)`
 
@@ -2601,39 +2601,45 @@ queue (like pushing to an ordinary list).
 
 This is called `undeq` because it can be used to undo a `deq`.
 
-[View source](queue.lisp#L141)
+[View source](queue.lisp#L142)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
-[View source](queue.lisp#L156)
+[View source](queue.lisp#L157)
 
 ### `(front queue)`
 
 The first element in QUEUE.
 
-[View source](queue.lisp#L161)
+[View source](queue.lisp#L162)
 
 ### `(qback queue)`
 
 Get the last element of a queue.
 
-[View source](queue.lisp#L173)
+[View source](queue.lisp#L174)
 
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L186)
+[View source](queue.lisp#L187)
 
 ### `(qappend queue list)`
 
 Append the elements of LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L197)
+[View source](queue.lisp#L198)
+
+### `(copy-queue queue)`
+
+Copy QUEUE as another queue.
+
+[View source](queue.lisp#L208)
 
 ## Box
 

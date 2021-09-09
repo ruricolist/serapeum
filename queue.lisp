@@ -169,7 +169,7 @@ This is called `undeq' because it can be used to undo a `deq'."
             value))
   value)
 
-(-> qback (queue) t)
+(-> qback (queue) (values t &optional))
 (defun qback (queue)
   "Get the last element of a queue."
   (unless (queue-empty-p queue)

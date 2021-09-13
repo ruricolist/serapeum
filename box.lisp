@@ -1,11 +1,18 @@
 (in-package #:serapeum)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +atomic-accessors+
+    (and (member :ecl *features*)
+         (ignore-errors
+          (eval `(defstruct (,(gensym) :atomic-accessors))))
+         '(:atomic-accessors))))
+
 (declaim (inline box))                  ;Allow dynamic-extent.
 (defstruct (box (:constructor box (unbox))
                 (:predicate boxp)
                 (:conc-name nil)
                 ;; Required for older ECLs only.
-                #+ecl :atomic-accessors)
+                . #.+atomic-accessors+)
   "A box is just a mutable cell.
 
 You create a box using `box' and get and set its value using the
@@ -36,8 +43,6 @@ recognize boxes using a type or predicate."
 
       (documentation '(setf unbox) 'function)
       "Put VALUE in box X.")
-
-;;; The compiler macros are included for CAS.
 
 (defmethod print-object ((self box) stream)
   (print-unreadable-object (self stream :type t :identity t)

@@ -1,14 +1,17 @@
 (in-package :serapeum)
 
+(-> make ((or class symbol) &rest t &key &allow-other-keys) (values t &optional))
 (defsubst make (class &rest initargs &key &allow-other-keys)
   "Shorthand for `make-instance'.
-Unlike `make-instance', this is not a generic function, so it can do compile-time sanity checking.
+Unlike `make-instance', this is not a generic function, so it can do
+more compile-time argument checking.
 
 Also unlike `make-instance', is defined to always return a single
 value.
 
 After Eulisp."
-  (declare (dynamic-extent initargs))
+  (declare (type (or class symbol) class)
+           (dynamic-extent initargs))
   (values (apply #'make-instance class initargs)))
 
 (define-compiler-macro make (class &rest initargs &key &allow-other-keys)

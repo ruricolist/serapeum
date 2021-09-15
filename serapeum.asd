@@ -63,7 +63,7 @@
                   :depends-on ("types"))
                  (:file "time")
                  (:file "clos"
-                  :depends-on ("binding"))
+                  :depends-on ("binding" "types"))
                  (:file "hooks"
                   :depends-on ("threads"))
                  (:file "fbind"

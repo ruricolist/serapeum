@@ -6,8 +6,8 @@
 Unlike `make-instance', this is not a generic function, so it can do
 more compile-time argument checking.
 
-Also unlike `make-instance', is defined to always return a single
-value.
+Also unlike `make-instance', `make' is defined to always return a
+single value.
 
 After Eulisp."
   (declare (type (or class symbol) class)
@@ -15,9 +15,11 @@ After Eulisp."
   (values (apply #'make-instance class initargs)))
 
 (define-compiler-macro make (class &rest initargs &key &allow-other-keys)
-  (when (constantp class)
-    (unless (typep (eval class) '(or class symbol))
-      (warn "~s cannot designate a class" class)))
+  (multiple-value-bind (class constant?)
+      (eval-if-constant class)
+    (when constant?
+      (unless (typep class '(or class symbol))
+        (warn "~s cannot designate a class" class))))
   `(values (make-instance ,class ,@initargs)))
 
 (defpattern make (class &rest initargs)

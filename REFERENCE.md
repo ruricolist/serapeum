@@ -2868,34 +2868,35 @@ Has a compiler macro.
 ### `(make class &rest initargs &key &allow-other-keys)`
 
 Shorthand for `make-instance`.
-Unlike `make-instance`, this is not a generic function, so it can do compile-time sanity checking.
+Unlike `make-instance`, this is not a generic function, so it can do
+more compile-time argument checking.
 
-Also unlike `make-instance`, is defined to always return a single
-value.
+Also unlike `make-instance`, `make` is defined to always return a
+single value.
 
 After Eulisp.
 
-[View source](clos.lisp#L3)
+[View source](clos.lisp#L4)
 
 ### `(class-name-of x)`
 
 The class name of the class of X.
 
-[View source](clos.lisp#L25)
+[View source](clos.lisp#L30)
 
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L29)
+[View source](clos.lisp#L34)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L36)
+[View source](clos.lisp#L41)
 
 ### `(slot-value-safe instance slot-name &optional default)`
 
@@ -2909,7 +2910,7 @@ Note that this function does call `slot-value`, so if there is a
 method on `slot-unbound` for the class it will be invoked. In this
 case the second value will still be `nil`, however.
 
-[View source](clos.lisp#L48)
+[View source](clos.lisp#L53)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -2995,7 +2996,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L75)
+[View source](clos.lisp#L80)
 
 ## Hooks
 

@@ -258,6 +258,19 @@ forever."
             :not-first-run
               (return (values-list cache))))))))
 
+(defun fuel (level)
+  "Return a function to count 'fuel' consumption down from the initial level.
+
+The function takes one argument and subtracts its value from the
+current fuel level.
+
+The two return values are a boolean indicating whether the available
+fuel has been exceeded followed by the current fuel level (which may
+be negative.)"
+  (lambda (consumption)
+    (let ((remaining (decf level consumption)))
+      (values (>= remaining 0) remaining))))
+
 (defun juxt (&rest fns)
   "Clojure's `juxt'.
 

@@ -177,6 +177,7 @@
    #:once
    #:fnil
    #:mvconstantly
+   #:fuel
    ;; Trees.
    #:reuse-cons
    #:occurs

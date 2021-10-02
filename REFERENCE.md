@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 435 functions)
+# Function Listing For serapeum (41 files, 436 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -1849,6 +1849,19 @@ forever.
 
 [View source](functions.lisp#L243)
 
+### `(fuel level)`
+
+Return a function to count 'fuel' consumption down from the initial level.
+
+The function takes one argument and subtracts its value from the
+current fuel level.
+
+The two return values are a boolean indicating whether the available
+fuel has been exceeded followed by the current fuel level (which may
+be negative.)
+
+[View source](functions.lisp#L261)
+
 ### `(juxt &rest fns)`
 
 Clojure's `juxt`.
@@ -1866,7 +1879,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-[View source](functions.lisp#L261)
+[View source](functions.lisp#L283)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -1891,7 +1904,7 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-[View source](functions.lisp#L291)
+[View source](functions.lisp#L313)
 
 ### `(hook f g)`
 
@@ -1909,7 +1922,7 @@ integer, by asking whether it is equal to its own floor.
 
 AKA Schoenfinkel's S combinator.
 
-[View source](functions.lisp#L324)
+[View source](functions.lisp#L346)
 
 ### `(fork g f h)`
 
@@ -1933,7 +1946,7 @@ you can write a (numerically unstable) `mean` using `fork`.
 
 From J.
 
-[View source](functions.lisp#L341)
+[View source](functions.lisp#L363)
 
 ### `(hook2 f g)`
 
@@ -1949,7 +1962,7 @@ hours.
 
 From J.
 
-[View source](functions.lisp#L366)
+[View source](functions.lisp#L388)
 
 ### `(fork2 g f h)`
 
@@ -1969,7 +1982,7 @@ written as a dyadic fork.
 
 From J.
 
-[View source](functions.lisp#L382)
+[View source](functions.lisp#L404)
 
 ### `(capped-fork g h)`
 
@@ -1979,7 +1992,7 @@ Like a monadic fork, but F is omitted.
 
 Effectively the composition of G and H.
 
-[View source](functions.lisp#L403)
+[View source](functions.lisp#L425)
 
 ### `(capped-fork2 g h)`
 
@@ -1987,7 +2000,7 @@ J's capped fork (dyadic).
 
 Like a dyadic fork, but F is omitted.
 
-[View source](functions.lisp#L412)
+[View source](functions.lisp#L434)
 
 ### `(fnil fn &rest defaults)`
 
@@ -2003,7 +2016,7 @@ This has a compiler macro for reasonable efficiency.
 
 From Clojure.
 
-[View source](functions.lisp#L419)
+[View source](functions.lisp#L441)
 
 ### `(variadic->unary fn)`
 
@@ -2012,7 +2025,7 @@ applies VARIADIC to it.
 
 Practically equivalent to `(curry #'apply VARIADIC arguments...)'.
 
-[View source](functions.lisp#L458)
+[View source](functions.lisp#L480)
 
 ### `(unary->variadic fn)`
 
@@ -2022,14 +2035,14 @@ on them as a list.
 Wraps a function that expects a single argument, a list, so it can be
 used variadically.
 
-[View source](functions.lisp#L468)
+[View source](functions.lisp#L490)
 
 ### `(mvconstantly &rest values)`
 
 Like `constantly`, but returns all of VALUES as multiple values.
 If there are not VALUES, returns nothing.
 
-[View source](functions.lisp#L478)
+[View source](functions.lisp#L500)
 
 ## Trees
 

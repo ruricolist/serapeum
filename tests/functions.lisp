@@ -236,8 +236,18 @@
                              (let* ((x 0) (y 0)
                                     (fn (mvconstantly (incf x) (incf y))))
                                (multiple-value-call #'list
-                                (funcall fn)
-                                (funcall fn))))))))
+                                 (funcall fn)
+                                 (funcall fn))))))))
     (test-body)
     (locally (declare (notinline mvconstantly))
       (test-body))))
+
+(test fuel ()
+  (let ((fuel (fuel 1)))
+    (is (null (funcall fuel 2))))
+  (let ((fuel (fuel 2)))
+    (is (eql t (funcall fuel 2)))
+    (is (null (funcall fuel 1))))
+  (let ((fuel (fuel most-positive-double-float)))
+    (signals error
+      (funcall fuel double-float-epsilon))))

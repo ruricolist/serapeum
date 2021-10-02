@@ -268,7 +268,16 @@ The two return values are a boolean indicating whether the available
 fuel has been exceeded followed by the current fuel level (which may
 be negative.)"
   (lambda (consumption)
-    (let ((remaining (decf level consumption)))
+    (let ((old-level level)
+          (remaining (decf level consumption)))
+      ;; Signal an error in the special case when LEVEL is a large
+      ;; float, CONSUMPTION is a small float, and subtraction does
+      ;; nothing.
+      (when (and (floatp consumption)
+                 (not (zerop consumption))
+                 (= old-level level))
+        (error "Fuel not consumed: level ~a, consumption ~a"
+               level consumption))
       (values (>= remaining 0) remaining))))
 
 (defun juxt (&rest fns)

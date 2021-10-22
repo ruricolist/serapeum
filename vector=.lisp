@@ -47,11 +47,6 @@
   (:method ((test test/equalp)) #'equalp)
   (:method ((test function)) test))
 
-(declaim-freeze-type
- test/rat= test/=
- test/char= test/char-equal
- test/eq test/eql test/equal test/equalp)
-
 (-> test-fn (t) function)
 (defsubst test-fn (test)
   (if (functionp test) test
@@ -95,11 +90,6 @@
 
 (defclass rat-vector (numeric-vector)
   ())
-
-(declaim-freeze-type
- vector-wrapper numeric-vector
- float-vector
- rat-vector)
 
 (defun vector-kind (v)
   (let ((aet (array-element-type v)))

@@ -2885,31 +2885,34 @@ Unlike `make-instance`, this is not a generic function, so it can do
 more compile-time argument checking.
 
 Also unlike `make-instance`, `make` is defined to always return a
-single value.
+single value. It also declares its return type (as `standard-object`,
+or also `structure-object` if the implementation allows). This may
+allow the compiler to warn you if you (e.g.) try to treat the return
+value as a list or number.
 
 After Eulisp.
 
-[View source](clos.lisp#L4)
+[View source](clos.lisp#L17)
 
 ### `(class-name-of x)`
 
 The class name of the class of X.
 
-[View source](clos.lisp#L30)
+[View source](clos.lisp#L47)
 
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L34)
+[View source](clos.lisp#L51)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L41)
+[View source](clos.lisp#L58)
 
 ### `(slot-value-safe instance slot-name &optional default)`
 
@@ -2923,7 +2926,7 @@ Note that this function does call `slot-value`, so if there is a
 method on `slot-unbound` for the class it will be invoked. In this
 case the second value will still be `nil`, however.
 
-[View source](clos.lisp#L53)
+[View source](clos.lisp#L70)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -3009,7 +3012,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L80)
+[View source](clos.lisp#L97)
 
 ## Hooks
 
@@ -4673,7 +4676,7 @@ Returns VECTOR.
 Like `string=` for any vector.
 If no TEST is supplied, elements are tested with `eql`.
 
-[View source](vector=.lisp#L171)
+[View source](vector=.lisp#L161)
 
 ## Internal Definitions
 

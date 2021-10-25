@@ -78,3 +78,12 @@
   (let ((c (make 'has-count-slot)))
     (incf (slot-value-safe c 'count 0))
     (is (eql (slot-value c 'count) 1))))
+
+(defclass a-foo () ())
+
+(defun make-foo () (make 'a-foo))
+
+#+sbcl
+(test reject-implausible-function
+  (signals warning
+    (compile nil '(lambda () (first (make-foo))))))

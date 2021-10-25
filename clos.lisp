@@ -1,26 +1,43 @@
 (in-package :serapeum)
 
-(-> make ((or class symbol) &rest t &key &allow-other-keys) (values t &optional))
+(eval-always
+  (defstruct (struct-to-try-instantiating
+              (:constructor nil)
+              (:copier nil)
+              (:predicate nil))))
+
+(deftype object ()
+  (if (load-time-value
+       (ignore-errors (make-instance 'struct-to-try-instantiating)))
+      '(or structure-object standard-object)
+      'standard-object))
+
+(-> make ((or class symbol) &rest t &key &allow-other-keys)
+  (values object &optional))
 (defsubst make (class &rest initargs &key &allow-other-keys)
   "Shorthand for `make-instance'.
 Unlike `make-instance', this is not a generic function, so it can do
 more compile-time argument checking.
 
 Also unlike `make-instance', `make' is defined to always return a
-single value.
+single value. It also declares its return type (as `standard-object',
+or also `structure-object' if the implementation allows). This may
+allow the compiler to warn you if you (e.g.) try to treat the return
+value as a list or number.
 
 After Eulisp."
   (declare (type (or class symbol) class)
            (dynamic-extent initargs))
   (values (apply #'make-instance class initargs)))
 
-(define-compiler-macro make (class &rest initargs &key &allow-other-keys)
-  (multiple-value-bind (class constant?)
-      (eval-if-constant class)
+(define-compiler-macro make (class &rest initargs &key &allow-other-keys
+                                   &environment env)
+  (multiple-value-bind (real-class constant?)
+      (eval-if-constant class env)
     (when constant?
-      (unless (typep class '(or class symbol))
+      (unless (typep real-class '(or class symbol))
         (warn "~s cannot designate a class" class))))
-  `(values (make-instance ,class ,@initargs)))
+  `(the object (values (make-instance ,class ,@initargs))))
 
 (defpattern make (class &rest initargs)
   (ematch class

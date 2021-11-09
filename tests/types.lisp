@@ -90,3 +90,23 @@
   (let ((x t))
     (with-boolean (x)
       (is-true (expansion-time-constant? x)))))
+
+(test soft-list-of
+  (is-true (typep () '(soft-list-of (not null))))
+  (is-true (typep '(t) '(soft-list-of (not null))))
+  (is-false (typep '(nil) '(soft-list-of (not null))))
+  (is-false (typep '(t nil) '(soft-list-of (not null))))
+  (is-true (typep '(t t) '(soft-list-of (not null))))
+  (is-false (typep '(nil t) '(soft-list-of (not null))))
+  (is-false (typep '(t t t nil) '(soft-list-of (not null))))
+
+  (is-true (typep '(1 2 3) '(soft-list-of number)))
+  ;; !!!
+  (is-true (typep '(1 2 :x) '(soft-list-of number)))
+  (is-false (typep '(1 2 nil) '(soft-list-of number)))
+  (is-false (typep '(1 . 2) '(soft-list-of number)))
+  ;; !!!
+  (is-true (typep
+            (append (make-list 20 :initial-element 1)
+                    '(2 . 3))
+            '(soft-list-of number))))

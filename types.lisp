@@ -634,3 +634,45 @@ Based on an idea by Eric Naggum."
 
 (define-compiler-macro true (x)
   `(not (null ,x)))
+
+(deftype soft-list-of (type)
+  "A soft constraint for the elements of a list.
+
+The elements are restricted only as far as is practical, which is not
+very far, using heuristics which will not be specified here because
+they may improve over time. That said, since the goal of this type is
+to be practically useful, it will avoid any checks that would be O(n)
+in the length of the list."
+  `(or null
+       (cons ,type
+             (and list
+                  ,(if (subtypep 'null type)
+                       '(satisfies proper-list?)
+                       '(satisfies proper-list-without-nil?))))))
+
+(declaim (ftype (function (t) (values boolean &optional))
+                proper-list? proper-list-without-nil?))
+
+(defun proper-list? (x &optional (cutoff 20))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      (null)
+                      (cons)
+                      (t (return nil)))
+                 finally (return t)))))
+
+(defun proper-list-without-nil? (x &optional (cutoff 20))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      (null)
+                      (cons
+                       (unless (car tail)
+                         (return nil)))
+                      (t (return nil)))
+                 finally (return t)))))

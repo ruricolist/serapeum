@@ -59,6 +59,7 @@
    #:with-vector-dispatch
    #:with-simple-vector-dispatch
    #:true
+   #:soft-list-of
    #:with-item-key-function
    ;; Definitions.
    #:defconst

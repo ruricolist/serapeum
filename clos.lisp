@@ -7,6 +7,8 @@
               (:predicate nil))))
 
 (deftype object ()
+  ;; Test (once at load time, not every time the type is expanded) if
+  ;; this Lisp supports make-instance with structure classes.
   (if (load-time-value
        (ignore-errors (make-instance 'struct-to-try-instantiating)))
       '(or structure-object standard-object)

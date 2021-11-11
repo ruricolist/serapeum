@@ -173,7 +173,7 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 Using `values' types is supported, with caveats:
-- The types of `&rest' arguments are not currently checked.
+- The types of `&rest' arguments are enforced using `soft-list-of'.
 - Types defined with `deftype' that expand into values types may not be checked in some Lisps.
 
 From ISLISP."
@@ -209,7 +209,7 @@ From ISLISP."
                    if (lambda-list-keyword? spec)
                      collect spec
                    else collect (gensym))))
-      (multiple-value-bind (required optional rest?)
+      (multiple-value-bind (required optional rest)
           (parse-ordinary-lambda-list lambda-list)
         (let ((optional
                 (loop for (arg default nil) in optional
@@ -218,7 +218,7 @@ From ISLISP."
           `(multiple-value-call
                (lambda (,@required
                    ,@(and optional `(&optional ,@optional))
-                   ,@(and rest? `(&rest ,rest?)))
+                   ,@(and rest `(&rest ,rest)))
                  (multiple-value-call #'values
                    ,@(loop for arg in required
                            for type in types
@@ -229,8 +229,10 @@ From ISLISP."
                              collect `(if ,arg-supplied?
                                           (assure ,type ,arg)
                                           (values))))
-                   ,@(and rest?
-                          `((values-list ,rest?)))))
+                   ,@(and rest
+                          `((values-list
+                             (assure (soft-list-of ,(lastcar types))
+                               ,rest))))))
              ,form))))))
 
 (defmacro assuref (place type-spec)

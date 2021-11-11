@@ -69,7 +69,9 @@
   ;; (signals type-error
   ;;   (assure (values integer &rest integer)
   ;;     (values 1 2 3 4 "5")))
-  )
+  (signals type-error
+    (assure (values integer &rest integer)
+      (values 1 2 3 4 nil))))
 
 (test (with-item-key-function :compile-at :run-time)
   (finishes

@@ -188,6 +188,11 @@ But the actual implementation is more efficient.
   (let ((found (apply #'assoc item alist args)))
     (values (cdr found) found)))
 
+(defsubst assocar (item alist &rest args &key &allow-other-keys)
+  "Like (car (assoc ...))"
+  (let ((found (apply #'assoc item alist args)))
+    (values (car found) found)))
+
 (defsubst assocadr (item alist &rest args &key &allow-other-keys)
   "Like `assocdr' for alists of proper lists.
 
@@ -200,6 +205,11 @@ But the actual implementation is more efficient.
   "Like (car (rassoc ...))"
   (let ((found (apply #'rassoc item alist args)))
     (values (car found) found)))
+
+(defsubst rassocdr (item alist &rest args &key &allow-other-keys)
+  "Like (cdr (rassoc ...))"
+  (let ((found (apply #'rassoc item alist args)))
+    (values (cdr found) found)))
 
 (defsubst firstn (n list)
   "The first N elements of LIST, as a fresh list:

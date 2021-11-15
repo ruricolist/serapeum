@@ -335,9 +335,11 @@
    #:memq
    #:delq
    #:append1
+   #:assocar
    #:assocdr
    #:assocadr
    #:rassocar
+   #:rassocdr
    #:firstn
    #:powerset
    #:efface

@@ -71,7 +71,7 @@
     (is (equal (multiple-value-list (assocdr 'a '((b . a) (a . b) (c . d))))
                '(b (a . b))))))
 
-(test assocdr
+(test assocadr
   (with-notinline (assocadr)
     (is (equal (multiple-value-list (assocadr 'a nil))
                '(nil nil)))
@@ -79,6 +79,15 @@
                '(b (a b))))
     (is (equal (multiple-value-list (assocadr 'a '((b a) (a b) (c d))))
                '(b (a b))))))
+
+(test assocar
+  (with-notinline (assocar)
+    (is (equal (multiple-value-list (assocar 'a nil))
+               '(nil nil)))
+    (is (equal (multiple-value-list (assocar 'a '((a . b))))
+               '(a (a . b))))
+    (is (equal (multiple-value-list (assocar 'a '((b . a) (a . b) (c . d))))
+               '(a (a . b))))))
 
 (test rassocar
   (with-notinline (rassocar)
@@ -88,6 +97,15 @@
                '(b (b . a))))
     (is (equal (multiple-value-list (rassocar 'a '((c . b) (b . a) (d . a))))
                '(b (b . a))))))
+
+(test rassocdr
+  (with-notinline (rassocdr)
+    (is (equal (multiple-value-list (rassocdr 'a nil))
+               '(nil nil)))
+    (is (equal (multiple-value-list (rassocdr 'a '((b . a))))
+               '(a (b . a))))
+    (is (equal (multiple-value-list (rassocdr 'a '((c . b) (b . a) (d . a))))
+               '(a (b . a))))))
 
 (test firstn
   (with-notinline (firstn)

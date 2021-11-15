@@ -751,6 +751,9 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing."
     ;; Adapted from split-sequence.
+    (assert (not (or (whitespacep (first-elt token))
+                     (whitespacep (last-elt token))))
+      () "Token must not begin or end with whitespace: ~a" token)
     (let ((len (length string))
           (end end2))
       (declare (array-length len end))

@@ -212,6 +212,12 @@
 
 (test string~=
   (is (string~= "foo" "foo bar"))
+  (signals error
+    (string~= "foo " "foo bar"))
+  (signals error
+    (string~= " foo " "foo bar"))
+  (signals error
+    (string~= " " "foo bar"))
   (is (string~= "foo" "bar foo"))
   (is (string~= "foo" "bar foo baz"))
   (is (not (string~= "foo" "barfoo baz")))

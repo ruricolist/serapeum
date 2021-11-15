@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 436 functions)
+# Function Listing For serapeum (41 files, 438 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -3305,6 +3305,12 @@ Like (cdr (assoc ...))
 
 [View source](lists.lisp#L186)
 
+### `(assocar item alist &rest args &key &allow-other-keys)`
+
+Like (car (assoc ...))
+
+[View source](lists.lisp#L191)
+
 ### `(assocadr item alist &rest args &key &allow-other-keys)`
 
 Like `assocdr` for alists of proper lists.
@@ -3312,13 +3318,19 @@ Like `assocdr` for alists of proper lists.
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
-[View source](lists.lisp#L191)
+[View source](lists.lisp#L196)
 
 ### `(rassocar item alist &rest args &key &allow-other-keys)`
 
 Like (car (rassoc ...))
 
-[View source](lists.lisp#L199)
+[View source](lists.lisp#L204)
+
+### `(rassocdr item alist &rest args &key &allow-other-keys)`
+
+Like (cdr (rassoc ...))
+
+[View source](lists.lisp#L209)
 
 ### `(firstn n list)`
 
@@ -3331,14 +3343,14 @@ The first N elements of LIST, as a fresh list:
 into Common Lisp, unless it was deliberately left out as an exercise
 for Maclisp users.)
 
-[View source](lists.lisp#L204)
+[View source](lists.lisp#L214)
 
 ### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
 
-[View source](lists.lisp#L216)
+[View source](lists.lisp#L226)
 
 ### `(efface item list)`
 
@@ -3346,7 +3358,7 @@ Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
-[View source](lists.lisp#L227)
+[View source](lists.lisp#L237)
 
 ### `(pop-assoc key alist &rest args)`
 
@@ -3354,7 +3366,7 @@ Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
 
-[View source](lists.lisp#L246)
+[View source](lists.lisp#L256)
 
 ### `(mapcar-into fn list)`
 
@@ -3362,25 +3374,25 @@ Like (map-into list fn list).
 
 From PAIP.
 
-[View source](lists.lisp#L262)
+[View source](lists.lisp#L272)
 
 ### `(nthrest n list)`
 
 Alias for `nthcdr`.
 
-[View source](lists.lisp#L271)
+[View source](lists.lisp#L281)
 
 ### `(plist-keys plist)`
 
 Return the keys of a plist.
 
-[View source](lists.lisp#L275)
+[View source](lists.lisp#L285)
 
 ### `(plist-values plist)`
 
 Return the values of a plist.
 
-[View source](lists.lisp#L281)
+[View source](lists.lisp#L291)
 
 ## Sequences
 
@@ -4549,13 +4561,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L778)
+[View source](strings.lisp#L781)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L832)
+[View source](strings.lisp#L835)
 
 ### `(chomp string &optional suffixes)`
 
@@ -4567,13 +4579,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L841)
+[View source](strings.lisp#L844)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L870)
+[View source](strings.lisp#L873)
 
 ### `(string+ &rest args)`
 
@@ -4587,7 +4599,7 @@ Roughly equivalent to
 But with a compiler macro that can sometimes result in more efficient
 code.
 
-[View source](strings.lisp#L889)
+[View source](strings.lisp#L892)
 
 ## Vectors
 

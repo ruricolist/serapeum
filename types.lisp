@@ -637,6 +637,10 @@ Based on an idea by Eric Naggum."
 (define-compiler-macro true (x)
   `(not (null ,x)))
 
+;;; Should this be exported?
+(declaim (type (integer 0 *) *soft-list-cutoff*))
+(defparameter *soft-list-cutoff* 20)
+
 (deftype soft-list-of (type)
   "A soft constraint for the elements of a list.
 
@@ -648,14 +652,24 @@ in the length of the list."
   `(or null
        (cons ,type
              (and list
-                  ,(if (subtypep 'null type)
-                       '(satisfies proper-list?)
-                       '(satisfies proper-list-without-nil?))))))
+                  ,(cond ((subtypep type 'cons)
+                          `(satisfies proper-alist?))
+                         ((subtypep 'null type)
+                          '(satisfies proper-list?))
+                         (t
+                          '(satisfies proper-list-without-nil?)))))))
 
-(declaim (ftype (function (t) (values boolean &optional))
+(deftype soft-alist-of (key-type value-type)
+  "A soft constraint for the elements of an alist.
+
+Equivalent to `(soft-list-of (cons KEY-TYPE VALUE-TYPE))`."
+  `(soft-list-of (cons ,key-type ,value-type)))
+
+(declaim (ftype (function (t &optional (integer 0 *))
+                          (values boolean &optional))
                 proper-list? proper-list-without-nil?))
 
-(defun proper-list? (x &optional (cutoff 20))
+(defun proper-list? (x &optional (cutoff *soft-list-cutoff*))
   (or (null x)
       (and (consp x)
            (loop for tail on x
@@ -663,10 +677,11 @@ in the length of the list."
                  do (typecase tail
                       (null)
                       (cons)
+                      ;; Improper list.
                       (t (return nil)))
                  finally (return t)))))
 
-(defun proper-list-without-nil? (x &optional (cutoff 20))
+(defun proper-alist? (x &optional (cutoff *soft-list-cutoff*))
   (or (null x)
       (and (consp x)
            (loop for tail on x
@@ -674,7 +689,24 @@ in the length of the list."
                  do (typecase tail
                       (null)
                       (cons
-                       (unless (car tail)
+                       (unless (consp (car tail))
                          (return nil)))
+                      ;; Improper list.
+                      (t (return nil)))
+                 finally (return t)))))
+
+(defun proper-list-without-nil? (x &optional (cutoff *soft-list-cutoff*))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      ;; Done.
+                      (null)
+                      ;; Contains null.
+                      (cons
+                       (when (null (car tail))
+                         (return nil)))
+                      ;; Improper list.
                       (t (return nil)))
                  finally (return t)))))

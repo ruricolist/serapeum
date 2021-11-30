@@ -112,3 +112,11 @@
             (append (make-list 20 :initial-element 1)
                     '(2 . 3))
             '(soft-list-of number))))
+
+(test soft-alist-of
+  (is (typep () '(soft-alist-of string number)))
+  (is (typep '(("x" . 1)) '(soft-alist-of string number)))
+  (is-false (typep '((:x . 1)) '(soft-alist-of string number)))
+  (is-false (typep '(1 . 2) '(soft-alist-of number number)))
+  (is-false (typep '(1) '(soft-alist-of number number)))
+  (is (typep '((x . y) (1 . 2) (3 . 4)) '(soft-alist-of t t))))

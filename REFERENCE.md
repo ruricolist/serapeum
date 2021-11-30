@@ -4501,12 +4501,6 @@ Like `string$=`, but case-insensitive.
 
 [View source](strings.lisp#L705)
 
-### `(string-contains-p substring string &key start1 end1 start2 end2)`
-
-Like `string*=`, but case-insensitive.
-
-[View source](strings.lisp#L725)
-
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
 Is SUBSTRING a substring of STRING?
@@ -4517,6 +4511,12 @@ This is similar, but not identical, to SEARCH.
      (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
+
+[View source](strings.lisp#L725)
+
+### `(string-contains-p substring string &key start1 end1 start2 end2)`
+
+Like `string*=`, but case-insensitive.
 
 [View source](strings.lisp#L725)
 

@@ -1,5 +1,4 @@
 (in-package :serapeum)
-(in-readtable :fare-quasiquote)
 
 ;;; * Functions
 

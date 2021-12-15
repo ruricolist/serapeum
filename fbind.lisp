@@ -1,5 +1,4 @@
 (in-package #:serapeum)
-(in-readtable :fare-quasiquote)
 
 ;;; References:
 ;;; Waddell, Sarkar, and Dybvig, "Fixing Letrec".
@@ -53,12 +52,12 @@ an ftype declaration."
   (let ((decls (partition-declarations `(#',fn) decls env)))
     (dolist (decl decls (values nil nil nil))
       (match decl
-        (`(declare (ftype ,sig ,_))
+        ((list 'declare (list 'ftype sig _))
           (return
             (match sig
-              (`(function ,args ,ret)
+              ((list 'function args ret)
                 (values args ret t))
-              (`(-> ,args ,ret)
+              ((list '-> args ret)
                 (values args ret t)))))))))
 
 (defun build-bind/ftype (fn var decls env)
@@ -113,14 +112,14 @@ analyze it into an environment, declarations, and a lambda."
   #.+merge-tail-calls+
   (match form
     ;; Special cases for `complement` and `constantly`.
-    (`(complement ,fn)
+    ((list 'complement fn)
       (with-gensyms (temp)
         (values `((,temp (ensure-function ,fn)))
                 `((function ,temp))
                 `(lambda (&rest args)
                    (declare (dynamic-extent args))
                    (not (apply ,temp args))))))
-    (`(constantly ,x)
+    ((list 'constantly x)
       (with-gensyms (temp)
         (values `((,temp ,x))
                 nil
@@ -129,7 +128,7 @@ analyze it into an environment, declarations, and a lambda."
                    ,temp))))
     ;; NB Disjoin, conjoin, and rcurry don't have compiler macros (why
     ;; not?).
-    (`(,(and fun (or 'conjoin 'disjoin)) ,pred ,@preds)
+    ((list* (and fun (or 'conjoin 'disjoin)) pred preds)
       (let* ((preds (cons pred preds))
              (temps (loop for nil in preds collect (gensym))))
         (values (mapcar (lambda (temp pred)
@@ -142,7 +141,7 @@ analyze it into an environment, declarations, and a lambda."
                        (disjoin 'or))
                     ,@(loop for temp in temps
                             collect `(apply ,temp args)))))))
-    (`(rcurry ,fun ,@args)
+    ((list* 'rcurry fun args)
       (let ((tempfn (string-gensym 'fn))
             (temps (loop for nil in args collect (gensym))))
         (values `((,tempfn (ensure-function ,fun))
@@ -154,15 +153,15 @@ analyze it into an environment, declarations, and a lambda."
                    (declare (dynamic-extent more))
                    (multiple-value-call ,tempfn (values-list more) ,@temps)))))
     ;; TODO Special-case partial. We should be smart enough to see through this.
-    (`(partial ,fn ,@args)
+    ((list* 'partial fn args)
       (let-over-lambda `(curry ,fn ,@args) lexenv))
     ;; A plain lambda.
-    ((or `(lambda ,args ,@body)
-         `(function (lambda ,args ,@body)))
+    ((or (list* 'lambda args body)
+         (list 'function (list* 'lambda args body)))
      (values nil nil `(lambda ,args ,@body)))
-    (`(ensure-function ,fn)
+    ((list 'ensure-function fn)
       (let-over-lambda fn lexenv))
-    (`(locally ,@body)
+    ((cons 'locally body)
       (multiple-value-bind (forms decls)
           (parse-body body)
         (let-over-lambda
@@ -171,7 +170,7 @@ analyze it into an environment, declarations, and a lambda."
             ,@forms)
          lexenv)))
     ;; A literal lambda as the function.
-    (`((lambda ,lambda-list ,@body) ,@arguments)
+    ((list* (list* 'lambda lambda-list body) arguments)
       ;; Just rewrite it as a let, if possible.
       (if (intersection lambda-list lambda-list-keywords)
           (trivia.fail:fail)
@@ -181,15 +180,16 @@ analyze it into an environment, declarations, and a lambda."
            lexenv)))
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
-    (`(let* (,binding) ,@body)
+    ((list* 'let* (list binding) body)
       (let-over-lambda `(let ,binding ,@body) lexenv))
     ;; let-over-lambda.
-    (`(let ,(and bindings (type list)) ,@body)
+    ((list* 'let (and bindings (type list)) body)
       (multiple-value-bind (forms decls)
           (parse-body body)
         (match forms
-          (`(,(or `(lambda ,args ,@body)
-                  `(function (lambda ,args ,@body))))
+          ((list
+             (or (list* 'lambda args body)
+                 (list 'function (list* 'lambda args body))))
             (if (every #'gensym? (mapcar #'ensure-car bindings))
                 ;; If all the bindings are gensyms, don't worry about
                 ;; shadowing or duplicates.
@@ -408,7 +408,7 @@ BODY is needed because we detect unreferenced bindings by looking for
                ;; Note that `analyze-fbinds' has already done the work
                ;; of exposing lambda inside let.
                (match expr
-                 (`(lambda ,@_) t)))
+                 ((cons 'lambda _) t)))
              (simple? (expr)
                ;; Special cases where we can be sure the expressions
                ;; are simple -- that is, that they contain no
@@ -416,15 +416,15 @@ BODY is needed because we detect unreferenced bindings by looking for
                (let ((expr (expand-macro expr)))
                  (match expr
                    ((and _ (type symbol)) t)
-                   (`(quote ,_) t)
-                   (`(function ,_) t)
-                   (`(if ,@body)
+                   ((list 'quote _) t)
+                   ((list 'function _) t)
+                   ((cons 'if body)
                      (and (simple? (first body))
                           (if (not (second body))
                               t
                               (simple? (second body)))))
                    ;; TODO Locally.
-                   (`(progn ,@body)
+                   ((cons 'progn body)
                      (every #'simple? body))))))
       (loop for binding in fbinds
             for var = (first binding)

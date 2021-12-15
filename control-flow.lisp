@@ -1,5 +1,4 @@
 (in-package :serapeum)
-(in-readtable :fare-quasiquote)
 
 (defmacro eval-always (&body body)
   "Shorthand for
@@ -385,13 +384,13 @@ clause succeeds."
 Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
-    (`((,test) ,@clauses)
+    ((list* (list test) clauses)
       `(if-let1 ,var ,test
          ,var
          (cond-let ,var ,@clauses)))
-    (`((t ,@body) ,@_)
+    ((list* (list* t body) _)
       `(progn ,@body))
-    (`((,test ,@body) ,@clauses)
+    ((list* (list* test body) clauses)
       `(if-let1 ,var ,test
          (progn ,@body)
          (cond-let ,var ,@clauses)))))

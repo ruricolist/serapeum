@@ -5,25 +5,25 @@
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :in-order-to ((test-op (test-op "serapeum/tests")))
-  :depends-on ("alexandria"
+  :depends-on (;; Support for extensible sequences on Lisps that
+               ;; provide it.
+               (:feature :abcl (:require :extensible-sequences))
+               ;; Existing utilities Serapeum builds on.
+               "alexandria"
                "trivia"
-               "trivia.quasiquote"
-               "uiop"
                "split-sequence"
                "string-case"
                "parse-number"
+               ;;; Portability libraries.
                "trivial-garbage"
                "bordeaux-threads"
-               "named-readtables"
-               "fare-quasiquote-extras"
                "parse-declarations-1.0"
                "introspect-environment"
                "trivial-cltl2"
                "global-vars"
                "trivial-file-size"
                "trivial-macroexpand-all"
-               "babel"
-               (:feature :abcl (:require :extensible-sequences)))
+               "babel")
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.

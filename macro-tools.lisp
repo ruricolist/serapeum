@@ -1,15 +1,13 @@
 (in-package :serapeum)
-(in-readtable :fare-quasiquote)
 
 ;;;# Basics
 
-;;; Borrowed from the internals of Alexandria.
-
 (defun extract-function-name (x)
   "If possible, extract the name from X, a function designator."
+  ;;; Borrowed from the internals of Alexandria.
   (match x
-    (`(function ,name) name)
-    (`(quote ,name) name)
+    ((list 'function name) name)
+    ((list 'quote name) name)
     (otherwise nil)))
 
 (defmacro rebinding-functions (bindings &body body)

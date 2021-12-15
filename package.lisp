@@ -8,7 +8,7 @@
 
 (defpackage #:serapeum
   (:use :cl :alexandria :split-sequence :parse-number
-        :named-readtables :tcr.parse-declarations-1.0)
+        :tcr.parse-declarations-1.0)
   (:import-from :introspect-environment
    :compiler-macroexpand :compiler-macroexpand-1
    :constant-form-value

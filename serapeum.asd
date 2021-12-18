@@ -22,8 +22,7 @@
                "trivial-cltl2"
                "global-vars"
                "trivial-file-size"
-               "trivial-macroexpand-all"
-               "babel")
+               "trivial-macroexpand-all")
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.

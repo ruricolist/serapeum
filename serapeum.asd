@@ -26,7 +26,8 @@
   :serial t
   :components ((:file "package")
                ;; The basics: these files can use CL and Alexandria.
-               (:file "macro-tools")    ;Very early.
+               (:file "portability")     ;Anything not worth using a portability layer for.
+               (:file "macro-tools")     ;Very early.
                (:module "level0"
                 :serial nil
                 :pathname ""

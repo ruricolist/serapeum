@@ -116,8 +116,8 @@ can pass the collector around or return it like any other function."
                     (dolist (x xs)
                       (setf (cdr ,tail) (setf ,tail (list x))))
                     (cdr ,head))))
-         ;; This causes problems in CCL.
-         #-ccl (declare (inline ,collector))
+         ;; This causes problems in CCL and ABCL.
+         #-(or ccl abcl) (declare (inline ,collector))
          ,@body
          (the list (cdr ,head))))))
 

@@ -5177,73 +5177,73 @@ Like `define-values`, with implicit export of VALUES.
 
 Like `def`, with implicit export of VAR.
 
-[View source](exporting.lisp#L56)
+[View source](exporting.lisp#L58)
 
 ### `(define-symbol-macro symbol expansion)`
 
 Like `define-symbol-macro`, with implicit export of SYMBOL.
 
-[View source](exporting.lisp#L58)
+[View source](exporting.lisp#L60)
 
 ### `(deftype name lamda-list &body body)`
 
 Like `deftype`, with implicit export of NAME.
 
-[View source](exporting.lisp#L60)
+[View source](exporting.lisp#L62)
 
 ### `(defconst symbol init &optional docstring)`
 
 Like `defconst`, with implicit export of SYMBOL.
 
-[View source](exporting.lisp#L62)
+[View source](exporting.lisp#L64)
 
 ### `(defconstant name value &optional doc)`
 
 Like `defconstant`, with implicit export of NAME.
 
-[View source](exporting.lisp#L64)
+[View source](exporting.lisp#L66)
 
 ### `(defvar var &optional val doc)`
 
 Like `defvar`, with implicit export of VAR.
 
-[View source](exporting.lisp#L66)
+[View source](exporting.lisp#L68)
 
 ### `(defparameter var val &optional doc)`
 
 Like `defparameter`, with implicit export of VAR.
 
-[View source](exporting.lisp#L68)
+[View source](exporting.lisp#L70)
 
 ### `(defun name lambda-list &body body)`
 
 Like `defun`, with implicit export of NAME.
 
-[View source](exporting.lisp#L70)
+[View source](exporting.lisp#L72)
 
 ### `(defalias name &body body)`
 
 Like `defalias`, with implicit export of NAME.
 
-[View source](exporting.lisp#L72)
+[View source](exporting.lisp#L74)
 
 ### `(defmacro name &body body)`
 
 Like `defmacro`, with implicit export of NAME.
 
-[View source](exporting.lisp#L74)
+[View source](exporting.lisp#L76)
 
 ### `(defgeneric name lambda-list &body options)`
 
 Like `defgeneric`, with implicit export of NAME.
 
-[View source](exporting.lisp#L76)
+[View source](exporting.lisp#L78)
 
 ### `(defmethod name &body args)`
 
 Like `defmethod`, with implicit export of NAME.
 
-[View source](exporting.lisp#L78)
+[View source](exporting.lisp#L80)
 
 ## Docs
 

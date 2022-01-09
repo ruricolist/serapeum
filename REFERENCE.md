@@ -1596,26 +1596,7 @@ Return the total.
 
 ### `(ignoring type &body body)`
 
-An improved version of `ignore-errors`.
-
-The behavior is the same: if an error occurs in the body, the form
-returns two values, `nil` and the condition itself.
-
-`ignoring` forces you to specify the kind of error you want to ignore:
-
-    (ignoring parse-error
-      ...)
-
-I call it an improvement because I think `ignore-errors` is too broad:
-by hiding all errors it becomes itself a source of bugs.
-
-Of course you can still ignore all errors, at the cost of one extra
-character:
-
-    (ignoring error
-      ...)
-
-NB `(ignoring t)` is a bad idea.
+DEPRECATED: use `alexandria:ignore-some-conditions` instead.
 
 [View source](conditions.lisp#L3)
 
@@ -1623,7 +1604,7 @@ NB `(ignoring t)` is a bad idea.
 
 When RESTART is active, invoke it with VALUES.
 
-[View source](conditions.lisp#L29)
+[View source](conditions.lisp#L10)
 
 ## Op
 

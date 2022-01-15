@@ -112,6 +112,7 @@
   :depends-on ("serapeum"
                "fiveam"
                "local-time"
+               "agnostic-lizard"
                (:feature
                 (:or :allegro :ccl :clasp :ecl :lispworks :mezzano :sbcl)
                 "atomics"))

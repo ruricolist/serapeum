@@ -85,13 +85,126 @@
         (with-item-key-function (key)
           (key "xyz"))))))
 
-(defmacro expansion-time-constant? (form &environment env)
-  (nth-value 1 (eval-if-constant form env)))
+(defun test-with-boolean-values-actual (x y z)
+  (let ((result 0))
+    (with-boolean (x y z)
+      (boolean-when x
+        (incf result 100))
+      (boolean-unless y
+        (incf result 20))
+      (boolean-if
+       z
+       (incf result 3)
+       (incf result 4)))
+    result))
 
-(test with-boolean
-  (let ((x t))
-    (with-boolean (x)
-      (is-true (expansion-time-constant? x)))))
+(defun test-with-boolean-values-expected (x y z)
+  (let ((result 0))
+    (when x
+      (incf result 100))
+    (unless y
+      (incf result 20))
+    (if z
+        (incf result 3)
+        (incf result 4))
+    result))
+
+(test with-boolean-value
+  (dolist (x '(nil t))
+    (dolist (y '(nil t))
+      (dolist (z '(nil t))
+        (let ((actual (test-with-boolean-values-actual x y z))
+              (expected (test-with-boolean-values-expected x y z)))
+          (is-true (= actual expected)))))))
+
+(defparameter *with-boolean-expansion-before*
+  `(with-boolean (x y z)
+     (boolean-when x
+       (print "X is true"))
+     (boolean-unless y
+       (print "X is false"))
+     (boolean-if
+      z
+      (print "Z is true!")
+      (print "Z is false!"))))
+
+(defparameter *with-boolean-expansion-after*
+  `(locally (declare
+             #+sbcl (sb-ext:disable-package-locks serapeum::%in-branching%
+                                                  serapeum::%all-branches%))
+     (symbol-macrolet ((serapeum::%in-branching% t)
+                       (serapeum::%all-branches% (x y z))
+                       (serapeum::%true-branches% nil))
+       (locally
+           (declare
+            #+sbcl (sb-ext:enable-package-locks serapeum::%in-branching%
+                                                serapeum::%all-branches%))
+         (if x
+             (symbol-macrolet ((serapeum::%true-branches% (x)))
+               (if y
+                   (symbol-macrolet ((serapeum::%true-branches% (y x)))
+                     (if z
+                         (symbol-macrolet ((serapeum::%true-branches% (z y x)))
+                           (progn (print "X is true") (progn)
+                                  (print "Z is true!")))
+                         (progn (print "X is true") (progn)
+                                (print "Z is false!"))))
+                   (if z
+                       (symbol-macrolet ((serapeum::%true-branches% (z x)))
+                         (progn
+                           (print "X is true")
+                           (print "X is false")
+                           (print "Z is true!")))
+                       (progn
+                         (print "X is true")
+                         (print "X is false")
+                         (print "Z is false!")))))
+             (if y
+                 (symbol-macrolet ((serapeum::%true-branches% (y)))
+                   (if z
+                       (symbol-macrolet ((serapeum::%true-branches% (z y)))
+                         (progn (progn) (progn) (print "Z is true!")))
+                       (progn (progn) (progn) (print "Z is false!"))))
+                 (if z
+                     (symbol-macrolet ((serapeum::%true-branches% (z)))
+                       (progn (progn) (print "X is false")
+                              (print "Z is true!")))
+                     (progn (progn) (print "X is false")
+                            (print "Z is false!")))))))))
+
+(test test-with-boolean-expansion
+  (#+sbcl sb-ext:without-package-locks
+   #-sbcl progn
+   (let* ((form *with-boolean-expansion-before*)
+          (expected *with-boolean-expansion-after*)
+          (actual (agnostic-lizard:macroexpand-all form)))
+     (is (equal expected actual)))))
+
+(test test-with-boolean-missing-lexical-environment
+  (let ((x 42))
+    (declare (ignorable x))
+    (flet ((test-1 () (boolean-if x :foo :bar))
+           (test-2 () (boolean-when x :foo))
+           (test-3 () (boolean-unless x :foo))
+           (test (fn)
+             (multiple-value-bind (value error)
+                 (ignore-errors (funcall fn))
+               (is (null value))
+               (is (typep error 'program-error)))))
+      (test #'test-1)
+      (test #'test-2)
+      (test #'test-3))))
+
+(test test-with-boolean-missing-branch
+  (let ((x 42) (y 24))
+    (declare (ignorable x y))
+    (flet ((test ()
+             (with-boolean (x)
+               (boolean-if y 42))))
+      (multiple-value-bind (value error)
+          (ignore-errors (funcall #'test))
+        (is (null value))
+        (is (typep error 'program-error))))))
 
 (test soft-list-of
   (is-true (typep () '(soft-list-of (not null))))

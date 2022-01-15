@@ -11,8 +11,7 @@
         :tcr.parse-declarations-1.0)
   (:import-from :introspect-environment
    :compiler-macroexpand :compiler-macroexpand-1
-   :constant-form-value
-                :typexpand :typexpand-1)
+   :constant-form-value :typexpand :typexpand-1)
   (:import-from :trivia :match :ematch :defpattern)
   (:import-from :trivial-file-size :file-size-in-octets)
   (:import-from :serapeum.sum :sum)
@@ -53,7 +52,8 @@
    #:output-stream
    #:with-type-dispatch
    #:vref
-   #:with-boolean
+   #:*boolean-bypass*
+   #:with-boolean #:boolean-if #:boolean-when #:boolean-unless
    #:with-subtype-dispatch
    #:with-string-dispatch
    #:with-vector-dispatch

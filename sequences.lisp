@@ -218,10 +218,10 @@ If SEQ is a list, this is equivalent to `dolist'."
          ,@body)
        (flet ((make-bucket (seq &optional (init nil initp))
                 (with-boolean (initp)
-                  (make-array (eif initp 1 0)
+                  (make-array (boolean-if initp 1 0)
                               :element-type (array-element-type seq)
                               :adjustable t
-                              :fill-pointer (eif initp 1 0)
+                              :fill-pointer (boolean-if initp 1 0)
                               :initial-contents (and initp (list init)))))
               (bucket-push (seq item bucket)
                 (declare (ignore seq))
@@ -540,7 +540,7 @@ agroup is immutable, the bucket itself is mutable."
   (bucket t))
 
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end hash
-                     &aux (orig-test test))
+               &aux (orig-test test))
   "Return SEQ assorted by KEY.
 
      (assort (iota 10)
@@ -571,17 +571,19 @@ instead. However TEST must be acceptable as the `:test' argument to
     (with-item-key-function (key)
       (with-boolean (hash)
         (let ((groups (queue))
-              (table (and hash (make-hash-table :test orig-test)))
+              (table (boolean-if hash (make-hash-table :test orig-test) nil))
               last-group)
+          (declare (ignorable table))
           (with-specialized-buckets (seq)
             (do-subseq (item seq nil :start start :end end)
               (let ((kitem (key item)))
                 (if-let ((group
-                          (if (match last-group
-                                ((agroup exemplar _)
-                                 (test kitem exemplar)))
-                              last-group
-                              (if hash
+                             (if (match last-group
+                                   ((agroup exemplar _)
+                                    (test kitem exemplar)))
+                                 last-group
+                                 (boolean-if
+                                  hash
                                   (gethash kitem table)
                                   (find-if
                                    (lambda (exemplar)
@@ -592,7 +594,7 @@ instead. However TEST must be acceptable as the `:test' argument to
                     (setf last-group group)
                     (bucket-push seq item (agroup-bucket group)))
                   (let ((new-group (agroup kitem (make-bucket seq item))))
-                    (when hash
+                    (boolean-when hash
                       (setf (gethash kitem table) new-group))
                     (enq new-group groups)))))
             (mapcar-into (lambda (group)
@@ -711,7 +713,7 @@ size N, with no leftovers."
                                     for (elt . rest) on seq
                                     collect elt
                                     finally (setf seq rest)
-                                            (when even
+                                            (boolean-when even
                                               (unless (= i n)
                                                 (uneven))))))
               (progn
@@ -725,7 +727,7 @@ size N, with no leftovers."
                               for (elt . rest) on seq
                               collect elt
                               finally (setf seq rest)
-                                      (when even
+                                      (boolean-when even
                                         (unless (= i m)
                                           (uneven)))))))))
         (let ((end (or end (length seq))))
@@ -1022,9 +1024,9 @@ holds a new sequence which is not EQ to the old."
                 `(slice ,getter ,s ,e))))))
 
 (defun ordering (seq &key unordered-to-end
-                          from-end
-                          (test 'eql)
-                          (key #'identity))
+                       from-end
+                       (test 'eql)
+                       (key #'identity))
   "Given a sequence, return a function that, when called with `sort',
 restores the original order of the sequence.
 
@@ -1049,9 +1051,10 @@ are left in no particular order."
     (with-item-key-function (key)
       (with-boolean (from-end)
         (do-each (item seq)
-          (if from-end
-              (setf (gethash (key item) table) (incf i))
-              (ensure-gethash (key item) table (incf i)))))
+          (boolean-if
+           from-end
+           (setf (gethash (key item) table) (incf i))
+           (ensure-gethash (key item) table (incf i)))))
 
       (let ((default
               (if unordered-to-end

@@ -558,25 +558,131 @@ START and END are the offset of the original vector's data in the array it is di
                 (,end (length ,var)))
            ,inner))))
 
-;;; Are these worth exporting?
+(defvar *boolean-bypass* nil
+  "Bypasses macroexpand-time branching of WITH-BOOLEAN. The bypass inhibits all
+macroexpand-time branching and instead defers all checks in expanded code to
+runtime in the following manner:
+\
+* WITH-BOOLEAN -> PROGN
+* BOOLEAN-IF -> IF
+* BOOLEAN-WHEN -> WHEN
+* BOOLEAN-UNLESS -> UNLESS")
 
-(defmacro with-boolean ((var) &body body)
-  "Emit BODY twice: once for the case where VAR is true, once for the
-  case where VAR is false.
+(define-symbol-macro %in-branching% nil)
 
-This lets you write an algorithm naturally, testing the value of VAR
-as much as you like -- perhaps even in each iteration of a loop --
-knowing that VAR will only actually be tested once.
+(define-symbol-macro %all-branches% ())
 
-Around each specialized body VAR is bound to a symbol macro whose
-value is `t' or `nil'. This allows macros to recognize VAR as a
-constant."
-  (check-type var symbol)
-  `(if ,var
-       (symbol-macrolet ((,var t))
-         ,@body)
-       (symbol-macrolet ((,var nil))
-         ,@body)))
+(defmacro with-boolean ((&rest branches) &body body
+                        &environment env)
+  "Establishes a lexical environment in which it is possible to use
+macroexpand-time branching. Within the lexical scope of
+WITH-BOOLEAN, it is possible to use BOOLEAN-IF,
+BOOLEAN-WHEN, and BOOLEAN-UNLESS to conditionalize whether
+some forms are included at compilation time.
+\
+The first argument must be a list of symbols which name variables. This macro
+will expand into a series of conditionals"
+  (cond (*boolean-bypass*
+         `(progn ,@body))
+        (t (let ((all-branches (macroexpand-1 '%all-branches% env)))
+             `(locally (declare #+sbcl (sb-ext:disable-package-locks
+                                        %in-branching% %all-branches%))
+                (symbol-macrolet ((%in-branching% t)
+                                  (%all-branches% (,@branches ,@all-branches))
+                                  (%true-branches% ()))
+                  (locally (declare #+sbcl (sb-ext:enable-package-locks
+                                            %in-branching% %all-branches%))
+                    (%with-boolean ,branches ,@body))))))))
+
+(defmacro %with-boolean ((&rest branches) &body body
+                         &environment env)
+  (cond ((not (null branches))
+         (destructuring-bind (branch . other-branches) branches
+           (check-type branch symbol)
+           (let ((true-branches (macroexpand-1 '%true-branches% env)))
+             `(if ,branch
+                  (symbol-macrolet
+                      ((%true-branches% (,branch . ,true-branches)))
+                    (%with-boolean (,@other-branches)
+                      ,@body))
+                  (%with-boolean (,@other-branches)
+                    ,@body)))))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
+
+(defun conditional-error (name)
+  `(simple-program-error
+    "~A must be used inside the lexical scope established by ~
+     WITH-BOOLEAN."
+    ',name))
+
+(defun missing-branch (name)
+  `(simple-program-error
+    "The macroexpand-time branch ~S was not defined in any encloding
+     WITH-BOOLEAN form."
+    ',name))
+
+(defmacro boolean-if (branch then &optional else &environment env)
+  "Chooses between the forms to include based on whether a macroexpand-time
+branch is true. The first argument must be a symbol naming a branch in the
+lexically enclosing WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond ((or *boolean-bypass* (policy> env 'space 'speed))
+         `(if ,branch ,then ,else))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'if))
+        ((member branch (macroexpand-1 '%true-branches% env))
+         then)
+        (t (or else `(progn)))))
+
+(defmacro boolean-when (branch &body body &environment env)
+  "Includes some forms based on whether a macroexpand-time branch is true. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond ((or *boolean-bypass* (policy> env 'space 'speed))
+         `(when ,branch ,@body))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'when))
+        ((not (member branch (macroexpand-1 '%true-branches% env)))
+         `(progn))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
+
+(defmacro boolean-unless (branch &body body &environment env)
+  "Includes some forms based on whether a macroexpand-time branch is false. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond ((or *boolean-bypass* (policy> env 'space 'speed))
+         `(unless ,branch ,@body))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'unless))
+        ((member branch (macroexpand-1 '%true-branches% env))
+         `(progn))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var

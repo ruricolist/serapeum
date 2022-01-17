@@ -576,23 +576,30 @@ runtime in the following manner:
                         &environment env)
   "Establishes a lexical environment in which it is possible to use
 macroexpand-time branching. Within the lexical scope of
-WITH-BOOLEAN, it is possible to use BOOLEAN-IF,
-BOOLEAN-WHEN, and BOOLEAN-UNLESS to conditionalize whether
-some forms are included at compilation time.
+`with-boolean', it is possible to use `boolean-if', `boolean-when',
+and `boolean-unless' to conditionalize whether some forms are included
+at compilation time. (You may also use `:if', `:when', or `:unless'
+for brevity.)
 \
 The first argument must be a list of symbols which name variables. This macro
 will expand into a series of conditionals"
   (cond (*boolean-bypass*
          `(progn ,@body))
         (t (let ((all-branches (macroexpand-1 '%all-branches% env)))
-             `(locally (declare #+sbcl (sb-ext:disable-package-locks
-                                        %in-branching% %all-branches%))
-                (symbol-macrolet ((%in-branching% t)
-                                  (%all-branches% (,@branches ,@all-branches))
-                                  (%true-branches% ()))
-                  (locally (declare #+sbcl (sb-ext:enable-package-locks
-                                            %in-branching% %all-branches%))
-                    (%with-boolean ,branches ,@body))))))))
+             `(macrolet ((:if (cond then else)
+                              (list 'boolean-if cond then else))
+                         (:when (cond &body then)
+                           (list* 'boolean-when cond then))
+                         (:unless (cond &body then)
+                           (list* 'boolean-unless cond then)))
+                (locally (declare #+sbcl (sb-ext:disable-package-locks
+                                          %in-branching% %all-branches%))
+                  (symbol-macrolet ((%in-branching% t)
+                                    (%all-branches% (,@branches ,@all-branches))
+                                    (%true-branches% ()))
+                    (locally (declare #+sbcl (sb-ext:enable-package-locks
+                                              %in-branching% %all-branches%))
+                      (%with-boolean ,branches ,@body)))))))))
 
 (defmacro %with-boolean ((&rest branches) &body body
                          &environment env)

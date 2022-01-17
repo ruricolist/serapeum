@@ -129,48 +129,54 @@
       (print "Z is false!"))))
 
 (defparameter *with-boolean-expansion-after*
-  `(locally (declare
-             #+sbcl (sb-ext:disable-package-locks serapeum::%in-branching%
+  `(macrolet ((:if (cond serapeum::then serapeum::else)
+                   (list 'boolean-if cond serapeum::then serapeum::else))
+              (:when (cond &body serapeum::then)
+                (list* 'boolean-when cond serapeum::then))
+              (:unless (cond &body serapeum::then)
+                (list* 'boolean-unless cond serapeum::then)))
+     (locally (declare
+               #+sbcl (sb-ext:disable-package-locks serapeum::%in-branching%
+                                                    serapeum::%all-branches%))
+       (symbol-macrolet ((serapeum::%in-branching% t)
+                         (serapeum::%all-branches% (x y z))
+                         (serapeum::%true-branches% nil))
+         (locally
+             (declare
+              #+sbcl (sb-ext:enable-package-locks serapeum::%in-branching%
                                                   serapeum::%all-branches%))
-     (symbol-macrolet ((serapeum::%in-branching% t)
-                       (serapeum::%all-branches% (x y z))
-                       (serapeum::%true-branches% nil))
-       (locally
-           (declare
-            #+sbcl (sb-ext:enable-package-locks serapeum::%in-branching%
-                                                serapeum::%all-branches%))
-         (if x
-             (symbol-macrolet ((serapeum::%true-branches% (x)))
-               (if y
-                   (symbol-macrolet ((serapeum::%true-branches% (y x)))
-                     (if z
-                         (symbol-macrolet ((serapeum::%true-branches% (z y x)))
+           (if x
+               (symbol-macrolet ((serapeum::%true-branches% (x)))
+                 (if y
+                     (symbol-macrolet ((serapeum::%true-branches% (y x)))
+                       (if z
+                           (symbol-macrolet ((serapeum::%true-branches% (z y x)))
+                             (progn (print "X is true") (progn)
+                                    (print "Z is true!")))
                            (progn (print "X is true") (progn)
-                                  (print "Z is true!")))
-                         (progn (print "X is true") (progn)
-                                (print "Z is false!"))))
-                   (if z
-                       (symbol-macrolet ((serapeum::%true-branches% (z x)))
+                                  (print "Z is false!"))))
+                     (if z
+                         (symbol-macrolet ((serapeum::%true-branches% (z x)))
+                           (progn
+                             (print "X is true")
+                             (print "X is false")
+                             (print "Z is true!")))
                          (progn
                            (print "X is true")
                            (print "X is false")
-                           (print "Z is true!")))
-                       (progn
-                         (print "X is true")
-                         (print "X is false")
-                         (print "Z is false!")))))
-             (if y
-                 (symbol-macrolet ((serapeum::%true-branches% (y)))
+                           (print "Z is false!")))))
+               (if y
+                   (symbol-macrolet ((serapeum::%true-branches% (y)))
+                     (if z
+                         (symbol-macrolet ((serapeum::%true-branches% (z y)))
+                           (progn (progn) (progn) (print "Z is true!")))
+                         (progn (progn) (progn) (print "Z is false!"))))
                    (if z
-                       (symbol-macrolet ((serapeum::%true-branches% (z y)))
-                         (progn (progn) (progn) (print "Z is true!")))
-                       (progn (progn) (progn) (print "Z is false!"))))
-                 (if z
-                     (symbol-macrolet ((serapeum::%true-branches% (z)))
+                       (symbol-macrolet ((serapeum::%true-branches% (z)))
+                         (progn (progn) (print "X is false")
+                                (print "Z is true!")))
                        (progn (progn) (print "X is false")
-                              (print "Z is true!")))
-                     (progn (progn) (print "X is false")
-                            (print "Z is false!")))))))))
+                              (print "Z is false!"))))))))))
 
 (test test-with-boolean-expansion
   (#+sbcl sb-ext:without-package-locks

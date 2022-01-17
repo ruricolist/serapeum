@@ -518,9 +518,10 @@ START and END are the offset of the original vector's data in the array it is di
 
 Establishes a lexical environment in which it is possible to use
 macroexpand-time branching. Within the lexical scope of
-WITH-BOOLEAN, it is possible to use BOOLEAN-IF,
-BOOLEAN-WHEN, and BOOLEAN-UNLESS to conditionalize whether
-some forms are included at compilation time.
+`with-boolean`, it is possible to use `boolean-if`, `boolean-when`,
+and `boolean-unless` to conditionalize whether some forms are included
+at compilation time. (You may also use `:if`, `:when`, or `:unless`
+for brevity.)
 
 The first argument must be a list of symbols which name variables. This macro
 will expand into a series of conditionals
@@ -536,7 +537,7 @@ lexically enclosing WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L628)
+[View source](types.lisp#L635)
 
 ### `(boolean-when branch &body body)`
 
@@ -547,7 +548,7 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L645)
+[View source](types.lisp#L654)
 
 ### `(boolean-unless branch &body body)`
 
@@ -558,7 +559,7 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L666)
+[View source](types.lisp#L677)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -568,7 +569,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L714)
+[View source](types.lisp#L727)
 
 ### `(true x)`
 
@@ -577,7 +578,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L736)
+[View source](types.lisp#L749)
 
 ## Definitions
 

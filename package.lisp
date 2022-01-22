@@ -93,6 +93,15 @@
    #:lret
    #:lret*
    #:and-let*
+   #:recklessly-continue
+   #:static-binding-flush-error
+   #:static-binding-flush-error-group
+   #:static-binding-flush-error-all-groups-p
+   #:static-binding-active-error
+   #:flush-static-binding-group
+   #:flush-all-static-binding-groups
+   #:static-let
+   #:static-let*
    ;; Control flow.
    #:eval-always
    #:eval-and-compile

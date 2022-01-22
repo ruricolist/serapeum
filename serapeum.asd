@@ -68,6 +68,8 @@
                   :depends-on ("threads"))
                  (:file "fbind"
                   :depends-on ("binding" "control-flow" "op" "iter" "trees"))
+                 (:file "static-let"
+                  :depends-on ("fbind"))
                  (:file "reader"
                   :depends-on ("definitions"))
                  (:file "packages")
@@ -158,6 +160,7 @@
                  (:file "mop")
                  (:file "hooks")
                  (:file "fbind")
+                 (:file "static-let")
                  (:file "lists")
                  (:file "strings")
                  (:file "sequences")

@@ -1,3 +1,5 @@
+;;; This hook implementation is deprecated; consider https://github.com/atlas-engineer/nhooks instead.
+
 (defpackage :serapeum/contrib/hooks
   (:use :common-lisp)
   (:import-from :serapeum

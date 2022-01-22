@@ -476,6 +476,8 @@ The contrib/ directory holds large contributions to Serapeum (ones that add a lo
 
 The package `:serapeum/contrib/hooks` holds an enhanced implementation of hooks (extension points) contributed by the maintainers of the [Nyxt](https://nyxt.atlas.engineer/) web browser. This is fully compatible with the existing Serapeum functions for hooks (`add-hook`, `run-hook`, etc.).
 
+NB This hook implementation is deprecated; consider [nhooks](https://github.com/atlas-engineer/nhooks) instead.
+
 # Function reference
 
 The complete reference is in a [separate file](REFERENCE.md).

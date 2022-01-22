@@ -5300,116 +5300,116 @@ Example usage:
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(fn handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(handler-type handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(description handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(place handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(name handler)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L66)
+[View source](contrib/hooks.lisp#L68)
 
 ### `(handlers hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L159)
+[View source](contrib/hooks.lisp#L161)
 
 ### `(disabled-handlers hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L159)
+[View source](contrib/hooks.lisp#L161)
 
 ### `(combination hook)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L159)
+[View source](contrib/hooks.lisp#L161)
 
 ### `(default-combine-hook hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L193)
+[View source](contrib/hooks.lisp#L195)
 
 ### `(combine-hook-until-failure hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L202)
+[View source](contrib/hooks.lisp#L204)
 
 ### `(combine-hook-until-success hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L217)
+[View source](contrib/hooks.lisp#L219)
 
 ### `(combine-composed-hook hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L228)
+[View source](contrib/hooks.lisp#L230)
 
 ### `(find-handler handler-or-name handlers)`
 
 Return handler matching HANDLER-OR-NAME in HANDLERS sequence.
 
-[View source](contrib/hooks.lisp#L253)
+[View source](contrib/hooks.lisp#L255)
 
 ### `(run-hook-with-args-until-failure hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L303)
+[View source](contrib/hooks.lisp#L305)
 
 ### `(run-hook-with-args-until-success hook &rest args)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L308)
+[View source](contrib/hooks.lisp#L310)
 
 ### `(disable-hook hook &rest handlers)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L329)
+[View source](contrib/hooks.lisp#L331)
 
 ### `(enable-hook hook &rest handlers)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L334)
+[View source](contrib/hooks.lisp#L336)
 
 ### `(define-hook hook-type name &key object handlers disabled-handlers combination)`
 
 Return a globally-accessible hook.
 The hook can be accessed with `find-hook` at (list NAME OBJECT).
 
-[View source](contrib/hooks.lisp#L346)
+[View source](contrib/hooks.lisp#L348)
 
 ### `(find-hook name &optional object)`
 
@@ -5419,7 +5419,7 @@ The following examples return different hooks:
 - (find-hook 'foo-hook 'bar-class)
 - (find-hook 'foo-hook (make-instance 'bar-class))
 
-[View source](contrib/hooks.lisp#L360)
+[View source](contrib/hooks.lisp#L362)
 
 ### `(define-hook-type name type)`
 
@@ -5436,13 +5436,13 @@ The function make-hook-NAME is created.  It is similar to (make-instance
 'hook-NAME ...) except that named functions are also accepted.  Named functions
 will be automatically encapsulated with make-handler-NAME.
 
-[View source](contrib/hooks.lisp#L378)
+[View source](contrib/hooks.lisp#L380)
 
 ### `(make-handler-void fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L431)
+[View source](contrib/hooks.lisp#L433)
 
 ### `(make-hook-void &key handlers combination)`
 
@@ -5450,7 +5450,7 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-VOID.
 
-[View source](contrib/hooks.lisp#L431)
+[View source](contrib/hooks.lisp#L433)
 
 ### `(make-hook-string->string &key handlers combination)`
 
@@ -5458,13 +5458,13 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-STRING->STRING.
 
-[View source](contrib/hooks.lisp#L432)
+[View source](contrib/hooks.lisp#L434)
 
 ### `(make-handler-string->string fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L432)
+[View source](contrib/hooks.lisp#L434)
 
 ### `(make-hook-number->number &key handlers combination)`
 
@@ -5472,13 +5472,13 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-NUMBER->NUMBER.
 
-[View source](contrib/hooks.lisp#L433)
+[View source](contrib/hooks.lisp#L435)
 
 ### `(make-handler-number->number fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L433)
+[View source](contrib/hooks.lisp#L435)
 
 ### `(make-hook-any &key handlers combination)`
 
@@ -5486,11 +5486,11 @@ Make hook and return it.
 HANDLERS can also contain named functions.
 Those will automatically be encapsulated with MAKE-HANDLER-ANY.
 
-[View source](contrib/hooks.lisp#L434)
+[View source](contrib/hooks.lisp#L436)
 
 ### `(make-handler-any fn &key name place value)`
 
 NO DOCS!
 
-[View source](contrib/hooks.lisp#L434)
+[View source](contrib/hooks.lisp#L436)
 

@@ -183,7 +183,7 @@
    #-sbcl progn
    (let* ((form *with-boolean-expansion-before*)
           (expected *with-boolean-expansion-after*)
-          (actual (agnostic-lizard:macroexpand-all form)))
+          (actual (trivial-macroexpand-all:macroexpand-all form)))
      (is (equal expected actual)))))
 
 (test test-with-boolean-missing-lexical-environment

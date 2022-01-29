@@ -173,4 +173,14 @@
   (signals error
     (eval* `(static-let ((x 1))
               (declare (dynamic-extent x))
+              (1+ x))))
+  (signals error
+    (eval* `(static-let* ((x 1)
+                          (y 2))
+              (declare (dynamic-extent y))
               (1+ x)))))
+
+(static-let-test static-let-setf
+  (signals error
+    (eval* `(static-let ((x 1))
+              (setf x 2)))))

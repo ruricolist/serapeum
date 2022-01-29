@@ -37,6 +37,12 @@
   (initializedp nil :type boolean)
   (lock nil :read-only t :type (or null bt:lock)))
 
+(defmacro value-ref (static-binding)
+  `(value ,static-binding))
+
+(define-setf-expander value-ref (name)
+  (error "Cannot mutate a ~s binding: ~a" 'static-let name))
+
 (defun make-static-binding (&key once)
   (%make-static-binding
    :lock (if once (bt:make-lock "Static binding lock") nil)))
@@ -306,7 +312,7 @@ will not be affected by this operation."
 
 (defun make-macrolet-binding (x)
   (with-canonicalized-binding-accessors ()
-    `(,(name x) (value ,(sym x)))))
+    `(,(name x) (value-ref ,(sym x)))))
 
 (defun make-type-declaration (x)
   (with-canonicalized-binding-accessors ()

@@ -7,9 +7,11 @@
                 #:ensure-car
                 #:deletef
                 #:parse-body
-                #:when-let)
+                #:when-let
+                #:mappend)
   (:import-from #:serapeum
-                #:partition-declarations)
+                #:partition-declarations
+                #:keep)
   ;; Imports for implementing.
   (:import-from #:serapeum
                 #:recklessly-continue
@@ -315,6 +317,19 @@ will not be affected by this operation."
     (let ((groups (mapcar #'in bindings)))
       `(list* ,@groups *active-groups*))))
 
+(defun check-no-dynamic-extent (names declarations)
+  "Check that none of NAMES are declared `dynaics' in DECLARATIONS."
+  (let* ((relevant-declarations (partition-declarations names declarations))
+         (dynamics
+           (mappend #'cdr
+                    (keep 'dynamic-extent
+                          (mappend #'cdr relevant-declarations)
+                          :key #'car))))
+    (when-let (intersection (intersection names dynamics))
+      (error "~s bindings cannot be declared dynamic-extent: ~a"
+             'static-let
+             intersection))))
+
 (defun parse-static-let (bindings body)
   (let* ((bindings (mapcar #'canonicalize-binding bindings))
          (let-bindings (mapcar #'make-let-binding bindings))
@@ -323,6 +338,7 @@ will not be affected by this operation."
          (type-declarations (mapcar #'make-type-declaration bindings))
          (active-groups-binding (make-active-groups-binding bindings)))
     (multiple-value-bind (real-body declarations) (parse-body body)
+      (check-no-dynamic-extent (mapcar #'car macrolet-bindings) declarations)
       `(let (,@let-bindings)
          ,@initforms
          (symbol-macrolet (,@macrolet-bindings)
@@ -337,6 +353,7 @@ will not be affected by this operation."
     (0 `(locally ,@body))
     (1 `(static-let ,bindings ,@body))
     (t (multiple-value-bind (body declarations) (parse-body body)
+         (check-no-dynamic-extent (mapcar #'car bindings) declarations)
          (destructuring-bind (binding . other-bindings) bindings
            (let ((binding-name (ensure-car binding)))
              (multiple-value-bind (declarations other-declarations)

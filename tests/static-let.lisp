@@ -168,3 +168,9 @@
       (is (= 110 x))
       (is (= 42 (foo)))
       (is (= 1110 x)))))
+
+(static-let-test static-let-not-dynamic
+  (signals error
+    (eval* `(static-let ((x 1))
+              (declare (dynamic-extent x))
+              (1+ x)))))

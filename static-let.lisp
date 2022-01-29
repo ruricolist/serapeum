@@ -324,7 +324,7 @@ will not be affected by this operation."
       `(list* ,@groups *active-groups*))))
 
 (defun check-no-dynamic-extent (names declarations)
-  "Check that none of NAMES are declared `dynaics' in DECLARATIONS."
+  "Check that none of NAMES are declared `dynamic-extent' in DECLARATIONS."
   (let* ((relevant-declarations (partition-declarations names declarations))
          (dynamics
            (mappend #'cdr

@@ -223,7 +223,7 @@ will not be affected by this operation."
         (gensym (gensym "STATIC-BINDING"))
         (once nil)
         (flush t)
-        (in '*package*))
+        (in *package*))
     (etypecase binding
       ;; VAR
       (variable-name

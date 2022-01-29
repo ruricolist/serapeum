@@ -70,6 +70,20 @@
       (is (= 42 (foo)))
       (is (= 3 x)))))
 
+(static-let-test static-let-default-group
+  (flet ((aux ()
+           (static-let ((x (make-array 10 :initial-element 1)))
+             (map-into x #'1+ x)
+             (aref x 0))))
+    (is (eql 2 (aux)))
+    (is (eql 3 (aux)))
+    (handler-bind ((error #'continue))
+      (flush-static-binding-group (find-package :cl-user)))
+    (is (eql 4 (aux)))
+    (handler-bind ((error #'continue))
+      (flush-static-binding-group (find-package :serapeum.tests)))
+    (is (eql 2 (aux)))))
+
 (static-let-test static-let-error
   (signals error
     (eval* `(static-let ((x 10)

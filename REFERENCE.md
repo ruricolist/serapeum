@@ -1,4 +1,4 @@
-# Function Listing For serapeum (41 files, 441 functions)
+# Function Listing For serapeum (42 files, 450 functions)
 
 - [Macro Tools](#macro-tools)
 - [Types](#types)
@@ -24,6 +24,7 @@
 - [Clos](#clos)
 - [Hooks](#hooks)
 - [Fbind](#fbind)
+- [Static Let](#static-let)
 - [Reader](#reader)
 - [Packages](#packages)
 - [Heap](#heap)
@@ -3111,6 +3112,126 @@ used in successive bindings.
 
 [View source](fbind.lisp#L484)
 
+## Static Let
+
+### `(recklessly-continue &optional condition)`
+
+Invokes the last bound RECKLESSLY-CONTINUE restart. Returns NIL if
+no such restart was bound or if the restart failed to transfer control.
+
+[View source](static-let.lisp#L56)
+
+### `(static-binding-flush-error-group static-binding-flush-error)`
+
+NO DOCS!
+
+[View source](static-let.lisp#L77)
+
+### `(static-binding-flush-error-all-groups-p static-binding-flush-error)`
+
+NO DOCS!
+
+[View source](static-let.lisp#L77)
+
+### `(static-binding-flush-error &optional group)`
+
+NO DOCS!
+
+[View source](static-let.lisp#L88)
+
+### `(static-binding-active-error group &optional all-groups-p)`
+
+NO DOCS!
+
+[View source](static-let.lisp#L121)
+
+### `(flush-static-binding-group group &key are-you-sure-p)`
+
+Flushes all static binding values in binding group `group` and
+restores them to their uninitialized state, forcing any initforms
+for these static bindings to be reevaluated whenever control
+next reaches the respective `static-let`/`static-let*`. Returns the
+number of live bindings flushed that way.
+
+This operation is unsafe to perform while any other threads are
+trying to access these bindings; proper synchronization is left
+to the user. Therefore, a continuable error is signaled unless
+Lisp is running single-threaded or `are-you-sure-p` is true.
+
+Note that a static binding that was created as `:flushablep nil'
+will not be affected by this operation.
+
+[View source](static-let.lisp#L159)
+
+### `(flush-all-static-binding-groups)`
+
+Flush all static binding values in ALL binding groups and
+restore them to their uninitialized state, forcing any initforms
+for these static bindings to be reevaluated whenever control
+next reaches the respective `static-let`/`static-let*`.  Returns the
+number of live bindings flushed that way.
+
+This operation is unsafe to perform while any other threads are
+trying to access these bindings; proper synchronization is left
+to the user. In addition, this operation will clear ALL values,
+including these which were not bound by the programmer. This can
+lead to unintended behavior, hence, a continuable error is signaled
+unless Lisp is running single-threaded.
+
+This function is useful e.g. when deploying Lisp binaries in order
+to not include static binding values in the resulting Lisp image.
+
+Note that a static binding that was created as `:flushablep nil'
+will not be affected by this operation.
+
+[View source](static-let.lisp#L181)
+
+### `(static-let (&rest bindings) &body body)`
+
+Like `let`, except the variables are only initialized once and
+retain their values between different invocations of `body`.
+
+Every static binding is similar to a `let` binding, except it can have
+additional keyword arguments:
+
+- `type` Denotes the type of the variable.
+- `once` If true, then binding initialization will be thread-safe.
+- `flush` If true, this binding will be flushable. Defaults to true.
+- `in` Denotes the static binding group in which the binding will be
+       placed for flushing. Defaults to the value of `*package`.
+
+Static bindings can be flushed via `flush-static-binding-group` and
+`flush-all-static-binding-groups`; the latter is automatically pushed
+into `uiop:*dump-image-hooks*` by Serapeum.
+
+An unflushable static binding will carry its value over into dumped
+Lisp binaries.
+
+[View source](static-let.lisp#L373)
+
+### `(static-let* (&rest bindings) &body body)`
+
+Like `let*`, except the variables are only initialized once and
+retain their values between different invocations of `body`.
+
+Every static binding is similar to a `let` binding, except it can have
+additional keyword arguments:
+
+- `type` Denotes the type of the variable.
+- `once` If true, then binding initialization will be thread-safe.
+- `flush` If true, this binding will be flushable. Defaults to true.
+- `in` Denotes the static binding group in which the binding will be
+       placed for flushing. Defaults to the value of `*package`.
+
+Static bindings can be flushed via `flush-static-binding-group` and
+`flush-all-static-binding-groups`; the latter is automatically pushed
+into `uiop:*dump-image-hooks*` by Serapeum.
+
+An unflushable static binding will carry its value over into dumped
+Lisp binaries.
+
+[View source](static-let.lisp#L394)
+
 ## Reader
 
 ### `(with-standard-input-syntax &body body)`
@@ -4514,6 +4635,12 @@ Like `string$=`, but case-insensitive.
 
 [View source](strings.lisp#L705)
 
+### `(string-contains-p substring string &key start1 end1 start2 end2)`
+
+Like `string*=`, but case-insensitive.
+
+[View source](strings.lisp#L725)
+
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
 Is SUBSTRING a substring of STRING?
@@ -4524,12 +4651,6 @@ This is similar, but not identical, to SEARCH.
      (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
-
-[View source](strings.lisp#L725)
-
-### `(string-contains-p substring string &key start1 end1 start2 end2)`
-
-Like `string*=`, but case-insensitive.
 
 [View source](strings.lisp#L725)
 

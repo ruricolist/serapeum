@@ -205,6 +205,7 @@ as its documentation.
 I believe the name comes from Edi Weitz."
   `(progn
      (defvar ,var)
+     (makunbound ',var)
      (setf (documentation ',var 'variable) ,docstring)
      ',var))
 

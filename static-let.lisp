@@ -172,11 +172,14 @@ Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation."
   (when (member group *active-groups*)
     (static-binding-active-error group))
-  (let ((thread-count (length (bt:all-threads))))
-    (unless (or (= 1 thread-count) are-you-sure-p)
-      (static-binding-flush-error group)))
   (bt:with-lock-held (*flushing-lock*)
-    (%flush group)))
+    (if (gethash group *flushable-bindings*)
+        (progn
+          (let ((thread-count (length (bt:all-threads))))
+            (unless (or (= 1 thread-count) are-you-sure-p)
+              (static-binding-flush-error group)))
+          (%flush group))
+        0)))
 
 (defun flush-all-static-binding-groups ()
   "Flush all static binding values in ALL binding groups and
@@ -199,16 +202,19 @@ Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation."
   (dolist (group (remove-duplicates *active-groups*))
     (static-binding-active-error group t))
-  (let ((thread-count (length (bt:all-threads))))
-    (unless (= 1 thread-count)
-      (static-binding-flush-error)))
   (bt:with-lock-held (*flushing-lock*)
-    (let ((result 0))
-      (flet ((flush (key value)
-               (declare (ignore value))
-               (incf result (%flush key))))
-        (maphash #'flush *flushable-bindings*)
-        result))))
+    (if (> (hash-table-count *flushable-bindings*) 0)
+        (progn
+          (let ((thread-count (length (bt:all-threads))))
+            (unless (= 1 thread-count)
+              (static-binding-flush-error)))
+          (let ((result 0))
+            (flet ((flush (key value)
+                     (declare (ignore value))
+                     (incf result (%flush key))))
+              (maphash #'flush *flushable-bindings*)
+              result)))
+        0)))
 
 (pushnew 'flush-all-static-binding-groups uiop:*image-dump-hook*)
 

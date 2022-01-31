@@ -87,3 +87,22 @@
 (test reject-implausible-function
   (signals warning
     (compile nil '(lambda () (first (make-foo))))))
+
+(defgeneric ctx-fn (x &key keyword)
+  (:method-combination standard/context)
+  (:method :context ((x t) &key (keyword nil keyword-supplied?))
+    (list* keyword keyword-supplied? (call-next-method)))
+  (:method ((x number) &key (keyword 'other))
+    (list x keyword)))
+
+(defgeneric ard-fn (x &key keyword)
+  (:method :around ((x t) &key (keyword nil keyword-supplied?))
+    (list* keyword keyword-supplied? (call-next-method)))
+  (:method ((x number) &key (keyword 'other))
+    (list x keyword)))
+
+(test context-keyword-defaults
+  (is (equal* (ctx-fn 1) (ard-fn 1) '(list other nil 1 other)))
+  (is (equal* (ctx-fn 1 :keyword 'given)
+              (ard-fn 1 :keyword 'given)
+              '(list given t 1 given))))

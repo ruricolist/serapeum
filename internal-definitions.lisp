@@ -498,7 +498,7 @@ them sane initialization values."
            (if (and (not (in-subenv? self)) (constantp expanded))
                (expand-partially self
                                  `(define-symbol-macro ,name ,expr))
-               (push (list name `(load-time-value ,(wrap-expr self expr) t)) hoisted-vars)))
+               (push (list name `(static-load-time-value ,(wrap-expr self expr) t)) hoisted-vars)))
          `',name)
 
         ((defconst name expr &optional docstring)

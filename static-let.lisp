@@ -11,7 +11,8 @@
                 #:mappend)
   (:import-from #:serapeum
                 #:partition-declarations
-                #:keep)
+                #:keep
+                #:static-load-time-value)
   ;; Imports for implementing.
   (:import-from #:serapeum
                 #:recklessly-continue
@@ -282,7 +283,7 @@ will not be affected by this operation."
 (defun make-let-binding (x)
   (with-canonicalized-binding-accessors ()
     (let ((once (once x)))
-      `(,(sym x) (load-time-value (make-static-binding :once ,once))))))
+      `(,(sym x) (static-load-time-value (make-static-binding :once ,once))))))
 
 (defun make-flusher (x)
   (with-canonicalized-binding-accessors ()

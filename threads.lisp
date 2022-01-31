@@ -100,9 +100,9 @@ The second value is T if the number of processors could be queried,
   (defun lock-form (object objectp env string)
     (cond ((not objectp)
            (let ((string (or string "Anonymous critical section")))
-             `(load-time-value (bt:make-recursive-lock ,string))))
+             `(static-load-time-value (bt:make-recursive-lock ,string))))
           ((constantp object env)
-           `(load-time-value
+           `(static-load-time-value
              (ensure-monitor ,object ,string)))
           (t `(ensure-monitor ,object ,string)))))
 

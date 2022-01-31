@@ -18,6 +18,9 @@
   (:documentation "Utilities beyond Alexandria.")
   #+sb-package-locks (:lock t)
   (:export
+   ;; Portability.
+   #:static-load-time-value
+   #:static-load-time-value-error
    ;; Macro tools.
    #:unsplice
    #:string-gensym

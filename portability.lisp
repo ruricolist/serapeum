@@ -57,3 +57,51 @@ shouldn't attempt to modify V."
                                      (array-element-type vector))
                          vector :start2 start :end2 end)
              0 (- end start))))
+
+(define-condition static-load-time-value-error (error)
+  ((form :initarg :form)
+   (read-only-p :initarg :read-only-p))
+  (:report (lambda (c s)
+             (with-slots (form) c
+               (format s "Cannot use ~s with ~s"
+                       'static-load-time-value
+                       form)))))
+
+(defun test-load-time-value (fn form read-only-p)
+  (unless (eql (funcall fn) (funcall fn))
+    (error 'static-load-time-value-error
+           :form form
+           :read-only-p read-only-p)))
+
+;;; Use a compiler macro to eliminate the overhead for compiled code.
+(define-compiler-macro test-load-time-value (fn form read-only-p)
+  (declare (ignore fn form read-only-p))
+  nil)
+
+(defmacro static-load-time-value
+    (form &optional (read-only-p nil read-only-p-supplied?))
+  "Like `load-time-value', but will signal an error if it cannot preserve identity.
+
+On close reading of the standard, in a function that is evaluated but
+not compiled, it is permissible for implementations to repeatedly
+execute a `load-time-value' form, and in fact some implementations do
+this \(including, at the time of writing, ABCL, CLISP, Allegro and
+LispWorks).
+
+When `static-load-time-value' is compiled using `compile-file', it
+behaves exactly like `load-time-value'. Otherwise it conducts a
+run-time check `load-time-value' preserves identity. \(In code
+compiled with `compile', this will impose a slight overhead.)"
+  ;; Thanks to Jean-Philippe Paradis and Michał Herda for helping to
+  ;; diagnose and treat the problem here.
+  (if *compile-file-truename*
+      `(load-time-value ,form
+                        ,@(and read-only-p-supplied? (list read-only-p)))
+      `(progn
+         (flet ((fn () (load-time-value (random most-positive-fixnum))))
+           (declare (dynamic-extent #'fn) (ignorable #'fn)
+                    #+LispWorks (notinline fn))
+           ;; Do the actual test out of line.
+           (test-load-time-value #'fn ',form ',read-only-p))
+         (load-time-value ,form
+                          ,@(and read-only-p-supplied? (list read-only-p))))))

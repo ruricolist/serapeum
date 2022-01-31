@@ -691,7 +691,7 @@ I believe the name comes from Edi Weitz.
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L211)
+[View source](definitions.lisp#L212)
 
 ## Defining Types
 
@@ -3184,7 +3184,7 @@ to not include static binding values in the resulting Lisp image.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L181)
+[View source](static-let.lisp#L184)
 
 ### `(static-let (&rest bindings) &body body)`
 
@@ -3207,7 +3207,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L373)
+[View source](static-let.lisp#L379)
 
 ### `(static-let* (&rest bindings) &body body)`
 
@@ -3230,7 +3230,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L394)
+[View source](static-let.lisp#L400)
 
 ## Reader
 

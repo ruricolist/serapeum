@@ -3203,7 +3203,7 @@ to not include static binding values in the resulting Lisp image.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L185)
+[View source](static-let.lisp#L181)
 
 ### `(static-let (&rest bindings) &body body)`
 
@@ -3226,7 +3226,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L380)
+[View source](static-let.lisp#L372)
 
 ### `(static-let* (&rest bindings) &body body)`
 
@@ -3249,7 +3249,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L401)
+[View source](static-let.lisp#L393)
 
 ## Reader
 

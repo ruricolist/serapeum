@@ -1,5 +1,6 @@
-# Function Listing For serapeum (42 files, 450 functions)
+# Function Listing For serapeum (43 files, 451 functions)
 
+- [Portability](#portability)
 - [Macro Tools](#macro-tools)
 - [Types](#types)
 - [Definitions](#definitions)
@@ -42,6 +43,24 @@
 - [Exporting](#exporting)
 - [Docs](#docs)
 - [Hooks](#hooks)
+
+## Portability
+
+### `(static-load-time-value form &optional (read-only-p nil read-only-p-supplied?))`
+
+Like `load-time-value`, but signals an error if it cannot preserve identity.
+
+On close reading of the standard, in a function that is evaluated but
+not compiled, it is permissible for implementations to repeatedly
+execute a `load-time-value` form, and in fact some implementations do
+this (including, at the time of writing, ABCL, CLISP, Allegro and
+LispWorks).
+
+When `static-load-time-value` is compiled, it behaves exactly like
+`load-time-value`. Otherwise it conducts a run-time check to ensure
+that `load-time-value` preserves identity.
+
+[View source](portability.lisp#L81)
 
 ## Macro Tools
 
@@ -3119,31 +3138,31 @@ used in successive bindings.
 Invokes the last bound RECKLESSLY-CONTINUE restart. Returns NIL if
 no such restart was bound or if the restart failed to transfer control.
 
-[View source](static-let.lisp#L56)
+[View source](static-let.lisp#L57)
 
 ### `(static-binding-flush-error-group static-binding-flush-error)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L77)
+[View source](static-let.lisp#L78)
 
 ### `(static-binding-flush-error-all-groups-p static-binding-flush-error)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L77)
+[View source](static-let.lisp#L78)
 
 ### `(static-binding-flush-error &optional group)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L88)
+[View source](static-let.lisp#L89)
 
 ### `(static-binding-active-error group &optional all-groups-p)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L121)
+[View source](static-let.lisp#L122)
 
 ### `(flush-static-binding-group group &key are-you-sure-p)`
 
@@ -3161,7 +3180,7 @@ Lisp is running single-threaded or `are-you-sure-p` is true.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L159)
+[View source](static-let.lisp#L160)
 
 ### `(flush-all-static-binding-groups)`
 
@@ -3184,7 +3203,7 @@ to not include static binding values in the resulting Lisp image.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L184)
+[View source](static-let.lisp#L185)
 
 ### `(static-let (&rest bindings) &body body)`
 
@@ -3207,7 +3226,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L379)
+[View source](static-let.lisp#L380)
 
 ### `(static-let* (&rest bindings) &body body)`
 
@@ -3230,7 +3249,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L400)
+[View source](static-let.lisp#L401)
 
 ## Reader
 

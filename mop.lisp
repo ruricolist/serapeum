@@ -14,7 +14,12 @@
   ((around (:around))
    (context (:context) :order :most-specific-last)
    (before (:before))
-   (primary () :required t)
+   ;; In the example standard method combination in the CL spec, they
+   ;; have `(primary () :required t)`, but this is bad UI: with
+   ;; `:required t' we get an opaque `method-combination-error' rather
+   ;; than a useful `no-applicable-method` error that tells us what
+   ;; the arguments were.
+   (primary ())
    (after (:after)))
   (flet ((call-methods (methods)
            (mapcar (lambda (method)

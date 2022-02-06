@@ -21,7 +21,7 @@
     
 # Overview
 
-[![Build Status](https://travis-ci.org/ruricolist/serapeum.svg?branch=master)](https://travis-ci.org/ruricolist/serapeum)
+[![CI](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml)
 
 Serapeum is a conservative library of Common Lisp utilities. It is a
 supplement, not a competitor, to [Alexandria][]. That means it is safe to

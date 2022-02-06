@@ -169,7 +169,6 @@
                  (:file "dispatch-case")
                  (:file "range")
                  (:file "generalized-arrays")
-                 (:file "quicklisp")
                  (:file "units")
                  (:module "contrib"
                   :components ((:file "hooks")))))))

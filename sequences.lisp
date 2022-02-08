@@ -1935,3 +1935,196 @@ Repetitions that are not adjacent are left alone.
               (setf val (key-fn item) init t)
               (unless (test val (key-fn item))
                 (return-from same nil))))))))
+
+(declaim (inline copy-enough-list nsplice-list splice-list))
+
+(defun copy-firstn (list n)
+  "Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
+lists gracefully."
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type fixnum n))
+  (cond ((= n 0) list)
+        ((null list) list)
+        (t (let ((result '())
+                 (cons list))
+             (dotimes (i n)
+               ;; Push at most N new conses onto the stack.
+               (push (car cons) result)
+               (setf cons (cdr cons))
+               ;; If at the end of a proper/dotted list, finish.
+               (when (atom cons) (return)))
+             ;; Nreverse the stack...
+             (prog1 (nreverse result)
+               ;; ...but set the last CDR to the shared tail.
+               (setf (cdr result) cons))))))
+
+(defun nsplice-list (list new start end)
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type (or null list) new))
+  (declare (type alexandria:array-index start end))
+  (let* ((temp-list (cons nil list))
+         (cut-start (nthcdr start temp-list))
+         (cut-end (nthcdr (- end start) (cdr cut-start))))
+    (if (null new)
+        (setf (cdr cut-start) cut-end)
+        (setf (cdr cut-start) new
+              (cdr (last new)) cut-end))
+    (cdr temp-list)))
+
+(defun splice-list (list new start end)
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type sequence new))
+  (declare (type alexandria:array-index start end))
+  (let* ((result-pointer (cons nil nil))
+         (current-list-cons list)
+         (current-result-cons result-pointer))
+    ;; Copy the beginning.
+    (dotimes (i start)
+      (setf (cdr current-result-cons) (cons (car current-list-cons) nil)
+            current-result-cons (cdr current-result-cons)
+            current-list-cons (cdr current-list-cons)))
+    ;; Fast-forward CURRENT-LIST-CONS.
+    (setf current-list-cons (nthcdr (- end start) current-list-cons))
+    ;; Copy the new part.
+    (do-each (new-elt new)
+      (setf (cdr current-result-cons) (cons new-elt current-list-cons)
+            current-result-cons (cdr current-result-cons)))
+    ;; Return the first cons of the result.
+    (cdr result-pointer)))
+
+(declaim (inline nsplice-vector splice-vector))
+
+(deftype array-size-difference ()
+  `(integer ,(- array-dimension-limit) ,array-dimension-limit))
+
+(defun nsplice-vector (vector new start end)
+  (declare (type alexandria:array-index start end))
+  (declare (type vector vector))
+  (declare (type sequence new))
+  (let ((diff-removed (- end start))
+        (diff-added (length new)))
+    (if (= diff-removed diff-added)
+        (replace vector new :start1 start)
+        (let* ((diff (- diff-added diff-removed))
+               (length (length vector)))
+          (declare (type array-size-difference diff))
+          (cond ((not (adjustable-array-p vector))
+                 ;; We must copy and overwrite the whole array.
+                 (let ((result (make-array (+ length diff) :element-type
+                                           (array-element-type vector))))
+                   ;; Copy the beginning.
+                   (replace result vector
+                            :start1 0 :end1 start
+                            :start2 0 :end2 start)
+                   ;; Copy the new part.
+                   (when new (replace result new :start1 start))
+                   ;; Copy the end.
+                   (replace result vector
+                            :start1 (+ end diff) :end1 (length result)
+                            :start2 end :end2 length)
+                   result))
+                ((plusp diff)
+                 ;; The array is adjustable and we are making it longer.
+                 ;; Adjust it and only then move the tail.
+                 (adjust-array vector (+ length diff))
+                 (replace vector vector
+                          :start1 (+ end diff) :end1 (+ length diff)
+                          :start2 end :end2 length)
+                 (when new (replace vector new :start1 start))
+                 vector)
+                (t
+                 ;; The array is adjustable and we are making it shorter.
+                 ;; Move the tail and only then adjust it.
+                 (replace vector vector
+                          :start1 (+ end diff) :end1 (+ length diff)
+                          :start2 end :end2 length)
+                 (adjust-array vector (+ length diff))
+                 (when new (replace vector new :start1 start))
+                 vector))))))
+
+(defun splice-vector (vector new start end)
+  (declare (type vector vector))
+  (declare (type sequence new))
+  (declare (type alexandria:array-index start end))
+  (let ((diff-removed (- end start))
+        (diff-added (length new))
+        (vector (copy-seq vector)))
+    (if (= diff-removed diff-added)
+        (replace vector new :start1 start)
+        (let* ((diff (- diff-added diff-removed))
+               (length (length vector)))
+          (declare (type array-size-difference diff))
+          ;; We must copy and overwrite the whole array.
+          (let ((result (make-array (+ length diff) :element-type
+                                    (array-element-type vector))))
+            ;; Copy the beginning.
+            (replace result vector
+                     :start1 0 :end1 start
+                     :start2 0 :end2 start)
+            ;; Copy the new part.
+            (when new (replace result new :start1 start))
+            ;; Copy the end.
+            (replace result vector
+                     :start1 (+ end diff) :end1 (length result)
+                     :start2 end :end2 length)
+            result)))))
+
+;;; TODO: there is no extensible sequence support in SPLICE/NSPLICE right now.
+;;;       Should there be? It doesn't seem like Serapeum is tested with
+;;;       extensible sequences at all.
+
+(declaim (inline splice-seq nsplice-seq))
+
+(-> splice-seq (sequence &key
+                         (:new sequence)
+                         (:start alexandria:array-index)
+                         (:end alexandria:array-index))
+    (values sequence &optional))
+(defun splice-seq (sequence &key new (start 0) (end (length sequence)))
+  "Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). Does not modify SEQUENCE or NEW, but the result
+is allowed to share structure with the original if SEQUENCE is a list.
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)"
+  (declare (type sequence sequence new))
+  (if (and (= start end) (= 0 (length new)))
+      sequence
+      (etypecase sequence
+        (list (splice-list sequence new start end))
+        (vector (splice-vector sequence new start end)))))
+
+(-> nsplice-seq (sequence &key
+                          (:new sequence)
+                          (:start alexandria:array-index)
+                          (:end alexandria:array-index))
+    (values sequence &optional))
+(defun nsplice-seq (sequence &key new (start 0) (end (length sequence)))
+  "Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). SEQUENCE and NEW may be destroyed in the process
+and the result is allowed to share structure with the original if SEQUENCE is a
+list.
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)"
+  (declare (type sequence sequence new))
+  (if (and (= start end) (= 0 (length new)))
+      sequence
+      (etypecase sequence
+        (list (nsplice-list sequence (coerce new 'list) start end))
+        (vector (nsplice-vector sequence new start end)))))
+
+(define-modify-macro splice-seqf (&rest keyword-args) splice-seq
+  "Modify macro for SPLICE-SEQ.")
+
+(define-modify-macro nsplice-seqf (&rest keyword-args) nsplice-seq
+  "Modify macro for NSPLICE-seq.")

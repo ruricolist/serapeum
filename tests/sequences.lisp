@@ -713,3 +713,38 @@
                                      :start i
                                      :end j))
       (is (seq= naive nspliced-list)))))
+
+(test longer
+  (let ((x '(1))
+        (y '())
+        (z '(3)))
+    (is (eql x (longer x y)))
+    (is (eql z (longer z y)))
+    (is (eql x (longer x z)))))
+
+(test shortest
+  (let ((x '(1))
+        (y '())
+        (z '(3))
+        (a '()))
+    (is (eql (shortest (list x y z a)) y))
+    (is (eql (shortest (list a x y z)) a))))
+
+(test long-short-generative
+  (for-all ((seqs
+             (lambda ()
+               (loop for i below (random 20)
+                     for seq = (range (random 20))
+                     if (zerop (random 1))
+                       collect seq
+                     else collect (coerce seq 'list)))))
+    (is (equal (shortest seqs)
+               (extremum seqs #'< :key #'length)))
+    (is (equal (longest seqs)
+               (extremum seqs #'> :key #'length)))
+    (loop for seq1 in seqs
+          for seq2 in (rest seqs)
+          do (is (eql (shorter seq1 seq2)
+                      (extremum (list seq1 seq2) #'< :key #'length))
+                 (eql (longer seq1 seq2)
+                      (extremum (list seq1 seq2) #'> :key #'length))))))

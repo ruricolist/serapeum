@@ -427,7 +427,9 @@
    #:length>
    #:length>=
    #:longer
+   #:shorter
    #:longest
+   #:shortest
    #:ordering
    #:bisect-left
    #:bisect-right

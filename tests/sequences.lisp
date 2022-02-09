@@ -655,3 +655,10 @@
   (is (seq= (splice-seq '(1 2 3 4 5) :start 1 :end 3)
             (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
             '(1 4 5))))
+
+(test splice-vector-regression
+  (is (seq= (nsplice-seq (vector 1 2 3 4 5) :start 1 :end 3)
+            (nsplice-seq (vect 1 2 3 4 5) :start 1 :end 3)
+            (splice-seq #(1 2 3 4 5) :start 1 :end 3)
+            (splice-seq (vect 1 2 3 4 5) :start 1 :end 3)
+            '(1 4 5))))

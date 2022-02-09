@@ -2033,7 +2033,12 @@ lists gracefully."
                  (replace vector vector
                           :start1 (+ end diff) :end1 (+ length diff)
                           :start2 end :end2 length)
-                 (adjust-array vector (+ length diff))
+                 (let ((new-len (+ length diff)))
+                   (when (array-has-fill-pointer-p vector)
+                     ;; The fill pointer has to be less than the new length.
+                     (setf (fill-pointer vector)
+                           (min (fill-pointer vector) new-len)))
+                   (adjust-array vector new-len))
                  (when new (replace vector new :start1 start))
                  vector))))))
 

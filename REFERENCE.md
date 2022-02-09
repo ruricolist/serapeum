@@ -4282,7 +4282,12 @@ is allowed to share structure with the original if SEQUENCE is a list.
     (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
     => (1 :A :B :C 5)
 
-[View source](sequences.lisp#L2086)
+Omitting NEW removes elements from SEQUENCE:
+
+    (splice-seq '(1 2 3 4 5) :start 1 :end 3)
+
+
+[View source](sequences.lisp#L2083)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4297,19 +4302,24 @@ list.
     (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
     => (1 :A :B :C 5)
 
-[View source](sequences.lisp#L2108)
+Omitting NEW removes elements from SEQUENCE:
+
+    (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
+    => '(1 4 5)
+
+[View source](sequences.lisp#L2110)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2126)
+[View source](sequences.lisp#L2133)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2129)
+[View source](sequences.lisp#L2136)
 
 ## Strings
 

@@ -2089,7 +2089,12 @@ is allowed to share structure with the original if SEQUENCE is a list.
     => (1 :A :B :C 2 3 4 5)
 
     (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
-    => (1 :A :B :C 5)"
+    => (1 :A :B :C 5)
+
+Omitting NEW removes elements from SEQUENCE:
+
+    (splice-seq '(1 2 3 4 5) :start 1 :end 3)
+"
   (declare (type sequence sequence new))
   (if (and (= start end) (emptyp new))
       sequence
@@ -2112,7 +2117,12 @@ list.
     => (1 :A :B :C 2 3 4 5)
 
     (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
-    => (1 :A :B :C 5)"
+    => (1 :A :B :C 5)
+
+Omitting NEW removes elements from SEQUENCE:
+
+    (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
+    => '(1 4 5)"
   (declare (type sequence sequence new))
   (if (and (= start end) (emptyp new))
       sequence

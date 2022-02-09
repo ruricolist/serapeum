@@ -650,3 +650,8 @@
     (frob '(1 2 3 a b c 7 8 9) :start 3 :end 6)
     (frob '(1 2 3 4 5 6 a b c) :start 6)
     (frob '(1 a b c 9) :start 1 :end 8)))
+
+(test splice-list-regression
+  (is (seq= (splice-seq '(1 2 3 4 5) :start 1 :end 3)
+            (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
+            '(1 4 5))))

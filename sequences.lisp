@@ -1978,22 +1978,14 @@ lists gracefully."
   (declare (type list list))
   (declare (type sequence new))
   (declare (type alexandria:array-index start end))
-  (let* ((result-pointer (cons nil nil))
-         (current-list-cons list)
-         (current-result-cons result-pointer))
-    ;; Copy the beginning.
-    (dotimes (i start)
-      (setf (cdr current-result-cons) (cons (car current-list-cons) nil)
-            current-result-cons (cdr current-result-cons)
-            current-list-cons (cdr current-list-cons)))
-    ;; Fast-forward CURRENT-LIST-CONS.
-    (setf current-list-cons (nthcdr (- end start) current-list-cons))
-    ;; Copy the new part.
+  (let ((queue (queue)))
+    (declare (dynamic-extent queue))
+    (loop repeat start do
+      (enq (pop list) queue))
     (do-each (new-elt new)
-      (setf (cdr current-result-cons) (cons new-elt current-list-cons)
-            current-result-cons (cdr current-result-cons)))
-    ;; Return the first cons of the result.
-    (cdr result-pointer)))
+      (enq new-elt queue))
+    (qconc queue (nthcdr (- end start) list))
+    (qlist queue)))
 
 (declaim (inline nsplice-vector splice-vector))
 

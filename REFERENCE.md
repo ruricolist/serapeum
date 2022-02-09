@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 451 functions)
+# Function Listing For serapeum (43 files, 456 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2689,15 +2689,15 @@ Copy QUEUE as another queue.
 
 ## Box
 
-### `(unbox box)`
-
-The value in the box X.
-
-[View source](box.lisp#L11)
-
 ### `(box unbox)`
 
 Box a value.
+
+[View source](box.lisp#L11)
+
+### `(unbox box)`
+
+The value in the box X.
 
 [View source](box.lisp#L11)
 
@@ -4263,6 +4263,54 @@ Return true if KEY-FN returns the same value for any/all members of LIST.
 
 [View source](sequences.lisp#L1928)
 
+### `(copy-firstn list n)`
+
+Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
+lists gracefully.
+
+[View source](sequences.lisp#L1941)
+
+### `(splice-seq sequence &key new start end)`
+
+Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). Does not modify SEQUENCE or NEW, but the result
+is allowed to share structure with the original if SEQUENCE is a list.
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)
+
+[View source](sequences.lisp#L2086)
+
+### `(nsplice-seq sequence &key new start end)`
+
+Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). SEQUENCE and NEW may be destroyed in the process
+and the result is allowed to share structure with the original if SEQUENCE is a
+list.
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)
+
+[View source](sequences.lisp#L2108)
+
+### `(splice-seqf g &rest keyword-args)`
+
+Modify macro for SPLICE-SEQ.
+
+[View source](sequences.lisp#L2126)
+
+### `(nsplice-seqf g &rest keyword-args)`
+
+Modify macro for NSPLICE-seq.
+
+[View source](sequences.lisp#L2129)
+
 ## Strings
 
 ### `(whitespacep char)`
@@ -4630,15 +4678,15 @@ From Arc.
 
 [View source](strings.lisp#L641)
 
-### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
-
-Like `string^=`, but case-insensitive.
-
-[View source](strings.lisp#L685)
-
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
 Is PREFIX a prefix of STRING?
+
+[View source](strings.lisp#L685)
+
+### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
+
+Like `string^=`, but case-insensitive.
 
 [View source](strings.lisp#L685)
 
@@ -4654,12 +4702,6 @@ Like `string$=`, but case-insensitive.
 
 [View source](strings.lisp#L705)
 
-### `(string-contains-p substring string &key start1 end1 start2 end2)`
-
-Like `string*=`, but case-insensitive.
-
-[View source](strings.lisp#L725)
-
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
 Is SUBSTRING a substring of STRING?
@@ -4670,6 +4712,12 @@ This is similar, but not identical, to SEARCH.
      (search "nil" "nil") => 0
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
+
+[View source](strings.lisp#L725)
+
+### `(string-contains-p substring string &key start1 end1 start2 end2)`
+
+Like `string*=`, but case-insensitive.
 
 [View source](strings.lisp#L725)
 

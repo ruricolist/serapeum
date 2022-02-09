@@ -469,6 +469,11 @@
    #:do-splits
    #:collapse-duplicates
    #:same
+   #:copy-firstn
+   #:splice-seq
+   #:nsplice-seq
+   #:splice-seqf
+   #:nsplice-seqf
    ;; Generalized arrays.
    #:shape
    #:reshape

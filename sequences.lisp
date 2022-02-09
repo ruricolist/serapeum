@@ -2094,7 +2094,7 @@ is allowed to share structure with the original if SEQUENCE is a list.
     (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
     => (1 :A :B :C 5)"
   (declare (type sequence sequence new))
-  (if (and (= start end) (= 0 (length new)))
+  (if (and (= start end) (emptyp new))
       sequence
       (etypecase sequence
         (list (splice-list sequence new start end))
@@ -2117,7 +2117,7 @@ list.
     (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
     => (1 :A :B :C 5)"
   (declare (type sequence sequence new))
-  (if (and (= start end) (= 0 (length new)))
+  (if (and (= start end) (emptyp new))
       sequence
       (etypecase sequence
         (list (nsplice-list sequence (coerce new 'list) start end))

@@ -4285,7 +4285,7 @@ is allowed to share structure with the original if SEQUENCE is a list.
 Omitting NEW removes elements from SEQUENCE:
 
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
-
+    => '(1 4 5)
 
 [View source](sequences.lisp#L2083)
 

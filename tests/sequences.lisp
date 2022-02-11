@@ -662,3 +662,54 @@
             (splice-seq #(1 2 3 4 5) :start 1 :end 3)
             (splice-seq (vect 1 2 3 4 5) :start 1 :end 3)
             '(1 4 5))))
+
+(defun naive-splice (v &key new (start 0) (end (length v)))
+  (assert (>= end start))
+  (concatenate 'vector
+               (subseq v 0 start)
+               new
+               (subseq v end)))
+
+(test splice-seq-generative
+  (for-all ((vec (lambda () (range 100)))
+            (i (lambda () (random 100)))
+            (j (lambda () (random 100)))
+            (new (lambda ()
+                   ;; Makes it easier to tell where the splice begins
+                   ;; and ends.
+                   (nreverse (range (random 100))))))
+    (local
+      (when (> i j)
+        (rotatef i j))
+
+      (def naive
+        (naive-splice vec :new new
+                          :start i
+                          :end j))
+
+      (def spliced-vec
+        (splice-seq vec :new new
+                        :start i
+                        :end j))
+      (is (seq= naive spliced-vec))
+
+      (def nspliced-vec
+        (nsplice-seq (copy-seq vec)
+                     :new new
+                     :start i
+                     :end j))
+      (is (seq= naive nspliced-vec))
+
+      (def list (coerce vec 'list))
+
+      (def spliced-list
+        (splice-seq list :new new
+                         :start i
+                         :end j))
+      (is (seq= naive spliced-list))
+
+      (def nspliced-list
+        (nsplice-seq (copy-seq list) :new new
+                                     :start i
+                                     :end j))
+      (is (seq= naive nspliced-list)))))

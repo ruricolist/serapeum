@@ -902,6 +902,7 @@ A length designator may be a sequence or an integer."
              (let ((len
                      ;; Get the length of SEQ, but only up to LAST.
                      (loop with len = 0
+                           repeat last
                            until (endp seq) do
                              (incf len)
                              (pop seq)
@@ -926,7 +927,9 @@ A length designator may be a sequence or an integer."
 (defun longer (x y)
   "Return the longer of X and Y.
 
-If X and Y are of equal length, return X."
+If X and Y are of equal length, return X.
+
+If X and Y are lists, this will only traverse the shorter of X and Y."
   (check-type x sequence)
   (check-type y sequence)
   (cond ((and (listp x) (listp y))
@@ -936,35 +939,26 @@ If X and Y are of equal length, return X."
                  ((endp ys) x)
                  ((endp xs) y)
                  (t (longer (rest xs) (rest ys))))))
-        ((listp x)
-         (if (length> x (length y))
-             x
-             y))
-        ((listp y)
-         (if (length> y (length x))
-             y
-             x))
-        ((< (length x) (length y)) y)
-        (t x)))
+        (t (if (length>= x y) x y))))
 
 (defun shorter (x y)
-  "Return the shorter of x and y."
-  (if (eql (longer x y) x) y x))
-
-(defun shortest/longest-seq (seqs test)
-  (let ((seqs
-          (map 'list (lambda (seq)
-                       (cons (length seq) seq))
-               seqs)))
-    (cdr (extremum seqs test :key #'car))))
+  "Return the shorter of X and Y."
+  (cond ((and (listp x) (listp y))
+         (nlet shorter ((xs x)
+                        (ys y))
+           (cond ((endp xs) x)
+                 ((endp ys) y)
+                 (t (shorter (rest xs) (rest ys))))))
+        (t (if (length<= x y) x y))))
 
 (defun shortest-seq (seqs)
-  (shortest/longest-seq seqs #'<))
+  (extremum seqs #'<= :key #'length))
 
 (defun longest-seq (seqs)
-  (shortest/longest-seq seqs #'>))
+  (extremum seqs #'>= :key #'length))
 
 (defun shortest-list (lists)
+  "Find the shortest list in LISTS."
   (let ((pairs (map 'list
                     (lambda (list)
                       (cons list list))
@@ -975,6 +969,7 @@ If X and Y are of equal length, return X."
           (return-from ret (cdr pair)))))))
 
 (defun longest-list (lists)
+  "Find the longest list in LISTS."
   (let ((lists (map 'list
                     (lambda (list)
                       (cons list list))
@@ -985,14 +980,14 @@ If X and Y are of equal length, return X."
               (delete-if (lambda (cons)
                            (null (pop (car cons))))
                          prev)))
-        (if (null lists) maybe-longest
-            (rec lists))))))
+        (cond ((null lists) maybe-longest)
+              ((single lists) (cdar lists))
+              (t (rec lists)))))))
 
-(defun shortest/longest (seqs extreme-seq extreme-list more-extreme length-predicate)
-  (fbind (extreme-seq extreme-list more-extreme length-predicate)
+(defun shortest/longest (seqs extreme-seq extreme-list length-predicate)
+  (fbind (extreme-seq extreme-list length-predicate)
     (cond ((emptyp seqs) nil)
           ((single seqs) (elt seqs 0))
-          ((length= 2 seqs) (more-extreme (elt seqs 0) (elt seqs 1)))
           (t
            (multiple-value-bind (lists non-lists)
                (partition #'listp seqs)
@@ -1000,27 +995,40 @@ If X and Y are of equal length, return X."
                    ((emptyp non-lists) (extreme-list lists))
                    (t (let* ((extreme-seq (extreme-seq non-lists))
                              (extreme-list (extreme-list lists))
-                             ;; Make sure we return the first if there
-                             ;; is no unique extremum.
-                             (x (find-if (lambda (item)
-                                           (or (eql item extreme-list)
-                                               (eql item extreme-seq)))
-                                         seqs))
-                             (y (if (eql x extreme-list) extreme-seq
-                                    extreme-list)))
-                        (if (length-predicate y x) y x)))))))))
+                             (leftmost
+                               (find-if (lambda (item)
+                                          (or (eql item extreme-list)
+                                              (eql item extreme-seq)))
+                                        seqs))
+                             (rightmost
+                               (if (eql leftmost extreme-list)
+                                   extreme-seq
+                                   extreme-list)))
+                        ;; Make sure we return the first if there
+                        ;; is no unique extremum.
+                        (if (length-predicate rightmost leftmost) rightmost
+                            leftmost)))))))))
 
 (-> longest (sequence) sequence)
 (defun longest (seqs)
-  "Return the longest seq in SEQS."
+  "Return the longest seq in SEQS.
+
+If there are lists in SEQS, then the total number of conses traversed
+will never exceed n*m, where n is the number of lists in SEQS and m
+is the length of the next-to-longest list (unless the longest list is
+not unique!)."
   (values
-   (shortest/longest seqs #'longest-seq #'longest-list #'longer #'length>)))
+   (shortest/longest seqs #'longest-seq #'longest-list #'length>)))
 
 (-> shortest (sequence) sequence)
 (defun shortest (seqs)
-  "Return the shortest seq in SEQS."
+  "Return the shortest seq in SEQS.
+
+If there are lists in SEQS, then the total number of conses traversed
+will never exceed n*m, where n is the number of lists in SEQS and m
+is the length of the shortest list."
   (values
-   (shortest/longest seqs #'shortest-seq #'shortest-list #'shorter #'length<)))
+   (shortest/longest seqs #'shortest-seq #'shortest-list #'length<)))
 
 (defsubst slice-bounds (len start end)
   "Normalize START and END, which may be negative, to offsets

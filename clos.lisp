@@ -191,16 +191,16 @@ This construct is very loosely inspired by impl blocks in Rust."
             (parse-body body))
            (slot-decls decls
             (partition-declarations slot-names decls)))
-    `(macrolet ((:method (name &body body)
-                  (let* ((class ',class)
-                         (self ',self)
-                         (slot-binds ',slot-binds)
-                         (qualifier (when (not (listp (car body))) (pop body)))
-                         (args (pop body))
-                         (docstring (when (stringp (car body)) (pop body)))
-                         (args-with-self (substitute (list self class) self args)))
-                    (when (equal args-with-self args)
-                      (error "No binding for ~s in ~s" self args))
+    `(macrolet ((:method (name &body args)
+                  (mvlet* ((class ',class)
+                           (self ',self)
+                           (slot-binds ',slot-binds)
+                           (qualifiers lambda-list body
+                            (parse-defmethod-args args))
+                           (body decls docstring (parse-body body :documentation t))
+                           (ll-with-self (substitute (list self class) self lambda-list)))
+                    (when (equal ll-with-self lambda-list)
+                      (error "No binding for ~s in ~s" self lambda-list))
                     `(symbol-macrolet ,(loop for (alias ref) in slot-binds
                                              collect (ematch ref
                                                        ((and ref (type symbol))
@@ -208,8 +208,9 @@ This construct is very loosely inspired by impl blocks in Rust."
                                                        ((list 'function fn)
                                                         `(,alias (,fn ,self)))))
                        ,@',slot-decls
-                       (defmethod ,name ,@(unsplice qualifier) ,args-with-self
+                       (defmethod ,name ,@qualifiers ,ll-with-self
                          ,@(unsplice docstring)
+                         ,@decls
                          ,@body)))))
        ,@decls
        ,@body)))

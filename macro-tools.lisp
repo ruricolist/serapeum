@@ -869,3 +869,15 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list'.
              `(&key ,@keywords))
       ,@(and aok? '(&allow-other-keys))
       ,@(and aux `(&aux ,@aux)))))
+
+(defun parse-defmethod-args (args)
+  "Parse the args to defmethod (everything except the name).
+Returns three values: a list of qualifiers, the specialized
+lambda-list, and the forms that make up the body."
+  (let* ((lambda-list.body (member-if (of-type 'list) args))
+         (qualifiers (ldiff args lambda-list.body))
+         (lambda-list (car lambda-list.body))
+         (body (cdr lambda-list.body)))
+    (values qualifiers
+            lambda-list
+            body)))

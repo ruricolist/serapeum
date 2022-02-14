@@ -42,6 +42,7 @@
    #:sane-body-for-splice
    #:sane-form-for-eval
    #:unparse-ordinary-lambda-list
+   #:parse-method-args
    ;; Types.
    #:supertypep
    #:proper-subtype-p

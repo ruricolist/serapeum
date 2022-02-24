@@ -421,6 +421,14 @@
     (signals inconsistent-graph
       (toposort inconsistent-constraints :test #'equal))))
 
+(test toposort-list-constraints
+  "Check we can use constraints with elements that are lists."
+  (let ((constraints '(((x 1) (y2))
+                       ((y 2) (z 3)))))
+    (is (equal '((x 1) (y 2) (z 3))
+               (sort (list '(z 3) '(y 2) '(x 1))
+                     (toposort constraints :test #'equal))))))
+
 (test same
   ;; See #88.
   (is-true (same #'length '((1 2 3) (a b c) (foo bar baz))))

@@ -1625,7 +1625,9 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering'."
   ;; Adapted from AMOP.
-  (let ((elts (remove-duplicates (flatten constraints) :test test)))
+  (let ((elts (remove-duplicates
+               (apply #'append constraints)
+               :test test)))
     (ordering (tsort elts constraints tie-breaker :test test)
               :test test
               :unordered-to-end unordered-to-end

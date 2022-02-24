@@ -4161,7 +4161,7 @@ TEST, FROM-END, and UNORDERED-TO-END are passed through to
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1657)
+[View source](sequences.lisp#L1659)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -4205,14 +4205,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1687)
+[View source](sequences.lisp#L1689)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1729)
+[View source](sequences.lisp#L1731)
 
 ### `(repeat-sequence seq n)`
 
@@ -4236,7 +4236,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1769)
+[View source](sequences.lisp#L1771)
 
 ### `(seq= &rest xs)`
 
@@ -4245,7 +4245,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1852)
+[View source](sequences.lisp#L1854)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4267,7 +4267,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1916)
+[View source](sequences.lisp#L1918)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4278,20 +4278,20 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1968)
+[View source](sequences.lisp#L1970)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L1999)
+[View source](sequences.lisp#L2001)
 
 ### `(copy-firstn list n)`
 
 Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
 lists gracefully.
 
-[View source](sequences.lisp#L2012)
+[View source](sequences.lisp#L2014)
 
 ### `(splice-seq sequence &key new start end)`
 
@@ -4310,7 +4310,7 @@ Omitting NEW removes elements from SEQUENCE:
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2154)
+[View source](sequences.lisp#L2156)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4330,19 +4330,19 @@ Omitting NEW removes elements from SEQUENCE:
     (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2181)
+[View source](sequences.lisp#L2183)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2204)
+[View source](sequences.lisp#L2206)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2207)
+[View source](sequences.lisp#L2209)
 
 ## Strings
 
@@ -5186,8 +5186,8 @@ Using `dispatch-case` instead gives you the readability of
 `defgeneric` with the efficiency and safety of `etypecase-of`.
 
     (defun time= (t1 t2)
-      (dispatch-case ((time t1)
-                      (time t2))
+      (dispatch-case ((t1 time)
+                      (t2 time))
         ((universal-time universal-time)
          (= t1 t2))
         ((timestamp timestamp)
@@ -5209,12 +5209,16 @@ write that using `dispatch-case` like so:
     (defun time= (x y)
       (dispatch-case ((x time)
                       (y time))
-        ((time universal-time)
+        ((* universal-time)
          (time= x (universal-to-timestamp y)))
-        ((universal-time time)
+        ((universal-time *)
          (time= (universal-to-timestamp x) y))
         ((timestamp timestamp)
          (timestamp= x y))))
+
+(In the list of types, you can use as asterisk as a shorthand for the
+type of the corresponding argument to `dispatch-case`; in that above,
+`time`.)
 
 Note that this requires only three clauses, where writing it out using
 nested `etypecase-of` forms would require four clauses. This is a
@@ -5246,7 +5250,7 @@ It may be helpful to think of this as a cross between
 list) and `let` (which has an obvious macro-expansion in terms of
 `lambda`).
 
-[View source](dispatch-case.lisp#L239)
+[View source](dispatch-case.lisp#L243)
 
 ## Range
 

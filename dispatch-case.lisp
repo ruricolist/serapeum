@@ -194,8 +194,8 @@ Using `dispatch-case' instead gives you the readability of
 `defgeneric' with the efficiency and safety of `etypecase-of'.
 
     (defun time= (t1 t2)
-      (dispatch-case ((time t1)
-                      (time t2))
+      (dispatch-case ((t1 time)
+                      (t2 time))
         ((universal-time universal-time)
          (= t1 t2))
         ((timestamp timestamp)

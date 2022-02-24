@@ -56,7 +56,7 @@ shadows later ones, if possible."
                               when (proper-subtype-p type1 type2 env)
                                 collect (list type1 type2))))
          (constraints (nub constraints))
-         (ordering (toposort constraints)))
+         (ordering (toposort constraints :test #'equal)))
     (stable-sort (copy-list clauses)
                  ordering
                  :key #'clause-leading-type)))

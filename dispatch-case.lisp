@@ -134,7 +134,7 @@ represented both as universal times, and as instances of
     (defpackage :dispatch-case-example
       (:use :cl :alexandria :serapeum :local-time)
       (:shadow :time))
-    (in-package :dispatch-case-example)
+    \(in-package :dispatch-case-example)
 
     (deftype universal-time ()
       '(integer 0 *))

@@ -217,12 +217,16 @@ write that using `dispatch-case' like so:
     (defun time= (x y)
       (dispatch-case ((x time)
                       (y time))
-        ((time universal-time)
+        ((* universal-time)
          (time= x (universal-to-timestamp y)))
-        ((universal-time time)
+        ((universal-time *)
          (time= (universal-to-timestamp x) y))
         ((timestamp timestamp)
          (timestamp= x y))))
+
+\(In the list of types, you can use as asterisk as a shorthand for the
+type of the corresponding argument to `dispatch-case'; in that above,
+`time'.)
 
 Note that this requires only three clauses, where writing it out using
 nested `etypecase-of' forms would require four clauses. This is a
@@ -271,16 +275,27 @@ list) and `let' (which has an obvious macro-expansion in terms of
                (vars-out var)
                (types-out type)
                (exprs-out expr))))))
-    (with-unique-names (block)
-      (multiple-value-bind (tags clauses)
-          (hoist-clause-bodies block clauses env)
-        `(let ,(mapcar #'list vars exprs)
-           (with-read-only-vars ,vars
-             (block ,block
-               (tagbody
-                  (dispatch-case/nobindings ,(mapcar #'list vars types)
-                    ,@clauses)
-                  ,@tags))))))))
+    (let ((normalized-clauses
+            ;; Normalize asterisks into the types of the corresponding
+            ;; variables.
+            (loop for (clause-types . clause-body) in clauses
+                  collect (cons
+                           (loop for clause-type in clause-types
+                                 for type in types
+                                 if (eql clause-type '*)
+                                   collect type
+                                 else collect clause-type)
+                           clause-body))))
+      (with-unique-names (block)
+        (multiple-value-bind (tags final-clauses)
+            (hoist-clause-bodies block normalized-clauses env)
+          `(let ,(mapcar #'list vars exprs)
+             (with-read-only-vars ,vars
+               (block ,block
+                 (tagbody
+                    (dispatch-case/nobindings ,(mapcar #'list vars types)
+                      ,@final-clauses)
+                    ,@tags)))))))))
 
 ;;; TODO The problem with this expansion is that each branch only sees
 ;;; one value, which yields error messages that are hard to

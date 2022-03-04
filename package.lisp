@@ -318,6 +318,7 @@
    #:time-until
    #:interval
    ;; Classes.
+   #:subclass-union
    #:class-name-of
    #:class-name-safe
    #:find-class-safe

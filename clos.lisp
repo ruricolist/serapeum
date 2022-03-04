@@ -1,5 +1,15 @@
 (in-package :serapeum)
 
+(deftype subclass-union (class-name)
+  "Return a disjunction of all the direct subtypes of CLASS.
+This can be useful for exhaustiveness checking over the direct
+subtypes of a class.
+
+This should not be used for classes meant to be subclassed by library
+users."
+  (let ((class (find-class class-name t)))
+    `(or ,@(mapcar #'class-name (c2mop:class-direct-subclasses class)))))
+
 (eval-always
   (defstruct (struct-to-try-instantiating
               (:constructor nil)

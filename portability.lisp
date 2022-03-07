@@ -104,3 +104,12 @@ that `load-time-value' preserves identity."
            (test-load-time-value #'fn ',form ',read-only-p))
          (load-time-value ,form
                           ,@(and read-only-p-supplied? (list read-only-p))))))
+
+(deftype no-applicable-method-error ()
+  "The type of the error signaled by `no-applicable-method' on this
+Lisp. Note this may not be unique."
+  (load-time-value
+   (handler-case
+       (no-applicable-method #'no-applicable-method (list 1))
+     (error (e)
+       (type-of e)))))

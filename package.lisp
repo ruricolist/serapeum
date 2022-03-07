@@ -21,6 +21,7 @@
    ;; Portability.
    #:static-load-time-value
    #:static-load-time-value-error
+   #:no-applicable-method-error
    ;; Macro tools.
    #:unsplice
    #:string-gensym

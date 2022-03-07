@@ -27,3 +27,13 @@
                  (values (funcall (caar cache))))))
            (thunk (compile nil `(lambda () ,body))))
       (funcall thunk))))
+
+(defgeneric generic-with-no-methods (x))
+
+(test no-applicable-method-error
+  (is (proper-subtype-p 'no-applicable-method-error 'error))
+  (is (eql 'caught
+           (handler-case
+               (generic-with-no-methods 1)
+             (no-applicable-method-error ()
+               'caught)))))

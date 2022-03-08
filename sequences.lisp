@@ -398,7 +398,6 @@ number of items to *keep*, not remove.
                                       &key count
                                       &allow-other-keys)
   "In the absence of COUNT, expand directly to `remove-if-not'."
-  (declare (dynamic-extent pred))
   (if (null count)
       `(remove-if-not ,pred ,seq ,@args)
       decline))
@@ -748,7 +747,6 @@ size N, with no leftovers."
 As a second value, return the length of SEQ.
 
 From Clojure."
-  (declare (dynamic-extent key))
   (let ((total 0)
         ;; Using multiple-value-call lets us specify defaults while
         ;; still ensuring the caller can override them.

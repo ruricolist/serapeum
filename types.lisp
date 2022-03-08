@@ -471,7 +471,6 @@ Functions\", by Irène Durand and Robert Strandh."
            `(locally ,@body))
           ((or (policy> env 'space 'speed)
                (policy> env 'compilation-speed 'speed))
-           (simple-style-warning "Not using type dispatch due to optimize declarations.")
            `(locally ,@body))
           ;; The advantage of the CMUCL/SBCL way (I hope) is that the
           ;; compiler can decide /not/ to bother inlining if the type

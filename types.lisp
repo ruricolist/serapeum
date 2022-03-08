@@ -638,10 +638,7 @@ lexically enclosing WITH-BOOLEAN form.
 \
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN."
-  (cond ((or *boolean-bypass*
-             ;; (policy> env 'space 'speed)
-             ;; (policy> env 'compilation-speed 'speed)
-             )
+  (cond (*boolean-bypass*
          `(if ,branch ,then ,else))
         ((not (member branch (macroexpand-1 '%all-branches% env)))
          (missing-branch branch))
@@ -658,10 +655,7 @@ WITH-BOOLEAN form.
 \
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN."
-  (cond ((or *boolean-bypass*
-             ;; (policy> env 'space 'speed)
-             ;; (policy> env 'compilation-speed 'speed)
-             )
+  (cond (*boolean-bypass*
          `(when ,branch ,@body))
         ((not (member branch (macroexpand-1 '%all-branches% env)))
          (missing-branch branch))
@@ -682,10 +676,7 @@ WITH-BOOLEAN form.
 \
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN."
-  (cond ((or *boolean-bypass*
-             ;; (policy> env 'space 'speed)
-             ;; (policy> env 'compilation-speed 'speed)
-             )
+  (cond (*boolean-bypass*
          `(unless ,branch ,@body))
         ((not (member branch (macroexpand-1 '%all-branches% env)))
          (missing-branch branch))

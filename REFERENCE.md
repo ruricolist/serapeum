@@ -3113,7 +3113,7 @@ symbol).
 
 Like `fbind`, but creates bindings sequentially.
 
-[View source](fbind.lisp#L353)
+[View source](fbind.lisp#L356)
 
 ### `(fbindrec bindings &body body)`
 
@@ -3122,14 +3122,14 @@ Like `fbind`, but creates recursive bindings.
 The consequences of referring to one binding in the expression that
 generates another are undefined.
 
-[View source](fbind.lisp#L441)
+[View source](fbind.lisp#L444)
 
 ### `(fbindrec* bindings &body body)`
 
 Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
-[View source](fbind.lisp#L484)
+[View source](fbind.lisp#L487)
 
 ## Static Let
 

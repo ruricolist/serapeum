@@ -327,12 +327,14 @@ symbol)."
            (body decls (parse-body body)))
     `(let ,env
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
+       "Hidden variable bindings to close over."
        (let ,(loop for temp in temps
                    for expr in exprs
                    collect `(,temp (ensure-function ,expr)))
          ,@(when temps
              (unsplice
               `(declare (function ,@temps))))
+         (comment "Hidden variable bindings for function values.")
          (flet (,@(loop for (name lambda) in lambdas
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
@@ -341,13 +343,14 @@ symbol)."
                           collect (build-bind/ftype var temp decls env)))
            #-sbcl (declare (inline ,@(set-difference vars macro-vars)))
            ,@decls
+           (comment "Functions that might be sharp-quoted.")
            (macrolet (,@(loop for var in vars
                               for temp in temps
                               when (member var macro-vars)
                                 collect `(,var
                                           (&rest args)
                                           (list* 'funcall ',temp args))))
-             (comment "Macro bindings for functions that are never called.")
+             (comment "Macros for functions provably never sharp-quoted.")
              ,@body))))))
 
 (defmacro fbind* (bindings &body body &environment env)

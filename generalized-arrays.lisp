@@ -185,7 +185,7 @@ Array theory calls this operation `list', but the MOA operation is
 identical and has a more distinctive name."
   ;; (reshape (tally array) array)
   (typecase array
-    (sequence array)
+    (sequence (copy-seq array))
     (array (reshape (tally array) array :displace displace))
     (t (list array))))
 

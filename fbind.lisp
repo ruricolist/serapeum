@@ -454,7 +454,7 @@ generates another are undefined."
            (simple complex lambda unref
             (partition-fbinds (append bindings lambdas)
                               body))
-           (temps (mapcar (compose #'gensym #'string #'first) complex))
+           (temps (mapcar (op (gensym (string (first _)))) complex))
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))
     `(let ,env
@@ -494,7 +494,7 @@ used in successive bindings."
            (simple complex lambda unref
             (partition-fbinds (append binds lambdas)
                               body))
-           (temps (mapcar (compose #'gensym #'string #'first) complex))
+           (temps (mapcar (op (gensym (string (first _)))) complex))
            (body decls (parse-body body))
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))

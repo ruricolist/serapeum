@@ -227,14 +227,23 @@
 (test extrema
   (is (equal (multiple-value-list (extrema '(1 2 3 4 5) #'<)) '(1 5))))
 
-(test halves
+(test list-halves
   (is (equal (halves '(x)) '(x)))
-  (is (equal (nth-value 1 (halves '(x) -1)) '(x)))
+  (is (equal (halves '(x) 1) '(x)))
+  (is (equal (multiple-value-list (halves '(x) -1)) '(nil (x))))
   (is (equal (multiple-value-list (halves '(x y))) '((x) (y))))
-  (is (equal (multiple-value-list (halves '(x y) -1)) '((x) (y))))
   (is (equal (multiple-value-list (halves '(x y z))) '((x y) (z))))
   (is (equal (multiple-value-list (halves '(x y z) -2)) '((x) (y z))))
+  (is (equal '(1 2 3) (halves '(1 2 3) 6))))
 
+(test list-halves/negative
+  (for-all ((list (lambda () (iota (random 20))))
+            (split (lambda () (- (random 20)))))
+    (multiple-value-bind (left right) (halves list split)
+      (is (equal left (butlast list (abs split))))
+      (is (equal right (last list (abs split)))))))
+
+(test string-halves
   (is (equal (halves "") ""))
   (is (equal (halves "" 1) ""))
   (is (equal (halves "" -1) ""))

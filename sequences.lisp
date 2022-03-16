@@ -1451,19 +1451,38 @@ values).
           (map-subseq #'update-extrema seq start end))
         (values min max)))))
 
-(-> split-at (list array-index) (values list list))
+(-> split-at (list signed-array-index) (values list list))
 (defun split-at (list k)
   (declare (list list)
            (optimize speed))
-  (nlet rec ((left '())
-             (right list)
-             (k k))
-    (declare (array-index k))
-    (if (zerop k)
-        (values (nreverse left) right)
-        (rec (cons (car right) left)
-             (cdr right)
-             (1- k)))))
+  (econd
+    ((zerop k)
+     (values list nil))
+    ((minusp k)
+     ;; Adapted from the definition of `butlast' in SBCL.
+     (let* ((k (abs k))
+            (head (nthcdr (1- k) list)))
+       (if (or (endp head)
+               (endp (cdr head)))
+           (values nil list)
+           (loop for trail on list
+                 and head on head
+                 ;; HEAD is n-1 conses ahead of TRAIL;
+                 ;; when HEAD is at the last cons, return
+                 ;; the data copied so far.
+                 until (endp (cdr head))
+                 collect (car trail) into copy
+                 finally (return (values copy trail))))))
+    ((plusp k)
+     (nlet rec ((left '())
+                (right list)
+                (k k))
+       (declare (array-index k))
+       (if (or (zerop k) (endp right))
+           (values (nreverse left) right)
+           (rec (cons (car right) left)
+                (cdr right)
+                (1- k)))))))
 
 (-> halves
     (sequence &optional (or null signed-array-index))
@@ -1479,18 +1498,17 @@ single-element list, it should be returned unchanged.
 
 If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
-the left."
+the left). Note that providing a negative argument to a list works
+similarly to `butlast' (a single traversal)."
   (declare ((or null signed-array-index) split))
   (flet ((halfway-point (seq)
            (ceiling (length seq) 2)))
     (seq-dispatch seq
-      (if split
-          (if (minusp split)
-              (split-at seq (max 0 (+ (length seq) split)))
-              ;; If we know where to split in advance we only have to
-              ;; traverse the list once.
-              (split-at seq split))
-          (split-at seq (halfway-point seq)))
+      (split-at seq
+                ;; If we know where to split in advance we only
+                ;; have to traverse the list once.
+                (or split
+                    (halfway-point seq)))
       (let* ((len (length seq))
              (split (or (and split
                              (clamp

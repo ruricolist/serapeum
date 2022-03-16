@@ -4081,22 +4081,23 @@ single-element list, it should be returned unchanged.
 
 If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
-the left.
+the left). Note that providing a negative argument to a list works
+similarly to `butlast` (a single traversal).
 
-[View source](sequences.lisp#L1471)
+[View source](sequences.lisp#L1490)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1505)
+[View source](sequences.lisp#L1523)
 
 ### `(dsu-sort-new seq fn &key key stable)`
 
 Like `dsu-sort`, but returning a new vector.
 
-[View source](sequences.lisp#L1512)
+[View source](sequences.lisp#L1530)
 
 ### `(deltas seq &optional fn)`
 
@@ -4116,14 +4117,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1527)
+[View source](sequences.lisp#L1545)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1551)
+[View source](sequences.lisp#L1569)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -4154,14 +4155,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1595)
+[View source](sequences.lisp#L1613)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1657)
+[View source](sequences.lisp#L1675)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -4205,14 +4206,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1687)
+[View source](sequences.lisp#L1705)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1729)
+[View source](sequences.lisp#L1747)
 
 ### `(repeat-sequence seq n)`
 
@@ -4236,7 +4237,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1769)
+[View source](sequences.lisp#L1787)
 
 ### `(seq= &rest xs)`
 
@@ -4245,7 +4246,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1852)
+[View source](sequences.lisp#L1870)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4267,7 +4268,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1916)
+[View source](sequences.lisp#L1934)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4278,20 +4279,20 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1968)
+[View source](sequences.lisp#L1986)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L1999)
+[View source](sequences.lisp#L2017)
 
 ### `(copy-firstn list n)`
 
 Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
 lists gracefully.
 
-[View source](sequences.lisp#L2012)
+[View source](sequences.lisp#L2030)
 
 ### `(splice-seq sequence &key new start end)`
 
@@ -4310,7 +4311,7 @@ Omitting NEW removes elements from SEQUENCE:
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2154)
+[View source](sequences.lisp#L2172)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4330,19 +4331,19 @@ Omitting NEW removes elements from SEQUENCE:
     (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2181)
+[View source](sequences.lisp#L2199)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2204)
+[View source](sequences.lisp#L2222)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2207)
+[View source](sequences.lisp#L2225)
 
 ## Strings
 

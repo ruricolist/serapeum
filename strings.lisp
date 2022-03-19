@@ -999,21 +999,12 @@ code."
 
 (define-compiler-macro string+ (&whole call
                                        &environment env
-                                       &rest args)
-  (if (null args) ""
-      (let ((args (simplify-args-for-string-plus args env)))
-        (if (> (length args) 20) call
-            (if (= (length args) 1)
-                (if (stringp (first args))
-                    `(copy-seq ,(first args))
-                    `(princ-to-string ,(first args)))
-                ;; If the arguments are reasonably few, unroll the
-                ;; loop.
-                (with-unique-names (stream)
-                  `(let ((*print-pretty* nil))
-                     (with-output-to-string (,stream)
-                       ,@(loop for arg in args
-                               if (stringp arg)
-                                 collect `(write-string ,arg ,stream)
-                               else
-                                 collect `(princ ,arg ,stream))))))))))
+                                       &rest orig-args)
+  (if (null orig-args) ""
+      (let ((args (simplify-args-for-string-plus orig-args env)))
+        (if (= (length args) 1)
+            (if (stringp (first args))
+                `(copy-seq ,(first args))
+                `(princ-to-string ,(first args)))
+            (if (equal args orig-args) call
+                `(string+ ,@args))))))

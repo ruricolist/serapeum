@@ -889,7 +889,7 @@ Takes care that the longest suffix is always removed first."
               (rec (+ match len) (1+ hits))))))))
 
 (deftype fixed-print-length-type ()
-  '(or string character symbol pathname integer))
+  '(or string character symbol pathname fixnum))
 
 (declaim (ftype (function (&rest t) string) string+))
 (defun string+ (&rest args)
@@ -911,15 +911,20 @@ code."
              ;; Based on the implementation of concatenate 'string in SBCL.
              (let ((len 0)
                    (print-base *print-base*))
-               (declare (array-index len))
+               (declare (array-index len)
+                        ((integer 2 36) print-base))
                (dolist (x args)
                  (typecase-of fixed-print-length-type x
                    (string (incf len (length x)))
                    (character (incf len))
-                   (pathname (incf len (length (namestring x))))
+                   (pathname
+                    (when-let (namestring (namestring x))
+                      (incf len (length namestring))))
                    (symbol (incf len (length (symbol-name x))))
                    ;; This may not be worthwhile.
-                   (integer (incf len (1+ (floor (log x print-base)))))
+                   (fixnum (incf len (1+
+                                      (the array-length
+                                           (floor (log x print-base))))))
                    (otherwise (go :use-string-stream))))
                (let ((result (make-array len :element-type 'character))
                      (start 0)
@@ -934,13 +939,15 @@ code."
                      (etypecase-of fixed-print-length-type x
                        (string (add-string x))
                        (character (add-string (string x)))
-                       (pathname (add-string (namestring x)))
+                       (pathname
+                        (when-let (namestring (namestring x))
+                          (add-string namestring)))
                        (symbol
                         ;; Case might be affected by print-case.
                         (if (eql print-case :upcase)
                             (add-string (symbol-name x))
                             (add-string (princ-to-string x))))
-                       (integer
+                       (fixnum
                         (cond
                           ((eql x 0) (add-string "0"))
                           ((eql x 1) (add-string "1"))

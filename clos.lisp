@@ -33,9 +33,9 @@ more compile-time argument checking.
 
 Also unlike `make-instance', `make' is defined to always return a
 single value. It also declares its return type (as `standard-object',
-or also `structure-object' if the implementation allows). This may
-allow the compiler to warn you if you (e.g.) try to treat the return
-value as a list or number.
+or also `structure-object' if the implementation allows
+`make-instance' on structures). This may allow the compiler to warn
+you if you (e.g.) try to treat the return value as a list or number.
 
 After Eulisp."
   (declare (type (or class symbol) class)

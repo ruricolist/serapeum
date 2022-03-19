@@ -2919,9 +2919,9 @@ more compile-time argument checking.
 
 Also unlike `make-instance`, `make` is defined to always return a
 single value. It also declares its return type (as `standard-object`,
-or also `structure-object` if the implementation allows). This may
-allow the compiler to warn you if you (e.g.) try to treat the return
-value as a list or number.
+or also `structure-object` if the implementation allows
+`make-instance` on structures). This may allow the compiler to warn
+you if you (e.g.) try to treat the return value as a list or number.
 
 After Eulisp.
 
@@ -2931,21 +2931,21 @@ After Eulisp.
 
 The class name of the class of X.
 
-[View source](clos.lisp#L59)
+[View source](clos.lisp#L60)
 
 ### `(class-name-safe x)`
 
 The class name of the class of X.
 If X is a class, the name of the class itself.
 
-[View source](clos.lisp#L63)
+[View source](clos.lisp#L65)
 
 ### `(find-class-safe x &optional env)`
 
 The class designated by X.
 If X is a class, it designates itself.
 
-[View source](clos.lisp#L70)
+[View source](clos.lisp#L74)
 
 ### `(slot-value-safe instance slot-name &optional default)`
 
@@ -2959,7 +2959,7 @@ Note that this function does call `slot-value`, so if there is a
 method on `slot-unbound` for the class it will be invoked. In this
 case the second value will still be `nil`, however.
 
-[View source](clos.lisp#L82)
+[View source](clos.lisp#L85)
 
 ### `(defmethods class (self . slots) &body body)`
 
@@ -3045,7 +3045,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L109)
+[View source](clos.lisp#L112)
 
 ## Hooks
 

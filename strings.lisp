@@ -902,12 +902,37 @@ code."
   (declare (dynamic-extent args))
   (if (null args) ""
       (let ((*print-pretty* nil))
-        (with-output-to-string (s)
-          (dolist (arg args)
-            (typecase arg
-              (string (write-string arg s))
-              (character (write-char arg s))
-              (t (princ arg s))))))))
+        (locally (declare (optimize (speed 3) (safety 1)))
+          (tagbody
+           :use-concat
+             ;; Based on the implementation of concatenate 'string in SBCL.
+             (let ((len 0))
+               (declare (array-index len))
+               (dolist (x args)
+                 (typecase x
+                   (string (incf len (length x)))
+                   (character (incf len))
+                   (t (go :use-string-stream))))
+               (let ((result (make-array len :element-type 'character))
+                     (start 0))
+                 (declare (array-index start)
+                          ((simple-array character (*)) result))
+                 (dolist (x args)
+                   (etypecase x
+                     ((or string character)
+                      (let ((x (string x)))
+                        (with-string-dispatch () x
+                          (replace result x :start1 start)
+                          (incf start (length x)))))))
+                 (return-from string+ result)))
+           :use-string-stream
+             (return-from string+
+               (with-output-to-string (s)
+                 (dolist (arg args)
+                   (typecase arg
+                     (string (write-string arg s))
+                     (character (write-char arg s))
+                     (t (princ arg s)))))))))))
 
 (defun simplify-args-for-string-plus (args &optional env)
   (reduce (lambda (x args)

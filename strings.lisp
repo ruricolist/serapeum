@@ -888,6 +888,9 @@ Takes care that the longest suffix is always removed first."
               hits
               (rec (+ match len) (1+ hits))))))))
 
+(deftype fixed-print-length-type ()
+  '(or string character symbol pathname integer))
+
 (declaim (ftype (function (&rest t) string) string+))
 (defun string+ (&rest args)
   "Optimized function for building small strings.
@@ -906,24 +909,42 @@ code."
           (tagbody
            :use-concat
              ;; Based on the implementation of concatenate 'string in SBCL.
-             (let ((len 0))
+             (let ((len 0)
+                   (print-base *print-base*))
                (declare (array-index len))
                (dolist (x args)
-                 (typecase x
+                 (typecase-of fixed-print-length-type x
                    (string (incf len (length x)))
                    (character (incf len))
-                   (t (go :use-string-stream))))
+                   (pathname (incf len (length (namestring x))))
+                   (symbol (incf len (length (symbol-name x))))
+                   ;; This may not be worthwhile.
+                   (integer (incf len (1+ (floor (log x print-base)))))
+                   (otherwise (go :use-string-stream))))
                (let ((result (make-array len :element-type 'character))
-                     (start 0))
+                     (start 0)
+                     (print-case *print-case*))
                  (declare (array-index start)
                           ((simple-array character (*)) result))
                  (dolist (x args)
-                   (etypecase x
-                     ((or string character)
-                      (let ((x (string x)))
-                        (with-string-dispatch () x
-                          (replace result x :start1 start)
-                          (incf start (length x)))))))
+                   (flet ((add-string (s)
+                            (with-string-dispatch () s
+                              (replace result s :start1 start)
+                              (incf start (length s)))))
+                     (etypecase-of fixed-print-length-type x
+                       (string (add-string x))
+                       (character (add-string (string x)))
+                       (pathname (add-string (namestring x)))
+                       (symbol
+                        ;; Case might be affected by print-case.
+                        (if (eql print-case :upcase)
+                            (add-string (symbol-name x))
+                            (add-string (princ-to-string x))))
+                       (integer
+                        (cond
+                          ((eql x 0) (add-string "0"))
+                          ((eql x 1) (add-string "1"))
+                          (t (add-string (princ-to-string x))))))))
                  (return-from string+ result)))
            :use-string-stream
              (return-from string+

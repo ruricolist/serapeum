@@ -80,9 +80,8 @@ If X is a class, it designates itself."
     (t nil)))
 
 (declaim (inline slot-value-safe))
-(declaim (ftype (function (t symbol)
-                          (values t boolean boolean &optional))
-                slot-bound-value))
+(-> slot-value-safe (t symbol &optional t)
+    (values t boolean boolean &optional))
 (defun slot-value-safe (instance slot-name &optional default)
   "Like `slot-value', but doesn't signal errors.
 Returns three values:

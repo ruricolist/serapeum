@@ -56,17 +56,21 @@ After Eulisp."
     ((list 'quote class-name)
      `(,class-name ,@initargs))))
 
-(defsubst class-name-of (x)
+(-> class-name-of (t) (values symbol &optional))
+(defun class-name-of (x)
   "The class name of the class of X."
-  (class-name (class-of x)))
+  (assure symbol (class-name (class-of x))))
 
+(-> class-name-safe (t) (values symbol &optional))
 (defun class-name-safe (x)
   "The class name of the class of X.
 If X is a class, the name of the class itself."
   (if (typep x 'class)
-      (class-name x)
+      (values (assure symbol (class-name x)))
       (class-name-of x)))
 
+(-> find-class-safe ((or symbol class) &optional t)
+    (values class &optional))
 (defun find-class-safe (x &optional env)
   "The class designated by X.
 If X is a class, it designates itself."

@@ -273,6 +273,26 @@
     (let ((*print-array* nil))
       (is (string^= "#<" (string+ my-vec))))))
 
+(test positive-numeric-string+
+  (for-all ((base (lambda () (random-in-range 2 36)))
+            (n (lambda () (random 1000))))
+    (let ((range (shuffle (range n)))
+          (*print-base* base))
+      (is (equal (apply #'string+ (coerce range 'list))
+                 (with-output-to-string (s)
+                   (do-each (n range)
+                     (princ n s))))))))
+
+(test negative-numeric-string+
+  (for-all ((base (lambda () (random-in-range 2 36)))
+            (n (lambda () (random 1000))))
+    (let ((range (shuffle (range (- n) 0)))
+          (*print-base* base))
+      (is (equal (apply #'string+ (coerce range 'list))
+                 (with-output-to-string (s)
+                   (do-each (n range)
+                     (princ n s))))))))
+
 (test print-case-string+
   "Check that print case is respected even for constant symbols."
   (is (equal "foo1" (string+ '|foo| 1)))

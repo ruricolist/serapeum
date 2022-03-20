@@ -891,6 +891,17 @@ Takes care that the longest suffix is always removed first."
 (deftype fixed-print-length-type ()
   '(or string character symbol pathname fixnum))
 
+(defun digit-length (n &optional (base *print-base*))
+  (declare ((integer 0 #.most-positive-fixnum) n)
+           (optimize speed (safety 1)))
+  ;; TODO Optimize for powers of 2.
+  (let ((len 0))
+    (declare ((integer 0 #.(integer-length most-positive-fixnum)) len))
+    (loop for q = (truncate n base)
+          do (incf len)
+          until (zerop (setf n q)))
+    len))
+
 (declaim (ftype (function (&rest t) string) string+))
 (defun string+ (&rest args)
   "Optimized function for building small strings.
@@ -910,8 +921,9 @@ code."
            :use-concat
              ;; Based on the implementation of concatenate 'string in SBCL.
              (let ((len 0)
-                   (print-base *print-base*))
-               (declare (array-index len)
+                   (print-base *print-base*)
+                   (int-chars "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+               (declare (array-length len)
                         ((integer 2 36) print-base))
                (dolist (x args)
                  (typecase-of fixed-print-length-type x
@@ -921,10 +933,10 @@ code."
                     (when-let (namestring (namestring x))
                       (incf len (length namestring))))
                    (symbol (incf len (length (symbol-name x))))
-                   ;; This may not be worthwhile.
-                   (fixnum (incf len (1+
-                                      (the array-length
-                                           (floor (log x print-base))))))
+                   (fixnum
+                    (when (minusp x)
+                      (incf len))
+                    (incf len (digit-length (abs x))))
                    (otherwise (go :use-string-stream))))
                (let ((result (make-array len :element-type 'character))
                      (start 0)
@@ -932,13 +944,18 @@ code."
                  (declare (array-index start)
                           ((simple-array character (*)) result))
                  (dolist (x args)
-                   (flet ((add-string (s)
+                   (flet ((add-char (c)
+                            (declare (character c))
+                            (setf (schar result start) c)
+                            (incf start))
+                          (add-string (s)
+                            (declare (string s))
                             (with-string-dispatch () s
                               (replace result s :start1 start)
                               (incf start (length s)))))
                      (etypecase-of fixed-print-length-type x
                        (string (add-string x))
-                       (character (add-string (string x)))
+                       (character (add-char x))
                        (pathname
                         (when-let (namestring (namestring x))
                           (add-string namestring)))
@@ -948,10 +965,23 @@ code."
                             (add-string (symbol-name x))
                             (add-string (princ-to-string x))))
                        (fixnum
-                        (cond
-                          ((eql x 0) (add-string "0"))
-                          ((eql x 1) (add-string "1"))
-                          (t (add-string (princ-to-string x))))))))
+                        (when (minusp x)
+                          (add-char #\-))
+                        (let* ((x (abs x))
+                               (ptr (+ start (digit-length x))))
+                          (declare (array-length ptr))
+                          (cond
+                            ((eql x 0) (add-char #\0))
+                            ((eql x 1) (add-char #\1))
+                            (t
+                             (loop (multiple-value-bind (q r)
+                                       (truncate x print-base)
+                                     ;; Write chars backwards.
+                                     (decf ptr)
+                                     (setf (aref result ptr) (schar int-chars r))
+                                     (incf start)
+                                     (when (zerop (setq x q))
+                                       (return)))))))))))
                  (return-from string+ result)))
            :use-string-stream
              (return-from string+

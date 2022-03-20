@@ -155,3 +155,8 @@
                                 most-positive-double-float)))))
         (values results1 results2))
     (is (every #'= results1 results2))))
+
+(test digit-length
+  (for-all ((n (lambda () (random most-positive-fixnum))))
+    (is (= (serapeum::digit-length n)
+           (length (princ-to-string n))))))

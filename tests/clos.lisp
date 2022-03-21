@@ -106,3 +106,6 @@
   (is (equal* (ctx-fn 1 :keyword 'given)
               (ard-fn 1 :keyword 'given)
               '(list given t 1 given))))
+
+(test find-class-safe
+  (is (null (find-class-safe 'this-class-does-not-exist))))

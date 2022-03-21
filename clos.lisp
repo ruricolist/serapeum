@@ -70,7 +70,7 @@ If X is a class, the name of the class itself."
       (class-name-of x)))
 
 (-> find-class-safe ((or symbol class) &optional t)
-    (values class &optional))
+    (values (or class null) &optional))
 (defun find-class-safe (x &optional env)
   "The class designated by X.
 If X is a class, it designates itself."

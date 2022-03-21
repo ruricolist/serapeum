@@ -293,6 +293,13 @@
                    (do-each (n range)
                      (princ n s))))))))
 
+(test nil-string+
+  (locally (declare (notinline string+))
+    (is (equal "" (string+ nil)))
+    (is (equal "xz" (string+ "x" nil "z"))))
+  (is (equal "" (string+ nil)))
+  (is (equal "xz" (string+ "x" nil "z"))))
+
 (test print-case-string+
   "Check that print case is respected even for constant symbols."
   (is (equal "foo1" (string+ '|foo| 1)))

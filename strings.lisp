@@ -911,8 +911,19 @@ Roughly equivalent to
     (let ((*print-pretty* nil))
      (format nil \"~@{~a}\" args...))
 
-But with a compiler macro that can sometimes result in more efficient
-code."
+But may be more efficient when the arguments of certain simple
+types (such as strings, characters, symbols, pathnames, and fixnums).
+
+Note that unlike `princ', `string+' treats `nil' as the same as the
+empty string:
+
+    (string+ nil)
+    => \"\"
+
+    (string+ \"x\" nil)
+    => \"x\"
+
+This utility is inspired by the utility of the same name in Allegro."
   (declare (dynamic-extent args))
   (if (null args) ""
       (let ((*print-pretty* nil))
@@ -932,6 +943,7 @@ code."
                    (pathname
                     (when-let (namestring (namestring x))
                       (incf len (length namestring))))
+                   (null)
                    (symbol (incf len (length (symbol-name x))))
                    (fixnum
                     (when (minusp x)
@@ -959,6 +971,7 @@ code."
                        (pathname
                         (when-let (namestring (namestring x))
                           (add-string namestring)))
+                       (null)
                        (symbol
                         ;; Case might be affected by print-case.
                         (if (eql print-case :upcase)
@@ -990,6 +1003,7 @@ code."
                    (typecase arg
                      (string (write-string arg s))
                      (character (write-char arg s))
+                     (null)
                      (t (princ arg s)))))))))))
 
 (defun simplify-args-for-string-plus (args &optional env)
@@ -1005,6 +1019,7 @@ code."
           :key (named-lambda stringify (arg)
                  ;; Stringify constant arguments when possible.
                  (trivia:match arg
+                   ((eql nil) "")
                    ((and arg (type character))
                     (string arg))
                    ((or (and sym (type keyword))

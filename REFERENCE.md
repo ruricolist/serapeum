@@ -4831,10 +4831,21 @@ Roughly equivalent to
     (let ((*print-pretty* nil))
      (format nil "~@{~a}" args...))
 
-But with a compiler macro that can sometimes result in more efficient
-code.
+But may be more efficient when the arguments of certain simple
+types (such as strings, characters, symbols, pathnames, and fixnums).
 
-[View source](strings.lisp#L892)
+Note that unlike `princ`, `string+` treats `nil` as the same as the
+empty string:
+
+    (string+ nil)
+    => ""
+
+    (string+ "x" nil)
+    => "x"
+
+This utility is inspired by the utility of the same name in Allegro.
+
+[View source](strings.lisp#L906)
 
 ## Vectors
 

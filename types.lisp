@@ -696,7 +696,7 @@ WITH-BOOLEAN."
 
 (defmacro with-test-fn ((test) &body body
                         &environment env)
-  "Specialize BODY on the most common test functions."
+  "Specialize BODY on the most common two-arg test functions."
   (check-type test symbol)
   (let ((default
           `(let ((,test (ensure-function ,test)))

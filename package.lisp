@@ -217,6 +217,8 @@
    #:flip-hash-table
    #:hash-fold
    #:maphash-return
+   #:maphash-new
+   #:maphash-into
    #:set-hash-table
    #:hash-table-set
    #:hash-table-predicate

@@ -255,6 +255,53 @@ From Zetalisp."
                '()
                hash-table)))
 
+(-> maphash-new ((-> (t t) (values t t &optional))
+                 hash-table &key &allow-other-keys)
+  hash-table)
+(defun maphash-new (fn hash-table &rest hash-table-args &key &allow-other-keys)
+  "Like MAPHASH, but builds and returns a new hash table.
+
+FN is a function of two arguments, like the function argument to
+`maphash'. It is required, however, to return two values, a new key
+and a new value.
+
+If `copy-hash-table' did not exist, you could define it as:
+
+    (maphash-new #'values hash-table)
+
+Note it is not necessarily the case that the new hash table will have
+the same number of entries as the old hash table, since FN might
+evaluate to the same key more than once.
+
+By default, the new hash table has the same hash table
+properties (test, size) as HASH-TABLE, but these can be overridden
+with HASH-TABLE-ARGS."
+  (let ((fn (ensure-function fn)))
+    (hash-fold (lambda (k v new)
+                 (receive (new-k new-v)
+                     (funcall fn k v)
+                   (dict* new new-k new-v))
+                 new)
+               (apply #'copy-hash-table/empty hash-table hash-table-args)
+               hash-table)))
+
+(-> map-into-hash-table (hash-table (-> (t t) (values t t &optional))
+                                    &rest sequence)
+  hash-table)
+(defun maphash-into (hash-table fn &rest seqs)
+  "Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
+
+FN is required to return two values, and key and a value."
+  (prog1 hash-table
+    ;; Is this worth having a compiler macro for, so `map' is called
+    ;; with a fixed number of values?
+    (let ((fn (ensure-function fn)))
+      (apply #'map nil
+             (lambda (&rest args)
+               (receive (k v) (apply fn args)
+                 (setf (gethash k hash-table) v)))
+             seqs))))
+
 ;; Clojure
 (defun merge-tables! (table &rest tables)
   (reduce (lambda (ht1 ht2)

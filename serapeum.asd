@@ -48,7 +48,7 @@
                   :depends-on ("types" "hash-tables" "iter"))
                  (:file "trees")
                  (:file "hash-tables"
-                  :depends-on ("iter" "types" "control-flow"))
+                  :depends-on ("iter" "types" "control-flow" "binding"))
                  (:file "files"
                   :depends-on ("types"))
                  (:file "symbols")

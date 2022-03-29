@@ -73,3 +73,32 @@
               (dict 'eql 1 4 2 5 3 6)))
   (signals error
     (pairhash '(1 2) '(3))))
+
+(test maphash-new
+  (let* ((old (dict "x" 1 "y" 2))
+         (new (maphash-new #'values old)))
+    (is (not (eql old new)))
+    (is (equalp old new)))
+  (let* ((old (dict "x" 1 "y" 2))
+         (new (maphash-new #'values old :test 'eql)))
+    (is (not (eql old new)))
+    (is (eql (hash-table-test new) 'eql))
+    (is (set-equal (hash-table-alist old)
+                   (hash-table-alist new)
+                   :test #'equal))))
+
+(test maphash-into
+  (let ((dict
+          (maphash-into (dict)
+                        (lambda (x)
+                          (values (princ-to-string x) x))
+                        '(1 2 3 4))))
+    (is (eql 1 (gethash "1" dict))))
+  (let ((dict
+          (maphash-into (make-hash-table)
+                        (lambda (x y z)
+                          (values x (+ y z)))
+                        '(1 2 3 4)
+                        '(5 6 7 8)
+                        '(9 10 11 12))))
+    (is (= (gethash 4 dict) (+ 8 12)))))

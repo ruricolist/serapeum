@@ -556,7 +556,7 @@ Cf. `ensure2'."
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     `(let* ,(mapcar #'list vars vals)
-       (or (ignoring (or unbound-slot unbound-variable)
+       (or (ignore-some-conditions (unbound-slot unbound-variable)
              ,getter)
            (multiple-value-bind ,stores
                (progn ,@newval)
@@ -570,7 +570,7 @@ Cf. `ensure2'."
             vals
             stores
             setter
-            `(or (ignoring (or unbound-slot unbound-variable)
+            `(or (ignore-some-conditions (unbound-slot unbound-variable)
                    ,getter)
                  (progn ,@newval)))))
 

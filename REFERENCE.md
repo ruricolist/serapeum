@@ -2317,7 +2317,7 @@ Clojure's `merge`.
 
 [View source](hash-tables.lisp#L315)
 
-### `(flip-hash-table table &key test key)`
+### `(flip-hash-table table &rest hash-table-args &key filter key test size rehash-size rehash-threshold)`
 
 Return a table like TABLE, but with keys and values flipped.
 
@@ -2337,7 +2337,7 @@ TEST allows you to filter which keys to set.
 KEY allows you to transform the keys in the old hash table.
 
      (def negative-number-names (flip-hash-table number-names :key #'-))
-     (gethash 'one negative-number-names) => -1, nil
+     (gethash 'one negative-number-names) => -1, t
 
 KEY defaults to `identity`.
 
@@ -2355,7 +2355,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L374)
+[View source](hash-tables.lisp#L379)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2364,7 +2364,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L406)
+[View source](hash-tables.lisp#L411)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2372,7 +2372,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L417)
+[View source](hash-tables.lisp#L422)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -2403,7 +2403,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L427)
+[View source](hash-tables.lisp#L432)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2411,14 +2411,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L518)
+[View source](hash-tables.lisp#L523)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L526)
+[View source](hash-tables.lisp#L531)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2431,7 +2431,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L535)
+[View source](hash-tables.lisp#L540)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2455,7 +2455,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L557)
+[View source](hash-tables.lisp#L562)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2464,7 +2464,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L607)
+[View source](hash-tables.lisp#L612)
 
 ## Files
 

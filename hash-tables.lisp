@@ -341,7 +341,9 @@ Clojure's `merge'.
                (copy-hash-table table :size size)
                tables))))))
 
-(defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
+(defun flip-hash-table (table &rest hash-table-args
+                        &key (filter (constantly t)) (key #'identity)
+                          test size rehash-size rehash-threshold)
   "Return a table like TABLE, but with keys and values flipped.
 
      (gethash :y (flip-hash-table (dict :x :y)))
@@ -360,21 +362,24 @@ TEST allows you to filter which keys to set.
 KEY allows you to transform the keys in the old hash table.
 
      (def negative-number-names (flip-hash-table number-names :key #'-))
-     (gethash 'one negative-number-names) => -1, nil
+     (gethash 'one negative-number-names) => -1, t
 
 KEY defaults to `identity'."
-  (let ((table2 (copy-hash-table/empty table)))
-    (ensuring-functions (key test)
+  (declare (ignore test size rehash-size rehash-threshold))
+  (let ((table2 (apply #'copy-hash-table/empty table
+                       (remove-from-plist hash-table-args
+                                          :filter :key))))
+    (ensuring-functions (key filter)
       (do-hash-table (k v table)
         (let ((key (funcall key k)))
-          (when (funcall test key)
+          (when (funcall filter key)
             (setf (gethash v table2) key)))))
     table2))
 
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)
-                                                      (key #'identity)
-                                                      (strict t)
-                                                      &allow-other-keys)
+                                                   (key #'identity)
+                                                   (strict t)
+                       &allow-other-keys)
   "Return SET, a list considered as a set, as a hash table.
 This is the equivalent of Alexandria's `alist-hash-table' and
 `plist-hash-table' for a list that denotes a set.

@@ -102,3 +102,31 @@
                         '(5 6 7 8)
                         '(9 10 11 12))))
     (is (= (gethash 4 dict) (+ 8 12)))))
+
+(test flip-hash-table-docstring
+  (is (equal '(:x t)
+             (multiple-value-list
+              (gethash :y (flip-hash-table (dict :x :y))))))
+  (local
+    (def number-names (dictq 1 one 2 two 3 three))
+
+    (def name-numbers (flip-hash-table number-names))
+    (def name-odd-numbers (flip-hash-table number-names :filter #'oddp))
+
+    (is (equal '(2 t)
+               (multiple-value-list
+                (gethash 'two name-numbers))))
+    (is (equal '(nil nil)
+               (multiple-value-list
+                (gethash 'two name-odd-numbers)))))
+  (local
+    (def number-names (dict 1 'one))
+    (def negative-number-names (flip-hash-table number-names :key #'-))
+    (is (equal '(-1 t)
+               (multiple-value-list
+                (gethash 'one negative-number-names))))))
+
+(test flip-hash-table-test
+  (let ((ht (dict 'eql 1 "one")))
+    (is (eql 'eql (hash-table-test ht)))
+    (is (eql 1 (gethash "one" (flip-hash-table ht :test 'equal))))))

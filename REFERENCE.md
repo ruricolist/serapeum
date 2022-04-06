@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 460 functions)
+# Function Listing For serapeum (43 files, 461 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2087,13 +2087,19 @@ Otherwise, return a fresh cons of X and Y.
 
 [View source](trees.lisp#L4)
 
+### `(car+cdr list)`
+
+Given LIST, return its car and cdr as two values.
+
+[View source](trees.lisp#L16)
+
 ### `(walk-tree fun tree &key tag traversal)`
 
 Call FUN in turn over each atom and cons of TREE.
 
 FUN can skip the current subtree with (throw TAG nil).
 
-[View source](trees.lisp#L13)
+[View source](trees.lisp#L21)
 
 ### `(map-tree fun tree &key tag traversal)`
 
@@ -2109,26 +2115,26 @@ case SUBTREE will be used as the value of the subtree.
 TRAVERSE can be one of `:preorder`, `:postorder`, or `:inorder`. The
 default is `:preorder`.
 
-[View source](trees.lisp#L28)
+[View source](trees.lisp#L36)
 
 ### `(leaf-walk fun tree)`
 
 Call FUN on each leaf of TREE.
 
-[View source](trees.lisp#L114)
+[View source](trees.lisp#L122)
 
 ### `(leaf-map fn tree)`
 
 Call FN on each leaf of TREE.
 Return a new tree possibly sharing structure with TREE.
 
-[View source](trees.lisp#L128)
+[View source](trees.lisp#L136)
 
 ### `(occurs-if test tree &key key traversal)`
 
 Is there a node (leaf or cons) in TREE that satisfies TEST?
 
-[View source](trees.lisp#L140)
+[View source](trees.lisp#L148)
 
 ### `(prune-if test tree &key key)`
 
@@ -2141,20 +2147,20 @@ and then filtering.
 Also note that pruning is not defined for trees containing improper
 lists.
 
-[View source](trees.lisp#L150)
+[View source](trees.lisp#L158)
 
 ### `(occurs node tree &key key test traversal)`
 
 Is NODE present in TREE?
 
-[View source](trees.lisp#L175)
+[View source](trees.lisp#L183)
 
 ### `(prune leaf tree &key key test)`
 
 Remove LEAF from TREE wherever it occurs.
 See `prune-if` for more information.
 
-[View source](trees.lisp#L183)
+[View source](trees.lisp#L191)
 
 ## Hash Tables
 

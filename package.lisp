@@ -196,6 +196,7 @@
    #:fuel
    ;; Trees.
    #:reuse-cons
+   #:car+cdr
    #:occurs
    #:occurs-if
    #:prune

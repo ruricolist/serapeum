@@ -162,11 +162,54 @@ From Emacs Lisp."
 
 (defun string-join (strings separator &key stream end)
   "Like `(mapconcat #'string STRINGS (string SEPARATOR))'."
-  (with-string (s stream)
-    (mapconcat #'string strings (string separator)
-               :stream s)
-    (when end
-      (write-string (string separator) s))))
+  (if stream
+      (with-string (s stream)
+        (mapconcat #'string strings (string separator)
+                   :stream s)
+        (when end
+          (write-string (string separator) s)))
+      (let* ((separator (coerce (string separator)
+                                '(simple-array character (*))))
+             (sep-len (length separator))
+             (separator? (not (zerop sep-len))))
+        (with-boolean (separator?)
+          (let ((len 0))
+            (declare (array-length len))
+            (locally (declare (optimize speed))
+              (loop for (s . more?) on strings
+                    do (etypecase s
+                         (string (incf len (length s)))
+                         (character (incf len 1))
+                         (symbol (incf len (length (symbol-name s)))))
+                       (boolean-when separator?
+                         (when more?
+                           (incf len sep-len)))
+                    finally
+                       (boolean-when separator?
+                         (when end
+                           (incf len sep-len))))
+              (lret ((start 0)
+                     (result (make-array len :element-type 'character)))
+                (declare (array-index start)
+                         ((simple-array character (*)) result))
+                (loop for (s . more?) on strings
+                      do (nlet rec (s)
+                           (etypecase s
+                             (string
+                              (with-string-dispatch () s
+                                (replace result s :start1 start)
+                                (incf start (length s))))
+                             (character
+                              (setf (schar result start) s)
+                              (incf start))
+                             (symbol (rec (symbol-name s)))))
+                         (boolean-when separator?
+                           (replace result separator :start1 start)
+                           (incf start sep-len))
+                      finally
+                         (boolean-when separator?
+                           (when end
+                             (replace result separator :start1 start)))))))))))
 
 (-> string-upcase-initials (string-designator) string)
 (defun string-upcase-initials (string)
@@ -930,7 +973,8 @@ This utility is inspired by the utility of the same name in Allegro."
         (locally (declare (optimize (speed 3) (safety 1)))
           (tagbody
            :use-concat
-             ;; Based on the implementation of concatenate 'string in SBCL.
+             ;; Based on the implementation of concatenate 'string in
+             ;; SBCL (also integer printing).
              (let ((len 0)
                    (print-base *print-base*)
                    (int-chars "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"))

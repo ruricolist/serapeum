@@ -307,3 +307,18 @@
   (let ((*print-case* :downcase))
     (is (equal "foo1" (string+ :|FOO| 1)))
     (is (equal "foo1" (string+ '|FOO| 1)))))
+
+(test string-join
+  (is (equal "" (string-join '("") "")))
+  (is (equal "" (string-join '("") "+")))
+  (is (equal "" (string-join '("") #\+)))
+  (is (equal "+" (string-join '("") "+" :end t)))
+  (is (equal "+" (string-join '("") #\+ :end t)))
+  (is (equal "xy" (string-join '("x" "y") "")))
+  (is (equal "x+y" (string-join '("x" "y") "+")))
+  (is (equal "x+y" (string-join '("x" "y") #\+)))
+  (is (equal "x+y" (string-join '("x" "y") :+)))
+  (is (equal "x+y" (string-join '("x" "y") #\+)))
+  (is (equal "x+y+" (string-join '("x" "y") "+" :end t)))
+  (is (equal "x+y+" (string-join '("x" "y") #\+ :end t)))
+  (is (equal "x+y+" (string-join '("x" "y") :+ :end t))))

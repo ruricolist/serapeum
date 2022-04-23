@@ -1,14 +1,10 @@
 (defpackage :serapeum/internal-definitions
   (:use :cl :alexandria :serapeum)
+  (:import-from :serapeum :unbound)
   (:import-from :trivia :match :ematch)
   #+sb-package-locks (:implement :serapeum :serapeum/internal-definitions))
 
 (in-package :serapeum/internal-definitions)
-
-(defstruct-read-only (unbound
-                      (:constructor unbound (var)))
-  "Placeholder for an unbound variable."
-  (var :type symbol))
 
 (defmethod make-load-form ((self unbound) &optional env)
   (make-load-form-saving-slots self

@@ -34,7 +34,7 @@
                 :components
                 ((:file "types")
                  (:file "definitions"
-                  :depends-on ("iter"))
+                  :depends-on ("iter" "defining-types"))
                  (:file "defining-types"
                   :depends-on ("iter" "threads"))
                  (:file "binding")

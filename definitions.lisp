@@ -1,5 +1,10 @@
 (in-package :serapeum)
 
+;;; For internal use.
+(defstruct-read-only (unbound (:constructor unbound (var)))
+  "Placeholder for an unbound variable."
+  (var :type symbol))
+
 ;;;# Lexical globals
 
 ;;; `def' and `defconst' are both applications of the same idea: using
@@ -59,7 +64,7 @@ VAL)`."
 (defmacro mvdef (vars &body (&optional expr documentation))
   `(progn
      ,@(loop for var in vars
-             collect `(def ,var nil ,@(unsplice documentation)))
+             collect `(def ,var (unbound ',var) ,@(unsplice documentation)))
      (setf (values ,@vars) ,expr)
      ',vars))
 

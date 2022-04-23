@@ -626,7 +626,7 @@ gain in efficiency.
 a separate variable and initialized as if by `(setf (values VAR...)
 VAL)`.
 
-[View source](definitions.lisp#L9)
+[View source](definitions.lisp#L14)
 
 ### `(define-values values &body (expr))`
 
@@ -634,7 +634,7 @@ Like `def`, but for multiple values.
 Each variable in VALUES is given a global, lexical binding, as with
 `def`, then set all at once, as with `multiple-value-setq`.
 
-[View source](definitions.lisp#L66)
+[View source](definitions.lisp#L71)
 
 ### `(defconst symbol init &optional docstring)`
 
@@ -653,7 +653,7 @@ for `defconstant`.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L90)
+[View source](definitions.lisp#L95)
 
 ### `(defsubst name params &body body)`
 
@@ -669,7 +669,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L119)
+[View source](definitions.lisp#L124)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -686,7 +686,7 @@ we must make it assignable (which is what `notinline` means).
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L141)
+[View source](definitions.lisp#L146)
 
 ### `(defplace name args &body (form &optional docstring))`
 
@@ -694,7 +694,7 @@ Define NAME and (SETF NAME) in one go.
 
 Note that the body must be a single, setf-able expression.
 
-[View source](definitions.lisp#L186)
+[View source](definitions.lisp#L191)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -703,14 +703,14 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L201)
+[View source](definitions.lisp#L206)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L212)
+[View source](definitions.lisp#L217)
 
 ## Defining Types
 
@@ -4985,7 +4985,7 @@ Like `local`, but leave the last form in BODY intact.
      (labels ((aux-fn ...))
        (defun entry-point ...)) 
 
-[View source](internal-definitions.lisp#L21)
+[View source](internal-definitions.lisp#L17)
 
 ### `(local &body orig-body)`
 
@@ -5095,7 +5095,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](internal-definitions.lisp#L687)
+[View source](internal-definitions.lisp#L683)
 
 ### `(block-compile (&key entry-points (block-compile t)) &body body)`
 
@@ -5113,7 +5113,7 @@ into local `declare` forms.
 If you pass `:block-compile nil', this macro is equivalent to progn.
 This may be useful during development.
 
-[View source](internal-definitions.lisp#L801)
+[View source](internal-definitions.lisp#L797)
 
 ## Tree Case
 

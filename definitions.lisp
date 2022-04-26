@@ -5,6 +5,11 @@
   "Placeholder for an unbound variable."
   (var :type symbol))
 
+(defmethod make-load-form ((self unbound) &optional env)
+  (make-load-form-saving-slots self
+                               :slot-names '(var)
+                               :environment env))
+
 ;;;# Lexical globals
 
 ;;; `def' and `defconst' are both applications of the same idea: using

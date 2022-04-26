@@ -6,11 +6,6 @@
 
 (in-package :serapeum/internal-definitions)
 
-(defmethod make-load-form ((self unbound) &optional env)
-  (make-load-form-saving-slots self
-                               :slot-names '(var)
-                               :environment env))
-
 (defmacro without-internal-definitions (&body body)
   `(progn ,@body))
 

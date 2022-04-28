@@ -171,12 +171,12 @@
   (is-false (typep '(1) '(soft-alist-of number number)))
   (is (typep '((x . y) (1 . 2) (3 . 4)) '(soft-alist-of t t))))
 
-(test (with-test-fn/high-safety :compile-at :run-time) ()
+(test (with-two-arg-test/high-safety :compile-at :run-time) ()
   (is-true
    (funcall (lambda (x y)
               (declare (optimize (safety 3)
                                  (speed 0)))
               (let ((my-test #'eql))
-                (serapeum::with-test-fn (my-test)
+                (serapeum::with-two-arg-test (my-test)
                   (my-test x y))))
             1 1)))

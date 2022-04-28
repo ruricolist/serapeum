@@ -57,7 +57,7 @@ part of the arguments to compare, and compares them using TEST."
         (test (canonicalize-test test test-not)))
     (if (eql key #'identity) test
         (fbind key
-          (with-test-fn (test)
+          (with-two-arg-test (test)
             (lambda (x y)
               (test (key x) (key y))))))))
 
@@ -1966,7 +1966,7 @@ but don't actually need to realize the sequences."
 
 (defun list-collapse-duplicates (test key list)
   (declare (list list))
-  (with-test-fn (test)
+  (with-two-arg-test (test)
     (with-item-key-function (key)
       (nlet rec ((list list)
                  (acc '())
@@ -1992,7 +1992,7 @@ Repetitions that are not adjacent are left alone.
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
   (if (listp seq)
       (list-collapse-duplicates test key seq)
-      (with-test-fn (test)
+      (with-two-arg-test (test)
         (with-item-key-function (key)
           (with-specialized-buckets (seq)
             (let ((bucket (make-bucket seq))
@@ -2017,7 +2017,7 @@ Repetitions that are not adjacent are left alone.
 (defun same (key-fn seq &key (test #'eql) (start 0) end)
   "Return true if KEY-FN returns the same value for any/all members of LIST."
   (fbind (key-fn)
-    (with-test-fn (test)
+    (with-two-arg-test (test)
       (let (init val)
         (do-subseq (item seq t :start start :end end)
           (if (null init)

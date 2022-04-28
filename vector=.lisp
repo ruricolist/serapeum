@@ -1,6 +1,6 @@
 (defpackage :serapeum/vector=
   (:use :cl :alexandria :serapeum)
-  (:import-from :serapeum :declaim-freeze-type :with-test-fn)
+  (:import-from :serapeum :declaim-freeze-type :with-two-arg-test)
   #+sb-package-locks (:implement :serapeum :serapeum/vector=))
 (in-package :serapeum/vector=)
 

@@ -694,8 +694,8 @@ WITH-BOOLEAN."
   `(with-type-dispatch (null ,type) ,var
      ,@body))
 
-(defmacro with-test-fn ((test) &body body
-                        &environment env)
+(defmacro with-two-arg-test ((test) &body body
+                             &environment env)
   "Specialize BODY on the most common two-arg test functions."
   (check-type test symbol)
   (let ((default

@@ -67,6 +67,7 @@
    #:soft-list-of
    #:soft-alist-of
    #:with-item-key-function
+   #:with-two-arg-test
    ;; Definitions.
    #:defconst
    #:defsubst

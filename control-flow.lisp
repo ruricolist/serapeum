@@ -428,8 +428,9 @@ From Zetalisp."
     `(let* ,(loop for temp in temps
                   for (test . nil) in test-clauses
                   collect `(,temp ,test))
-       (if (not (or ,@temps))
-           (progn ,@(rest otherwise-clause))
+       ;; Work around Iterate bug. See
+       ;; <https://gitlab.common-lisp.net/iterate/iterate/-/issues/11>.
+       (if (or ,@temps)
            ,(with-gensyms (ret)
               `(let (,ret)
                  ,@(loop for temp in temps
@@ -439,7 +440,8 @@ From Zetalisp."
                                           ,(if (null body)
                                                temp
                                                `(progn ,@body)))))
-                 ,ret))))))
+                 ,ret))
+           (progn ,@(rest otherwise-clause))))))
 
 (defmacro bcond (&body clauses)
   "Scheme's extended COND.

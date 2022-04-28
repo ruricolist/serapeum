@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 461 functions)
+# Function Listing For serapeum (43 files, 462 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -580,6 +580,12 @@ It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
 [View source](types.lisp#L672)
+
+### `(with-two-arg-test (test) &body body)`
+
+Specialize BODY on the most common two-arg test functions.
+
+[View source](types.lisp#L697)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 

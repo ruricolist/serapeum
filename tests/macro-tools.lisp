@@ -60,15 +60,15 @@
   (signals error
     (sane-form-for-eval (list '(+ 1 2)))))
 
-(test sane-body-for-splice
+(test expect-form-list
   (signals error
-    (sane-body-for-splice '(progn)))
+    (expect-form-list '(progn)))
   (signals error
-    (sane-body-for-splice '(locally)))
+    (expect-form-list '(locally)))
   (signals error
-    (sane-body-for-splice 'x))
+    (expect-form-list 'x))
   (finishes
-    (sane-body-for-splice nil)))
+    (expect-form-list nil)))
 
 (defun my-plus (x y)
   (+ x y))

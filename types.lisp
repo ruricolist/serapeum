@@ -728,7 +728,7 @@ If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
-     ,@(sane-body-for-splice
+     ,@(expect-form-list
         (if (or (policy> env 'space 'speed)
                 (policy> env 'compilation-speed 'speed))
             `((macrolet ((,key (x) (list 'funcall ',key x)))

@@ -40,7 +40,7 @@
    #:parse-leading-keywords
    #:with-read-only-vars
    #:+merge-tail-calls+
-   #:sane-body-for-splice
+   #:expect-form-list
    #:sane-form-for-eval
    #:unparse-ordinary-lambda-list
    #:parse-method-args

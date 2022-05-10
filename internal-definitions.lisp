@@ -646,7 +646,7 @@ them sane initialization values."
                          ,@body)
                       `(progn ,@body))))
                (wrap-vars (body)
-                 (sane-body-for-splice
+                 (expect-form-list
                   (if (or hoisted-vars vars)
                       ;; As an optimization, hoist constant
                       ;; bindings, e.g. (def x 1), so the
@@ -664,7 +664,7 @@ them sane initialization values."
                             ,@body)))
                       body)))
                (wrap-labels (body)
-                 (sane-body-for-splice
+                 (expect-form-list
                   (if labels
                       `((labels ,(shadow-names labels)
                           ,@fn-decls

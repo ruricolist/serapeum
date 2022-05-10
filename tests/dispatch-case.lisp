@@ -91,3 +91,16 @@
          (mapcar #'time=/dc perm (rest perm))
          (mapcar #'time=/dc/rec perm (rest perm)))))
      (list now/ut then/ut then/ts now/ts))))
+
+(5am:test dispatch-caseql
+  (flet ((process (x y)
+           (dispatch-caseql ((x '(member :x y))
+                             (y '(member :x y)))
+             ((:x :x) :xs)
+             ((:y :y) :ys)
+             ((:x :y) :x)
+             ((:y :x) :y))))
+    (5am:is (eql :xs (process :x :x)))
+    (5am:is (eql :ys (process :y :y)))
+    (5am:is (eql :x (process :x :y)))
+    (5am:is (eql :y (process :y :x)))))

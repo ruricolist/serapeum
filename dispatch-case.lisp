@@ -240,6 +240,21 @@ such fallthrough clauses become more useful."
                 collect `((,var ,type) ,expr))
        ,@clauses)))
 
+(defun expand-dispatch-caseql-clauses (clauses)
+  (expect-form-list
+   (loop for (keys . body) in clauses
+         collect (cons (loop for key in keys
+                             collect `(eql ,key))
+                       body))))
+
+(defmacro dispatch-caseql ((&rest exprs-and-types) &body clauses)
+  "Like `dispatch-case', but types in clauses are implicitly wrapped in `eql'.
+The syntax of `dispatch-caseql' is tohus closer to `case' than to
+`typecase'."
+  (expect-form-list
+   `(dispatch-case ,exprs-and-types
+      ,@(expand-dispatch-caseql-clauses clauses))))
+
 (defmacro dispatch-case-let ((&rest bindings) &body clauses &environment env)
   "Like `dispatch-case', but establish new bindings for each expression.
 
@@ -296,6 +311,11 @@ list) and `let' (which has an obvious macro-expansion in terms of
                     (dispatch-case/nobindings ,(mapcar #'list vars types)
                       ,@final-clauses)
                     ,@tags)))))))))
+
+(defmacro dispatch-caseql-let ((&rest bindings) &body clauses)
+  "Like `dispatch-case-let', but using the clause syntax of `dispatch-caseql'."
+  `(dispatch-case-let ,bindings
+     ,@(expand-dispatch-caseql-clauses clauses)))
 
 ;;; TODO The problem with this expansion is that each branch only sees
 ;;; one value, which yields error messages that are hard to

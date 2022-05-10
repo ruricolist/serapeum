@@ -121,7 +121,9 @@
    #:ctypecase-of
    #:ccase-of
    #:dispatch-case
+   #:dispatch-caseql
    #:dispatch-case-let
+   #:dispatch-caseql-let
    #:dispatch-case-error
    #:destructuring-case-of
    #:destructuring-ccase-of

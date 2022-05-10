@@ -50,15 +50,15 @@
     (symbol-macrolet ((x 1))
       (is (eql 1 (constant-value/env x))))))
 
-(test sane-form-for-eval
+(test expect-single-form
   (finishes
-    (sane-form-for-eval (list '(lambda ()))))
+    (expect-single-form (list '(lambda ()))))
   (finishes
-    (sane-form-for-eval nil))
+    (expect-single-form nil))
   (finishes
-    (sane-form-for-eval (list nil)))
+    (expect-single-form (list nil)))
   (signals error
-    (sane-form-for-eval (list '(+ 1 2)))))
+    (expect-single-form (list '(+ 1 2)))))
 
 (test expect-form-list
   (signals error

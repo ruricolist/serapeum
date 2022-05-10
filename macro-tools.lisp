@@ -828,7 +828,7 @@ E.g. `progn', `locally'.")
              exp)
       exp))
 
-(defun sane-form-for-eval (exp)
+(defun expect-single-form (exp)
   "Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact."
   (if (match exp

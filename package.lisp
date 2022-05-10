@@ -41,7 +41,7 @@
    #:with-read-only-vars
    #:+merge-tail-calls+
    #:expect-form-list
-   #:sane-form-for-eval
+   #:expect-single-form
    #:unparse-ordinary-lambda-list
    #:parse-method-args
    ;; Types.

@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 462 functions)
+# Function Listing For serapeum (43 files, 464 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -350,7 +350,7 @@ macros.
 
 [View source](macro-tools.lisp#L739)
 
-### `(sane-body-for-splice exp)`
+### `(expect-form-list exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
@@ -358,7 +358,7 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
 
 [View source](macro-tools.lisp#L821)
 
-### `(sane-form-for-eval exp)`
+### `(expect-single-form exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
@@ -5281,6 +5281,14 @@ such fallthrough clauses become more useful.
 
 [View source](dispatch-case.lisp#L127)
 
+### `(dispatch-caseql (&rest exprs-and-types) &body clauses)`
+
+Like `dispatch-case`, but types in clauses are implicitly wrapped in `eql`.
+The syntax of `dispatch-caseql` is tohus closer to `case` than to
+`typecase`.
+
+[View source](dispatch-case.lisp#L250)
+
 ### `(dispatch-case-let (&rest bindings) &body clauses)`
 
 Like `dispatch-case`, but establish new bindings for each expression.
@@ -5304,7 +5312,13 @@ It may be helpful to think of this as a cross between
 list) and `let` (which has an obvious macro-expansion in terms of
 `lambda`).
 
-[View source](dispatch-case.lisp#L243)
+[View source](dispatch-case.lisp#L258)
+
+### `(dispatch-caseql-let (&rest bindings) &body clauses)`
+
+Like `dispatch-case-let`, but using the clause syntax of `dispatch-caseql`.
+
+[View source](dispatch-case.lisp#L315)
 
 ## Range
 

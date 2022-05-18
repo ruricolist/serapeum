@@ -1065,6 +1065,10 @@ If the bounds cross in the middle, the result is an empty string:
 
     (slice \"x\" 1 -1) => \"\"
 
+Note that `slice' implicitly clamps bounds, even when they are not negative:
+
+    (slice \"x\" 0 100) => \"x\"
+
 Setf of `slice' is like setf of `ldb': afterwards, the place being set
 holds a new sequence which is not EQ to the old."
   (multiple-value-bind (start end)

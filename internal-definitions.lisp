@@ -648,14 +648,15 @@ them sane initialization values."
                (wrap-vars (body)
                  (expect-form-list
                   (if (or hoisted-vars vars)
-                      ;; As an optimization, hoist constant
-                      ;; bindings, e.g. (def x 1), so the
-                      ;; compiler can infer their types or
-                      ;; make use of declarations. (Ideally we
-                      ;; would hoist anything we know for sure
-                      ;; is not a closure, but that's
-                      ;; impractical.)
-                      `((let-initialized (,@hoisted-vars
+                      ;; As an optimization, hoist constant bindings,
+                      ;; e.g. (def x 1), so the compiler can infer
+                      ;; their types or make use of declarations.
+                      ;; (Ideally we would hoist anything we know for
+                      ;; sure is not a closure, but that's
+                      ;; impractical.) NB Since they're constant, we
+                      ;; don't need to reverse them before splicing,
+                      ;; but it makes the expansion easier to read.
+                      `((let-initialized (,@(reverse hoisted-vars)
                                           ,@vars)
                           ,@var-decls
                           ;; Un-alias the vars.

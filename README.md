@@ -31,6 +31,12 @@ do:
 
 without package conflicts.
 
+Alternatively, now that package-local nicknames are generally
+available, the `serapeum/rec` package reexports the symbols of both
+(along with other utilities used by Serapeum itself):
+
+    (defpackage ... (:local-nicknames (:rec :serapeum/rec)))
+
 There may already be too many utility libraries for Common Lisp.
 Releasing another has become something to apologize for, not
 celebrate. But I would rather make my apologies than have to maintain

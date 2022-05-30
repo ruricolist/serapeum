@@ -508,3 +508,10 @@
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))
+
+(uiop:define-package :serapeum/rec
+  (:use-reexport
+   :serapeum
+   :alexandria
+   :split-sequence
+   :parse-number))

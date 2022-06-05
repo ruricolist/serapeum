@@ -591,8 +591,11 @@ will expand into a series of conditionals"
                            (list* 'boolean-when cond then))
                          (:unless (cond &body then)
                            (list* 'boolean-unless cond then)))
-                (locally (declare #+sbcl (sb-ext:disable-package-locks
-                                          %in-branching% %all-branches%))
+                (locally
+                    (declare #+sbcl (sb-ext:disable-package-locks
+                                     %in-branching% %all-branches%)
+                             #+sbcl (sb-ext:muffle-conditions
+                                     sb-ext:code-deletion-note))
                   (symbol-macrolet ((%in-branching% t)
                                     (%all-branches% (,@branches ,@all-branches))
                                     (%true-branches% ()))

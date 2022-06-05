@@ -94,8 +94,8 @@
 
 (5am:test dispatch-caseql
   (flet ((process (x y)
-           (dispatch-caseql ((x '(member :x y))
-                             (y '(member :x y)))
+           (dispatch-caseql ((x (member :x :y))
+                             (y (member :x :y)))
              ((:x :x) :xs)
              ((:y :y) :ys)
              ((:x :y) :x)

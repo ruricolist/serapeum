@@ -218,7 +218,7 @@ possible to do better, `op' would still only be suited for one-liners.
 If you need more than a one-liner, then you should be giving your
 parameters names.
 
-\(One thing you *can* count on the ability to use `op' with
+\(One thing you *can* count on is the ability to use `op' with
 quasiquotes. If using placeholders inside quasiquotes does not work on
 your Lisp implementation, that's a bug, not a limitation.)"
   (let ((env (extract-op-env body env)))

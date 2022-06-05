@@ -2,7 +2,12 @@
 
 (uiop:define-package :serapeum.exporting
   (:use)
-  (:export :defclass :define-values))
+  (:export
+   :defclass :define-values
+   ;; Prevent implicit exports from being unexported on redefinition.
+   . #.(and (find-package :serapeum.exporting)
+            (mapcar #'make-keyword
+                    (serapeum:package-exports :serapeum.exporting)))))
 
 (defmacro serapeum.exporting:defclass (name supers &body (slots . options))
   "Like `defclass', but implicitly export the name of the class and

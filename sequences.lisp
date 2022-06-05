@@ -162,12 +162,13 @@ If SEQ is a list, this is equivalent to `dolist'."
                                  end
                                  from-end)
                             &body body)
-  `(map-subseq
-    (lambda (,var)
-      ,@body)
-    ,seq
-    ,start ,end
-    ,from-end))
+  `(locally (declare (inline map-subseq))
+     (map-subseq
+      (lambda (,var)
+        ,@body)
+      ,seq
+      ,start ,end
+      ,from-end)))
 
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
@@ -1447,7 +1448,8 @@ values).
                               (setf kmin kx min x))
                              ((pred kmax kx)
                               (setf kmax kx max x)))))))
-          (declare (dynamic-extent #'update-extrema))
+          (declare (dynamic-extent #'update-extrema)
+                   (inline map-subseq))
           (map-subseq #'update-extrema seq start end))
         (values min max)))))
 

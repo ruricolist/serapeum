@@ -385,15 +385,18 @@ Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
     ((list* (list test) clauses)
-      `(if-let1 ,var ,test
-         ,var
-         (cond-let ,var ,@clauses)))
+     `(if-let1 ,var ,test
+        ,var
+        (cond-let ,var ,@clauses)))
     ((list* (list* t body) _)
-      `(progn ,@body))
+     `(progn ,@body))
     ((list* (list* test body) clauses)
-      `(if-let1 ,var ,test
-         (progn ,@body)
-         (cond-let ,var ,@clauses)))))
+     `(let ((,var ,test))
+        (if ,var
+            ;; Rebind the variables for declarations.
+            (let1 ,var ,var
+              ,@body)
+            (cond-let ,var ,@clauses))))))
 
 (defmacro econd-let (symbol &body clauses)
   "Like `cond-let' for `econd'."

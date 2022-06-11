@@ -336,6 +336,19 @@
   (is (eql (cond-let x (nil x) (t x)) nil))
   (is (eql (cond-let x ((1+ 0))) 1)))
 
+(test cond-let/declare
+  (flet ((aux (x)
+           (cond-let y
+             ((and (minusp x) (- x 1))
+              (declare (integer y))
+              y)
+             ((and (plusp x) (+ x 1s0))
+              (declare (single-float y))
+              y))))
+    (declare (notinline aux))
+    (is (= -2 (aux -1)))
+    (is (= 2s0 (aux 1)))))
+
 (test econd-let
   (is (eql (econd-let x (10 x) (t 0)) 10))
   (is (eql (econd-let x (nil x) (:a x)) :a))

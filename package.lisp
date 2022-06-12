@@ -509,7 +509,7 @@
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))
 
-(uiop:define-package :serapeum/rec
+(uiop:define-package :serapeum/bundle
   (:use-reexport
    :serapeum
    :alexandria

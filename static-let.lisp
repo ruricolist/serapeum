@@ -50,7 +50,11 @@
       (error "Cannot mutate a ~s binding: ~s"
              'static-let
              (name static-binding))
-      (setf (value static-binding) value)))
+      (let ((lock (lock static-binding)))
+        (if lock
+            (bt:with-lock-held (lock)
+              (setf (value static-binding) value))
+            (setf (value static-binding) value)))))
 
 (defun make-static-binding (&key once name read-only)
   (%make-static-binding
@@ -396,7 +400,8 @@ Every static binding is similar to a `let' binding, except it can have
 additional keyword arguments:
 
 - `type' Denotes the type of the variable.
-- `once' If true, then binding initialization will be thread-safe.
+- `once' If true, then binding initialization and mutation will be
+         thread-safe.
 - `flush' If true, this binding will be flushable. Defaults to true.
 - `in' Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package'.
@@ -418,7 +423,8 @@ Every static binding is similar to a `let' binding, except it can have
 additional keyword arguments:
 
 - `type' Denotes the type of the variable.
-- `once' If true, then binding initialization will be thread-safe.
+- `once' If true, then binding initialization and mutation will be
+         thread-safe.
 - `flush' If true, this binding will be flushable. Defaults to true.
 - `in' Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package'.

@@ -181,6 +181,9 @@
               (1+ x)))))
 
 (static-let-test static-let-setf
-  (signals error
+  (finishes
     (eval* `(static-let ((x 1))
+              (setf x 2))))
+  (signals error
+    (eval* `(static-let ((x 1 :read-only t))
               (setf x 2)))))

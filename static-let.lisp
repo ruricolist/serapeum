@@ -34,19 +34,29 @@
                            (:copier nil)
                            (:predicate nil)
                            (:conc-name #:||))
+  (name 'unknown :type symbol)
   (value nil :type t)
   (initializedp nil :type boolean)
+  (read-only nil :type boolean)
   (lock nil :read-only t :type (or null bt:lock)))
 
-(defmacro value-ref (static-binding)
-  `(value ,static-binding))
+(declaim (inline value-ref (setf value-ref)))
 
-(define-setf-expander value-ref (name)
-  (error "Cannot mutate a ~s binding: ~a" 'static-let name))
+(defun value-ref (static-binding)
+  (value static-binding))
 
-(defun make-static-binding (&key once)
+(defun (setf value-ref) (value static-binding)
+  (if (read-only static-binding)
+      (error "Cannot mutate a ~s binding: ~s"
+             'static-let
+             (name static-binding))
+      (setf (value static-binding) value)))
+
+(defun make-static-binding (&key once name read-only)
   (%make-static-binding
-   :lock (if once (bt:make-lock "Static binding lock") nil)))
+   :lock (if once (bt:make-lock "Static binding lock") nil)
+   :name name
+   :read-only read-only))
 
 ;;; Condition helpers
 
@@ -224,13 +234,15 @@ will not be affected by this operation."
   ;; * boolean stating if the evaluation of initform should be synchronized
   ;; * boolean stating if the binding should be flushable
   ;; * object naming the flushing group
+  ;; * boolean static if the binding is read-only
   (let (name
         (value nil)
         (type 't)
         (gensym (gensym "STATIC-BINDING"))
         (once nil)
         (flush t)
-        (in *package*))
+        (in *package*)
+        (read-only nil))
     (etypecase binding
       ;; VAR
       (variable-name
@@ -249,15 +261,17 @@ will not be affected by this operation."
                               ((:type new-type) nil new-type-p)
                               ((:once new-once) nil new-once-p)
                               ((:flush new-flush) nil new-flush-p)
-                              ((:in new-in) nil new-in-p))
+                              ((:in new-in) nil new-in-p)
+                              ((:read-only new-read-only) nil new-read-only-p))
            binding
          (setf name new-name
                value new-value)
          (when new-type-p (setf type new-type))
          (when new-once-p (setf once new-once))
          (when new-flush-p (setf flush new-flush))
-         (when new-in-p (setf in new-in)))))
-    (list name value type gensym once flush in)))
+         (when new-in-p (setf in new-in))
+         (when new-read-only-p (setf read-only new-read-only)))))
+    (list name value type gensym once flush in read-only)))
 
 (defmacro with-canonicalized-binding-accessors (() &body body)
   `(flet ((name (x) (elt x 0))
@@ -266,8 +280,9 @@ will not be affected by this operation."
           (sym (x) (elt x 3))
           (once (x) (elt x 4))
           (flush (x) (elt x 5))
-          (in (x) (elt x 6)))
-     (declare (ignorable #'name #'value #'type #'sym #'once #'flush #'in))
+          (in (x) (elt x 6))
+          (read-only (x) (elt x 7)))
+     (declare (ignorable #'name #'value #'type #'sym #'once #'flush #'in #'read-only))
      ,@body))
 
 ;;; Macro element generators
@@ -275,7 +290,11 @@ will not be affected by this operation."
 (defun make-let-binding (x)
   (with-canonicalized-binding-accessors ()
     (let ((once (once x)))
-      `(,(sym x) (static-load-time-value (make-static-binding :once ,once))))))
+      `(,(sym x)
+        (static-load-time-value (make-static-binding
+                                 :once ,once
+                                 :name ',(name x)
+                                 :read-only ,(read-only x)))))))
 
 (defun make-flusher (x)
   (with-canonicalized-binding-accessors ()
@@ -381,6 +400,7 @@ additional keyword arguments:
 - `flush' If true, this binding will be flushable. Defaults to true.
 - `in' Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package'.
+- `read-only' If true, then the binding cannot be mutated with `setf'.
 
 Static bindings can be flushed via `flush-static-binding-group' and
 `flush-all-static-binding-groups'; the latter is automatically pushed
@@ -402,6 +422,7 @@ additional keyword arguments:
 - `flush' If true, this binding will be flushable. Defaults to true.
 - `in' Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package'.
+- `read-only' If true, then the binding cannot be mutated with `setf'.
 
 Static bindings can be flushed via `flush-static-binding-group' and
 `flush-all-static-binding-groups'; the latter is automatically pushed

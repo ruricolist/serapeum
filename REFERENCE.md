@@ -3180,31 +3180,31 @@ used in successive bindings.
 Invokes the last bound RECKLESSLY-CONTINUE restart. Returns NIL if
 no such restart was bound or if the restart failed to transfer control.
 
-[View source](static-let.lisp#L57)
+[View source](static-let.lisp#L71)
 
 ### `(static-binding-flush-error-group static-binding-flush-error)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L78)
+[View source](static-let.lisp#L92)
 
 ### `(static-binding-flush-error-all-groups-p static-binding-flush-error)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L78)
+[View source](static-let.lisp#L92)
 
 ### `(static-binding-flush-error &optional group)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L89)
+[View source](static-let.lisp#L103)
 
 ### `(static-binding-active-error group &optional all-groups-p)`
 
 NO DOCS!
 
-[View source](static-let.lisp#L122)
+[View source](static-let.lisp#L136)
 
 ### `(flush-static-binding-group group &key are-you-sure-p)`
 
@@ -3222,7 +3222,7 @@ Lisp is running single-threaded or `are-you-sure-p` is true.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L160)
+[View source](static-let.lisp#L174)
 
 ### `(flush-all-static-binding-groups)`
 
@@ -3245,7 +3245,7 @@ to not include static binding values in the resulting Lisp image.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L181)
+[View source](static-let.lisp#L195)
 
 ### `(static-let (&rest bindings) &body body)`
 
@@ -3256,10 +3256,12 @@ Every static binding is similar to a `let` binding, except it can have
 additional keyword arguments:
 
 - `type` Denotes the type of the variable.
-- `once` If true, then binding initialization will be thread-safe.
+- `once` If true, then binding initialization and mutation will be
+         thread-safe.
 - `flush` If true, this binding will be flushable. Defaults to true.
 - `in` Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package`.
+- `read-only` If true, then the binding cannot be mutated with `setf`.
 
 Static bindings can be flushed via `flush-static-binding-group` and
 `flush-all-static-binding-groups`; the latter is automatically pushed
@@ -3268,7 +3270,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L372)
+[View source](static-let.lisp#L395)
 
 ### `(static-let* (&rest bindings) &body body)`
 
@@ -3279,10 +3281,12 @@ Every static binding is similar to a `let` binding, except it can have
 additional keyword arguments:
 
 - `type` Denotes the type of the variable.
-- `once` If true, then binding initialization will be thread-safe.
+- `once` If true, then binding initialization and mutation will be
+         thread-safe.
 - `flush` If true, this binding will be flushable. Defaults to true.
 - `in` Denotes the static binding group in which the binding will be
        placed for flushing. Defaults to the value of `*package`.
+- `read-only` If true, then the binding cannot be mutated with `setf`.
 
 Static bindings can be flushed via `flush-static-binding-group` and
 `flush-all-static-binding-groups`; the latter is automatically pushed
@@ -3291,7 +3295,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L393)
+[View source](static-let.lisp#L418)
 
 ## Reader
 

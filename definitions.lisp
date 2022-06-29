@@ -193,20 +193,24 @@ Name from Emacs Lisp."
 
 ;;;# Etc
 
-(defmacro defplace (name args &body (form &optional docstring))
+(defmacro defplace (name args &body body)
   "Define NAME and (SETF NAME) in one go.
 
-Note that the body must be a single, setf-able expression."
-  (when (stringp form)
-    (rotatef form docstring))
-  (with-gensyms (value)
-    `(progn
-       (defun ,name ,args
-         ,@(unsplice docstring)
-         ,form)
-       (defun (setf ,name) (,value ,@args)
-         ,@(unsplice docstring)
-         (setf ,form ,value)))))
+BODY is a list of forms, starting with an optional docstring. The last
+form in BODY, however, must be a single, setf-able expression."
+  (match body
+    ((list (type string))
+     (error "No form for ~s: ~a" 'defplace body))
+    ((last (cons (type string) nil) 1)
+     `(defplace ,name ,args ,@(reverse body)))
+    (otherwise
+     (with-gensyms (value)
+       `(progn
+          (defun ,name ,args
+            ,@body)
+          (defun (setf ,name) (,value ,@args)
+            ,@(butlast body)
+            (setf ,(lastcar body) ,value)))))))
 
 (defmacro defvar-unbound (var &body (docstring))
   "Define VAR as if by `defvar' with no init form, and set DOCSTRING

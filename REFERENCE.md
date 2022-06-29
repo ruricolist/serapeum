@@ -694,11 +694,12 @@ Name from Emacs Lisp.
 
 [View source](definitions.lisp#L151)
 
-### `(defplace name args &body (form &optional docstring))`
+### `(defplace name args &body body)`
 
 Define NAME and (SETF NAME) in one go.
 
-Note that the body must be a single, setf-able expression.
+BODY is a list of forms, starting with an optional docstring. The last
+form in BODY, however, must be a single, setf-able expression.
 
 [View source](definitions.lisp#L196)
 
@@ -709,14 +710,14 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L211)
+[View source](definitions.lisp#L215)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L222)
+[View source](definitions.lisp#L226)
 
 ## Defining Types
 

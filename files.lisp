@@ -40,10 +40,16 @@
     ((1)
      `(with-open-file ,(first args) ,@body))
     (t `(with-open-file ,(first args)
-	  (with-open-files
-	      ,(rest args) ,@body)))))
+          (with-open-files
+              ,(rest args) ,@body)))))
 
-(defun path-join (&rest pathnames)
+(defun path-basename (pathname)
+  "Return the basename, that is:
+- if it's a directory, the name of the directory,
+- if it's a file, the name of the file including its type (extension)."
+  (first (last (pathname-directory (uiop:ensure-directory-pathname pathname)))))
+
+(defun path-join (&rest paths)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built
 in the order they appear in it:
@@ -52,17 +58,26 @@ in the order they appear in it:
     ≡ (uiop:merge-pathnames* config-file
        (uiop:merge-pathnames* config-dir
         (user-homedir-pathname)))
-
-Note that `path-join' does not coerce the parts of the pathname into
-directories; you have to do that yourself.
-
-    (path-join \"dir1\" \"dir2\" \"file\") -> #p\"file\"
-    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\""
-  (the pathname
-       (reduce (lambda (x y)
-                 (uiop:merge-pathnames* y x))
-               pathnames
-               :initial-value (make-pathname))))
+"
+  ;; Contributed by Pierre Niedhardt (@ambrevar).
+  ;; https://github.com/ruricolist/serapeum/issues/127
+  (if (< (length paths) 2)
+      (the (values pathname &optional)
+           (uiop:ensure-pathname (first paths)))
+      (apply #'path-join
+             (let ((path1 (first paths))
+                   (path2 (second paths)))
+               (if (or (null (pathname-name path1))
+                       (pathname-directory path2))
+                   (uiop:merge-pathnames*
+                    (uiop:relativize-pathname-directory
+                     (uiop:ensure-pathname path2))
+                    (uiop:ensure-pathname path1 :ensure-directory t))
+                   (let ((new-base (uiop:strcat (path-basename path1)
+                                                (path-basename path2))))
+                     (make-pathname :defaults path1 :type (pathname-type new-base)
+                                    :name (pathname-name new-base)))))
+             (cddr paths))))
 
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.

@@ -69,3 +69,32 @@
     (uiop:delete-file-if-exists file2)
     (uiop:delete-file-if-exists empty-file)
     (uiop:delete-file-if-exists junk-file)))
+
+(test join
+  (is (path-join "foo")
+      #p"foo"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo" "bar")
+      #p"foobar"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo" "bar" #p"baz")
+      #p"foobarbaz"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo" "bar/baz")
+      #p"foo/bar/baz"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo/bar" "baz")
+      #p"foo/barbaz"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo/bar/" "baz")
+      #p"foo/bar/baz"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo/" "bar/" "baz" "qux")
+      #p"foo/bar/bazqux"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo.txt" "bar/baz")
+      #p"foo.txt/bar/baz"
+      :test 'uiop:pathname-equal)
+  (is (path-join #p"foo.txt" "bar.ext")
+      #p"foo.txtbar.ext"
+      :test 'uiop:pathname-equal))

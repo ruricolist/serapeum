@@ -40,10 +40,18 @@
     ((1)
      `(with-open-file ,(first args) ,@body))
     (t `(with-open-file ,(first args)
-	  (with-open-files
-	      ,(rest args) ,@body)))))
+          (with-open-files
+              ,(rest args) ,@body)))))
 
-(defun path-join (&rest pathnames)
+(defun path-basename (pathname)
+  "Return the basename, that is:
+- if it's a directory, the name of the directory,
+- if it's a file, the name of the file including its type (extension)."
+  (first (last (pathname-directory (uiop:ensure-directory-pathname pathname)))))
+
+(-> path-join (&rest (or string stream pathname))
+  (values pathname &optional))
+(defun path-join (&rest paths)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built
 in the order they appear in it:
@@ -57,12 +65,57 @@ Note that `path-join' does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
     (path-join \"dir1\" \"dir2\" \"file\") -> #p\"file\"
-    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\""
+    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\"
+
+Cf. `base-path-join' for a similar function with more intuitive
+behavior."
   (the pathname
        (reduce (lambda (x y)
                  (uiop:merge-pathnames* y x))
                pathnames
                :initial-value (make-pathname))))
+
+(-> base-path-join (&rest (or string stream pathname))
+  (values pathname &optional))
+(defun base-path-join (base &rest suffixes)
+  "Build a pathname by appending SUFFIXES to BASE.
+For `path-join-base', the path on the left is always the *base* and
+the path on the right is always the *suffix*. This means that even if
+the right hand path is absolute, it will be treated as if it were
+relative.
+
+    (base-path-join #p\"foo/bar\" #p\"/baz\")
+    => #p\"foo/bar/baz\")
+
+Also, a bare file name as a suffix does not override but is appended
+to the accumulated file name. This includes the extension.
+
+    (base-path-join #p\"foo/bar\" \"baz\")
+    => #p\"foo/barbaz\")
+
+    (base-path-join #p\"foo/bar.x\" \"baz.y\")
+    => #p\"foo/bar.xbaz.y\")
+
+See `path-join' for a similar function with more consistent behavior."
+  ;; Contributed by Pierre Niedhardt (@ambrevar).
+  ;; https://github.com/ruricolist/serapeum/issues/127
+  (if (null suffixes)
+      (the (values pathname &optional)
+           (uiop:ensure-pathname base))
+      (reduce (lambda (path1 path2)
+                (if (or (null (pathname-name path1))
+                        (pathname-directory path2))
+                    (uiop:merge-pathnames*
+                     (uiop:relativize-pathname-directory
+                      (uiop:ensure-pathname path2))
+                     (uiop:ensure-pathname path1 :ensure-directory t))
+                    (let ((new-base (string+ (path-basename path1)
+                                             (path-basename path2))))
+                      (make-pathname :defaults path1
+                                     :type (pathname-type new-base)
+                                     :name (pathname-name new-base)))))
+              suffixes
+              :initial-value base)))
 
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.

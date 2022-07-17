@@ -61,23 +61,22 @@ in the order they appear in it:
 "
   ;; Contributed by Pierre Niedhardt (@ambrevar).
   ;; https://github.com/ruricolist/serapeum/issues/127
-  (if (< (length paths) 2)
+  (if (single paths)
       (the (values pathname &optional)
            (uiop:ensure-pathname (first paths)))
-      (apply #'path-join
-             (let ((path1 (first paths))
-                   (path2 (second paths)))
-               (if (or (null (pathname-name path1))
-                       (pathname-directory path2))
-                   (uiop:merge-pathnames*
-                    (uiop:relativize-pathname-directory
-                     (uiop:ensure-pathname path2))
-                    (uiop:ensure-pathname path1 :ensure-directory t))
-                   (let ((new-base (uiop:strcat (path-basename path1)
-                                                (path-basename path2))))
-                     (make-pathname :defaults path1 :type (pathname-type new-base)
-                                    :name (pathname-name new-base)))))
-             (cddr paths))))
+      (reduce (lambda (path1 path2)
+                (if (or (null (pathname-name path1))
+                        (pathname-directory path2))
+                    (uiop:merge-pathnames*
+                     (uiop:relativize-pathname-directory
+                      (uiop:ensure-pathname path2))
+                     (uiop:ensure-pathname path1 :ensure-directory t))
+                    (let ((new-base (string+ (path-basename path1)
+                                             (path-basename path2))))
+                      (make-pathname :defaults path1
+                                     :type (pathname-type new-base)
+                                     :name (pathname-name new-base)))))
+              paths)))
 
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.

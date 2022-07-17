@@ -241,6 +241,7 @@
    #:absolute-directory-pathname
    #:file-pathname
    #:path-join
+   #:path-basename
    #:write-stream-into-file
    #:write-file-into-stream
    #:file=

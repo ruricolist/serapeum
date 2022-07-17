@@ -98,3 +98,19 @@
   (is (path-join #p"foo.txt" "bar.ext")
       #p"foo.txtbar.ext"
       :test 'uiop:pathname-equal))
+
+(test basename
+  (is (path-basename "")
+      nil)
+  (is (path-basename "foo/bar")
+      "bar")
+  (is (path-basename #p"")
+      nil)
+  (is (path-basename #p"/foo/bar/baz")
+      "baz")
+  (is (path-basename #p"/foo/bar/baz/")
+      "baz")
+  (is (path-basename #p"/foo/bar/baz.ext")
+      "baz.ext")
+  (is (path-basename #p"foo/bar/baz.ext")
+      "baz.ext"))

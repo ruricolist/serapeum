@@ -49,6 +49,8 @@
 - if it's a file, the name of the file including its type (extension)."
   (first (last (pathname-directory (uiop:ensure-directory-pathname pathname)))))
 
+(-> path-join (&rest (or string stream pathname))
+  (values pathname &optional))
 (defun path-join (&rest paths)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built

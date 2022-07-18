@@ -1471,16 +1471,16 @@ But with less consing, and potentially faster.
 
 ### `(eq* &rest xs)`
 
-Variadic version of `EQ`.
+Variadic version of `eq`.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `EQ`.
+With two arguments, same as `eq`.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `EQ`.
+equivalent under `eq`.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
@@ -1489,16 +1489,16 @@ writing out the tests by hand.
 
 ### `(eql* &rest xs)`
 
-Variadic version of `EQL`.
+Variadic version of `eql`.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `EQL`.
+With two arguments, same as `eql`.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `EQL`.
+equivalent under `eql`.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
@@ -1507,16 +1507,16 @@ writing out the tests by hand.
 
 ### `(equal* &rest xs)`
 
-Variadic version of `EQUAL`.
+Variadic version of `equal`.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `EQUAL`.
+With two arguments, same as `equal`.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `EQUAL`.
+equivalent under `equal`.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
@@ -1525,16 +1525,16 @@ writing out the tests by hand.
 
 ### `(equalp* &rest xs)`
 
-Variadic version of `EQUALP`.
+Variadic version of `equalp`.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `EQUALP`.
+With two arguments, same as `equalp`.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `EQUALP`.
+equivalent under `equalp`.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
@@ -1840,7 +1840,7 @@ If you've ever caught yourself trying to do something like
 then `nth-arg` is what you need.
 
 If `hash-table-keys` were not already defined by Alexandria, you could
-define it thus:
+define it as:
 
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))
@@ -2061,9 +2061,9 @@ From Clojure.
 ### `(variadic->unary fn)`
 
 Return a function that takes a single argument, a list, and
-applies VARIADIC to it.
+applies FN to it.
 
-Practically equivalent to `(curry #'apply VARIADIC arguments...)'.
+Practically equivalent to `(curry #'apply FN arguments...)'.
 
 [View source](functions.lisp#L479)
 

@@ -142,10 +142,10 @@ If you've ever caught yourself trying to do something like
 
     (mapcar #'second xs ys)
 
-then `nth-arg` is what you need.
+then `nth-arg' is what you need.
 
-If `hash-table-keys` were not already defined by Alexandria, you could
-define it thus:
+If `hash-table-keys' were not already defined by Alexandria, you could
+define it as:
 
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))"
@@ -478,9 +478,9 @@ From Clojure."
 
 (define-train variadic->unary (fn)
   "Return a function that takes a single argument, a list, and
-applies VARIADIC to it.
+applies FN to it.
 
-Practically equivalent to `(curry #'apply VARIADIC arguments...)'."
+Practically equivalent to `(curry #'apply FN arguments...)'."
   (with-unique-names (list)
     `(lambda (,list)
        (declare (list ,list))

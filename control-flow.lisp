@@ -910,16 +910,16 @@ But with less consing, and potentially faster."
 (defmacro define-variadic-equality (variadic binary)
   `(progn
      (defun ,variadic (&rest xs)
-       ,(format nil "Variadic version of `~a'.
+       ,(format nil "Variadic version of `~(~a~)'.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `~:*~a'.
+With two arguments, same as `~:*~(~a~)'.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `~:*~a'.
+equivalent under `~:*~(~a~)'.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand."

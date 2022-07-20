@@ -45,7 +45,7 @@
                  (:file "conditions")
                  (:file "op")
                  (:file "functions"
-                  :depends-on ("types" "hash-tables" "iter"))
+                  :depends-on ("types" "iter"))
                  (:file "trees")
                  (:file "hash-tables"
                   :depends-on ("iter" "types" "control-flow" "binding"))

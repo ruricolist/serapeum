@@ -65,6 +65,7 @@ This is to vectors what `values-list' is to lists."
     `(trivia:guard (and ,it (trivia:vector* ,@elts))
                    (= (length ,it) ,(length elts)))))
 
+(declaim (notinline pad-start))
 (-> pad-start (vector array-length &optional t)
     vector)
 (defun pad-start (vec length &optional (pad #\Space))
@@ -120,6 +121,7 @@ Loosely inspired by ECMA."
                                          &environment env)
   (expand-pad-x call 'pad-start env vec len pad))
 
+(declaim (notinline pad-end))
 (-> pad-end (vector array-length &optional t)
     vector)
 (defun pad-end (vec length &optional (pad #\Space))

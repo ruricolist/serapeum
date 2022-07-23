@@ -68,19 +68,22 @@
   (is (null (receive () (values) nil)))
   (is (null (receive x (values) x)))
 
-  (signals error
-    (eval* `(receive (one two &optional three) (values 1 2 3)
-              (list one two three))))
-  (signals error
-    (eval* `(receive (one two) (values 1 2 3)
-              (list one two))))
-  (signals error
-    (eval* `(receive (one two three four) (values 1 2 3)
-              (list one two three four))))
-  (signals error
-    (eval* `(receive () (values 1))))
-  (signals error
-    (eval* `(receive (x) (values) x))))
+;;; See https://gitlab.com/embeddable-common-lisp/ecl/-/issues/672
+  #-ecl
+  (progn
+    (signals error
+      (eval* `(receive (one two &optional three) (values 1 2 3)
+                (list one two three))))
+    (signals error
+      (eval* `(receive (one two) (values 1 2 3)
+                (list one two))))
+    (signals error
+      (eval* `(receive (one two three four) (values 1 2 3)
+                (list one two three four))))
+    (signals error
+      (eval* `(receive () (values 1))))
+    (signals error
+      (eval* `(receive (x) (values) x)))))
 
 (test mvlet*
   (is (= 2 (let ((x 1)) x

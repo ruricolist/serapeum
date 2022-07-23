@@ -934,6 +934,9 @@ Takes care that the longest suffix is always removed first."
 (deftype fixed-print-length-type ()
   '(or string character symbol pathname fixnum))
 
+(declaim (ftype (function ((integer 0 #.most-positive-fixnum)
+                           &optional (integer 2 36))
+                          (integer 0 #.(integer-length most-positive-fixnum)))))
 (defun digit-length (n &optional (base *print-base*))
   (declare ((integer 0 #.most-positive-fixnum) n)
            (optimize speed (safety 1)))

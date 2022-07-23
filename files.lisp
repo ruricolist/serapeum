@@ -91,8 +91,7 @@ STREAM will be closed afterwards, so wrap it with
 (defun file= (file1 file2 &key (buffer-size 4096))
   "Compare FILE1 and FILE2 octet by octet, \(possibly) using buffers
 of BUFFER-SIZE."
-  (declare (optimize speed)
-           (ignorable buffer-size))
+  (declare (ignorable buffer-size))
   (let ((file1 (truename file1))
         (file2 (truename file2)))
     (or (equal file1 file2)

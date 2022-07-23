@@ -128,8 +128,7 @@ as vectors."
   (declare
    (type pathname file1 file2)
    (type array-length buffer-size)
-   (optimize (speed 3) (safety 1)
-             (debug 0) (compilation-speed 0)))
+   (optimize (safety 1) (debug 0) (compilation-speed 0)))
   (flet ((make-buffer ()
            (make-array buffer-size
                        :element-type 'octet
@@ -139,15 +138,16 @@ as vectors."
                       (file2 file2 :element-type 'octet :direction :input))
       (and (= (file-length file1)
               (file-length file2))
-           (loop with buffer1 = (make-buffer)
-                 with buffer2 = (make-buffer)
-                 for end1 = (read-sequence buffer1 file1)
-                 for end2 = (read-sequence buffer2 file2)
-                 until (or (zerop end1) (zerop end2))
-                 always (and (= end1 end2)
-                             (octet-vector= buffer1 buffer2
-                                            :end1 end1
-                                            :end2 end2)))))))
+           (locally (declare (optimize speed))
+             (loop with buffer1 = (make-buffer)
+                   with buffer2 = (make-buffer)
+                   for end1 = (read-sequence buffer1 file1)
+                   for end2 = (read-sequence buffer2 file2)
+                   until (or (zerop end1) (zerop end2))
+                   always (and (= end1 end2)
+                               (octet-vector= buffer1 buffer2
+                                              :end1 end1
+                                              :end2 end2))))))))
 
 (defun file-size (file &key (element-type '(unsigned-byte 8)))
   "The size of FILE, in units of ELEMENT-TYPE (defaults to bytes).

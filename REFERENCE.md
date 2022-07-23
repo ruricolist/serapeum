@@ -2538,14 +2538,14 @@ resulting stream.
 If all you want is to read the file's size in octets from its
 metadata, consider `trivial-file-size:file-size-in-octets` instead.
 
-[View source](files.lisp#L153)
+[View source](files.lisp#L152)
 
 ### `(exe p)`
 
 If P, a pathname designator, has no extension, then, on Windows
 only, add an extension of `.exe`.
 
-[View source](files.lisp#L169)
+[View source](files.lisp#L168)
 
 ### `(resolve-executable p)`
 
@@ -2559,7 +2559,7 @@ Note that this function does not check the current directory (even on
 Windows) and it does not care if P is already an absolute pathname: it
 only cares about its name and type.
 
-[View source](files.lisp#L189)
+[View source](files.lisp#L188)
 
 ### `(format-file-size-human-readable stream file-size &key flavor space suffix)`
 
@@ -2580,7 +2580,7 @@ prefix. (Defaults to T if FLAVOR is `:si`.)
 SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec`,
 otherwise empty.
 
-[View source](files.lisp#L209)
+[View source](files.lisp#L208)
 
 ### `(file-size-human-readable file &key flavor space suffix stream)`
 
@@ -2589,7 +2589,7 @@ The size of file is found by `trivial-file-size:file-size-in-octets`.
 
 Inspired by the function of the same name in Emacs.
 
-[View source](files.lisp#L237)
+[View source](files.lisp#L236)
 
 ## Symbols
 

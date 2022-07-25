@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 464 functions)
+# Function Listing For serapeum (43 files, 466 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2647,38 +2647,38 @@ Test for a queue.
 
 Build a new queue with INITIAL-CONTENTS.
 
-[View source](queue.lisp#L83)
+[View source](queue.lisp#L85)
 
 ### `(clear-queue queue)`
 
 Return QUEUE's contents and reset it.
 
-[View source](queue.lisp#L102)
+[View source](queue.lisp#L104)
 
 ### `(qlen queue)`
 
 The number of items in QUEUE.
 
-[View source](queue.lisp#L110)
+[View source](queue.lisp#L112)
 
 ### `(qlist queue)`
 
 A list of the items in QUEUE.
 Does not cons.
 
-[View source](queue.lisp#L115)
+[View source](queue.lisp#L117)
 
 ### `(enq item queue)`
 
 Insert ITEM at the end of QUEUE.
 
-[View source](queue.lisp#L121)
+[View source](queue.lisp#L123)
 
 ### `(deq queue)`
 
 Remove item from the front of the QUEUE.
 
-[View source](queue.lisp#L130)
+[View source](queue.lisp#L132)
 
 ### `(undeq item queue)`
 
@@ -2690,45 +2690,57 @@ queue (like pushing to an ordinary list).
 
 This is called `undeq` because it can be used to undo a `deq`.
 
-[View source](queue.lisp#L142)
+[View source](queue.lisp#L144)
 
 ### `(queue-empty-p queue)`
 
 Is QUEUE empty?
 
-[View source](queue.lisp#L157)
+[View source](queue.lisp#L159)
 
 ### `(front queue)`
 
 The first element in QUEUE.
 
-[View source](queue.lisp#L162)
+[View source](queue.lisp#L164)
 
 ### `(qback queue)`
 
 Get the last element of a queue.
 
-[View source](queue.lisp#L174)
+[View source](queue.lisp#L176)
 
 ### `(qconc queue list)`
 
 Destructively concatenate LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L187)
+[View source](queue.lisp#L189)
 
 ### `(qappend queue list)`
 
 Append the elements of LIST onto the end of QUEUE.
 Return the queue.
 
-[View source](queue.lisp#L198)
+[View source](queue.lisp#L200)
+
+### `(qprepend list queue)`
+
+Insert ITEMS at the beginning of QUEUE.
+
+[View source](queue.lisp#L209)
+
+### `(qpreconc list queue)`
+
+Destructively splice LIST at the beginning of QUEUE.
+
+[View source](queue.lisp#L213)
 
 ### `(copy-queue queue)`
 
 Copy QUEUE as another queue.
 
-[View source](queue.lisp#L208)
+[View source](queue.lisp#L223)
 
 ## Box
 

@@ -50,6 +50,8 @@ The rest of the API:
 - `qback' Get the last element of the queue
 - `queue-empty-p' Test if the queue is empty
 - `qappend' Non-destructively join a list to the end of the queue
+- `qconc' Destructively join a list to the end of the queue
+- `qprepend' Non-destructively join a list to the front of the queue
 
 Note that support for both `deq' and `undeq' means that a queue is
 also effectively a stack. (But not quite a double-ended queue: you can
@@ -203,6 +205,19 @@ Return the queue."
       ;; it than to access the queue for each element.
       (qconc queue (copy-list list))
       queue))
+
+(defun qprepend (list queue)
+  "Insert ITEMS at the beginning of QUEUE."
+  (qpreconc (copy-list list) queue))
+
+(defun qpreconc (list queue)
+  "Destructively splice LIST at the beginning of QUEUE."
+  (let ((q (queue-cons queue)))
+    (if (cdr q)
+        (setf (cdr q)
+              (nconc list (cdr q)))
+        (qconc queue list))
+    queue))
 
 (-> copy-queue (queue) (values queue &optional))
 (defun copy-queue (queue)

@@ -84,3 +84,19 @@
     (enq 2 q2)
     (is (equal (qlist q1) '(1 2 3 4)))
     (is (equal (qlist q2) '(1 2 3 2)))))
+
+(test qprepend
+  (let ((q (queue)))
+    (qprepend '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3))))
+  (let ((q (queue 4 5 6)))
+    (qprepend '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3 4 5 6)))))
+
+(test qpreconc
+  (let ((q (queue)))
+    (qpreconc '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3))))
+  (let ((q (queue 4 5 6)))
+    (qpreconc '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3 4 5 6)))))

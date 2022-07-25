@@ -267,7 +267,9 @@
    #:qlen
    #:qlist
    #:qconc
+   #:qpreconc
    #:qappend
+   #:qprepend
    #:queue-empty-p
    #:clear-queue
    #:copy-queue

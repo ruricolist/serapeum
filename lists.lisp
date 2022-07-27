@@ -50,7 +50,6 @@ From Emacs Lisp."
 From Emacs Lisp."
   (if (consp x) (cdr x) nil))
 
-(declaim (notinline append1))
 (defsubst append1 (list item)
   "Append an atom to a list.
 

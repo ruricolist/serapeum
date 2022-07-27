@@ -448,7 +448,6 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
       `(remove ,item ,seq :test-not ,test ,@(remove-from-plist args :test))
       decline))
 
-(declaim (notinline single))
 (-> single (sequence) boolean)
 (defsubst single (seq)
   "Is SEQ a sequence of one element?"

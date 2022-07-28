@@ -138,9 +138,11 @@ hash table is inlined as a literal object."
 
     (href (dict :x 1) :x) => 1
     (href (dict :x (dict :y 2)) :x :y)  => 2"
-  (cond ((endp keys) (values table t))
-        ((single keys) (gethash (car keys) table))
-        (t (apply #'href (gethash (car keys) table) (cdr keys)))))
+  (match keys
+    (() (values table t))
+    ((list _) (gethash (car keys) table))
+    (otherwise
+     (apply #'href (gethash (car keys) table) (cdr keys)))))
 
 
 (-> href-default (t hash-table &rest t) (values t boolean &optional))
@@ -148,26 +150,30 @@ hash table is inlined as a literal object."
   "Like `href', with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned."
   (nlet href (table keys)
-    (cond ((endp keys)
-           (values default nil))
-          ((single keys)
-           (multiple-value-bind (value ok?)
-               (gethash (car keys) table)
-             (if ok?
-                 (values value t)
-                 (values default nil))))
-          (t (multiple-value-bind (value ok?)
-                 (gethash (car keys) table)
-               (if ok?
-                   (href value (cdr keys))
-                   (values default nil)))))))
+    (match keys
+      (()
+       (values default nil))
+      ((list _)
+       (multiple-value-bind (value ok?)
+           (gethash (car keys) table)
+         (if ok?
+             (values value t)
+             (values default nil))))
+      (otherwise
+       (multiple-value-bind (value ok?)
+           (gethash (car keys) table)
+         (if ok?
+             (href value (cdr keys))
+             (values default nil)))))))
 
 (defun (setf href) (value table &rest keys)
   (nlet hset ((table table)
               (keys keys))
-    (cond ((endp keys) value)
-          ((single keys) (setf (gethash (car keys) table) value))
-          (t (hset (gethash (car keys) table) (cdr keys))))))
+    (match keys
+      (() value)
+      ((list _) (setf (gethash (car keys) table) value))
+      (otherwise
+       (hset (gethash (car keys) table) (cdr keys))))))
 
 (defun expand-href (table keys)
   (reduce
@@ -192,9 +198,9 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
 (defun (setf @) (value table key &rest keys)
   (nlet rec ((table table)
              (keys (cons key keys)))
-    (if (single keys)
-        (setf (gethash (car keys) table) value)
-        (rec (gethash (car keys) table) (cdr keys)))))
+    (if (rest keys)
+        (rec (gethash (car keys) table) (cdr keys))
+        (setf (gethash (car keys) table) value))))
 
 (flet ((expand-@ (table keys)
          (reduce

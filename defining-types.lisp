@@ -493,8 +493,8 @@ member types. A class is also defined, with the same name, but with
 angle brackets around it."
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
-         (ctors (filter #'listp variants))
-         (units (filter #'atom variants))
+         (ctors (remove-if-not #'listp variants))
+         (units (remove-if-not #'atom variants))
          (types (append units (mapcar #'first ctors)))
          (super (symbolicate '< union '>)))
     ;; CCL (and maybe other lisps) evaluates `(:include)' options at

@@ -373,13 +373,15 @@ symbol)."
   ;; The names of the ignored functions.
   (mapcar #'second
           ;; Ignore declarations for functions.
-          (filter #'listp
-                  ;; The ignore declarations.
-                  (mappend (lambda (decl)
-                             (let ((decls (cdr decl)))
-                               (mappend #'cdr
-                                        (keep 'ignore decls :key #'car))))
-                           decls))))
+          (remove-if-not #'listp
+                         ;; The ignore declarations.
+                         (mappend (lambda (decl)
+                                    (let ((decls (cdr decl)))
+                                      (mappend #'cdr
+                                               (remove 'ignore decls
+                                                       :test-not #'eql
+                                                       :key #'car))))
+                                  decls))))
 
 (defun ignored-functions-in-body (body)
   (~> body

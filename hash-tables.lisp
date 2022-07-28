@@ -624,7 +624,9 @@ If you want to always pretty print hash tables, you can set this in your init fi
     (let ((off (if explicit on (not toggled))))
       (if off
           (progn
-            (set-pprint-dispatch 'hash-table (flip #'pretty-print-hash-table))
+            (set-pprint-dispatch 'hash-table
+                                 (lambda (x y)
+                                   (pretty-print-hash-table y x)))
             (setf toggled t))
           (progn (set-pprint-dispatch 'hash-table nil)
                  (setf toggled nil))))))

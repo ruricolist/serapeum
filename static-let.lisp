@@ -350,9 +350,10 @@ will not be affected by this operation."
   (let* ((relevant-declarations (partition-declarations names declarations))
          (dynamics
            (mappend #'cdr
-                    (keep 'dynamic-extent
-                          (mappend #'cdr relevant-declarations)
-                          :key #'car))))
+                    (remove 'dynamic-extent
+                            (mappend #'cdr relevant-declarations)
+                            :test-not #'eql
+                            :key #'car))))
     (when-let (intersection (intersection names dynamics))
       (error "~s bindings cannot be declared dynamic-extent: ~a"
              'static-let

@@ -200,7 +200,7 @@ them sane initialization values."
 (defun extract-tagbody-tags (body)
   ;; It's not documented in CLHS, but SBCL and CCL agree that a tag
   ;; must be a symbol or an integer.
-  (filter #'tagbody-tag? body))
+  (remove-if-not #'tagbody-tag? body))
 
 (defun augment/funs (funs &optional (subenv *subenv*))
   (copy-subenv subenv
@@ -519,7 +519,7 @@ them sane initialization values."
 
         ;; SEQUENCING.
         ((progn &body body)
-         (if (single body)
+         (if (null (rest body))
              (expand-partially self (first body))
              (if (not (subenv-empty?))
                  `(progn ,@(mapcar (op (expand-partially self _)) body))

@@ -674,7 +674,7 @@ first."
 instead of the first."
   (thread-aux '~>> needle holes
               (lambda (needle hole)
-                (append1 hole needle))))
+                (append hole (list needle)))))
 
 (defpattern ~>> (needle &rest holes)
   (check-no-underscores holes)

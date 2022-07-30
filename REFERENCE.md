@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 466 functions)
+# Function Listing For serapeum (43 files, 469 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -937,7 +937,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L563)
+[View source](defining-types.lisp#L564)
 
 ## Binding
 
@@ -1425,7 +1425,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L691)
+[View source](control-flow.lisp#L692)
 
 ### `(select keyform &body clauses)`
 
@@ -1445,7 +1445,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L726)
+[View source](control-flow.lisp#L727)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1455,7 +1455,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L745)
+[View source](control-flow.lisp#L746)
 
 ### `(sort-values pred &rest values)`
 
@@ -1467,7 +1467,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L864)
+[View source](control-flow.lisp#L865)
 
 ### `(eq* &rest xs)`
 
@@ -1485,7 +1485,7 @@ equivalent under `eq`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L935)
+[View source](control-flow.lisp#L936)
 
 ### `(eql* &rest xs)`
 
@@ -1503,7 +1503,7 @@ equivalent under `eql`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L937)
+[View source](control-flow.lisp#L938)
 
 ### `(equal* &rest xs)`
 
@@ -1521,7 +1521,7 @@ equivalent under `equal`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L939)
+[View source](control-flow.lisp#L940)
 
 ### `(equalp* &rest xs)`
 
@@ -1539,14 +1539,14 @@ equivalent under `equalp`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L941)
+[View source](control-flow.lisp#L942)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L951)
+[View source](control-flow.lisp#L952)
 
 ## Threads
 
@@ -2232,7 +2232,7 @@ A concise way of doing lookups in (potentially nested) hash tables.
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L147)
+[View source](hash-tables.lisp#L149)
 
 ### `(@ table &rest keys)`
 
@@ -2241,7 +2241,7 @@ A concise way of doing lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => 1
     (@ (dict :x (dict :y 2)) :x :y)  => 2 
 
-[View source](hash-tables.lisp#L185)
+[View source](hash-tables.lisp#L191)
 
 ### `(pophash key hash-table)`
 
@@ -2251,7 +2251,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L211)
+[View source](hash-tables.lisp#L217)
 
 ### `(swaphash key value hash-table)`
 
@@ -2261,7 +2261,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L223)
+[View source](hash-tables.lisp#L229)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -2271,14 +2271,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L233)
+[View source](hash-tables.lisp#L239)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L248)
+[View source](hash-tables.lisp#L254)
 
 ### `(maphash-new fn hash-table &rest hash-table-args &key &allow-other-keys)`
 
@@ -2300,7 +2300,7 @@ By default, the new hash table has the same hash table
 properties (test, size) as HASH-TABLE, but these can be overridden
 with HASH-TABLE-ARGS.
 
-[View source](hash-tables.lisp#L261)
+[View source](hash-tables.lisp#L267)
 
 ### `(maphash-into hash-table fn &rest seqs)`
 
@@ -2308,7 +2308,7 @@ Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
 
 FN is required to return two values, and key and a value.
 
-[View source](hash-tables.lisp#L291)
+[View source](hash-tables.lisp#L297)
 
 ### `(merge-tables &rest tables)`
 
@@ -2328,7 +2328,7 @@ All of the tables being merged must have the same value for
 Clojure's `merge`.
 
 
-[View source](hash-tables.lisp#L315)
+[View source](hash-tables.lisp#L321)
 
 ### `(flip-hash-table table &rest hash-table-args &key filter key test size rehash-size rehash-threshold)`
 
@@ -2354,7 +2354,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L344)
+[View source](hash-tables.lisp#L350)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2368,7 +2368,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L379)
+[View source](hash-tables.lisp#L385)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2377,7 +2377,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L411)
+[View source](hash-tables.lisp#L417)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2385,7 +2385,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L422)
+[View source](hash-tables.lisp#L428)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -2416,7 +2416,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L432)
+[View source](hash-tables.lisp#L438)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2424,14 +2424,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L523)
+[View source](hash-tables.lisp#L529)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L531)
+[View source](hash-tables.lisp#L537)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2444,7 +2444,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L540)
+[View source](hash-tables.lisp#L546)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2468,7 +2468,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L562)
+[View source](hash-tables.lisp#L568)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2477,7 +2477,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L612)
+[View source](hash-tables.lisp#L618)
 
 ## Files
 
@@ -3177,14 +3177,14 @@ Like `fbind`, but creates recursive bindings.
 The consequences of referring to one binding in the expression that
 generates another are undefined.
 
-[View source](fbind.lisp#L444)
+[View source](fbind.lisp#L445)
 
 ### `(fbindrec* bindings &body body)`
 
 Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
-[View source](fbind.lisp#L487)
+[View source](fbind.lisp#L488)
 
 ## Static Let
 
@@ -3258,7 +3258,7 @@ to not include static binding values in the resulting Lisp image.
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation.
 
-[View source](static-let.lisp#L195)
+[View source](static-let.lisp#L196)
 
 ### `(static-let (&rest bindings) &body body)`
 
@@ -3283,7 +3283,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L395)
+[View source](static-let.lisp#L397)
 
 ### `(static-let* (&rest bindings) &body body)`
 
@@ -3308,7 +3308,7 @@ into `uiop:*dump-image-hooks*` by Serapeum.
 An unflushable static binding will carry its value over into dumped
 Lisp binaries.
 
-[View source](static-let.lisp#L418)
+[View source](static-let.lisp#L420)
 
 ## Reader
 
@@ -3451,6 +3451,31 @@ Append an atom to a list.
 
 [View source](lists.lisp#L53)
 
+### `(nconc1 list item)`
+
+Like `append1`, but destructive.
+
+[View source](lists.lisp#L60)
+
+### `(push-end item place)`
+
+Destructively push ITEM to the end of PLACE.
+Like `push`, but affects the last item rather than the first.
+
+You may want to use `enq` on a `queue` instead.
+
+From LispWorks.
+
+[View source](lists.lisp#L64)
+
+### `(push-end-new item place &rest kwargs &key key test test-not)`
+
+Pushes ITEM to the end of place (like `push-end`) but only if it not already a member of PLACE (like `pushnew`).
+
+For the use of KEY, TEST, and TEST-NOT, see `pushnew`.
+
+[View source](lists.lisp#L80)
+
 ### `(in x &rest items)`
 
 Is X equal to any of ITEMS?
@@ -3461,14 +3486,14 @@ candidate matches are constant.
 
 From Arc.
 
-[View source](lists.lisp#L60)
+[View source](lists.lisp#L99)
 
 ### `(memq item list)`
 
 Like (member ... :test #'eq).
 Should only be used for symbols.
 
-[View source](lists.lisp#L88)
+[View source](lists.lisp#L127)
 
 ### `(delq item list)`
 
@@ -3476,7 +3501,7 @@ Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-[View source](lists.lisp#L115)
+[View source](lists.lisp#L154)
 
 ### `(mapply fn list &rest lists)`
 
@@ -3509,19 +3534,19 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
 
-[View source](lists.lisp#L132)
+[View source](lists.lisp#L171)
 
 ### `(assocdr item alist &rest args &key &allow-other-keys)`
 
 Like (cdr (assoc ...))
 
-[View source](lists.lisp#L186)
+[View source](lists.lisp#L225)
 
 ### `(assocar item alist &rest args &key &allow-other-keys)`
 
 Like (car (assoc ...))
 
-[View source](lists.lisp#L191)
+[View source](lists.lisp#L230)
 
 ### `(assocadr item alist &rest args &key &allow-other-keys)`
 
@@ -3530,19 +3555,19 @@ Like `assocdr` for alists of proper lists.
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
-[View source](lists.lisp#L196)
+[View source](lists.lisp#L235)
 
 ### `(rassocar item alist &rest args &key &allow-other-keys)`
 
 Like (car (rassoc ...))
 
-[View source](lists.lisp#L204)
+[View source](lists.lisp#L243)
 
 ### `(rassocdr item alist &rest args &key &allow-other-keys)`
 
 Like (cdr (rassoc ...))
 
-[View source](lists.lisp#L209)
+[View source](lists.lisp#L248)
 
 ### `(firstn n list)`
 
@@ -3555,14 +3580,14 @@ The first N elements of LIST, as a fresh list:
 into Common Lisp, unless it was deliberately left out as an exercise
 for Maclisp users.)
 
-[View source](lists.lisp#L214)
+[View source](lists.lisp#L253)
 
 ### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
 
-[View source](lists.lisp#L226)
+[View source](lists.lisp#L265)
 
 ### `(efface item list)`
 
@@ -3570,7 +3595,7 @@ Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
-[View source](lists.lisp#L237)
+[View source](lists.lisp#L276)
 
 ### `(pop-assoc key alist &rest args)`
 
@@ -3578,7 +3603,7 @@ Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
 
-[View source](lists.lisp#L256)
+[View source](lists.lisp#L295)
 
 ### `(mapcar-into fn list)`
 
@@ -3586,25 +3611,25 @@ Like (map-into list fn list).
 
 From PAIP.
 
-[View source](lists.lisp#L272)
+[View source](lists.lisp#L311)
 
 ### `(nthrest n list)`
 
 Alias for `nthcdr`.
 
-[View source](lists.lisp#L281)
+[View source](lists.lisp#L320)
 
 ### `(plist-keys plist)`
 
 Return the keys of a plist.
 
-[View source](lists.lisp#L285)
+[View source](lists.lisp#L324)
 
 ### `(plist-values plist)`
 
 Return the values of a plist.
 
-[View source](lists.lisp#L291)
+[View source](lists.lisp#L330)
 
 ## Sequences
 
@@ -4970,7 +4995,7 @@ VEC, so PAD must satisfy that element type.
 
 Loosely inspired by ECMA.
 
-[View source](vectors.lisp#L70)
+[View source](vectors.lisp#L97)
 
 ### `(pad-end vec length &optional pad)`
 
@@ -4978,7 +5003,7 @@ Pad VEC, a vector, to LENGTH, using PAD.
 Like `pad-start`, but padding is addded to the end, rather than the
 beginning.
 
-[View source](vectors.lisp#L125)
+[View source](vectors.lisp#L152)
 
 ### `(vector-conc-extend vector new-elements &optional extension)`
 
@@ -4988,7 +5013,7 @@ each element on NEW-ELEMENTS, but should be faster.
 
 Returns VECTOR.
 
-[View source](vectors.lisp#L176)
+[View source](vectors.lisp#L177)
 
 ## Vector=
 
@@ -5122,7 +5147,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](internal-definitions.lisp#L679)
+[View source](internal-definitions.lisp#L681)
 
 ### `(block-compile (&key entry-points (block-compile t)) &body body)`
 
@@ -5140,7 +5165,7 @@ into local `declare` forms.
 If you pass `:block-compile nil', this macro is equivalent to progn.
 This may be useful during development.
 
-[View source](internal-definitions.lisp#L793)
+[View source](internal-definitions.lisp#L795)
 
 ## Tree Case
 

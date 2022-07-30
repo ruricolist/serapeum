@@ -2,6 +2,7 @@
 **Table of Contents**
 
 - [Overview](#overview)
+- [Installation](#installation)
 - [Commentary](#commentary)
     - [A note about strings](#a-note-about-strings)
     - [Dividing sequences](#dividing-sequences)
@@ -15,6 +16,8 @@
     - [CLOS](#clos)
         - [Method combination: standard with context](#method-combination-standard-with-context)
         - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
+- [Contributions](#contributions)
+    - [Hooks](#hooks)
 - [Function reference](#function-reference)
 
 <!-- markdown-toc end -->
@@ -65,6 +68,15 @@ Serapeum is intended to be portable, but it is principally tested
 where it is developed, on [SBCL][] and [Clozure CL][]. Patches and bug
 reports for other Lisps are always welcome, however, including
 implementation-specific optimizations.
+
+# Installation
+
+The preferred way to install Serapeum by using [Quicklisp][]:
+
+    (ql:quickload "serapeum")
+    
+If you want the very latest version of Serapeum, you can check out the
+repository into your `~/quicklisp/local-projects` directory.
 
 # Commentary
 
@@ -496,3 +508,4 @@ be edited by hand.)
 [Clozure CL]: http://clozure.com
 [ECL]: https://common-lisp.net/project/ecl/
 [Allegro]: https://franz.com/products/allegrocl/
+[Quicklisp]: https://www.quicklisp.org/beta/

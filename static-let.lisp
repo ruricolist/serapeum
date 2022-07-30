@@ -185,6 +185,7 @@ Lisp is running single-threaded or `are-you-sure-p' is true.
 
 Note that a static binding that was created as `:flushablep nil'
 will not be affected by this operation."
+  (declare (ignorable are-you-sure-p))
   (when (member group *active-groups*)
     (static-binding-active-error group))
   (bt:with-lock-held (*flushing-lock*)
@@ -347,6 +348,7 @@ will not be affected by this operation."
 
 (defun check-no-dynamic-extent (names declarations)
   "Check that none of NAMES are declared `dynamic-extent' in DECLARATIONS."
+  (declare (notinline keep))
   (let* ((relevant-declarations (partition-declarations names declarations))
          (dynamics
            (mappend #'cdr

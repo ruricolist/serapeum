@@ -491,6 +491,7 @@ defines a read-only structure, as with `defconstructor').
 UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it."
+  (declare (notinline filter))          ;phasing
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
          (ctors (filter #'listp variants))
@@ -504,19 +505,19 @@ angle brackets around it."
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defstruct (,super
-                      (:constructor nil)
-                      (:copier nil)
-                      (:predicate nil)
-                      (:include %read-only-struct))
+                     (:constructor nil)
+                     (:copier nil)
+                     (:predicate nil)
+                     (:include %read-only-struct))
            ,@(unsplice docstring)))
        ;; NB The declarations are not currently used, due to an SBCL bug.
        (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
          (symbol-macrolet ((serapeum.unlocked:%union ,super))
            (declare #+sbcl (sb-ext:enable-package-locks %union))
            ,@(loop for type in units
-                collect `(defunit ,type))
+                   collect `(defunit ,type))
            ,@(loop for (type . slots) in ctors
-                collect `(defconstructor ,type ,@slots))
+                   collect `(defconstructor ,type ,@slots))
            (deftype ,union ()
              ,@(unsplice docstring)
              '(or ,@types))

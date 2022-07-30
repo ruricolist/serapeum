@@ -672,6 +672,7 @@ first."
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
+  (declare (notinline append1))         ;phasing
   (thread-aux '~>> needle holes
               (lambda (needle hole)
                 (append1 hole needle))))

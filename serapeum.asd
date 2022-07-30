@@ -45,7 +45,7 @@
                  (:file "conditions")
                  (:file "op")
                  (:file "functions"
-                  :depends-on ("types" "hash-tables" "iter"))
+                  :depends-on ("types" "iter"))
                  (:file "trees")
                  (:file "hash-tables"
                   :depends-on ("iter" "types" "control-flow" "binding"))
@@ -83,9 +83,9 @@
                 :serial nil
                 :components
                 ((:file "lists")
-                 (:file "sequences")
+                 (:file "sequences" :depends-on ("lists"))
                  (:file "strings" :depends-on ("sequences"))
-                 (:file "vectors")))
+                 (:file "vectors" :depends-on ("lists"))))
                ;; Level 2 files can use CL, Alexandria, and the rest
                ;; of Serapeum. Anything at this level could, in
                ;; principle, be its own separate library that depends

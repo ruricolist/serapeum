@@ -198,6 +198,7 @@ them sane initialization values."
   (typep form '(or symbol integer)))
 
 (defun extract-tagbody-tags (body)
+  (declare (notinline filter))          ;phasing
   ;; It's not documented in CLHS, but SBCL and CCL agree that a tag
   ;; must be a symbol or an integer.
   (filter #'tagbody-tag? body))
@@ -409,6 +410,7 @@ them sane initialization values."
 
 (define-env-method expand-partially (self form)
   "Macro-expand FORM until it becomes a definition form or macro expansion stops."
+  (declare (notinline single))
   (if (atom form) (step-expansion self form)
       (destructuring-case-of internal-definition-form form
         ;; A specific form to stop expansion.

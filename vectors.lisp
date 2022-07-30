@@ -65,6 +65,33 @@ This is to vectors what `values-list' is to lists."
     `(trivia:guard (and ,it (trivia:vector* ,@elts))
                    (= (length ,it) ,(length elts)))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun expand-pad-x (call fn env vec len pad)
+    "Auxiliary function for `pad-X' compiler macros.
+     Optimizes some cases where PAD is a constant sequence."
+    (if (not (typep pad 'sequence)) call
+        (case (length pad)
+          (0
+           (cond ((constantp len env)
+                  vec)
+                 ((constantp vec env)
+                  ;; We don't have to worry about evaluation order.
+                  `(progn ,len ,vec))
+                 (t
+                  ;; Evaluate VEC, then LEN, then return STRING.
+                  (with-unique-names (temp)
+                    ;; Ensure LEN
+                    `(let ((,temp ,vec))
+                       ,len
+                       ,temp)))))
+          (1 `(,fn ,vec ,len ',(aref pad 0)))
+          (t call)))))
+
+(define-compiler-macro pad-start (&whole call vec len
+                                         &optional (pad #\Space)
+                                         &environment env)
+  (expand-pad-x call 'pad-start env vec len pad))
+
 (-> pad-start (vector array-length &optional t)
     vector)
 (defun pad-start (vec length &optional (pad #\Space))
@@ -115,10 +142,10 @@ Loosely inspired by ECMA."
            (fill out pad :end offset)
            out))))
 
-(define-compiler-macro pad-start (&whole call vec len
-                                         &optional (pad #\Space)
-                                         &environment env)
-  (expand-pad-x call 'pad-start env vec len pad))
+(define-compiler-macro pad-end (&whole call vec len
+                                       &optional (pad #\Space)
+                                       &environment env)
+  (expand-pad-x call 'pad-end env vec len pad))
 
 (-> pad-end (vector array-length &optional t)
     vector)
@@ -146,32 +173,6 @@ beginning."
            (replace out vec)
            (fill out pad :start (length vec))
            out))))
-
-(define-compiler-macro pad-end (&whole call vec len
-                                       &optional (pad #\Space)
-                                       &environment env)
-  (expand-pad-x call 'pad-end env vec len pad))
-
-(defun expand-pad-x (call fn env vec len pad)
-  "Auxiliary function for `pad-X' compiler macros.
-Optimizes some cases where PAD is a constant sequence."
-  (if (not (typep pad 'sequence)) call
-      (case (length pad)
-        (0
-         (cond ((constantp len env)
-                vec)
-               ((constantp vec env)
-                ;; We don't have to worry about evaluation order.
-                `(progn ,len ,vec))
-               (t
-                ;; Evaluate VEC, then LEN, then return STRING.
-                (with-unique-names (temp)
-                  ;; Ensure LEN
-                  `(let ((,temp ,vec))
-                     ,len
-                     ,temp)))))
-        (1 `(,fn ,vec ,len ',(aref pad 0)))
-        (t call))))
 
 (defun vector-conc-extend (vector new-elements &optional (extension 0))
   "Add NEW-ELEMENTS to the end of VECTOR, an adjustable array with a fill-pointer.

@@ -52,6 +52,38 @@
     (is (equal (append1 nil nil) '(nil)))
     (is (equal (append1 '(a b c) '(d e)) '(a b c (d e))))))
 
+(test nconc1
+  (with-notinline (nconc1)
+    (is (equal (nconc1 nil 'a) '(a)))
+    (is (equal (nconc1 nil nil) '(nil)))
+    (is (equal (nconc1 (list 'a 'b 'c) '(d e))
+               '(a b c (d e))))))
+
+(test push-end
+  (let ((xs (list)))
+    (push-end 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1)))
+    (push-end 2 xs)
+    (is (equal '(1 2) xs))))
+
+(test push-end-new
+  (let ((xs (list)))
+    (push-end-new 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1)))
+    (push-end-new 2 xs)
+    (is (equal '(1 2) xs)))
+  (let ((xs (list 1)))
+    (push-end-new 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1.0)))
+    (push-end-new 1 xs :test #'=)
+    (is (equal '(1.0) xs)))
+  (let ((xs (list "1")))
+    (push-end-new 1 xs :test #'equal :key #'parse-integer)
+    (is (equal '("1") xs))))
+
 (test in
   (with-notinline (in)
     (is (eql (in 'a 'b 'c) nil))

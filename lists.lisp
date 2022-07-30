@@ -57,6 +57,45 @@ From Emacs Lisp."
     ≡ (append list (list item))"
   (append list (list item)))
 
+(defsubst nconc1 (list item)
+  "Like `append1', but destructive."
+  (nconc list (list item)))
+
+(defmacro push-end (item place &environment env)
+  "Destructively push ITEM to the end of PLACE.
+Like `push', but affects the last item rather than the first.
+
+You may want to use `enq' on a `queue' instead.
+
+From LispWorks."
+  (multiple-value-bind (dummies vals temps setter getter)
+      (get-setf-expansion place env)
+    (when (rest temps) (error "Invalid place for push-end"))
+    (let ((temp (car temps)))
+      `(let* (,@(mapcar #'list dummies vals)
+              (,temp ,getter))
+         (setf ,temp (nconc1 ,temp ,item))
+         ,setter))))
+
+(defmacro push-end-new (item place
+                        &rest kwargs
+                        &key key test test-not
+                        &environment env)
+  "Pushes ITEM to the end of place (like `push-end') but only if it not already a member of PLACE (like `pushnew').
+
+For the use of KEY, TEST, and TEST-NOT, see `pushnew'."
+  (declare (ignore key test test-not))
+  (once-only (item)
+    (multiple-value-bind (dummies vals temps setter getter)
+        (get-setf-expansion place env)
+      (when (rest temps) (error "Invalid place for push-end"))
+      (let ((temp (car temps)))
+        `(let* (,@(mapcar #'list dummies vals)
+                (,temp ,getter))
+           (unless (member ,item ,temp ,@kwargs)
+             (setf ,temp (nconc1 ,temp ,item)))
+           ,setter)))))
+
 (defun in (x &rest items)
   "Is X equal to any of ITEMS?
 

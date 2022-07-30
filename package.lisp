@@ -359,6 +359,9 @@
    #:memq
    #:delq
    #:append1
+   #:nconc1
+   #:push-end
+   #:push-end-new
    #:assocar
    #:assocdr
    #:assocadr

@@ -370,6 +370,7 @@ symbol)."
          ,@body))))
 
 (defun ignored-functions-in-decls (decls)
+  (declare (notinline filter))         ;phasing
   ;; The names of the ignored functions.
   (mapcar #'second
           ;; Ignore declarations for functions.

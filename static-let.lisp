@@ -347,6 +347,7 @@ will not be affected by this operation."
 
 (defun check-no-dynamic-extent (names declarations)
   "Check that none of NAMES are declared `dynamic-extent' in DECLARATIONS."
+  (declare (notinline keep))
   (let* ((relevant-declarations (partition-declarations names declarations))
          (dynamics
            (mappend #'cdr

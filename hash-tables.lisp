@@ -621,6 +621,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
     If ON is set explicitly, turn on literal printing (T), otherwise use the default (NIL).
 
     Ported from RUTILS."
+    (declare (notinline flip))          ;phasing
     (let ((off (if explicit on (not toggled))))
       (if off
           (progn

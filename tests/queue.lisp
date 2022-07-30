@@ -95,8 +95,8 @@
 
 (test qpreconc
   (let ((q (queue)))
-    (qpreconc '(1 2 3) q)
+    (qpreconc (list 1 2 3) q)
     (is (equal (qlist q) '(1 2 3))))
   (let ((q (queue 4 5 6)))
-    (qpreconc '(1 2 3) q)
+    (qpreconc (list 1 2 3) q)
     (is (equal (qlist q) '(1 2 3 4 5 6)))))

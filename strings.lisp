@@ -45,7 +45,9 @@ are considered whitespace."
          (fn s)))
       (output-stream (fn stream)))))
 
-(defmacro with-string ((var &optional stream) &body body)
+(defmacro with-string ((var &optional stream
+                        &key (element-type nil element-type-supplied?))
+                       &body body)
   "Bind VAR to the character stream designated by STREAM.
 
 STREAM is resolved like the DESTINATION argument to `format': it can
@@ -68,7 +70,9 @@ functions.
                   ,@body)))
             ((null stream)
              (return-from with-string
-               `(with-output-to-string (,var)
+               `(with-output-to-string (,var
+                                        ,@(and element-type-supplied?
+                                               `(:element-type ,element-type)))
                   ,@body))))))
 
   (with-thunk (body var)

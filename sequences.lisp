@@ -1810,7 +1810,7 @@ as long as SEQ is empty.
     (repeat-sequence \"\" (1+ array-dimension-limit))
     => \"\"
 "
-  (check-type n (integer 0 *))
+  #-sbcl (check-type n (integer 0 *))
   (seq-dispatch seq
     (repeat-list seq n)
     (repeat-vector seq n)

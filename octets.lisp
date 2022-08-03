@@ -39,11 +39,13 @@ Defaults to little-endian order."
           (loop for i from (1- n-bytes) downto 0
                 for j from 0
                 do (setf (aref vec j)
-                         (ldb (byte 8 (* i 8)) n)))
+                         (locally (declare #+sbcl (optimize (speed 1)))
+                           (ldb (byte 8 (* i 8)) n))))
           (loop for i from 0 below n-bytes
                 for byte from 0 by 8
                 do (setf (aref vec i)
-                         (ldb (byte 8 byte) n))))
+                         (locally (declare #+sbcl (optimize (speed 1)))
+                           (ldb (byte 8 byte) n)))))
       vec)))
 
 (-> unoctets (octet-vector &key (:big-endian t)) integer)
@@ -52,7 +54,8 @@ Defaults to little-endian order."
 Defaults to little-endian order."
   (declare (octet-vector bytes)
            (inline reduce)
-           (optimize speed))
+           (optimize #+sbcl (speed 1)
+                     #-sbcl speed))
   (if big-endian
       (reduce (lambda (sum octet)
                 (+ octet (ash sum 8)))

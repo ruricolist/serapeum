@@ -215,7 +215,7 @@ From Emacs Lisp."
                            (when end
                              (replace result separator :start1 start)))))))))))
 
-(-> string-upcase-initials (string-designator) string)
+(-> string-upcase-initials (string-designator) (values string &optional))
 (defun string-upcase-initials (string)
   "Return STRING with the first letter of each word capitalized.
 This differs from STRING-CAPITALIZE in that the other characters in

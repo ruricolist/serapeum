@@ -468,50 +468,50 @@ Serapeum, `with-templated-body'. One possible expansion is based on
 the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
-  (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-  (let* ((types (simplify-subtypes types))
-         (var-type (variable-type var env))
-         ;; If the var has a declared type, remove excluded types.
-         (types (remove-if-not (lambda (type)
-                                 (subtypep type var-type env))
-                               types)))
-    (cond ((null types)
-           `(locally ,@body))
-          ((or (policy> env 'space 'speed)
-               (policy> env 'compilation-speed 'speed))
-           `(locally ,@body))
-          ;; The advantage of the CMUCL/SBCL way (I hope) is that the
-          ;; compiler can decide /not/ to bother inlining if the type
-          ;; is such that it cannot do any meaningful optimization.
-          ((or #+(or cmucl sbcl) t)
-           ;; Cf. sb-impl::string-dispatch.
-           (with-unique-names ((fun type-dispatch-fun))
-             `(flet ((,fun (,var)
-                       (with-read-only-vars (,var)
-                         ,@body)))
-                (declare (inline ,fun))
-                (etypecase ,var
-                  ,@(loop for type in types
-                          collect `(,type (,fun (truly-the ,type ,var))))))))
-          ((or #+ccl t)
-           `(with-type-declarations-trusted ()
-              (etypecase ,var
-                ,@(loop for type in types
-                        collect `(,type
-                                  (locally (declare (type ,type ,var))
-                                    (with-read-only-vars (,var)
-                                      (with-vref ,type
-                                        ,@body))))))))
-          (t
-           `(with-type-declarations-trusted ()
-              (etypecase ,var
-                ,@(loop for type in types
-                        collect `(,type
-                                  (let ((,var ,var))
-                                    (declare (type ,type ,var))
-                                    (with-read-only-vars (,var)
-                                      (with-vref ,type
-                                        ,@body)))))))))))
+  `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+     ,(let* ((types (simplify-subtypes types))
+             (var-type (variable-type var env))
+             ;; If the var has a declared type, remove excluded types.
+             (types (remove-if-not (lambda (type)
+                                     (subtypep type var-type env))
+                                   types)))
+        (cond ((null types)
+               `(locally ,@body))
+              ((or (policy> env 'space 'speed)
+                   (policy> env 'compilation-speed 'speed))
+               `(locally ,@body))
+              ;; The advantage of the CMUCL/SBCL way (I hope) is that the
+              ;; compiler can decide /not/ to bother inlining if the type
+              ;; is such that it cannot do any meaningful optimization.
+              ((or #+(or cmucl sbcl) t)
+               ;; Cf. sb-impl::string-dispatch.
+               (with-unique-names ((fun type-dispatch-fun))
+                 `(flet ((,fun (,var)
+                           (with-read-only-vars (,var)
+                             ,@body)))
+                    (declare (inline ,fun))
+                    (etypecase ,var
+                      ,@(loop for type in types
+                              collect `(,type (,fun (truly-the ,type ,var))))))))
+              ((or #+ccl t)
+               `(with-type-declarations-trusted ()
+                  (etypecase ,var
+                    ,@(loop for type in types
+                            collect `(,type
+                                      (locally (declare (type ,type ,var))
+                                        (with-read-only-vars (,var)
+                                          (with-vref ,type
+                                            ,@body))))))))
+              (t
+               `(with-type-declarations-trusted ()
+                  (etypecase ,var
+                    ,@(loop for type in types
+                            collect `(,type
+                                      (let ((,var ,var))
+                                        (declare (type ,type ,var))
+                                        (with-read-only-vars (,var)
+                                          (with-vref ,type
+                                            ,@body))))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)

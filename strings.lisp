@@ -45,10 +45,11 @@ are considered whitespace."
          (fn s)))
       (output-stream (fn stream)))))
 
-(defmacro with-string ((var &optional stream
-                        &key (element-type nil element-type-supplied?))
-                       &body body)
-  "Bind VAR to the character stream designated by STREAM.
+(locally (declare #+sbcl (sb-ext:muffle-conditions style-warning))
+  (defmacro with-string ((var &optional stream
+                          &key (element-type nil element-type-supplied?))
+                         &body body)
+    "Bind VAR to the character stream designated by STREAM.
 
 STREAM is resolved like the DESTINATION argument to `format': it can
 be any of t (for `*standard-output*'), nil (for a string stream), a
@@ -62,21 +63,21 @@ functions.
     (defun format-x (x &key stream)
       (with-string (s stream)
         ...))"
-  (when (constantp stream)
-    (let ((stream (eval stream)))
-      (cond ((eql stream t)
-             (return-from with-string
-               `(let ((,var *standard-output*))
-                  ,@body)))
-            ((null stream)
-             (return-from with-string
-               `(with-output-to-string (,var
-                                        ,@(and element-type-supplied?
-                                               `(:element-type ,element-type)))
-                  ,@body))))))
+    (when (constantp stream)
+      (let ((stream (eval stream)))
+        (cond ((eql stream t)
+               (return-from with-string
+                 `(let ((,var *standard-output*))
+                    ,@body)))
+              ((null stream)
+               (return-from with-string
+                 `(with-output-to-string (,var
+                                          ,@(and element-type-supplied?
+                                                 `(:element-type ,element-type)))
+                    ,@body))))))
 
-  (with-thunk (body var)
-    `(call/string #',body ,stream)))
+    (with-thunk (body var)
+      `(call/string #',body ,stream))))
 
 (defsubst blankp (seq)
   "SEQ is either empty, or consists entirely of characters that

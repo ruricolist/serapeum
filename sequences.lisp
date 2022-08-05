@@ -157,18 +157,17 @@ If SEQ is a list, this is equivalent to `dolist'."
                     do (fn (elt seq i)))))))))
 (declaim (notinline map-subseq))
 
-(define-do-macro do-subseq ((var seq &optional return
-                                 &key start
-                                 end
-                                 from-end)
-                            &body body)
-  `(locally (declare (inline map-subseq))
-     (map-subseq
-      (lambda (,var)
-        ,@body)
-      ,seq
-      ,start ,end
-      ,from-end)))
+(locally (declare #+sbcl (sb-ext:muffle-conditions style-warning))
+  (define-do-macro do-subseq ((var seq &optional return
+                                   &key start end from-end)
+                              &body body)
+    `(locally (declare (inline map-subseq))
+       (map-subseq
+        (lambda (,var)
+          ,@body)
+        ,seq
+        ,start ,end
+        ,from-end))))
 
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.

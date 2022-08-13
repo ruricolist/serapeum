@@ -198,7 +198,15 @@
   (finishes
     (compile nil '(lambda (e)
                    (match-of (or maybe (member 42)) e
-                     ((nothing) nil) ((just v) v) ((eql 42) 'life)))))
+                     ((nothing) nil) ((just v) v) (42 'life)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (match-of (or maybe (member :x)) e
+                     ((nothing) nil) ((just v) v) (:x 'life)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (match-of (or maybe (eql x)) e
+                     ((nothing) nil) ((just v) v) ('x 'life)))))
   (signals warning
     (compile nil '(lambda (e)
                    (match-of (or point liszt) e

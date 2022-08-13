@@ -527,6 +527,10 @@ angle brackets around it."
   (match pattern
     ((list 'eql type)
      (values `(eql ,type) `(eql ,type)))
+    ((and lit (type (or number keyword)))
+     (pattern-type `(eql ,lit) union))
+    ((list 'quote object)
+     (pattern-type `(eql ',object) union))
     ((and type (type symbol))
      (if (string= pattern "_")
          (values union `(and _ (type ,union)))

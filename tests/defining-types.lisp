@@ -198,7 +198,7 @@
   (finishes
     (compile nil '(lambda (e)
                    (match-of (or maybe (member 42)) e
-                     ((nothing) nil) ((just v) v) (42 'life)))))
+                     ((nothing) nil) ((just v) v) ((eql 42) 'life)))))
   (signals warning
     (compile nil '(lambda (e)
                    (match-of (or point liszt) e

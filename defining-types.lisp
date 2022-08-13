@@ -525,6 +525,8 @@ angle brackets around it."
 (defun pattern-type (pattern union)
   "Return two values: the type and the final pattern."
   (match pattern
+    ((list 'eql type)
+     (values `(eql ,type) `(eql ,type)))
     ((and type (type symbol))
      (if (string= pattern "_")
          (values union `(and _ (type ,union)))

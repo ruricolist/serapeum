@@ -136,9 +136,10 @@ analyze it into an environment, declarations, and a lambda."
                         temps preds)
                 nil
                 `(lambda (&rest args)
-                   (,(case fun
-                       (conjoin 'and)
-                       (disjoin 'or))
+                   (,(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+                       (case fun
+                         (conjoin 'and)
+                         (disjoin 'or)))
                     ,@(loop for temp in temps
                             collect `(apply ,temp args)))))))
     ((list* 'rcurry fun args)

@@ -34,8 +34,6 @@ can prevent optimization.")
     (#\l 'long-float)))
 
 (defun read-float-aux (stream junk-allowed type)
-  (declare (optimize #+sbcl (speed 1)
-                     #-sbcl (speed 3)))
   #.+merge-tail-calls+
   (labels ((junk ()
              (error "Junk in string"))

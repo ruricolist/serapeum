@@ -321,10 +321,8 @@ some implementation tricks from `cl-algebraic-data-type'."
                                    type-name)))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
-         (conc-name
-           (symbolicate type-name '-))
          (readers
-           (mapcar (curry #'symbolicate conc-name)
+           (mapcar (curry #'symbolicate type-name '-)
                    slot-names))
          (copier-name (symbolicate 'copy- type-name)))
     `(progn
@@ -337,7 +335,6 @@ some implementation tricks from `cl-algebraic-data-type'."
            (,type-name
             ,@(unsplice (and super `(:include ,super)))
             (:constructor ,constructor ,slot-names)
-            (:conc-name ,conc-name)
             (:predicate nil)
             (:print-function
              (lambda (object stream depth)
@@ -514,13 +511,13 @@ angle brackets around it."
        (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
          (symbol-macrolet ((serapeum.unlocked:%union ,super))
            (declare #+sbcl (sb-ext:enable-package-locks %union))
+           (deftype ,union ()
+             ,@(unsplice docstring)
+             '(or ,@types))
            ,@(loop for type in units
                    collect `(defunit ,type))
            ,@(loop for (type . slots) in ctors
                    collect `(defconstructor ,type ,@slots))
-           (deftype ,union ()
-             ,@(unsplice docstring)
-             '(or ,@types))
            (declaim-freeze-type ,super)
            ',union)))))
 
@@ -528,6 +525,12 @@ angle brackets around it."
 (defun pattern-type (pattern union)
   "Return two values: the type and the final pattern."
   (match pattern
+    ((list 'eql type)
+     (values `(eql ,type) `(eql ,type)))
+    ((and lit (type (or number keyword)))
+     (pattern-type `(eql ,lit) union))
+    ((list 'quote object)
+     (pattern-type `(eql ',object) union))
     ((and type (type symbol))
      (if (string= pattern "_")
          (values union `(and _ (type ,union)))

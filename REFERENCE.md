@@ -903,7 +903,7 @@ Unit types are useful for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L440)
+[View source](defining-types.lisp#L437)
 
 ### `(defunion union &body variants)`
 
@@ -917,7 +917,7 @@ UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it.
 
-[View source](defining-types.lisp#L484)
+[View source](defining-types.lisp#L481)
 
 ### `(match-of union expr &body clauses)`
 
@@ -937,7 +937,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L564)
+[View source](defining-types.lisp#L567)
 
 ## Binding
 

@@ -48,6 +48,8 @@ can prevent optimization.")
                       (after-decimal number 1))
                      (digit
                       (before-decimal (+ (* number 10) digit)))
+                     ((exponent-char? char)
+                      (exponent number 1 0 (exponent-char-format char)))
                      (t (if junk-allowed
                             number
                             (junk))))))

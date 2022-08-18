@@ -62,7 +62,10 @@
     (is-true (eql (parse-float "x" :junk-allowed t :type 'double-float)
                   0.0d0))
     (signals error (parse-float "x"))
-    ))
+    (is (eql 3d0 (parse-float "3d0")))
+    (signals error (parse-float "3d0.0"))
+    (is (eql 3f0 (parse-float "3f0")))
+    (signals error (parse-float "3f0.0"))))
 
 (test round-to
   (with-notinline (round-to)

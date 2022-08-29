@@ -2795,7 +2795,7 @@ The type of the float is determined by, in order:
 Of course you could just use `parse-number`, but sometimes only a
 float will do.
 
-[View source](numbers.lisp#L101)
+[View source](numbers.lisp#L102)
 
 ### `(round-to number &optional divisor)`
 
@@ -2804,45 +2804,45 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
-[View source](numbers.lisp#L138)
+[View source](numbers.lisp#L139)
 
 ### `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L147)
+[View source](numbers.lisp#L148)
 
 ### `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L169)
+[View source](numbers.lisp#L170)
 
 ### `(shrink n by)`
 
 Decrease N by a factor.
 
-[View source](numbers.lisp#L186)
+[View source](numbers.lisp#L187)
 
 ### `(grow n by)`
 
 Increase N by a factor.
 
-[View source](numbers.lisp#L190)
+[View source](numbers.lisp#L191)
 
 ### `(shrinkf g n)`
 
 Shrink the value in a place by a factor.
 
-[View source](numbers.lisp#L194)
+[View source](numbers.lisp#L195)
 
 ### `(growf g n)`
 
 Grow the value in a place by a factor.
 
-[View source](numbers.lisp#L197)
+[View source](numbers.lisp#L198)
 
 ### `(random-in-range low high)`
 
@@ -2860,7 +2860,7 @@ would cause a floating-point overflow.
 
 From Zetalisp.
 
-[View source](numbers.lisp#L200)
+[View source](numbers.lisp#L201)
 
 ### `(float-precision-contagion &rest ns)`
 
@@ -2873,7 +2873,7 @@ floating-point arguments to the function".
 This does nothing but numeric contagion: the number of arguments
 returned is the same as the number of arguments given.
 
-[View source](numbers.lisp#L280)
+[View source](numbers.lisp#L281)
 
 ## Octets
 

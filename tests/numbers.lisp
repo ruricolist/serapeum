@@ -67,8 +67,8 @@
     (is (eql 3f0 (parse-float "3f0")))
     (signals error (parse-float "3f0.0"))
 
-    (is (eql (parse-float ".5") 0.5d0))
-    (is (eql (parse-float "-.5") -0.5d0))))
+    (is (eql (parse-float ".5") 0.5f0))
+    (is (eql (parse-float "-.5") -0.5f0))))
 
 (test round-to
   (with-notinline (round-to)

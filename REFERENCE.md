@@ -3010,9 +3010,9 @@ Returns three values:
 2. A boolean that is T if the slot exists and *was* bound,
 3. A boolean that is T if the slot exists.
 
-Note that this function does call `slot-value`, so if there is a
-method on `slot-unbound` for the class it will be invoked. In this
-case the second value will still be `nil`, however.
+Note that this function does call `slot-value` (if the slot exists),
+so if there is a method on `slot-unbound` for the class it will be
+invoked. In this case the second value will still be `nil`, however.
 
 [View source](clos.lisp#L85)
 

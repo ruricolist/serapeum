@@ -166,7 +166,16 @@ From Emacs Lisp."
              (mapconcat/seq fun seq separator stream)))))))
 
 (defun string-join (strings separator &key stream end)
-  "Like `(mapconcat #'string STRINGS (string SEPARATOR))'."
+  "Join strings in STRINGS, separated by SEPARATOR.
+
+SEPARATOR can be any string designator.
+
+If STREAM is provided, write to STREAM rather than returning a string.
+
+If END is provided, then insert SEPARATOR after the last string, as
+well as between strings.
+
+Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'."
   (if stream
       (with-string (s stream)
         (mapconcat #'string strings (string separator)

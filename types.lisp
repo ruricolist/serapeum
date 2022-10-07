@@ -777,12 +777,14 @@ in the length of the list."
   `(or null
        (cons ,type
              (and list
-                  ,(cond ((subtypep type 'cons)
-                          `(satisfies proper-alist?))
-                         ((subtypep 'null type)
-                          '(satisfies proper-list?))
-                         (t
-                          '(satisfies proper-list-without-nil?)))))))
+                  ,(if (subtypep type 'cons)
+                       `(satisfies proper-alist?)
+                       (multiple-value-bind (allows-null? for-sure?)
+                           (subtypep 'null type)
+                         (if (and (not allows-null?)
+                                  for-sure?)
+                             '(satisfies proper-list-without-nil?)
+                             '(satisfies proper-list?))))))))
 
 (deftype soft-alist-of (key-type value-type)
   "A soft constraint for the elements of an alist.

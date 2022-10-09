@@ -250,6 +250,10 @@
    #:format-file-size-human-readable
    #:file-size-human-readable
    #:with-open-files
+   #:path-basename
+   #:path-parent
+   #:pathname-type*
+   #:path-concat
    ;; Symbols.
    #:find-keyword
    #:bound-value

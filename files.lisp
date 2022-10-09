@@ -1,5 +1,10 @@
 (in-package :serapeum)
 
+;;; TODO Should this be exported? Or should we re-export the type from trivial-types?
+(deftype pathname-designator ()
+  "A value that can be passed to `pathname'."
+  '(or pathname string stream))
+
 ;;; Pathname types. These correspond to the predicates defined by
 ;;; UIOP.
 
@@ -245,3 +250,64 @@ Inspired by the function of the same name in Emacs."
      :flavor flavor
      :suffix suffix
      :space space)))
+
+
+;; (-> basename (pathname-designator) (or pathname-designator null))
+;; (defun path-basename (pathname)
+;;   "Remove leading directory components of PATHNAME."
+;;   (etypecase pathname
+;;     (directory-pathname
+;;      (make-pathname
+;;       :defaults pathname
+;;       :device nil
+;;       :host nil
+;;       :directory
+;;       (let ((basn)))
+;;       (cons :relative (list (lastcar (pathname-directory pathname))))))
+;;     (file-pathname
+;;      (make-pathname
+;;       :defaults pathname
+;;       :device nil
+;;       :host nil
+;;       :directory '(:relative)))))
+
+(-> path-parent (pathname-designator) (or pathname-designator null))
+(defun path-parent (path)
+  "Return the parent directory of PATH."
+  (let ((path (uiop:ensure-pathname path)))
+    (the (values (or pathname null) &optional)
+         (if (uiop:directory-pathname-p path)
+             (uiop:pathname-parent-directory-pathname path)
+             (uiop:pathname-directory-pathname path)))))
+
+(-> pathname-type* (pathname-designator &key (:case (member :local :common)))
+    (values (or string null) t &optional))
+(defun pathname-type* (pathname &key (case :local))
+  "Like `pathname-type' but return NIL instead of \"\", :UNSPECIFIC, or :WILD.
+The original is returned as a second value."
+  (let ((type (pathname-type pathname :case case)))
+    (if (and (stringp type)
+             (plusp (length type)))
+        (values type type)
+        (values nil type))))
+
+(-> path-concat (&rest pathname-designator) (or pathname-designator null))
+(defun path-concat (&rest paths)
+  "Concatenate PATHS."
+  (if (< (length paths) 2)
+      (the (values pathname &optional)
+           (uiop:ensure-pathname (first paths)))
+      (labels ((path-concat (path1 path2)
+                 (if (or (null (pathname-name path1))
+                         (pathname-directory path2))
+                     (uiop:merge-pathnames*
+                      (uiop:relativize-pathname-directory
+                       (uiop:ensure-pathname path2))
+                      (uiop:ensure-pathname path1 :ensure-directory t))
+                     (let ((new-base
+                             (string+ (path-basename path1)
+                                      (path-basename path2))))
+                       (make-pathname :defaults path1
+                                      :type (pathname-type new-base)
+                                      :name (pathname-name new-base))))))
+        (reduce #'path-concat paths))))

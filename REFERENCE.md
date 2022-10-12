@@ -4516,7 +4516,16 @@ From Emacs Lisp.
 
 ### `(string-join strings separator &key stream end)`
 
-Like `(mapconcat #'string STRINGS (string SEPARATOR))'.
+Join strings in STRINGS, separated by SEPARATOR.
+
+SEPARATOR can be any string designator.
+
+If STREAM is provided, write to STREAM rather than returning a string.
+
+If END is provided, then insert SEPARATOR after the last string, as
+well as between strings.
+
+Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'.
 
 [View source](strings.lisp#L168)
 
@@ -4531,26 +4540,26 @@ each word are not changed.
 
 From Emacs Lisp (where it is simply `upcase-initials`).
 
-[View source](strings.lisp#L220)
+[View source](strings.lisp#L229)
 
 ### `(nstring-upcase-initials string)`
 
 Destructive version of `string-upcase-initials`.
 
-[View source](strings.lisp#L232)
+[View source](strings.lisp#L241)
 
 ### `(same-case-p string)`
 
 Every character with case in STRING has the same case.
 Return `:upper` or `:lower` as appropriate.
 
-[View source](strings.lisp#L252)
+[View source](strings.lisp#L261)
 
 ### `(nstring-invert-case string)`
 
 Destructive version of `string-invert-case`.
 
-[View source](strings.lisp#L275)
+[View source](strings.lisp#L284)
 
 ### `(string-invert-case string)`
 
@@ -4560,7 +4569,7 @@ This does the same thing as a case-inverting readtable:
 - If the string is lowercase, upcase the string.
 - If the string is mixed-case, leave it alone.
 
-[View source](strings.lisp#L284)
+[View source](strings.lisp#L293)
 
 ### `(words string &key start end)`
 
@@ -4583,7 +4592,7 @@ The definition of a word is the same as that used by
 
 Cf. `tokens`.
 
-[View source](strings.lisp#L294)
+[View source](strings.lisp#L303)
 
 ### `(tokens string &key start end)`
 
@@ -4595,7 +4604,7 @@ Tokens are runs of non-whitespace characters.
 
 Cf. `words`.
 
-[View source](strings.lisp#L323)
+[View source](strings.lisp#L332)
 
 ### `(word-wrap string &key column stream)`
 
@@ -4605,7 +4614,7 @@ Note that this is not a general-purpose word-wrapping routine like you
 would find in a text editor: in particular, any existing whitespace is
 removed.
 
-[View source](strings.lisp#L338)
+[View source](strings.lisp#L347)
 
 ### `(lines string &key eol-style honor-crlf keep-eols count)`
 
@@ -4752,7 +4761,7 @@ To additionally omit lines consisting only of whitespace:
                          (serapeum:lines string :eol-style :unicode))))
     => ("abc" "z")
 
-[View source](strings.lisp#L371)
+[View source](strings.lisp#L380)
 
 ### `(fmt control-string &rest args)`
 
@@ -4763,7 +4772,7 @@ some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
 
-[View source](strings.lisp#L583)
+[View source](strings.lisp#L592)
 
 ### `(escape string table &key start end stream)`
 
@@ -4783,7 +4792,7 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
-[View source](strings.lisp#L660)
+[View source](strings.lisp#L669)
 
 ### `(ellipsize string n &key ellipsis)`
 
@@ -4798,31 +4807,31 @@ started.
 
 From Arc.
 
-[View source](strings.lisp#L689)
+[View source](strings.lisp#L698)
 
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
 Is PREFIX a prefix of STRING?
 
-[View source](strings.lisp#L733)
+[View source](strings.lisp#L742)
 
 ### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
-[View source](strings.lisp#L733)
+[View source](strings.lisp#L742)
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
 Is SUFFIX a suffix of STRING?
 
-[View source](strings.lisp#L753)
+[View source](strings.lisp#L762)
 
 ### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L753)
+[View source](strings.lisp#L762)
 
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
@@ -4835,13 +4844,13 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L773)
+[View source](strings.lisp#L782)
 
 ### `(string-contains-p substring string &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L773)
+[View source](strings.lisp#L782)
 
 ### `(string~= token string &key start1 end1 start2 end2)`
 
@@ -4851,13 +4860,13 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L795)
+[View source](strings.lisp#L804)
 
 ### `(string-token-p token string &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L795)
+[View source](strings.lisp#L804)
 
 ### `(string-replace-all old string new &key start end stream count)`
 
@@ -4884,13 +4893,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L829)
+[View source](strings.lisp#L838)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L883)
+[View source](strings.lisp#L892)
 
 ### `(chomp string &optional suffixes)`
 
@@ -4902,13 +4911,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L892)
+[View source](strings.lisp#L901)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L921)
+[View source](strings.lisp#L930)
 
 ### `(string+ &rest args)`
 
@@ -4933,7 +4942,7 @@ empty string:
 
 This utility is inspired by the utility of the same name in Allegro.
 
-[View source](strings.lisp#L957)
+[View source](strings.lisp#L966)
 
 ## Vectors
 

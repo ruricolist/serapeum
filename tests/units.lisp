@@ -4,8 +4,8 @@
 (in-suite units)
 
 (test si-prefix
-  (is (equal "yocto" (si-prefix least-positive-double-float)))
-  (is (equal "yotta" (si-prefix most-positive-double-float)))
+  (is (equal "quecto" (si-prefix least-positive-double-float)))
+  (is (equal "quetta" (si-prefix most-positive-double-float)))
   (is-true (every (equals "") (mapcar #'si-prefix '(0 1 0s0 1s0 0d0 1d0))))
   (is (equal "deca" (si-prefix 10 :base 10)))
   (is (equal "deca" (si-prefix 12 :base 10)))

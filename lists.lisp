@@ -68,9 +68,8 @@ From Emacs Lisp."
     ≡ (append list-2 list-1)"
   (apply #'append (reverse lists)))
 
-(define-modify-macro prependf (&rest lists)
-  "Modify-macro for prepend. Prepends LISTS to the PLACE designated by the first argument."
-  prepend)
+(define-modify-macro prependf (&rest lists) prepend
+  "Modify-macro for prepend. Prepends LISTS to the PLACE designated by the first argument.")
 
 (defmacro push-end (item place &environment env)
   "Destructively push ITEM to the end of PLACE.

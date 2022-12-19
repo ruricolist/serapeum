@@ -61,6 +61,16 @@ From Emacs Lisp."
   "Like `append1', but destructive."
   (nconc list (list item)))
 
+(defsubst prepend (&rest lists)
+  "Construct and return a list by concatenating LISTS in reverse order.
+
+    (prepend list-1 list-2)
+    ≡ (append list-2 list-1)"
+  (apply #'append (reverse lists)))
+
+(define-modify-macro prependf (&rest lists) prepend
+  "Modify-macro for prepend. Prepends LISTS to the PLACE designated by the first argument.")
+
 (defmacro push-end (item place &environment env)
   "Destructively push ITEM to the end of PLACE.
 Like `push', but affects the last item rather than the first.

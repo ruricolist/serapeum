@@ -360,6 +360,8 @@
    #:delq
    #:append1
    #:nconc1
+   #:prepend
+   #:prependf
    #:push-end
    #:push-end-new
    #:assocar

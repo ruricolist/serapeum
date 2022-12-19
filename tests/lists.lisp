@@ -59,6 +59,21 @@
     (is (equal (nconc1 (list 'a 'b 'c) '(d e))
                '(a b c (d e))))))
 
+(test prepend
+  (with-notinline (prepend)
+    (is (equal (prepend) nil))
+    (is (equal (prepend '(4 5 6) '(1 2 3)) '(1 2 3 4 5 6)))
+    (is (equal (prepend '(5 6) '(3 4) '(1 2)) '(1 2 3 4 5 6)))))
+
+(test prependf
+  (with-notinline (prepend)
+    (let ((xs (list)))
+      (prependf xs '(4 5 6))
+      (is (equal xs '(4 5 6))))
+    (let ((xs (list 4 5 6)))
+      (prependf xs '(1 2 3))
+      (is (equal xs '(1 2 3 4 5 6))))))
+
 (test push-end
   (let ((xs (list)))
     (push-end 1 xs)

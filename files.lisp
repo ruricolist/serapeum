@@ -51,7 +51,7 @@
 
 (-> path-join (&rest (or string stream pathname))
   (values pathname &optional))
-(defun path-join (&rest paths)
+(defun path-join (&rest pathnames)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built
 in the order they appear in it:
@@ -75,7 +75,7 @@ behavior."
                pathnames
                :initial-value (make-pathname))))
 
-(-> base-path-join (&rest (or string stream pathname))
+(-> base-path-join ((or string stream pathname) &rest (or string stream pathname))
   (values pathname &optional))
 (defun base-path-join (base &rest suffixes)
   "Build a pathname by appending SUFFIXES to BASE.

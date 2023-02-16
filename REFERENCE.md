@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 469 functions)
+# Function Listing For serapeum (43 files, 471 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -3457,6 +3457,21 @@ Like `append1`, but destructive.
 
 [View source](lists.lisp#L60)
 
+### `(prepend &rest lists)`
+
+Construct and return a list by concatenating LISTS in reverse order.
+
+    (prepend list-1 list-2)
+    ≡ (append list-2 list-1)
+
+[View source](lists.lisp#L64)
+
+### `(prependf g &rest lists)`
+
+Modify-macro for prepend. Prepends LISTS to the PLACE designated by the first argument.
+
+[View source](lists.lisp#L71)
+
 ### `(push-end item place)`
 
 Destructively push ITEM to the end of PLACE.
@@ -3466,7 +3481,7 @@ You may want to use `enq` on a `queue` instead.
 
 From LispWorks.
 
-[View source](lists.lisp#L64)
+[View source](lists.lisp#L74)
 
 ### `(push-end-new item place &rest kwargs &key key test test-not)`
 
@@ -3474,7 +3489,7 @@ Pushes ITEM to the end of place (like `push-end`) but only if it not already a m
 
 For the use of KEY, TEST, and TEST-NOT, see `pushnew`.
 
-[View source](lists.lisp#L80)
+[View source](lists.lisp#L90)
 
 ### `(in x &rest items)`
 
@@ -3486,14 +3501,14 @@ candidate matches are constant.
 
 From Arc.
 
-[View source](lists.lisp#L99)
+[View source](lists.lisp#L109)
 
 ### `(memq item list)`
 
 Like (member ... :test #'eq).
 Should only be used for symbols.
 
-[View source](lists.lisp#L127)
+[View source](lists.lisp#L137)
 
 ### `(delq item list)`
 
@@ -3501,7 +3516,7 @@ Like (delete ... :test #'eq), but only for lists.
 
 Almost always used as (delq nil ...).
 
-[View source](lists.lisp#L154)
+[View source](lists.lisp#L164)
 
 ### `(mapply fn list &rest lists)`
 
@@ -3534,19 +3549,19 @@ But the actual implementation is more efficient.
     (mapply #'cons '((x 1) (y 2))
     => '((x . 1) (y . 2))
 
-[View source](lists.lisp#L171)
+[View source](lists.lisp#L181)
 
 ### `(assocdr item alist &rest args &key &allow-other-keys)`
 
 Like (cdr (assoc ...))
 
-[View source](lists.lisp#L225)
+[View source](lists.lisp#L235)
 
 ### `(assocar item alist &rest args &key &allow-other-keys)`
 
 Like (car (assoc ...))
 
-[View source](lists.lisp#L230)
+[View source](lists.lisp#L240)
 
 ### `(assocadr item alist &rest args &key &allow-other-keys)`
 
@@ -3555,19 +3570,19 @@ Like `assocdr` for alists of proper lists.
      (assocdr 'x '((x 1))) => '(1)
      (assocadr 'x '((x 1))) => 1
 
-[View source](lists.lisp#L235)
+[View source](lists.lisp#L245)
 
 ### `(rassocar item alist &rest args &key &allow-other-keys)`
 
 Like (car (rassoc ...))
 
-[View source](lists.lisp#L243)
+[View source](lists.lisp#L253)
 
 ### `(rassocdr item alist &rest args &key &allow-other-keys)`
 
 Like (cdr (rassoc ...))
 
-[View source](lists.lisp#L248)
+[View source](lists.lisp#L258)
 
 ### `(firstn n list)`
 
@@ -3580,14 +3595,14 @@ The first N elements of LIST, as a fresh list:
 into Common Lisp, unless it was deliberately left out as an exercise
 for Maclisp users.)
 
-[View source](lists.lisp#L253)
+[View source](lists.lisp#L263)
 
 ### `(powerset set)`
 
 Return the powerset of SET.
 Uses a non-recursive algorithm.
 
-[View source](lists.lisp#L265)
+[View source](lists.lisp#L275)
 
 ### `(efface item list)`
 
@@ -3595,7 +3610,7 @@ Destructively remove only the first occurence of ITEM in LIST.
 
 From Lisp 1.5.
 
-[View source](lists.lisp#L276)
+[View source](lists.lisp#L286)
 
 ### `(pop-assoc key alist &rest args)`
 
@@ -3603,7 +3618,7 @@ Like `assoc` but, if there was a match, delete it from ALIST.
 
 From Newlisp.
 
-[View source](lists.lisp#L295)
+[View source](lists.lisp#L305)
 
 ### `(mapcar-into fn list)`
 
@@ -3611,25 +3626,25 @@ Like (map-into list fn list).
 
 From PAIP.
 
-[View source](lists.lisp#L311)
+[View source](lists.lisp#L321)
 
 ### `(nthrest n list)`
 
 Alias for `nthcdr`.
 
-[View source](lists.lisp#L320)
+[View source](lists.lisp#L330)
 
 ### `(plist-keys plist)`
 
 Return the keys of a plist.
 
-[View source](lists.lisp#L324)
+[View source](lists.lisp#L334)
 
 ### `(plist-values plist)`
 
 Return the values of a plist.
 
-[View source](lists.lisp#L330)
+[View source](lists.lisp#L340)
 
 ## Sequences
 
@@ -5481,7 +5496,7 @@ prefixes centi, deci, deca and hecto are also used. Base 1024 uses the
 same prefixes as 1000, but with 1024 as the base, as in vulgar file
 sizes. Base 2 uses the IEC binary prefixes.
 
-[View source](units.lisp#L56)
+[View source](units.lisp#L60)
 
 ### `(human-size-formatter size &key flavor space)`
 
@@ -5496,7 +5511,7 @@ processing format directive (~?):
         (human-size-formatter size)
       (format t "~?" control args))
 
-[View source](units.lisp#L77)
+[View source](units.lisp#L81)
 
 ### `(format-human-size stream size &key flavor space)`
 
@@ -5514,7 +5529,7 @@ etc.) are used.
 If SPACE is non-nil, include a space between the number and the
 prefix. (Defaults to T if FLAVOR is `:si`.)
 
-[View source](units.lisp#L109)
+[View source](units.lisp#L113)
 
 ## Exporting
 

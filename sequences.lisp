@@ -225,7 +225,8 @@ If SEQ is a list, this is equivalent to `dolist'."
                               :initial-contents (and initp (list init)))))
               (bucket-push (seq item bucket)
                 (declare (ignore seq))
-                (vector-push-extend item bucket))
+                (vector-push-extend item bucket
+                                    (max 1 (ceiling (* 0.5 (length bucket))))))
               (bucket-seq (seq bucket)
                 (declare (ignore seq))
                 bucket))

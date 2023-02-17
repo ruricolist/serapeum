@@ -74,7 +74,8 @@ KEY and TEST are used to order the heap elements."
   "Insert NEW-ITEM into HEAP."
   (let ((vec (heap-vector heap)))
     (fbind ((ge (heap-test heap)))
-      (vector-push-extend nil vec)
+      (vector-push-extend nil vec
+                          (max 1 (ceiling (* 0.5 (length vec)))))
       (with-item-key-function (key (heap-key heap))
         (loop for i = (1- (length vec)) then parent-i
               for parent-i = (heap-parent i)

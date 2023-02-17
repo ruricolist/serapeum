@@ -183,7 +183,8 @@ Returns VECTOR."
   (declare (type array-length extension))
   (cond ((emptyp new-elements))
         ((single new-elements)
-         (vector-push-extend (elt new-elements 0) vector))
+         (vector-push-extend (elt new-elements 0) vector
+                             (max 1 (ceiling (* 0.5 (length vector))))))
         (t (let* ((size (array-dimension vector 0))
                   (len1 (length vector))
                   (len2 (length new-elements))

@@ -165,6 +165,8 @@ From Emacs Lisp."
              (mapconcat/list fun seq separator stream)
              (mapconcat/seq fun seq separator stream)))))))
 
+(defmacro do-strings ((s more?) &body body))
+
 (defun string-join (strings separator &key stream end)
   "Join strings in STRINGS, separated by SEPARATOR.
 
@@ -186,44 +188,56 @@ Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'."
                                 '(simple-array character (*))))
              (sep-len (length separator))
              (separator? (not (zerop sep-len))))
-        (with-boolean (separator?)
-          (let ((len 0))
-            (declare (array-length len))
-            (locally (declare (optimize speed))
-              (loop for (s . more?) on strings
-                    do (etypecase s
-                         (string (incf len (length s)))
-                         (character (incf len 1))
-                         (symbol (incf len (length (symbol-name s)))))
-                       (boolean-when separator?
-                         (when more?
-                           (incf len sep-len)))
-                    finally
-                       (boolean-when separator?
-                         (when end
-                           (incf len sep-len))))
-              (lret ((start 0)
-                     (result (make-array len :element-type 'character)))
-                (declare (array-index start)
-                         ((simple-array character (*)) result))
-                (loop for (s . more?) on strings
-                      do (nlet rec (s)
-                           (etypecase s
-                             (string
-                              (with-string-dispatch () s
-                                (replace result s :start1 start)
-                                (incf start (length s))))
-                             (character
-                              (setf (schar result start) s)
-                              (incf start))
-                             (symbol (rec (symbol-name s)))))
-                         (boolean-when separator?
-                           (replace result separator :start1 start)
-                           (incf start sep-len))
-                      finally
-                         (boolean-when separator?
-                           (when end
-                             (replace result separator :start1 start)))))))))))
+        (macrolet ((do-strings ((s more?) &body body)
+                     (with-unique-names (i last)
+                       `(if (listp strings)
+                            (loop for (,s . ,more?) on strings
+                                  do (progn ,@body))
+                            (let ((,last (1- (length strings)))
+                                  (,i 0))
+                              (declare (array-index ,i ,last))
+                              (do-each (,s strings)
+                                (let ((,more? (< ,i ,last)))
+                                  (declare (ignorable ,more?))
+                                  ,@body)
+                                (incf ,i)))))))
+          (with-boolean (separator?)
+            (let ((len 0))
+              (declare (array-length len))
+              (locally (declare (optimize speed))
+                (do-strings (s more?)
+                  (etypecase s
+                    (string (incf len (length s)))
+                    (character (incf len 1))
+                    (symbol (incf len (length (symbol-name s)))))
+                  (boolean-when separator?
+                    (when more?
+                      (incf len sep-len))))
+                (boolean-when separator?
+                  (when end
+                    (incf len sep-len)))
+                (lret ((start 0)
+                       (result (make-array len :element-type 'character)))
+                  (declare (array-index start)
+                           ((simple-array character (*)) result))
+                  (do-strings (s more?)
+                    (nlet rec (s)
+                      (etypecase s
+                        (string
+                         (with-string-dispatch () s
+                           (replace result s :start1 start)
+                           (incf start (length s))))
+                        (character
+                         (setf (schar result start) s)
+                         (incf start))
+                        (symbol (rec (symbol-name s)))))
+                    (boolean-when separator?
+                      (when more?
+                        (replace result separator :start1 start)
+                        (incf start sep-len))))
+                  (boolean-when separator?
+                    (when end
+                      (replace result separator :start1 start)))))))))))
 
 (-> string-upcase-initials (string-designator) (values string &optional))
 (defun string-upcase-initials (string)

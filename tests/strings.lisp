@@ -310,6 +310,7 @@
 
 (test string-join
   (is (equal "" (string-join '("") "")))
+  (is (equal "" (string-join #("") "")))
   (is (equal "" (string-join '("") "+")))
   (is (equal "" (string-join '("") #\+)))
   (is (equal "+" (string-join '("") "+" :end t)))
@@ -321,4 +322,5 @@
   (is (equal "x+y" (string-join '("x" "y") #\+)))
   (is (equal "x+y+" (string-join '("x" "y") "+" :end t)))
   (is (equal "x+y+" (string-join '("x" "y") #\+ :end t)))
-  (is (equal "x+y+" (string-join '("x" "y") :+ :end t))))
+  (is (equal "x+y+" (string-join '("x" "y") :+ :end t)))
+  (is (equal "x+y+" (string-join #("x" "y") :+ :end t))))

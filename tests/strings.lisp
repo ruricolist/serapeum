@@ -309,6 +309,7 @@
     (is (equal "foo1" (string+ '|FOO| 1)))))
 
 (test string-join
+  (is (equal "" (string-join #() "")))
   (is (equal "" (string-join '("") "")))
   (is (equal "" (string-join #("") "")))
   (is (equal "" (string-join '("") "+")))

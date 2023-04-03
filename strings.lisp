@@ -193,7 +193,7 @@ Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'."
                        `(if (listp strings)
                             (loop for (,s . ,more?) on strings
                                   do (progn ,@body))
-                            (let ((,last (1- (length strings)))
+                            (let ((,last (max 0 (1- (length strings))))
                                   (,i 0))
                               (declare (array-index ,i ,last))
                               (do-each (,s strings)

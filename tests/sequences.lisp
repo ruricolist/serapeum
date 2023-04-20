@@ -160,6 +160,42 @@
   (is (length> '(1 2 3) 2))
   (is (not (length> nil 0))))
 
+(test length>=
+  ;; Regression; see #147.
+  (is (not (length>= '() '(1) '(2)))))
+
+(test length-fns
+  (let* ((equivs
+           '((length= . =)
+             (length< . <)
+             (length> . >)
+             (length<= . <=)
+             (length>= . >=))))
+    (for-all* ((len (lambda () (random-in-range 2 10)))
+               (seq-lens
+                (lambda ()
+                  (loop repeat len collect (random 10))))
+               (seq-types
+                (lambda ()
+                  (loop repeat len collect (random-elt '(list vector integer))))))
+      (let ((seqs
+              (loop for type in seq-types
+                    for len in seq-lens
+                    collect (ecase type
+                              (list (make-list len))
+                              (vector (make-array (list len)))
+                              (integer len)))))
+        (flet ((len (x)
+                 (etypecase x
+                   (list (length x))
+                   (vector (length x))
+                   (integer x))))
+          (dolist (equiv equivs)
+            (let ((length-fn (car equiv))
+                  (num-fn (cdr equiv)))
+              (is (eql (apply length-fn seqs)
+                       (apply num-fn (mapcar #'len seqs)))))))))))
+
 (test slice
   (is (equal "in" (slice "string" -3 -1)))
   (is (equal "foo" (slice "foo" -0)))

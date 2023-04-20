@@ -879,48 +879,52 @@ length LENGTH.
          (sequence-of-length-p seq ,length))
       call))
 
+(defmacro length-gt (cmp offset-fn seqs)
+  `(nlet rec ((prev most-positive-fixnum)
+              (seqs ,seqs))
+     (if (endp seqs) t
+         (destructuring-bind (seq . seqs) seqs
+           (etypecase seq
+             (array-length
+              (and (,cmp prev seq)
+                   (rec seq seqs)))
+             (list
+              (let ((len
+                      ;; Get the length of SEQ, but only up to LAST.
+                      (loop with len = 0
+                            repeat (,offset-fn prev)
+                            until (endp seq) do
+                              (incf len)
+                              (pop seq)
+                            finally (return len))))
+                (and (,cmp prev len)
+                     (rec len seqs))))
+             (sequence
+              (let ((len (length seq)))
+                (and (,cmp prev len)
+                     (rec len seqs)))))))))
+
+(defun length> (&rest seqs)
+  "Is each length-designator in SEQS longer than the next?
+A length designator may be a sequence or an integer."
+  (length-gt > identity seqs))
+
+(defun length>= (&rest seqs)
+  "Is each length-designator in SEQS longer or as long as the next?
+A length designator may be a sequence or an integer."
+  (length-gt >= 1+ seqs))
+
 (defun length< (&rest seqs)
   "Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer."
   (declare (dynamic-extent seqs))
   (apply #'length> (reverse seqs)))
 
-(defun length> (&rest seqs)
-  "Is each length-designator in SEQS longer than the next?
-A length designator may be a sequence or an integer."
-  (nlet rec ((last most-positive-fixnum)
-             (seqs seqs))
-    (if (endp seqs) t
-        (destructuring-bind (seq . seqs) seqs
-          (etypecase seq
-            (array-length
-             (and (> last seq)
-                  (rec seq seqs)))
-            (list
-             (let ((len
-                     ;; Get the length of SEQ, but only up to LAST.
-                     (loop with len = 0
-                           repeat last
-                           until (endp seq) do
-                             (incf len)
-                             (pop seq)
-                           finally (return len))))
-               (and (> last len)
-                    (rec len seqs))))
-            (sequence
-             (let ((len (length seq)))
-               (and (> last len)
-                    (rec len seqs)))))))))
-
-(defun length>= (&rest seqs)
-  "Is each length-designator in SEQS longer or as long as the next?
-A length designator may be a sequence or an integer."
-  (not (apply #'length< seqs)))
-
 (defun length<= (&rest seqs)
   "Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer."
-  (not (apply #'length> seqs)))
+  (declare (dynamic-extent seqs))
+  (apply #'length>= (reverse seqs)))
 
 (defun longer (x y)
   "Return the longer of X and Y.

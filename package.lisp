@@ -68,6 +68,7 @@
    #:soft-alist-of
    #:with-item-key-function
    #:with-two-arg-test
+   #:with-member-test
    ;; Definitions.
    #:defconst
    #:defsubst
@@ -382,6 +383,7 @@
    #:nthrest
    #:plist-keys
    #:plist-values
+   #:stable-set-difference
    ;; Strings.
    #:ascii-char-p
    #:whitespace

@@ -392,3 +392,14 @@ presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
           (list+length list start end)
         (declare (fixnum length) (list list))
         (aux3 fun list length)))))
+
+(defun stable-set-difference (list1 list2 &key key test test-not)
+  "Like `set-difference', but preserve the order of LIST1's elements."
+  (declare (list list1 list2))
+  (with-member-test (mem :key key :test test :test-not test-not)
+    (if list2
+        (collecting
+          (dolist (elt list1)
+            (unless (mem (key elt) list2)
+              (collect elt))))
+        list1)))

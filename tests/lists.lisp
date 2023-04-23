@@ -236,3 +236,22 @@
       (setf acc nil)
       (%f #'%a '(a b c d e) :start 1 :end 4)
       (is (equal acc '(b c d))))))
+
+(test stable-set-difference
+  (is (null (stable-set-difference nil nil)))
+  (is (equal '(1 2 3 4)
+             (stable-set-difference '(1 2 3 4) nil)))
+  (is (equal '(1 3 4)
+             (stable-set-difference '(1 2 3 4) '(2))))
+  (is (equal '(4 3 1)
+             (stable-set-difference '(4 3 2 1) '(2))))
+  (for-all* ((list1 (lambda ()
+                      (coerce (range 100) 'list)))
+             (list2 (lambda ()
+                      (shuffle
+                       (filter-map (lambda (x)
+                                     (whichever x nil))
+                                   list1)))))
+    (let ((sdiff (stable-set-difference list1 list2)))
+      (is (set-equal sdiff (set-difference list1 list2)))
+      (is (every #'< sdiff (rest sdiff))))))

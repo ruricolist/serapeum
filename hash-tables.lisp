@@ -407,10 +407,10 @@ values. That is, each element of SET is stored as if by
     (with-item-key-function (key)
       (if (not strict)
           (dolist (item set)
-            (setf (gethash (funcall key item) table) item))
+            (setf (gethash (key item) table) item))
           ;; We can check for set-ness while building the hash table.
           (dolist (item set)
-            (when (nth-value 1 (swaphash (funcall key item) item table))
+            (when (nth-value 1 (swaphash (key item) item table))
               (error "Not a set: ~a" set)))))
     table))
 

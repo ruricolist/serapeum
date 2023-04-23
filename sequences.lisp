@@ -42,7 +42,8 @@
              (function-name (fdefinition test))
              (function test))))
     (cond ((and test test-not)
-           (error "Cannot supply both ~s and ~s to a sequence function" 'test 'test-not))
+           (error "Cannot supply both ~s and ~s to a sequence function"
+                  :test :test-not))
           (test (canonicalize test))
           (test-not (canonicalize test-not))
           (t #'eql))))

@@ -135,7 +135,7 @@ From Arc."
 (-> memq (t list) list)
 (declaim-maybe-inline memq)
 (defun memq (item list)
-  "Like (member ... :test #'eq).
+  "Like (member ITEM LIST :test #'eq).
 Should only be used for symbols."
   (declare (optimize (speed 3) (safety 0) (debug 0))
            (list list))

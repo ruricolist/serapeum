@@ -727,6 +727,42 @@ WITH-BOOLEAN."
                ;;    ,@body))
                (t ,default)))))
 
+(defmacro with-member-test ((test-fn &key key test test-not) &body body
+                            &environment env)
+  "Emit BODY multiple times with specialized, inline versions of
+`member' bound to TEST-FN."
+  (if (not (speed-matters? env))
+      (with-unique-names (ukey utest utest-not)
+        `(let ((,ukey ,key)
+               (,utest ,test)
+               (,utest-not ,test-not))
+           (macrolet ((,test-fn (item list)
+                        (list 'member
+                              item list
+                              :key ,ukey
+                              :test ,utest
+                              :test-not ,utest-not)))
+             ,@body)))
+      `(let ((,test (canonicalize-test ,test ,test-not)))
+         (with-item-key-function (,key)
+           (with-two-arg-test (,test)
+             (macrolet ((,test-fn (x l)
+                          (let ((test ',test)
+                                (key ',key))
+                            (with-unique-names (ul ux mem)
+                              `(let ((,ul ,l)
+                                     (,ux ,x))
+                                 (declare (optimize (safety 0) (debug 0))
+                                          (list ,ul))
+                                 (block ,mem
+                                   (tagbody loop
+                                      (when ,ul
+                                        (unless (,test ,ux (,key (first ,ul)))
+                                          (setf ,ul (cdr ,ul))
+                                          (go loop)))
+                                      (return-from ,mem ,ul))))))))
+               ,@body))))))
+
 (defmacro with-item-key-function ((key &optional (key-form key))
                                   &body body &environment env)
   "For each of the most common key functions used in sequences, emit a

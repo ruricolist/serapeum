@@ -97,7 +97,7 @@ part of the arguments to compare, and compares them using TEST."
 (defmacro do-each ((var seq &optional return) &body body &environment env)
   "Iterate over the elements of SEQ, a sequence.
 If SEQ is a list, this is equivalent to `dolist'."
-  (when (policy> env 'space 'speed)
+  (unless (speed-matters? env)
     (return-from do-each
       `(do-each/map (,var ,seq ,@(unsplice return))
          ,@body)))

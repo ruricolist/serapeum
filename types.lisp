@@ -477,8 +477,7 @@ Functions\", by Irène Durand and Robert Strandh."
                                    types)))
         (cond ((null types)
                `(locally ,@body))
-              ((or (policy> env 'space 'speed)
-                   (policy> env 'compilation-speed 'speed))
+              ((not (speed-matters? env))
                `(locally ,@body))
               ;; The advantage of the CMUCL/SBCL way (I hope) is that the
               ;; compiler can decide /not/ to bother inlining if the type
@@ -713,9 +712,7 @@ WITH-BOOLEAN."
           `(let ((,test (ensure-function ,test)))
              (macrolet ((,test (x y) (list 'funcall ',test x y)))
                ,@body))))
-    (if (or (policy> env 'space 'speed)
-            (policy> env 'compilation-speed 'speed))
-        default
+    (if (not (speed-matters? env)) default
         `(cond ((eql ,test #'eq)
                 (macrolet ((,test (x y) `(eq ,x ,y)))
                   ,@body))
@@ -740,8 +737,7 @@ compilation speed over runtime speed, then BODY is only emitted once."
   (check-type key symbol)
   `(let ((,key (canonicalize-key ,key-form)))
      ,@(expect-form-list
-        (if (or (policy> env 'space 'speed)
-                (policy> env 'compilation-speed 'speed))
+        (if (not (speed-matters? env))
             `((macrolet ((,key (x) (list 'funcall ',key x)))
                 ,@body))
             `((cond ((eql ,key #'identity)

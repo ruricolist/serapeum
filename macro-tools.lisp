@@ -431,6 +431,11 @@ Returns 1 when the environment cannot be accessed."
   (> (policy-quality policy1 env)
      (policy-quality policy2 env)))
 
+(defun speed-matters? (env)
+  "Return T if ENV says we should prefer space to speed."
+  (not (or (policy> env 'space 'speed)
+           (policy> env 'compilation-speed 'speed))))
+
 (defun variable-type (var &optional env)
   (if (fboundp 'trivial-cltl2:variable-information)
       (let ((alist (nth-value 2 (funcall 'trivial-cltl2:variable-information var env))))

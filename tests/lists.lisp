@@ -245,16 +245,18 @@
              (stable-set-difference '(1 2 3 4) '(2))))
   (is (equal '(4 3 1)
              (stable-set-difference '(4 3 2 1) '(2))))
-  (for-all* ((list1 (lambda ()
-                      (coerce (range 100) 'list)))
-             (list2 (lambda ()
-                      (shuffle
-                       (filter-map (lambda (x)
-                                     (whichever x nil))
-                                   list1)))))
-    (let ((sdiff (stable-set-difference list1 list2)))
-      (is (set-equal sdiff (set-difference list1 list2)))
-      (is (every #'< sdiff (rest sdiff))))))
+  (for-all ((list1.list2
+             (lambda ()
+               (let* ((v1 (range 100))
+                      (v2 (shuffle (map-into (make-array (length v1))
+                                             (op (whichever _ nil))
+                                             v1))))
+                 (cons (coerce v1 'list)
+                       (coerce v2 'list))))))
+    (destructuring-bind (list1 . list2) list1.list2
+      (let ((sdiff (stable-set-difference list1 list2)))
+        (is (set-equal sdiff (set-difference list1 list2)))
+        (is (every #'< sdiff (rest sdiff)))))))
 
 (test with-member-test/simple-expansion ()
   "Test expansion of with-member-test when speed is not the priority."

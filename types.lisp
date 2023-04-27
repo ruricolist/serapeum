@@ -737,11 +737,16 @@ WITH-BOOLEAN."
                (,utest ,test)
                (,utest-not ,test-not))
            (macrolet ((,test-fn (item list)
-                        (list 'member
+                        (list 'multiple-value-call
+                              '(function member)
                               item list
                               :key ',ukey
-                              :test ',utest
-                              :test-not ',utest-not)))
+                              (list 'if ',utest
+                                    '(values :test ',utest)
+                                    '(values))
+                              (list 'if ',utest-not
+                                    '(values :test-not ',utest-not)
+                                    '(values)))))
              ,@body)))
       `(let ((,test (canonicalize-test ,test ,test-not)))
          (with-item-key-function (,key)

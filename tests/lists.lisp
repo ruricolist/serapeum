@@ -255,3 +255,10 @@
     (let ((sdiff (stable-set-difference list1 list2)))
       (is (set-equal sdiff (set-difference list1 list2)))
       (is (every #'< sdiff (rest sdiff))))))
+
+(test with-member-test/simple-expansion ()
+  "Test expansion of with-member-test when speed is not the priority."
+  (locally (declare (optimize (safety 3) (speed 0)))
+    (with-member-test (mem :key nil :test nil)
+      (is-true (mem 1 '(1 2 3)))
+      (is-false (mem 4 '(1 2 3))))))

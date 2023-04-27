@@ -739,9 +739,9 @@ WITH-BOOLEAN."
            (macrolet ((,test-fn (item list)
                         (list 'member
                               item list
-                              :key ,ukey
-                              :test ,utest
-                              :test-not ,utest-not)))
+                              :key ',ukey
+                              :test ',utest
+                              :test-not ',utest-not)))
              ,@body)))
       `(let ((,test (canonicalize-test ,test ,test-not)))
          (with-item-key-function (,key)

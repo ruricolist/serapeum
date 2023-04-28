@@ -264,3 +264,10 @@
     (with-member-test (mem :key nil :test nil)
       (is-true (mem 1 '(1 2 3)))
       (is-false (mem 4 '(1 2 3))))))
+
+(test with-member-test/complex-expansion ()
+  "Test expansion of with-member-test when speed is the priority."
+  (locally (declare (optimize (speed 3) (space 0) (compilation-speed 0) (debug 0)))
+    (with-member-test (mem :key nil :test nil)
+      (is-true (mem 1 '(1 2 3)))
+      (is-false (mem 4 '(1 2 3))))))

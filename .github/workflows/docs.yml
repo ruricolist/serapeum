@@ -18,7 +18,7 @@ jobs:
         run: 'env | sort -u'
       - name: Install Roswell
         env:
-          LISP: ccl-bin
+          LISP: ccl-bin/1.12.1
         run: |
           curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
           echo /home/runner/.roswell/bin >> $GITHUB_PATH

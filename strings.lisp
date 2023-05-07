@@ -158,8 +158,8 @@ From Emacs Lisp."
   (values
    (if (emptyp seq)
        (make-string 0)
-       (let ((fun (ensure-function fun)))
-         (check-type separator string)
+       (let ((fun (ensure-function fun))
+             (separator (string separator)))
          (with-string (stream stream)
            (seq-dispatch seq
              (mapconcat/list fun seq separator stream)
@@ -177,11 +177,10 @@ If STREAM is provided, write to STREAM rather than returning a string.
 If END is provided, then insert SEPARATOR after the last string, as
 well as between strings.
 
-Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'."
+Equivalent to `(mapconcat #'string STRINGS SEPARATOR)'."
   (if stream
       (with-string (s stream)
-        (mapconcat #'string strings (string separator)
-                   :stream s)
+        (mapconcat #'string strings separator :stream s)
         (when end
           (write-string (string separator) s)))
       (let* ((separator (coerce (string separator)

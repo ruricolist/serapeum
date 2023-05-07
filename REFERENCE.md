@@ -4588,7 +4588,7 @@ If STREAM is provided, write to STREAM rather than returning a string.
 If END is provided, then insert SEPARATOR after the last string, as
 well as between strings.
 
-Equivalent to `(mapconcat #'string STRINGS (string SEPARATOR))'.
+Equivalent to `(mapconcat #'string STRINGS SEPARATOR)'.
 
 [View source](strings.lisp#L170)
 

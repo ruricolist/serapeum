@@ -239,7 +239,7 @@ directly into Lisp code:
                 ;; will be compiled to `aref', &c.
                 `(if (arrayp ,seq)
                      ,vector-form
-                     ,other-form))))
+                     ,array-form))))
     #-(or sbcl abcl ccl)
     `(if (listp ,seq) ,list-form ,vector-form)))
 

@@ -800,14 +800,14 @@ the string "#.".
 If `*print-readably*` is true, but `*read-eval*` is not true, signal
 an error.
 
-[View source](defining-types.lisp#L168)
+[View source](defining-types.lisp#L170)
 
 ### `(deconstruct x)`
 
 If X is a type defined with `defconstructor`, return its slots as
 multiple values.
 
-[View source](defining-types.lisp#L212)
+[View source](defining-types.lisp#L214)
 
 ### `(defconstructor type-name &body slots)`
 
@@ -896,7 +896,7 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](defining-types.lisp#L222)
+[View source](defining-types.lisp#L224)
 
 ### `(defunit name &optional docstring)`
 
@@ -910,7 +910,7 @@ Unit types are useful for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L437)
+[View source](defining-types.lisp#L439)
 
 ### `(defunion union &body variants)`
 
@@ -924,7 +924,7 @@ UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it.
 
-[View source](defining-types.lisp#L481)
+[View source](defining-types.lisp#L483)
 
 ### `(match-of union expr &body clauses)`
 
@@ -944,7 +944,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L567)
+[View source](defining-types.lisp#L569)
 
 ## Binding
 

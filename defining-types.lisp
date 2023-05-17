@@ -126,9 +126,11 @@ designed to facilitate working with immutable data."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
-        (when (find :copier opts :key #'ensure-car)
-          (error "Read only struct ~a does not need a copier."
-                 name))
+        (when-let (copier (find :copier opts :key #'ensure-car))
+          (if (null (second copier))
+              (removef opts copier)
+              (error "Read only struct ~a does not need a copier."
+                     name)))
         (when-let (clause (find :type opts :key #'car-safe))
           (error "Read-only structs may not use the ~s option: ~a"
                  :type clause))

@@ -379,14 +379,14 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
 
 ## Types
 
-### `(-> function args values)`
+### `(-> function (&rest args) &optional values)`
 
 Declaim the ftype of FUNCTION from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)
 
-[View source](types.lisp#L56)
+[View source](types.lisp#L57)
 
 ### `(assure type-spec &body (form))`
 
@@ -411,21 +411,21 @@ Using `values` types is supported, with caveats:
 
 From ISLISP.
 
-[View source](types.lisp#L159)
+[View source](types.lisp#L162)
 
 ### `(assuref place type-spec)`
 
 Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
 PLACE only once.
 
-[View source](types.lisp#L246)
+[View source](types.lisp#L249)
 
 ### `(supertypep supertype type &optional env)`
 
 Is SUPERTYPE a supertype of TYPE?
 That is, is TYPE a subtype of SUPERTYPE?
 
-[View source](types.lisp#L278)
+[View source](types.lisp#L281)
 
 ### `(proper-subtype-p subtype type &optional env)`
 
@@ -433,7 +433,7 @@ Is SUBTYPE a proper subtype of TYPE?
 
 This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
 
-[View source](types.lisp#L284)
+[View source](types.lisp#L287)
 
 ### `(proper-supertype-p supertype type &optional env)`
 
@@ -442,7 +442,7 @@ Is SUPERTYPE a proper supertype of TYPE?
 That is, is it true that every value of TYPE is also of type
 SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
 
-[View source](types.lisp#L308)
+[View source](types.lisp#L311)
 
 ### `(vref vec index)`
 
@@ -452,7 +452,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L360)
+[View source](types.lisp#L363)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -503,7 +503,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L423)
+[View source](types.lisp#L426)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -512,19 +512,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L515)
+[View source](types.lisp#L518)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L528)
+[View source](types.lisp#L531)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L538)
+[View source](types.lisp#L541)
 
 ### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
 
@@ -532,7 +532,7 @@ Like `with-vector-dispatch` but on implementations that support it, the underlyi
 
 START and END are the offset of the original vector's data in the array it is displaced to.
 
-[View source](types.lisp#L544)
+[View source](types.lisp#L547)
 
 ### `(with-boolean (&rest branches) &body body)`
 
@@ -546,7 +546,7 @@ for brevity.)
 The first argument must be a list of symbols which name variables. This macro
 will expand into a series of conditionals
 
-[View source](types.lisp#L581)
+[View source](types.lisp#L584)
 
 ### `(boolean-if branch then &optional else)`
 
@@ -557,7 +557,7 @@ lexically enclosing WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L644)
+[View source](types.lisp#L647)
 
 ### `(boolean-when branch &body body)`
 
@@ -568,7 +568,7 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L661)
+[View source](types.lisp#L664)
 
 ### `(boolean-unless branch &body body)`
 
@@ -579,20 +579,20 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L682)
+[View source](types.lisp#L685)
 
 ### `(with-two-arg-test (test) &body body)`
 
 Specialize BODY on the most common two-arg test functions.
 
-[View source](types.lisp#L707)
+[View source](types.lisp#L710)
 
 ### `(with-member-test (test-fn &key key test test-not) &body body)`
 
 Emit BODY multiple times with specialized, inline versions of
 `member` bound to TEST-FN.
 
-[View source](types.lisp#L730)
+[View source](types.lisp#L733)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -602,7 +602,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L780)
+[View source](types.lisp#L783)
 
 ### `(true x)`
 
@@ -611,7 +611,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L801)
+[View source](types.lisp#L804)
 
 ## Definitions
 

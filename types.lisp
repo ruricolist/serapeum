@@ -54,13 +54,13 @@ Literal keywords, numbers, and characters are also treated as `eql' type specifi
   `(function ,args ,@(when values
                        (list values))))
 
-(defmacro -> (function args &optional values)
+(defmacro -> (function (&rest args) &optional values)
   "Declaim the ftype of FUNCTION from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)"
-  `(declaim (ftype (-> ,args ,@(when values
-                                 (list values)))
+  `(declaim (ftype (-> (,@args) ,@(when values
+                                    (list values)))
                    ,function)))
 
 (defmacro declaim-freeze-type (&rest types)

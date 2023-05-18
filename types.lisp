@@ -49,16 +49,19 @@ Literal keywords, numbers, and characters are also treated as `eql' type specifi
 (defpattern tuple (&rest args)
   `(list ,@args))
 
-(deftype -> (args values)
+(deftype -> (args &optional values)
   "The type of a function from ARGS to VALUES."
-  `(function ,args ,values))
+  `(function ,args ,@(when values
+                       (list values))))
 
-(defmacro -> (function args values)
+(defmacro -> (function args &optional values)
   "Declaim the ftype of FUNCTION from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
      (defun mod-fixnum+ (x y) ...)"
-  `(declaim (ftype (-> ,args ,values) ,function)))
+  `(declaim (ftype (-> ,args ,@(when values
+                                 (list values)))
+                   ,function)))
 
 (defmacro declaim-freeze-type (&rest types)
   "Declare that TYPES is not going to change.

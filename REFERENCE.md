@@ -328,7 +328,7 @@ could define it almost trivially using `define-case-macro`:
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L723)
+[View source](macro-tools.lisp#L731)
 
 ### `(eval-if-constant form &optional env)`
 
@@ -348,7 +348,7 @@ Note that this function may treat a form as constant which would not
 be recognized as such by `constantp`, because we also expand compiler
 macros.
 
-[View source](macro-tools.lisp#L744)
+[View source](macro-tools.lisp#L752)
 
 ### `(expect-form-list exp)`
 
@@ -356,14 +356,14 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)
 
-[View source](macro-tools.lisp#L826)
+[View source](macro-tools.lisp#L834)
 
 ### `(expect-single-form exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
 
-[View source](macro-tools.lisp#L836)
+[View source](macro-tools.lisp#L844)
 
 ### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
 
@@ -375,7 +375,7 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
     ≡ (multiple-value-call #'unparse-ordinary-lambda-list
         (parse-ordinary-lambda-list lambda-list)
 
-[View source](macro-tools.lisp#L848)
+[View source](macro-tools.lisp#L856)
 
 ## Types
 

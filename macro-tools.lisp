@@ -618,6 +618,14 @@ Otherwise, leave the keylist alone."
         else
           collect clause))
 
+(defparameter *case-macro-target*
+  (case uiop:*implementation-type*
+    ((:sbcl :cmu) 'flet)
+    (t 'tagbody))
+  "Implementation-appropriate target syntax clause deduplication.
+How should repeated clauses in a case macro be deduplicated? With flet
+or a tagbody?")
+
 (defun expand-case-macro (cont expr clauses
                           &key (default-keys '(t otherwise)) error
                                (macro-name 'custom-case))
@@ -660,9 +668,9 @@ Otherwise, leave the keylist alone."
                 ;; might even be worth using different expansions on
                 ;; different Lisps.)
                 (let ((expander
-                        (case uiop:*implementation-type*
-                          ((:sbcl :cmu) #'expand-case-macro/flet)
-                          (t #'expand-case-macro/tagbody))))
+                        (ecase *case-macro-target*
+                          ((flet) #'expand-case-macro/flet)
+                          ((tagbody) #'expand-case-macro/tagbody))))
                   (funcall expander
                            cont expr-temp clauses default
                            :macro-name macro-name))))))))
@@ -714,7 +722,7 @@ Otherwise, leave the keylist alone."
               ,(funcall cont expr-temp default clauses))
             ,@(loop for (sym . body) in dests
                     append `(,sym (return-from ,case-block
-                                    ,@body))))))))
+                                    (progn ,@body)))))))))
 
 (define-condition case-failure (type-error)
   ()

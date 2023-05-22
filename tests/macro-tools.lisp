@@ -97,3 +97,27 @@
   (is (= 42
          (let ((x 42))
            (my-incf* x)))))
+
+(define-case-macro faux-case (expr &body clauses)
+    (:default default)
+  `(cond ,@(loop for (key . body) in clauses
+                 collect `((eql ,expr ,key) ,@body))
+         (t ,@default)))
+
+(test faux-case
+  (dolist (target '(tagbody flet))
+    (let ((serapeum::*case-macro-target* target))
+      (is (eql 'bit
+               (funcall
+                (compile
+                 nil
+                 (eval
+                  `(lambda (x)
+                     (faux-case x
+                       ((0 1)
+                        ;; Multiple forms.
+                        (let ((*standard-output* (make-broadcast-stream)))
+                          (print "hello"))
+                        'bit)
+                       (t 'non-bit)))))
+                1))))))

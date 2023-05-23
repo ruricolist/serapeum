@@ -71,19 +71,44 @@
       (serious-condition ()
         nil))))
 
-(defun count-cpus (&key (default 2) online)
-  "Try very hard to return a meaningful count of CPUs.
+(declaim (ftype (function (&key (:default (integer 1))
+                                (:online t)
+                                (:memoize t))
+                          (values (integer 1)
+                                  boolean
+                                  &optional))
+                count-cpus))
+(let (cpu-count online-cpu-count)
+  (defun count-cpus (&key (default 2) online (memoize t))
+    "Try very hard to return a meaningful count of CPUs.
 If ONLINE is non-nil, try to return only the active CPUs.
 
 The second value is T if the number of processors could be queried,
-`nil' otherwise."
-  (let ((string (count-cpus-string :online online)))
-    (if string
-        (let ((int (parse-integer string :junk-allowed t)))
-          (if int
-              (values int t)
-              (values default nil)))
-        (values default nil))))
+`nil' otherwise.
+
+If MEMOIZE is non-nil (default), then memoize the result. Calling with
+MEMOIZE nil clears any memoized results."
+    (labels ((count-cpus ()
+               (let ((string (count-cpus-string :online online)))
+                 (if string
+                     (let ((int (parse-integer string :junk-allowed t)))
+                       (if int
+                           (values int t)
+                           (values default nil)))
+                     (values default nil))))
+             (count-cpus-cons ()
+               (multiple-value-call #'cons (count-cpus))))
+      (declare (dynamic-extent #'count-cpus #'count-cpus-cons))
+      (if memoize
+          (car+cdr
+           (if online
+               (or online-cpu-count
+                   (setf online-cpu-count (count-cpus-cons)))
+               (or cpu-count
+                   (setf cpu-count (count-cpus-cons)))))
+          (progn
+            (nix cpu-count online-cpu-count)
+            (count-cpus))))))
 
 ;;; We need more space for locks than you might expect. In, say, Java,
 ;;; only a handful of locks exist at a time. But in Lisp I often use

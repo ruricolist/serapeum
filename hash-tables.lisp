@@ -20,11 +20,13 @@ that key in TABLE is bound to VALUE."
 
 (defun hash-table-test-p (test)
   "Is TEST a valid hash table test?"
-  (and (or (member test '(eq eql equal equalp))
-           (member (ensure-function test)
-                   (load-time-value (list #'eq #'eql #'equal #'equalp) t))
-           (ignore-errors (make-hash-table :size 0 :test test)))
-       t))
+  (or (member test '(eq eql equal equalp) :test #'eq)
+      (member (ensure-function test)
+              (load-time-value (list #'eq #'eql #'equal #'equalp) t)
+              :test #'eq)
+      (values
+       (ignore-errors
+        (make-hash-table :test test)))))
 
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))

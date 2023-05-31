@@ -130,3 +130,10 @@
   (let ((ht (dict 'eql 1 "one")))
     (is (eql 'eql (hash-table-test ht)))
     (is (eql 1 (gethash "one" (flip-hash-table ht :test 'equal))))))
+
+(test hash-table-test-p
+      (dolist (test '(eq eql equal equalp))
+        (is (hash-table-test-p test)))
+      (dolist (test '(eq eql equal equalp))
+        (is (hash-table-test-p (symbol-function test))))
+      (is (not (hash-table-test-p #'car))))

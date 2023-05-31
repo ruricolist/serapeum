@@ -471,7 +471,7 @@
 
 (test toposort-list-constraints
   "Check we can use constraints with elements that are lists."
-  (let ((constraints '(((x 1) (y2))
+  (let ((constraints '(((x 1) (y 2))
                        ((y 2) (z 3)))))
     (is (equal '((x 1) (y 2) (z 3))
                (sort (list '(z 3) '(y 2) '(x 1))

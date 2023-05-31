@@ -233,6 +233,7 @@
    #:pairhash
    #:pretty-print-hash-table
    #:toggle-pretty-print-hash-table
+   #:hash-table-test-p
    ;; Pathnames.
    #:wild-pathname
    #:non-wild-pathname

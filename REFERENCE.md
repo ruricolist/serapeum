@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 475 functions)
+# Function Listing For serapeum (43 files, 476 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2190,6 +2190,12 @@ that key in TABLE is bound to VALUE.
 
 [View source](hash-tables.lisp#L3)
 
+### `(hash-table-test-p test)`
+
+Is TEST a valid hash table test?
+
+[View source](hash-tables.lisp#L21)
+
 ### `(dict &rest keys-and-values)`
 
 A concise constructor for hash tables.
@@ -2211,14 +2217,14 @@ Note that `dict` can also be used for destructuring (with Trivia).
       ((dict :x x) x))
     => 1
 
-[View source](hash-tables.lisp#L62)
+[View source](hash-tables.lisp#L72)
 
 ### `(dict* dict &rest args)`
 
 Merge new bindings into DICT.
 Roughly equivalent to `(merge-tables DICT (dict args...))'.
 
-[View source](hash-tables.lisp#L122)
+[View source](hash-tables.lisp#L132)
 
 ### `(dictq &rest keys-and-values)`
 
@@ -2226,7 +2232,7 @@ A literal hash table.
 Like `dict`, but the keys and values are implicitly quoted, and the
 hash table is inlined as a literal object.
 
-[View source](hash-tables.lisp#L129)
+[View source](hash-tables.lisp#L139)
 
 ### `(href table &rest keys)`
 
@@ -2235,14 +2241,14 @@ A concise way of doing lookups in (potentially nested) hash tables.
     (href (dict :x 1) :x) => 1
     (href (dict :x (dict :y 2)) :x :y)  => 2
 
-[View source](hash-tables.lisp#L136)
+[View source](hash-tables.lisp#L146)
 
 ### `(href-default default table &rest keys)`
 
 Like `href`, with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned.
 
-[View source](hash-tables.lisp#L149)
+[View source](hash-tables.lisp#L159)
 
 ### `(@ table &rest keys)`
 
@@ -2251,7 +2257,7 @@ A concise way of doing lookups in (potentially nested) hash tables.
     (@ (dict :x 1) :x) => 1
     (@ (dict :x (dict :y 2)) :x :y)  => 2 
 
-[View source](hash-tables.lisp#L191)
+[View source](hash-tables.lisp#L201)
 
 ### `(pophash key hash-table)`
 
@@ -2261,7 +2267,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L217)
+[View source](hash-tables.lisp#L227)
 
 ### `(swaphash key value hash-table)`
 
@@ -2271,7 +2277,7 @@ This is only a shorthand. It is not in itself thread-safe.
 
 From Zetalisp.
 
-[View source](hash-tables.lisp#L229)
+[View source](hash-tables.lisp#L239)
 
 ### `(hash-fold fn init hash-table)`
 
@@ -2281,14 +2287,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L239)
+[View source](hash-tables.lisp#L249)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L254)
+[View source](hash-tables.lisp#L264)
 
 ### `(maphash-new fn hash-table &rest hash-table-args &key &allow-other-keys)`
 
@@ -2310,7 +2316,7 @@ By default, the new hash table has the same hash table
 properties (test, size) as HASH-TABLE, but these can be overridden
 with HASH-TABLE-ARGS.
 
-[View source](hash-tables.lisp#L267)
+[View source](hash-tables.lisp#L277)
 
 ### `(maphash-into hash-table fn &rest seqs)`
 
@@ -2318,7 +2324,7 @@ Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
 
 FN is required to return two values, and key and a value.
 
-[View source](hash-tables.lisp#L297)
+[View source](hash-tables.lisp#L307)
 
 ### `(merge-tables &rest tables)`
 
@@ -2338,7 +2344,7 @@ All of the tables being merged must have the same value for
 Clojure's `merge`.
 
 
-[View source](hash-tables.lisp#L321)
+[View source](hash-tables.lisp#L331)
 
 ### `(flip-hash-table table &rest hash-table-args &key filter key test size rehash-size rehash-threshold)`
 
@@ -2364,7 +2370,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L350)
+[View source](hash-tables.lisp#L360)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2378,7 +2384,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L385)
+[View source](hash-tables.lisp#L395)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2387,7 +2393,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L417)
+[View source](hash-tables.lisp#L427)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2395,7 +2401,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L428)
+[View source](hash-tables.lisp#L438)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
 
@@ -2426,7 +2432,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
 specified.
 
-[View source](hash-tables.lisp#L438)
+[View source](hash-tables.lisp#L448)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2434,14 +2440,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L529)
+[View source](hash-tables.lisp#L539)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L537)
+[View source](hash-tables.lisp#L547)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2454,7 +2460,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L546)
+[View source](hash-tables.lisp#L556)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2478,7 +2484,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L568)
+[View source](hash-tables.lisp#L578)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2487,7 +2493,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L618)
+[View source](hash-tables.lisp#L628)
 
 ## Files
 
@@ -4309,14 +4315,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1623)
+[View source](sequences.lisp#L1672)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1685)
+[View source](sequences.lisp#L1734)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -4360,14 +4366,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1715)
+[View source](sequences.lisp#L1764)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1757)
+[View source](sequences.lisp#L1806)
 
 ### `(repeat-sequence seq n)`
 
@@ -4391,7 +4397,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1797)
+[View source](sequences.lisp#L1846)
 
 ### `(seq= &rest xs)`
 
@@ -4400,7 +4406,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1880)
+[View source](sequences.lisp#L1929)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4422,7 +4428,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1944)
+[View source](sequences.lisp#L1993)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4433,20 +4439,20 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L1996)
+[View source](sequences.lisp#L2045)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L2027)
+[View source](sequences.lisp#L2076)
 
 ### `(copy-firstn list n)`
 
 Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
 lists gracefully.
 
-[View source](sequences.lisp#L2040)
+[View source](sequences.lisp#L2089)
 
 ### `(splice-seq sequence &key new start end)`
 
@@ -4465,7 +4471,7 @@ Omitting NEW removes elements from SEQUENCE:
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2182)
+[View source](sequences.lisp#L2231)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4485,19 +4491,19 @@ Omitting NEW removes elements from SEQUENCE:
     (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2209)
+[View source](sequences.lisp#L2258)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2232)
+[View source](sequences.lisp#L2281)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2235)
+[View source](sequences.lisp#L2284)
 
 ## Strings
 

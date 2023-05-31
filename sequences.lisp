@@ -1662,12 +1662,7 @@ Cf. `toposort'.")
 (defun tsort (elts constraints tie-breaker &key (test #'eql))
   (if (hash-table-test-p test)
       (tsort/hash-table elts constraints tie-breaker :test test)
-      (tsort/list elts constraints tie-breaker :test test))
-  ;; (let ((list-result (tsort/list elts constraints tie-breaker :test test))
-  ;;       (hash-result (tsort/hash-table elts constraints tie-breaker :test test)))
-  ;;   (assert (equal list-result hash-result))
-  ;;   list-result)
-  )
+      (tsort/list elts constraints tie-breaker :test test)))
 
 (defun toposort (constraints
                  &key (test #'eql)

@@ -4315,14 +4315,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1672)
+[View source](sequences.lisp#L1669)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1734)
+[View source](sequences.lisp#L1731)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -4366,14 +4366,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1764)
+[View source](sequences.lisp#L1761)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L1806)
+[View source](sequences.lisp#L1803)
 
 ### `(repeat-sequence seq n)`
 
@@ -4397,7 +4397,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L1846)
+[View source](sequences.lisp#L1843)
 
 ### `(seq= &rest xs)`
 
@@ -4406,7 +4406,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L1929)
+[View source](sequences.lisp#L1926)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4428,7 +4428,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L1993)
+[View source](sequences.lisp#L1990)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4439,20 +4439,20 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L2045)
+[View source](sequences.lisp#L2042)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L2076)
+[View source](sequences.lisp#L2073)
 
 ### `(copy-firstn list n)`
 
 Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
 lists gracefully.
 
-[View source](sequences.lisp#L2089)
+[View source](sequences.lisp#L2086)
 
 ### `(splice-seq sequence &key new start end)`
 
@@ -4471,7 +4471,7 @@ Omitting NEW removes elements from SEQUENCE:
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2231)
+[View source](sequences.lisp#L2228)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4491,19 +4491,19 @@ Omitting NEW removes elements from SEQUENCE:
     (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2258)
+[View source](sequences.lisp#L2255)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2281)
+[View source](sequences.lisp#L2278)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2284)
+[View source](sequences.lisp#L2281)
 
 ## Strings
 

@@ -1597,6 +1597,7 @@ Cf. `toposort'.")
 
 (defun tsort/list (elts constraints tie-breaker &key (test #'eql))
   "Do the initial topological sort."
+  ;; Adapted from AOMP.
   (declare (function test tie-breaker))
   (loop while elts
         for min-elts = (or (remove-if
@@ -1621,6 +1622,7 @@ Cf. `toposort'.")
         finally (return results)))
 
 (defun tsort/hash-table (objects constraints tie-breaker &key (test #'eql))
+  ;; Adapted from SBCL.
   (declare (list objects constraints)
            (function tie-breaker))
   (let ((obj-info (make-hash-table :size (length objects) :test test))

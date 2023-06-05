@@ -788,16 +788,18 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once."
   (check-type key symbol)
-  `(let ((,key (canonicalize-key ,key-form)))
-     ,@(expect-form-list
-        (if (not (speed-matters? env))
-            `((macrolet ((,key (x) (list 'funcall ',key x)))
-                ,@body))
-            `((cond ((eql ,key #'identity)
-                     (macrolet ((,key (x) x))
-                       ,@body))
-                    (t (macrolet ((,key (x) (list 'funcall ',key x)))
-                         ,@body))))))))
+  (with-unique-names (ukey)
+    `(let* ((,key (canonicalize-key ,key-form))
+            (,ukey ,key))
+       ,@(expect-form-list
+          (if (not (speed-matters? env))
+              `((macrolet ((,key (x) (list 'funcall ',ukey x)))
+                  ,@body))
+              `((cond ((eql ,ukey #'identity)
+                       (macrolet ((,key (x) x))
+                         ,@body))
+                      (t (macrolet ((,key (x) (list 'funcall ',ukey x)))
+                           ,@body)))))))))
 
 (declaim (ftype (function (t) boolean) true))
 (declaim (inline true))

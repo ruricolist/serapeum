@@ -200,6 +200,11 @@
   (is (equal '(0 1)
              (filter-map (distinct :key #'evenp) (iota 10)))))
 
+(test distinct/ht
+  "Test distinct works for longer lists, with or without a key."
+  (is (length= 100 (filter-map (distinct) (iota 100))))
+  (is (length= 100 (filter-map (distinct :key #'-) (iota 100)))))
+
 (test flip
   (is (equal '(:b :a) (funcall (flip #'list) :a :b)))
   (locally (declare (notinline flip))

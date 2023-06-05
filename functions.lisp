@@ -161,7 +161,8 @@ define it as:
          ,arg))))
 
 (defun distinct (&key (key #'identity)
-                      (test 'equal))
+                      (test 'equal)
+                      (synchronized nil))
   "Return a closure returning only values it has not seen before.
 
     (defalias test (distinct))
@@ -177,6 +178,9 @@ This has many uses, for example:
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
 
+If SYNCHRONIZED is non-nil, then `distinct' can safely be used from
+multiple threads. Otherwise it is not thread-safe.
+
 Note the closure returned by `distinct' changes how it tracks unique
 items based on the number of items it is tracking, so it is suitable
 for all sizes of set."
@@ -187,29 +191,36 @@ for all sizes of set."
         (dict nil)
         (test (ensure-function test)))
     (declare ((integer 0 20) set-len))
-    (flet ((dict-init ()
-             (set-hash-table (shiftf set nil) :test test :strict nil)))
+    (labels ((dict-init ()
+               (set-hash-table (shiftf set nil) :test test :strict nil))
+             (distinct ()
+               (with-item-key-function (key)
+                 (lambda (arg)
+                   (let ((key (key arg)))
+                     ;; Swap the representation based on the number of items
+                     ;; being tracked.
+                     (if (< set-len 20)
+                         (if (member key set :test test)
+                             (values nil nil)
+                             (progn
+                               (push key set)
+                               (incf set-len)
+                               (values arg t)))
+                         (let ((dict (or dict (setf dict (dict-init)))))
+                           (declare (hash-table dict))
+                           (let ((key (key arg)))
+                             (if (nth-value 1 (gethash key dict))
+                                 (values nil nil)
+                                 (progn
+                                   (setf (gethash key dict) t)
+                                   (values arg t)))))))))))
       (declare (dynamic-extent #'dict-init))
-      (with-item-key-function (key)
-        (lambda (arg)
-          (let ((key (key arg)))
-            ;; Swap the representation based on the number of items
-            ;; being tracked.
-            (if (< set-len 20)
-                (if (member key set :test test)
-                    (values nil nil)
-                    (progn
-                      (push key set)
-                      (incf set-len)
-                      (values arg t)))
-                (let ((dict (or dict (setf dict (dict-init)))))
-                  (declare (hash-table dict))
-                  (let ((key (key arg)))
-                    (if (nth-value 1 (gethash key dict))
-                        (values nil nil)
-                        (progn
-                          (setf (gethash key dict) t)
-                          (values arg t))))))))))))
+      (let ((distinct (distinct)))
+        (if (not synchronized) (distinct)
+            (let ((lock (bt:make-lock)))
+              (lambda (arg)
+                (bt:with-lock-held (lock)
+                  (funcall distinct arg)))))))))
 
 (defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.

@@ -216,7 +216,7 @@ for all sizes of set."
                                    (values arg t)))))))))))
       (declare (dynamic-extent #'dict-init))
       (let ((distinct (distinct)))
-        (if (not synchronized) (distinct)
+        (if (not synchronized) distinct
             (let ((lock (bt:make-lock)))
               (lambda (arg)
                 (bt:with-lock-held (lock)

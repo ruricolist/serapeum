@@ -1857,9 +1857,9 @@ define it as:
 
 [View source](functions.lisp#L138)
 
-### `(distinct &key key test)`
+### `(distinct &key key test synchronized)`
 
-Return a function that echoes only values it has not seen before.
+Return a closure returning only values it has not seen before.
 
     (defalias test (distinct))
     (test 'foo) => foo, t
@@ -1873,6 +1873,13 @@ This has many uses, for example:
 
     (count-if (distinct) seq)
     ≡ (length (remove-duplicates seq))
+
+If SYNCHRONIZED is non-nil, then `distinct` can safely be used from
+multiple threads. Otherwise it is not thread-safe.
+
+Note the closure returned by `distinct` changes how it tracks unique
+items based on the number of items it is tracking, so it is suitable
+for all sizes of set.
 
 [View source](functions.lisp#L163)
 
@@ -1890,14 +1897,14 @@ to get a version with a lock.
 You can pass MEMOIZED if you want the function to remember values
 between calls.
 
-[View source](functions.lisp#L189)
+[View source](functions.lisp#L225)
 
 ### `(once fn)`
 
 Return a function that runs FN only once, caching the results
 forever.
 
-[View source](functions.lisp#L242)
+[View source](functions.lisp#L278)
 
 ### `(fuel level)`
 
@@ -1910,7 +1917,7 @@ The two return values are a boolean indicating whether the available
 fuel has been exceeded followed by the current fuel level (which may
 be negative.)
 
-[View source](functions.lisp#L260)
+[View source](functions.lisp#L296)
 
 ### `(juxt &rest fns)`
 
@@ -1929,7 +1936,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-[View source](functions.lisp#L282)
+[View source](functions.lisp#L318)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -1954,7 +1961,7 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-[View source](functions.lisp#L312)
+[View source](functions.lisp#L348)
 
 ### `(hook f g)`
 
@@ -1972,7 +1979,7 @@ integer, by asking whether it is equal to its own floor.
 
 AKA Schoenfinkel's S combinator.
 
-[View source](functions.lisp#L345)
+[View source](functions.lisp#L381)
 
 ### `(fork g f h)`
 
@@ -1996,7 +2003,7 @@ you can write a (numerically unstable) `mean` using `fork`.
 
 From J.
 
-[View source](functions.lisp#L362)
+[View source](functions.lisp#L398)
 
 ### `(hook2 f g)`
 
@@ -2012,7 +2019,7 @@ hours.
 
 From J.
 
-[View source](functions.lisp#L387)
+[View source](functions.lisp#L423)
 
 ### `(fork2 g f h)`
 
@@ -2032,7 +2039,7 @@ written as a dyadic fork.
 
 From J.
 
-[View source](functions.lisp#L403)
+[View source](functions.lisp#L439)
 
 ### `(capped-fork g h)`
 
@@ -2042,7 +2049,7 @@ Like a monadic fork, but F is omitted.
 
 Effectively the composition of G and H.
 
-[View source](functions.lisp#L424)
+[View source](functions.lisp#L460)
 
 ### `(capped-fork2 g h)`
 
@@ -2050,7 +2057,7 @@ J's capped fork (dyadic).
 
 Like a dyadic fork, but F is omitted.
 
-[View source](functions.lisp#L433)
+[View source](functions.lisp#L469)
 
 ### `(fnil fn &rest defaults)`
 
@@ -2066,7 +2073,7 @@ This has a compiler macro for reasonable efficiency.
 
 From Clojure.
 
-[View source](functions.lisp#L440)
+[View source](functions.lisp#L476)
 
 ### `(variadic->unary fn)`
 
@@ -2075,7 +2082,7 @@ applies FN to it.
 
 Practically equivalent to `(curry #'apply FN arguments...)'.
 
-[View source](functions.lisp#L479)
+[View source](functions.lisp#L515)
 
 ### `(unary->variadic fn)`
 
@@ -2085,14 +2092,14 @@ on them as a list.
 Wraps a function that expects a single argument, a list, so it can be
 used variadically.
 
-[View source](functions.lisp#L489)
+[View source](functions.lisp#L525)
 
 ### `(mvconstantly &rest values)`
 
 Like `constantly`, but returns all of VALUES as multiple values.
 If there are not VALUES, returns nothing.
 
-[View source](functions.lisp#L499)
+[View source](functions.lisp#L535)
 
 ## Trees
 

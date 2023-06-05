@@ -160,6 +160,8 @@ define it as:
          (declare (ignore ,@leading ,rest))
          ,arg))))
 
+(defconst +alist-breakeven+ 25)
+
 (defun distinct (&key (key #'identity)
                       (test 'equal)
                       (synchronized nil))
@@ -190,7 +192,7 @@ for all sizes of set."
         (set-len 0)
         (dict nil)
         (test (ensure-function test)))
-    (declare ((integer 0 20) set-len))
+    (declare ((integer 0 #.+alist-breakeven+) set-len))
     (labels ((dict-init ()
                (set-hash-table (shiftf set nil) :test test :strict nil))
              (distinct ()
@@ -199,7 +201,7 @@ for all sizes of set."
                    (let ((key (key arg)))
                      ;; Swap the representation based on the number of items
                      ;; being tracked.
-                     (if (< set-len 20)
+                     (if (< set-len +alist-breakeven+)
                          (if (member key set :test test)
                              (values nil nil)
                              (progn

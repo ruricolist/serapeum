@@ -162,7 +162,7 @@ define it as:
 
 (defun distinct (&key (key #'identity)
                       (test 'equal))
-  "Return a function that echoes only values it has not seen before.
+  "Return a closure returning only values it has not seen before.
 
     (defalias test (distinct))
     (test 'foo) => foo, t
@@ -175,16 +175,41 @@ TEST must be a valid test for a hash table.
 This has many uses, for example:
 
     (count-if (distinct) seq)
-    ≡ (length (remove-duplicates seq))"
-  (let ((dict (make-hash-table :test test))
-        (key-fn (ensure-function key)))
-    (lambda (arg)
-      (let ((key (funcall key-fn arg)))
-        (if (nth-value 1 (gethash key dict))
-            (values nil nil)
-            (values (setf (gethash key dict)
-                          arg)
-                    t))))))
+    ≡ (length (remove-duplicates seq))
+
+Note the closure returned by `distinct' changes how it tracks unique
+items based on the number of items it is tracking, so it is suitable
+for all sizes of set."
+  (unless (hash-table-test-p test)
+    (error "Not a hash table test: ~a" test))
+  (let ((set '())
+        (set-len 0)
+        (dict nil)
+        (test (ensure-function test)))
+    (declare ((integer 0 20) set-len))
+    (flet ((dict-init ()
+             (set-hash-table (shiftf set nil) :test test :strict nil)))
+      (declare (dynamic-extent #'dict-init))
+      (with-item-key-function (key)
+        (lambda (arg)
+          (let ((key (key arg)))
+            ;; Swap the representation based on the number of items
+            ;; being tracked.
+            (if (< set-len 20)
+                (if (member key set :test test)
+                    (values nil nil)
+                    (progn
+                      (push key set)
+                      (incf set-len)
+                      (values arg t)))
+                (let ((dict (or dict (setf dict (dict-init)))))
+                  (declare (hash-table dict))
+                  (let ((key (key arg)))
+                    (if (nth-value 1 (gethash key dict))
+                        (values nil nil)
+                        (progn
+                          (setf (gethash key dict) t)
+                          (values arg t))))))))))))
 
 (defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.

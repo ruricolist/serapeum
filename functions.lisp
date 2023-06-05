@@ -208,12 +208,11 @@ for all sizes of set."
                                (values arg t)))
                          (let ((dict (or dict (setf dict (dict-init)))))
                            (declare (hash-table dict))
-                           (let ((key (key arg)))
-                             (if (nth-value 1 (gethash key dict))
-                                 (values nil nil)
-                                 (progn
-                                   (setf (gethash key dict) t)
-                                   (values arg t)))))))))))
+                           (if (nth-value 1 (gethash key dict))
+                               (values nil nil)
+                               (progn
+                                 (setf (gethash key dict) t)
+                                 (values arg t))))))))))
       (declare (dynamic-extent #'dict-init))
       (let ((distinct (distinct)))
         (if (not synchronized) distinct

@@ -335,7 +335,7 @@ symbol)."
          ,@(when temps
              (unsplice
               `(declare (function ,@temps))))
-         (comment "Hidden variable bindings for function values.")
+         (comment "fbind: Hidden variable bindings for function values.")
          (flet (,@(loop for (name lambda) in lambdas
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
@@ -344,14 +344,14 @@ symbol)."
                           collect (build-bind/ftype var temp decls env)))
            #-sbcl (declare (inline ,@(set-difference vars macro-vars)))
            ,@decls
-           (comment "Functions that might be sharp-quoted.")
+           (comment "fbind: Functions that might be sharp-quoted.")
            (macrolet (,@(loop for var in vars
                               for temp in temps
                               when (member var macro-vars)
                                 collect `(,var
                                           (&rest args)
                                           (list* 'funcall ',temp args))))
-             (comment "Macros for functions provably never sharp-quoted.")
+             (comment "fbind: Macros for functions provably never sharp-quoted.")
              ,@body))))))
 
 (defmacro fbind* (bindings &body body &environment env)
@@ -463,23 +463,23 @@ generates another are undefined."
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
        ;; Simple expressions reference functions already defined
        ;; outside of the letrec, so we can handle them with fbind.
-       (comment "Simple")
+       (comment "fbind: Simple")
        (fbind ,simple
          ,@simple-decls
-         (comment "Temps for complex bindings")
+         (comment "fbind: Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
                         collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
-             (comment "Lambdas")
+             (comment "fbind: Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               (comment "Unreferenced")
+               (comment "fbind: Unreferenced")
                (progn ,@(mapcar #'second unref))
-               (comment "Complex")
+               (comment "fbind: Complex")
                (psetf ,@(loop for temp in temps
                               for (nil expr) in complex
                               append `(,temp (ensure-function ,expr))))
@@ -508,21 +508,21 @@ used in successive bindings."
                             `(,var #'invalid)
                             var))
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
-       (comment "Simple bindings")
+       (comment "fbind: Simple bindings")
        (fbind ,simple
          ,@simple-decls
-         (comment "Temps for complex bindings")
+         (comment "fbind: Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
                         collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
-             (comment "Lambdas")
+             (comment "fbind: Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               (comment "Interleave unreferenced and complex bindings in order.")
+               (comment "fbind: Interleave unreferenced and complex bindings in order.")
                ,@(remove nil
                          (loop for (name nil) in bindings
                                append (or (loop for (uname init) in unref
@@ -532,7 +532,7 @@ used in successive bindings."
                                                 for temp in temps
                                                 if (eql cname name)
                                                   return `((setf ,temp (ensure-function ,init)))))))
-               (comment "Set the `env` variables for the lambdas")
+               (comment "fbind: Set the `env` variables for the lambdas")
                (setf ,@(apply #'append env))
                (locally ,@others
                  ,@body))))))))

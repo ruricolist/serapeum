@@ -1813,7 +1813,7 @@ values. Cf. `mvfold'."
            `(reduce ,fn ,seq
                     :from-end ,from-end
                     :initial-value ,(car seeds)))
-          (t (let ((tmps (make-gensym-list (length seeds))))
+          (t (let ((tmps (make-gensym-list (length seeds) (string 'seed))))
                (with-gensyms (item)
                  (rebinding-functions (fn)
                    `(let ,(mapcar #'list tmps seeds)

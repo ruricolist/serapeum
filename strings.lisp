@@ -8,11 +8,11 @@
   #+(or abcl lispworks) (code-char 160))
 
 (defconst whitespace
-  #.(remove-duplicates
-     (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
-                   #\Vt                 ;Vertical tab.
-                   no-break-space)
-             'string))
+  (remove-duplicates
+   (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
+                 #\Vt                   ;Vertical tab.
+                 no-break-space)
+           'string))
   "Whitespace characters.")
 
 (defsubst whitespacep (char)

@@ -123,6 +123,19 @@
                                            #.(code-char #x2029)))
                           :honor-crlf t)))))))
 
+(test compile-fmt-extra-args
+  ;; Test that fmt raises an error/warning for a wrong number of
+  ;; arguments, but only if this Lisp actually checks that in general.
+  (handler-case
+      (compile nil
+               (eval
+                '(lambda () (format nil "~a" "x" "y"))))
+    ((or error warning) ()
+      (signals ((or error warning))
+        (compile nil
+                 (eval
+                  '(lambda () (fmt "~a" "x" "y"))))))))
+
 (test lines/count
   (is (null (lines "" :count 50)))
   (is (null (lines "" :count 0)))

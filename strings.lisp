@@ -639,7 +639,7 @@ Has a compiler macro with `formatter'."
                      (prin1-to-string ,arg))))
                (t
                 `(let (*print-pretty*)
-                   (format nil (formatter ,control-string) ,@args))))
+                   (format nil ,control-string ,@args))))
              `(let (*print-pretty*)
                 (format nil ,control-string ,@args)))))
 

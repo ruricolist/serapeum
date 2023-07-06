@@ -271,3 +271,10 @@
     (with-member-test (mem :key nil :test nil)
       (is-true (mem 1 '(1 2 3)))
       (is-false (mem 4 '(1 2 3))))))
+
+(test intersectionp ()
+  (is (null (intersectionp '() '())))
+  (is (null (intersectionp '(1) '())))
+  (is (null (intersectionp '() '(1))))
+  (is (intersectionp '(1) '(1 2)))
+  (is (intersectionp '(1 2) '(1))))

@@ -393,6 +393,20 @@ presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
         (declare (fixnum length) (list list))
         (aux3 fun list length)))))
 
+(defun intersectionp (list1 list2 &key key test test-not)
+  "Return T if LIST1 and LIST2 intersect.
+Equivalent to `(and (intersection list1 list2) t)`, without
+intermediate consing.
+
+Two empty lists are not considered to intersect."
+
+  (declare (list list1 list2))
+  (when (and list1 list2)
+    (with-member-test (mem :key key :test test :test-not test-not)
+      (dolist (elt list1)
+        (when (mem (key elt) list2)
+          (return t))))))
+
 (defun stable-set-difference (list1 list2 &key key test test-not)
   "Like `set-difference', but preserve the order of LIST1's elements."
   (declare (list list1 list2))

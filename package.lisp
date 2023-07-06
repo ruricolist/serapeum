@@ -385,6 +385,7 @@
    #:plist-keys
    #:plist-values
    #:stable-set-difference
+   #:intersectionp
    ;; Strings.
    #:ascii-char-p
    #:whitespace

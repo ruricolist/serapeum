@@ -754,7 +754,7 @@ WITH-BOOLEAN."
       (let ((test? test)
             (test (or test (gensym (string 'test))))
             (test-not? test-not)
-            (test-not (or test (gensym (string 'test-not))))
+            (test-not (or test-not (gensym (string 'test-not))))
             (key? key)
             (key (or key (gensym (string 'key)))))
         `(let ((,test (canonicalize-test

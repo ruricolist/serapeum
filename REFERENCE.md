@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 476 functions)
+# Function Listing For serapeum (43 files, 477 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -3704,11 +3704,21 @@ Return the values of a plist.
 
 [View source](lists.lisp#L340)
 
+### `(intersectionp list1 list2 &key key test test-not)`
+
+Return T if LIST1 and LIST2 intersect.
+Equivalent to `(and (intersection list1 list2) t)`, without
+intermediate consing.
+
+Two empty lists are not considered to intersect.
+
+[View source](lists.lisp#L396)
+
 ### `(stable-set-difference list1 list2 &key key test test-not)`
 
 Like `set-difference`, but preserve the order of LIST1's elements.
 
-[View source](lists.lisp#L396)
+[View source](lists.lisp#L410)
 
 ## Sequences
 

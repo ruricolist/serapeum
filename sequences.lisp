@@ -45,7 +45,7 @@
            (error "Cannot supply both ~s and ~s to a sequence function"
                   :test :test-not))
           (test (canonicalize test))
-          (test-not (canonicalize test-not))
+          (test-not (complement (canonicalize test-not)))
           (t #'eql))))
 
 (-> key-test (key-designator test-designator &optional test-designator)

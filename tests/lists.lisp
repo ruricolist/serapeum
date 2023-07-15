@@ -256,6 +256,11 @@
     (destructuring-bind (list1 . list2) list1.list2
       (let ((sdiff (stable-set-difference list1 list2)))
         (is (set-equal sdiff (set-difference list1 list2)))
+        (is (every #'< sdiff (rest sdiff)))))
+    (destructuring-bind (list1 . list2) list1.list2
+      (let ((sdiff (stable-set-difference list1 list2
+                                          :test-not (complement #'eql))))
+        (is (set-equal sdiff (set-difference list1 list2 :test-not (complement #'eql))))
         (is (every #'< sdiff (rest sdiff)))))))
 
 (test with-member-test/simple-expansion

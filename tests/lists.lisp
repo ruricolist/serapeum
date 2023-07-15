@@ -258,21 +258,21 @@
         (is (set-equal sdiff (set-difference list1 list2)))
         (is (every #'< sdiff (rest sdiff)))))))
 
-(test with-member-test/simple-expansion ()
+(test with-member-test/simple-expansion
   "Test expansion of with-member-test when speed is not the priority."
   (locally (declare (optimize (safety 3) (speed 0)))
     (with-member-test (mem :key nil :test nil)
       (is-true (mem 1 '(1 2 3)))
       (is-false (mem 4 '(1 2 3))))))
 
-(test with-member-test/complex-expansion ()
+(test with-member-test/complex-expansion
   "Test expansion of with-member-test when speed is the priority."
   (locally (declare (optimize (speed 3) (space 0) (compilation-speed 0) (debug 0)))
     (with-member-test (mem :key nil :test nil)
       (is-true (mem 1 '(1 2 3)))
       (is-false (mem 4 '(1 2 3))))))
 
-(test intersectionp ()
+(test intersectionp
   (is (null (intersectionp '() '())))
   (is (null (intersectionp '(1) '())))
   (is (null (intersectionp '() '(1))))

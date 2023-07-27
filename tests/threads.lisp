@@ -5,6 +5,7 @@
 
 (test count-cpus
   (is (> (count-cpus) 0))
+  (is (> (count-cpus :memoize nil) 0))
   (is (<= (count-cpus :online t)
           (count-cpus))))
 

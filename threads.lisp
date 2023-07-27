@@ -107,7 +107,7 @@ MEMOIZE nil clears any memoized results."
                (or cpu-count
                    (setf cpu-count (count-cpus-cons)))))
           (progn
-            (nix cpu-count online-cpu-count)
+            (setf cpu-count nil online-cpu-count nil)
             (count-cpus))))))
 
 ;;; We need more space for locks than you might expect. In, say, Java,

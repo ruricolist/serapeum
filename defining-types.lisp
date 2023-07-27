@@ -430,11 +430,12 @@ overriding some or all of its slots." type-name)
 
 (defvar *units* (make-hash-table))
 
-(defun intern-unit (name ctor)
-  (synchronized ('*units*)
-    (or (gethash name *units*)
-        (setf (gethash name *units*)
-              (funcall ctor)))))
+(let ((units-lock (bt:make-lock)))
+  (defun intern-unit (name ctor)
+    (bt:with-lock-held (units-lock)
+      (or (gethash name *units*)
+          (setf (gethash name *units*)
+                (funcall ctor))))))
 
 (defmacro defunit (name &optional docstring
                    &environment env)

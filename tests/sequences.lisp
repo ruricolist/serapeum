@@ -143,9 +143,11 @@
   (is (equal '((a b)) (batches '(a b c) 2 :end 2 :even t))))
 
 (test gcp
+  (is (null (gcp nil)))
   (is (equal (gcp '("miss" "molly")) "m")))
 
 (test gcs
+  (is (null (gcs nil)))
   (is (equal (gcs '("how" "now")) "ow")))
 
 (test length<

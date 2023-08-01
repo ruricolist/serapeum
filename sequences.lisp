@@ -833,36 +833,38 @@ From Haskell."
   "The greatest common prefix of SEQS.
 
 If there is no common prefix, return NIL."
-  (let ((test (ensure-function test)))
-    (labels ((gcp (x y)
-               (let ((miss (mismatch x y :test test)))
-                 (cond ((not miss) x)
-                       ((> miss 0) (subseq x 0 miss))
-                       (t nil)))))
-      (block nil
-        (reduce
-         (lambda (x y)
-           (or (gcp x y)
-               (return)))
-         seqs)))))
+  (if (emptyp seqs) nil
+      (let ((test (ensure-function test)))
+        (labels ((gcp (x y)
+                   (let ((miss (mismatch x y :test test)))
+                     (cond ((not miss) x)
+                           ((> miss 0) (subseq x 0 miss))
+                           (t nil)))))
+          (block nil
+            (reduce
+             (lambda (x y)
+               (or (gcp x y)
+                   (return)))
+             seqs))))))
 
 (defun gcs (seqs &key (test #'eql))
   "The greatest common suffix of SEQS.
 
 If there is no common suffix, return NIL."
-  (let ((test (ensure-function test)))
-    (labels ((gcs (x y)
-               (let ((miss (mismatch x y :from-end t :test test)))
-                 (cond ((not miss) x)
-                       ((< miss (length x))
-                        (subseq x miss))
-                       (t nil)))))
-      (block nil
-        (reduce
-         (lambda (x y)
-           (or (gcs x y)
-               (return)))
-         seqs)))))
+  (if (emptyp seqs) nil
+      (let ((test (ensure-function test)))
+        (labels ((gcs (x y)
+                   (let ((miss (mismatch x y :from-end t :test test)))
+                     (cond ((not miss) x)
+                           ((< miss (length x))
+                            (subseq x miss))
+                           (t nil)))))
+          (block nil
+            (reduce
+             (lambda (x y)
+               (or (gcs x y)
+                   (return)))
+             seqs))))))
 
 (-> of-length (array-length) function)
 (defun of-length (length)

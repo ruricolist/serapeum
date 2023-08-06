@@ -31,7 +31,7 @@ Add items with `enq':
 
 Remove an item with `deq':
 
-    (deq (queue 1 2 3)) => 3
+    (deq (queue 1 2 3)) => 1
 
 Prepend an item with `undeq':
 

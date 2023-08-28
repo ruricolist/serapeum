@@ -328,7 +328,7 @@ symbol)."
            (body decls (parse-body body)))
     `(let ,env
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
-       "Hidden variable bindings to close over."
+       (comment "Hidden variable bindings to close over.")
        (let ,(loop for temp in temps
                    for expr in exprs
                    collect `(,temp (ensure-function ,expr)))

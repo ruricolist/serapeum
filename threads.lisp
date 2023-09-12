@@ -178,6 +178,6 @@ object created (as the argument to `bt:make-recursive-lock')."
                   (ensure-monitor object string))))))
 
 (defclass synchronized ()
-  ((monitor :initform (bt:make-recursive-lock)
+  ((monitor :initform (bt:make-recursive-lock "Object monitor")
             :reader monitor))
   (:documentation "Mixin for a class with its own monitor."))

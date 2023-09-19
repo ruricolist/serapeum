@@ -801,6 +801,9 @@ compilation speed over runtime speed, then BODY is only emitted once."
                       (t (macrolet ((,key (x) (list 'funcall ',ukey x)))
                            ,@body)))))))))
 
+(deftype true () '(eql t))
+(deftype false () '(eql nil))
+
 (declaim (ftype (function (t) boolean) true))
 (declaim (inline true))
 (defun true (x)

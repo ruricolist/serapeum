@@ -110,6 +110,7 @@
    #:static-let
    #:static-let*
    ;; Control flow.
+   #:null-if
    #:eval-always
    #:eval-and-compile
    #:no
@@ -294,6 +295,7 @@
    #:values-vector
    #:vector-conc-extend
    ;; Numbers.
+   #:null-if-zero
    #:fixnump
    #:parse-number
    #:parse-real-number
@@ -498,6 +500,7 @@
    #:nsplice-seq
    #:splice-seqf
    #:nsplice-seqf
+   #:null-if-empty
    ;; Generalized arrays.
    #:shape
    #:reshape

@@ -811,3 +811,17 @@
            (rev (reverse sorted)))
       (is (every #'length>= sorted (drop 1 sorted)))
       (is (every #'length<= rev (drop 1 rev))))))
+
+(test null-if-empty
+  (is (null (null-if-empty nil)))
+  (is (null (null-if-empty #())))
+  (is (null (null-if-empty "")))
+  (is (null (null-if-empty (make-octet-vector 0))))
+  (is (null (null-if-empty (make-array 0 :element-type 'bit))))
+  (is (null (null-if-empty (make-array '(0 0)))))
+  (is (null (null-if-empty (make-array 10 :fill-pointer 0))))
+  (is (equal '(1) (null-if-empty '(1))))
+  (is (null (null-if-empty (make-array '(0 0)))))
+  (is (null (null-if-empty (make-hash-table))))
+  (is (null (null-if-empty (dict))))
+  (is (null-if-empty (dict :x 1))))

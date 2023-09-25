@@ -26,6 +26,30 @@
   "Is X a sequence?"
   (typep x 'sequence))
 
+(-> null-if-empty ((or sequence array hash-table))
+    (values (or sequence array hash-table) boolean &optional))
+(defun null-if-empty (xs)
+  "Return nil if XS is empty, XS otherwise.
+If XS was empty the second value is nil; otherwise t.
+
+This function also accepts multidimensional arrays. Arrays are
+considered empty if their total size (from `array-total-size`) is
+zero.
+
+Hash tables are considered empty if their count is 0."
+  (etypecase xs
+    (hash-table
+     (if (zerop (hash-table-count xs))
+         (values nil nil)
+         (values xs t)))
+    (sequence
+     (null-if xs 0 :test #'length=))
+    ;; Handle multidimensional arrays.
+    (array
+     (if (eql (array-total-size xs) 0)
+         (values nil nil)
+         (values xs t)))))
+
 (-> canonicalize-key (key-designator) function)
 (defun canonicalize-key (k)
   (etypecase-of key-designator k

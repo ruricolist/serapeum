@@ -166,3 +166,14 @@
   (for-all ((n (lambda () (random most-positive-fixnum))))
     (is (= (serapeum::digit-length n)
            (length (princ-to-string n))))))
+
+(test null-if-zero
+  (is (null (null-if-zero 0)))
+  (is (null (null-if-zero 0.0)))
+  (is (null (null-if-zero -0.0)))
+  (is (null (null-if-zero -0.0)))
+  (is (null (null-if-zero -0.0s0)))
+  (is (null (null-if-zero 0.0s0)))
+  (is (null (null-if-zero 0.0d0)))
+  (is (null (null-if-zero -0.0d0)))
+  (is (eql 1 (null-if-zero 1))))

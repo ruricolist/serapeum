@@ -4,6 +4,14 @@
   "Same as `(typep N 'fixnum)'."
   (typep n 'fixnum))
 
+(declaim (ftype (function (t) (values (not (member 0 0.0s0 0.0d0 -0.0s0 -0.0d0))
+                                      boolean &optional))
+                null-if-zero))
+(defun null-if-zero (x)
+  "If X is a nonzero number, return it, otherwise return nil.
+The second value is T if X was nonzero."
+  (null-if x 0 :test #'=))
+
 (define-post-modify-macro finc (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
 

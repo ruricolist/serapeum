@@ -21,6 +21,16 @@ From Arc."
 (define-compiler-macro no (x)
   `(not ,x))
 
+(defsubst null-if (arg1 arg2 &key (test #'eql))
+  "Return nil if arguments are equal, ARG1 otherwise.
+Return a second value of nil if the arguments were equal, T
+otherwise.
+
+From SQL."
+  (if (funcall test arg1 arg2)
+      (values nil nil)
+      (values arg1 t)))
+
 (defmacro nor (&rest forms)
   "Equivalent to (not (or ...)).
 

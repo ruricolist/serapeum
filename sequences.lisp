@@ -1212,7 +1212,10 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
   "Return the prefix of SEQ for which PRED returns true."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
-    (ldiff seq (member-if-not pred seq))
+    (let ((pred (ensure-function pred)))
+      (loop for x in seq
+            while (funcall pred x)
+            collect x))
     (let ((end (position-if-not pred seq)))
       (if end (subseq seq 0 end)
           seq))))

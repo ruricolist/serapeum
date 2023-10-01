@@ -482,7 +482,9 @@
    #:split-sequence-if
    #:split-sequence-if-not
    #:take-while
+   #:take-until
    #:drop-while
+   #:drop-until
    #:drop-prefix
    #:ensure-prefix
    #:drop-suffix

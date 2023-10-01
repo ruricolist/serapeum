@@ -1220,6 +1220,11 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
       (if end (subseq seq 0 end)
           seq))))
 
+(-> take-until (function sequence) sequence)
+(defsubst take-until (pred seq)
+  "Like `take-while' with the complement of PRED."
+  (take-while (complement pred) seq))
+
 (-> drop-while (function sequence) sequence)
 (defsubst drop-while (pred seq)
   "Return the largest possible suffix of SEQ for which PRED returns
@@ -1231,8 +1236,13 @@ false when called on the first element."
       (if start (subseq seq start)
           seq))))
 
+(-> drop-until (function sequence) sequence)
+(defsubst drop-until (pred seq)
+  "Like `drop-while' with the complement of PRED."
+  (drop-while (complement pred) seq))
+
 (-> drop-prefix (sequence sequence &key (:test (or symbol function)))
-  sequence)
+    sequence)
 (defun drop-prefix (prefix seq &key (test #'eql))
   "If SEQ starts with PREFIX, remove it."
   (cond ((emptyp prefix) seq)

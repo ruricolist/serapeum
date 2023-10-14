@@ -199,6 +199,7 @@
    #:fnil
    #:mvconstantly
    #:fuel
+   #:do-nothing
    ;; Trees.
    #:reuse-cons
    #:car+cdr

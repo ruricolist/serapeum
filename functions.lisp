@@ -562,3 +562,17 @@ If there are not VALUES, returns nothing."
               (lambda (&rest args)
                 (declare (ignore args))
                 (values ,@temps)))))))
+
+
+(define-compiler-macro do-nothing (&rest args)
+  `(progn ,@args (values)))
+
+(-> do-nothing (&rest t) (values &optional))
+(declaim (inline do-nothing))
+(defun do-nothing (&rest args)
+  "Do nothing and return nothing.
+This function is meant as a placeholder for a function argument.
+
+From LispWorks."
+  (declare (ignore args))
+  (values))

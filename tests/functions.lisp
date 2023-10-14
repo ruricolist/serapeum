@@ -256,3 +256,11 @@
   (let ((fuel (fuel most-positive-double-float)))
     (signals error
       (funcall fuel double-float-epsilon))))
+
+(test do-nothing ()
+  (is (null (do-nothing)))
+  (is (equal '() (multiple-value-list (do-nothing))))
+  ;; Make sure we preserve side effects, in order.
+  (let ((list '()))
+    (do-nothing (push 1 list) (push 2 list))
+    (is (equal list '(2 1)))))

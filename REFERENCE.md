@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 482 functions)
+# Function Listing For serapeum (43 files, 483 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2110,6 +2110,15 @@ Like `constantly`, but returns all of VALUES as multiple values.
 If there are not VALUES, returns nothing.
 
 [View source](functions.lisp#L536)
+
+### `(do-nothing &rest args)`
+
+Do nothing and return nothing.
+This function is meant as a placeholder for a function argument.
+
+From LispWorks.
+
+[View source](functions.lisp#L572)
 
 ## Trees
 

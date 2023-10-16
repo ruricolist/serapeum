@@ -523,7 +523,10 @@
    ;; Units.
    #:si-prefix
    #:human-size-formatter
-   #:format-human-size))
+   #:format-human-size
+   ;; Left
+   #:letf
+   #:letf*))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

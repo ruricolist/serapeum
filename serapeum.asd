@@ -102,7 +102,8 @@
                  (:file "dispatch-case")
                  (:file "range" :depends-on ("dispatch-case"))
                  (:file "generalized-arrays" :depends-on ("range"))
-                 (:file "units")))
+                 (:file "units")
+                 (:file "letf")))
                (:module "contrib"
                 :components
                 ((:file "hooks")))))

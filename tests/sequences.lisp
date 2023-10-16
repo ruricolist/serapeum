@@ -122,6 +122,15 @@
       (is (>= j (length (runs ns :test #'< :count j))))
       (is (>= j (length (runs ns-list :test #'< :count j)))))))
 
+(test runs-compare-last
+  (is (equal '(()) (runs '() :compare-last t)))
+  (is (equalp '((1)) (runs '(1) :compare-last t)))
+  (is (equalp '(#()) (runs #() :compare-last t)))
+  (is (equalp '(#(1)) (runs #(1) :compare-last t)))
+  (is (seq= (runs #(10 2 3 2 1) :test #'> :compare-last t)
+            (runs '(10 2 3 2 1) :test #'> :compare-last t)
+            '((10 2) (3 2 1)))))
+
 (test batches
   (is (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
   (is (equal '("ab" "cd" "e") (batches "abcde" 2)))

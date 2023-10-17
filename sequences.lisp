@@ -650,28 +650,30 @@ instead. However TEST must be acceptable as the `:test' argument to
                                (cdr list))
                           (let ((x (caar runs)))
                             (if (test x y)
-                                (rec (cons (if compare-last
-                                               (cons y (car runs))
-                                               (list* x y (cdar runs)))
-                                           (cdr runs))
+                                (rec (cons
+                                      (boolean-if compare-last
+                                                  (cons y (car runs))
+                                                  (list* x y (cdar runs)))
+                                      (cdr runs))
                                      count
                                      (rest list))
                                 (if (zerop (1- count))
                                     runs
-                                    (rec (list* (list y)
-                                                (if compare-last
-                                                    (nreverse (car runs))
-                                                    (cons (caar runs)
-                                                          (nreverse (cdar runs))))
-                                                (cdr runs))
+                                    (rec (list*
+                                          (list y)
+                                          (boolean-if compare-last
+                                                      (nreverse (car runs))
+                                                      (cons (caar runs)
+                                                            (nreverse (cdar runs))))
+                                          (cdr runs))
                                          (1- count)
                                          (rest list)))))))))))
         (nreverse
-         (if compare-last
-             (cons (nreverse (car runs)) (cdr runs))
-             (cons (cons (caar runs)
-                         (nreverse (cdar runs)))
-                   (cdr runs))))))))
+         (boolean-if compare-last
+                     (cons (nreverse (car runs)) (cdr runs))
+                     (cons (cons (caar runs)
+                                 (nreverse (cdar runs)))
+                           (cdr runs))))))))
 
 (defun runs (seq &key (start 0) end (key #'identity) (test #'eql) compare-last
                    (count most-positive-fixnum))

@@ -425,6 +425,8 @@ Even more usefully, we don’t have to worry about bugs caused by misspellings:
 => No warning
 ```
 
+[This article](https://dev.to/vindarel/compile-time-exhaustiveness-checking-in-common-lisp-with-serapeum-5c5i) has more about exhaustiveness checking in Serapeum.
+
 
 ## CLOS
 

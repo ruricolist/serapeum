@@ -49,18 +49,30 @@ Literal keywords, numbers, and characters are also treated as `eql' type specifi
 (defpattern tuple (&rest args)
   `(list ,@args))
 
-(deftype -> (args &optional values)
-  "The type of a function from ARGS to VALUES."
-  `(function ,args ,@(when values
-                       (list values))))
+(deftype -> (arg-typespec &optional value-typespec)
+  "The type of a function from ARG-TYPESPEC to VALUE-TYPESPEC.
+VALUE-TYPESPEC must specify all values returned."
+  (let ((value-typespec
+          (match value-typespec
+            (() nil)
+            ((list* 'values value-types)
+             (list
+              (if (intersection value-types lambda-list-keywords)
+                  value-typespec
+                  (append value-typespec '(&optional)))))
+            (t (list (list 'values value-typespec '&optional))))))
+    `(function ,arg-typespec ,@value-typespec)))
 
-(defmacro -> (function (&rest args) &optional values)
-  "Declaim the ftype of FUNCTION from ARGS to VALUES.
+(defmacro -> (function (&rest arg-typespec) &optional value-typespec)
+  "Declaim the ftype of FUNCTION from ARG-TYPESPEC to VALUE-TYPESPEC.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
-     (defun mod-fixnum+ (x y) ...)"
-  `(declaim (ftype (-> (,@args) ,@(when values
-                                    (list values)))
+     (defun mod-fixnum+ (x y) ...)
+
+VALUE-TYPESPEC must specify all values returned."
+  `(declaim (ftype (-> (,@arg-typespec)
+                       ,@(when value-typespec
+                           (list value-typespec)))
                    ,function)))
 
 (defmacro declaim-freeze-type (&rest types)

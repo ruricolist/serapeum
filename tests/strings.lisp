@@ -136,6 +136,19 @@
                  (eval
                   '(lambda () (fmt "~a" "x" "y"))))))))
 
+(test fmt-compiler-macro-print-numeric
+  ;; Test that the compiler macro for fmt handles numeric types correctly.
+  (dolist (*read-default-float-format* '(single-float double-float))
+    (dolist (float '(0.0s0 0.0d0))
+      (is (equal (format nil "~f" float) (fmt "~f" float)))))
+  (dolist (*read-default-float-format* '(single-float double-float))
+    (dolist (float '(0.0s0 0.0d0))
+      (is (equal (format nil "~g" float)
+                 (fmt "~g" float)))))
+  (is (equal "10"
+             (let ((*print-base* 8))
+               (fmt "~d" 10)))))
+
 (test lines/count
   (is (null (lines "" :count 50)))
   (is (null (lines "" :count 0)))

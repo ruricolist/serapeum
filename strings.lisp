@@ -627,16 +627,29 @@ Has a compiler macro with `formatter'."
                ((not (find #\~ control-string))
                 `(copy-seq ,control-string))
                ;; Same as `princ'.
-               ((member control-string '("~a" "~d" "~f" "~g")
-                        :test #'equalp)
+               ((equalp control-string "~a")
                 (destructuring-bind (arg) args
-                  `(let (*print-pretty*)
-                     (princ-to-string ,arg))))
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape nil
+                    :readably nil)))
                ;; Same as `prin1'.
                ((equalp control-string "~s")
                 (destructuring-bind (arg) args
-                  `(let (*print-pretty*)
-                     (prin1-to-string ,arg))))
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape t)))
+               ((equalp control-string "~s")
+                (destructuring-bind (arg) args
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape nil
+                    :radix nil
+                    :base 10
+                    :readably nil)))
                (t
                 `(let (*print-pretty*)
                    (format nil ,control-string ,@args))))

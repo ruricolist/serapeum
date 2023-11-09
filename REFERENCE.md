@@ -4938,7 +4938,7 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
-[View source](strings.lisp#L682)
+[View source](strings.lisp#L695)
 
 ### `(ellipsize string n &key ellipsis)`
 
@@ -4953,31 +4953,31 @@ started.
 
 From Arc.
 
-[View source](strings.lisp#L711)
+[View source](strings.lisp#L724)
 
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
 Is PREFIX a prefix of STRING?
 
-[View source](strings.lisp#L755)
+[View source](strings.lisp#L768)
 
 ### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
-[View source](strings.lisp#L755)
+[View source](strings.lisp#L768)
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
 Is SUFFIX a suffix of STRING?
 
-[View source](strings.lisp#L775)
+[View source](strings.lisp#L788)
 
 ### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L775)
+[View source](strings.lisp#L788)
 
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
@@ -4990,13 +4990,13 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L795)
+[View source](strings.lisp#L808)
 
 ### `(string-contains-p substring string &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L795)
+[View source](strings.lisp#L808)
 
 ### `(string~= token string &key start1 end1 start2 end2)`
 
@@ -5006,13 +5006,13 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L817)
+[View source](strings.lisp#L830)
 
 ### `(string-token-p token string &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L817)
+[View source](strings.lisp#L830)
 
 ### `(string-replace-all old string new &key start end stream count)`
 
@@ -5039,13 +5039,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L851)
+[View source](strings.lisp#L864)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L905)
+[View source](strings.lisp#L918)
 
 ### `(chomp string &optional suffixes)`
 
@@ -5057,13 +5057,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L914)
+[View source](strings.lisp#L927)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L943)
+[View source](strings.lisp#L956)
 
 ### `(string+ &rest args)`
 
@@ -5088,7 +5088,7 @@ empty string:
 
 This utility is inspired by the utility of the same name in Allegro.
 
-[View source](strings.lisp#L979)
+[View source](strings.lisp#L992)
 
 ## Vectors
 

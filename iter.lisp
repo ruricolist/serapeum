@@ -74,7 +74,7 @@ are being evaluated, and it is safe to close over the arguments."
                          (let ,(mapcar #'list vars temps)
                            ,@body))))))))))
 
-(defmacro with-syms (syms &body body)
+(defmacro with-current-package-symbols (syms &body body)
   "Like `with-gensyms', but binds SYMS in the current package."
   `(let ,(loop for sym in syms
                if (symbolp sym)
@@ -86,7 +86,7 @@ are being evaluated, and it is safe to close over the arguments."
 (defmacro collecting* (&body body)
   "Intern COLLECT in the current package and bind it as a collector
 with MACROLET."
-  (with-syms (collect)
+  (with-current-package-symbols (collect)
     (with-gensyms (head tail)
       `(let* ((,head (list nil))
               (,tail ,head))
@@ -124,7 +124,7 @@ can pass the collector around or return it like any other function."
 (defmacro collecting (&body body)
   "Like `with-collector', with the collector bound to the result of
 interning `collect' in the current package."
-  (with-syms (collect)
+  (with-current-package-symbols (collect)
     `(with-collector (,collect)
        ,@body)))
 
@@ -166,7 +166,7 @@ Return the total."
   ;; float.
   (let ((zero (if (numberp (first body)) (pop body) 0)))
     (with-gensyms (n x)
-      (with-syms (sum)
+      (with-current-package-symbols (sum)
         `(the number
               (let ((,n ,zero))
                 (declare (number ,n))

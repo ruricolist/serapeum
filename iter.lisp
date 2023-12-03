@@ -165,13 +165,14 @@ Return the total."
   ;; TODO This should be numerically stable, at least if the zero is a
   ;; float.
   (let ((zero (if (numberp (first body)) (pop body) 0)))
-    (with-gensyms (n x)
+    (with-gensyms (running-total x x-supplied?)
       (with-current-package-symbols (sum)
-        `(the number
-              (let ((,n ,zero))
-                (declare (number ,n))
-                (flet ((,sum (,x)
-                         (incf ,n ,x)))
-                  (declare (ignorable (function ,sum)))
-                  ,@body)
-                ,n))))))
+        `(let ((,running-total ,zero))
+           (declare (number ,running-total))
+           (flet ((,sum (&optional (,x 0 ,x-supplied?))
+                    (if ,x-supplied?
+                        (incf ,running-total ,x)
+                        ,running-total)))
+             (declare (ignorable (function ,sum)))
+             ,@body)
+           (the number ,running-total))))))

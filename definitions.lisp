@@ -219,6 +219,13 @@ as its documentation.
 I believe the name comes from Edi Weitz."
   `(progn
      (defvar ,var)
+     (setf (documentation ',var 'variable) ,docstring)
+     ',var))
+
+(defmacro defparameter-unbound (var &body (docstring))
+  "Like `defvar-unbound', but ensures VAR is unbound when evaluated."
+  `(progn
+     (defvar ,var)
      (makunbound ',var)
      (setf (documentation ',var 'variable) ,docstring)
      ',var))

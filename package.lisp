@@ -77,6 +77,7 @@
    #:define-values
    #:defplace
    #:defvar-unbound
+   #:defparameter-unbound
    #:defloop
    ;; Defining types.
    #:read-eval-prefix

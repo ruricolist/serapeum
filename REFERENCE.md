@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 483 functions)
+# Function Listing For serapeum (43 files, 484 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -719,12 +719,18 @@ I believe the name comes from Edi Weitz.
 
 [View source](definitions.lisp#L215)
 
+### `(defparameter-unbound var &body (docstring))`
+
+Like `defvar-unbound`, but ensures VAR is unbound when evaluated.
+
+[View source](definitions.lisp#L225)
+
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L226)
+[View source](definitions.lisp#L233)
 
 ## Defining Types
 

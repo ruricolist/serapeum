@@ -201,6 +201,7 @@
    #:mvconstantly
    #:fuel
    #:do-nothing
+   #:repeat-until-stable
    ;; Trees.
    #:reuse-cons
    #:car+cdr

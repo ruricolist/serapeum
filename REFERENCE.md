@@ -2126,6 +2126,15 @@ From LispWorks.
 
 [View source](functions.lisp#L572)
 
+### `(repeat-until-stable fn x &key (test 'eql) max-depth)`
+
+Repeatedly call a single-argument function FN until the result stays the same (equal
+according to TEST). It will call `(fn x)`, then `(fn (fn x))` etc. If MAX-DEPTH
+is specified, then FN will be called at most MAX-DEPTH times, even if the result
+hasn't stabilized.
+
+[View source](functions.lisp#L580)
+
 ## Trees
 
 ### `(reuse-cons x y x-y)`

@@ -576,3 +576,16 @@ This function is meant as a placeholder for a function argument.
 From LispWorks."
   (declare (ignore args))
   (values))
+
+(defloop repeat-until-stable (fn x &key (test 'eql) max-depth)
+  "Takes a single-argument FN and calls (fn x), then (fn (fn x)), and so on
+until the result doesn't change according to TEST. If MAX-DEPTH is specified
+then FN will be called at most MAX-DEPTH times even if the result is still changing."
+  (if (eql 0 max-depth)
+      x
+      (let ((next (funcall fn x)))
+        (if (funcall test next x)
+            x
+            (repeat-until-stable fn next :test test
+                                         :max-depth (when max-depth
+                                                      (1- max-depth)))))))

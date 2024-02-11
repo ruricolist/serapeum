@@ -264,3 +264,12 @@
   (let ((list '()))
     (do-nothing (push 1 list) (push 2 list))
     (is (equal list '(2 1)))))
+
+(test repeat-until-stable
+  (flet ((herons-method (S)
+           "Return a function that iteratively estimates the square root of S."
+           (lambda (n)
+             (/ (+ n (/ S n))
+                2d0))))
+    (is (= 2.23606797749979d0 (repeat-until-stable (herons-method 5) 7)))
+    (is (= 3.162319422150883d0 (repeat-until-stable (herons-method 10) 5 :max-depth 3)))))

@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 484 functions)
+# Function Listing For serapeum (43 files, 485 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2126,12 +2126,11 @@ From LispWorks.
 
 [View source](functions.lisp#L572)
 
-### `(repeat-until-stable fn x &key (test 'eql) max-depth)`
+### `(repeat-until-stable fn x &key test max-depth)`
 
-Repeatedly call a single-argument function FN until the result stays the same (equal
-according to TEST). It will call `(fn x)`, then `(fn (fn x))` etc. If MAX-DEPTH
-is specified, then FN will be called at most MAX-DEPTH times, even if the result
-hasn't stabilized.
+Takes a single-argument FN and calls (fn x), then (fn (fn x)), and so on
+until the result doesn't change according to TEST. If MAX-DEPTH is specified
+then FN will be called at most MAX-DEPTH times even if the result is still changing.
 
 [View source](functions.lisp#L580)
 

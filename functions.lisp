@@ -577,22 +577,29 @@ From LispWorks."
   (declare (ignore args))
   (values))
 
+(-> repeat-until-stable ((or symbol function) t
+                         &key (:test (or symbol function))
+                         (:max-depth (or null (integer 0))))
+    (values t (or null (integer 0))))
 (defun repeat-until-stable (fn x &key (test 'eql) max-depth)
   "Takes a single-argument FN and calls (fn x), then (fn (fn x)), and so on
 until the result doesn't change according to TEST. If MAX-DEPTH is specified
-then FN will be called at most MAX-DEPTH times even if the result is still changing."
+then FN will be called at most MAX-DEPTH times even if the result is still changing.
+
+Returns two values, the stable result of FN and the remainder of
+MAX-DEPTH. \(If this value is 0, the result is unstable.)"
   (declare ((or symbol function) fn test)
-           ((or (integer *) null) max-depth))
+           ((or (integer 0) null) max-depth))
   (let ((fn (ensure-function fn)))
     (with-two-arg-test (test)
       (with-boolean (max-depth)
         (nlet repeat-until-stable ((x x)
                                    (max-depth max-depth))
           (if (eql 0 max-depth)
-              x
+              (values x max-depth)
               (let ((next (funcall fn x)))
                 (if (funcall test next x)
-                    x
+                    (values x max-depth)
                     (repeat-until-stable next
                                          (boolean-when max-depth
                                            (1- max-depth)))))))))))

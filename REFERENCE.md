@@ -2132,7 +2132,10 @@ Takes a single-argument FN and calls (fn x), then (fn (fn x)), and so on
 until the result doesn't change according to TEST. If MAX-DEPTH is specified
 then FN will be called at most MAX-DEPTH times even if the result is still changing.
 
-[View source](functions.lisp#L580)
+Returns two values, the stable result of FN and the remainder of
+MAX-DEPTH. (If this value is 0, the result is unstable.)
+
+[View source](functions.lisp#L584)
 
 ## Trees
 

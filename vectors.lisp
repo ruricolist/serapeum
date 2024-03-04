@@ -193,3 +193,18 @@ Returns VECTOR."
              (incf (fill-pointer vector) len2)
              (replace vector new-elements :start1 len1))))
   vector)
+
+(defun vector-from-fn (fn length &rest kwargs &key &allow-other-keys)
+  "Initialize a vector by calling FN on each index.
+The value of FN at each index becomes the value of the array at that
+index.
+
+If you just want a vector where each element is the same as its index,
+use `range' instead."
+  (declare (array-index length))
+  (let ((fn (ensure-function fn))
+        (v (apply #'make-array length kwargs)))
+    (with-vector-dispatch () v
+      (loop for i of-type array-index from 0 below (length v)
+            do (setf (vref v i)
+                     (funcall fn i))))))

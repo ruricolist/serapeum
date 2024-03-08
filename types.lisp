@@ -203,11 +203,11 @@ From ISLISP."
      #+sbcl
      ;; For SBCL, create a temporary binding so SBCL will print a
      ;; warning if it can infer the declared type is wrong.
-     (with-unique-names (temp)
-       `(let ((,temp ,form))
-          (declare (type ,type-spec ,temp))
+     (with-unique-names (assure-temp)
+       `(let ((,assure-temp ,form))
+          (declare (type ,type-spec ,assure-temp))
           ;; `values' is hand-holding for SBCL.
-          (the ,type-spec (values (require-type ,temp ',type-spec)))))
+          (the ,type-spec (values (require-type ,assure-temp ',type-spec)))))
      #-sbcl
      `(the ,type-spec (require-type ,form ',type-spec)))))
 

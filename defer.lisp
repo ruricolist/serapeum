@@ -96,6 +96,10 @@ interrupted."
   "Define a single function call as an uncondiional scope
 guard.
 
+    (defer (fn x y z))
+    ≅ (with-scope-guard (:on :exit)
+        (fn x y z))
+
 The function's arguments are executed immediately, but the
 function itself is not called until the scope guard is run."
   (with-unique-names (temp-args)

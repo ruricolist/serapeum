@@ -41,13 +41,13 @@
       (execute-scope-guards (rest scope-guards))))
   (values))
 
-(defmacro unwind-protect* (protected &body cleanup)
+(defmacro unwind-protect/without-interrupts (protected &body cleanup)
   "Like `unwind-protect', but try to guarantee cleanup forms cannot be
 interrupted."
   #+sbcl
   `(sb-sys:without-interrupts
      (unwind-protect
-          (sb-sys:with-local-interrupts
+          (sb-sys:without-interrupts
             ,protected)
        ,@cleanup))
   ;; CCL at least guarantees no interrupts in cleanup. TODO Does
@@ -62,11 +62,11 @@ interrupted."
   (with-unique-names (guarded-scope)
     `(let* ((,guarded-scope (make-guarded-scope))
             (*guarded-scope* ,guarded-scope))
-       (unwind-protect*
-           (multiple-value-prog1
-               (locally ,@body)
-             (setf (guard-scope-success ,guarded-scope) t))
-         (execute-scope-guards ,guarded-scope)))))
+       (unwind-protect/without-interrupts
+        (multiple-value-prog1
+            (locally ,@body)
+          (setf (guard-scope-success ,guarded-scope) t))
+        (execute-scope-guards ,guarded-scope)))))
 
 (defmacro with-scope-guard ((&key (on :exit)) &body body)
   (with-unique-names (guarded-scope)

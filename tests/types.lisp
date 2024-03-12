@@ -17,6 +17,11 @@
   (is (typep (list :name 1 #\a 'x)
              '(tuple :name 1 #\a 'x))))
 
+(test function-type-declaration
+  (finishes
+    (-> test-function135345 (integer) integer)
+    (-> (test-function257357 test-function3346356) (integer) integer)))
+
 (test supertypep
   (is (supertypep 'rational 'integer))
   (is (supertypep 'integer 'integer)))

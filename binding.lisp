@@ -290,12 +290,18 @@ Also, this version makes the bindings immutable."
                   ((list* (and var (type symbol)) clauses)
                    `(and ,var ,@(expand clauses body)))
                   ((list* (list var expr) clauses)
-                   (multiple-value-bind (local other)
-                       (partition-declarations (list var) decls env)
-                     `(let1 ,var ,expr
-                        ,@local
-                        (and ,var ,@(expand clauses
-                                            (append other body))))))
+                   (let ((temp (gensym (string var))))
+                     (multiple-value-bind (local-decls other-decls)
+                         (partition-declarations (list var) decls env)
+                       ;; The use of the temporary here is so we still
+                       ;; get style warnings if the variable is
+                       ;; unused.
+                       `(let* ((,temp ,expr)
+                               (,var ,temp))
+                          ,@local-decls
+                          (and ,temp
+                               ,@(expand clauses
+                                         (append other-decls body)))))))
                   ((list* (list expr) clauses)
                    `(and ,expr ,@(expand clauses body)))))))
       (car (expand clauses body)))))

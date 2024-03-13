@@ -160,3 +160,10 @@
     (expect  '(let ((x 0)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) nil)
     (expect  '(let ((x nil)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) nil)
     (expect  '(let ((x 3)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) (/ 3 2))))
+
+#+(or sbcl ccl)
+(test and-let-unused ()
+  (signals style-warning
+    (eval `(and-let* ((x 1)
+                      (y 2))
+             x))))

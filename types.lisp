@@ -54,14 +54,23 @@ Literal keywords, numbers, and characters are also treated as `eql' type specifi
   `(function ,args ,@(when values
                        (list values))))
 
-(defmacro -> (function (&rest args) &optional values)
-  "Declaim the ftype of FUNCTION from ARGS to VALUES.
+(defmacro -> (functions (&rest args) &optional values)
+  "Declaim the ftype of one or multiple FUNCTIONS from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
-     (defun mod-fixnum+ (x y) ...)"
+     (defun mod-fixnum+ (x y) ...)
+
+     (-> (mod-float+ mod-single-float+) (float float) float)
+     (defun mod-float+ (x y) ...)
+     (defun mode-single-float+ (x y) ...)"
   `(declaim (ftype (-> (,@args) ,@(when values
                                     (list values)))
-                   ,function)))
+		   ,@(if (consp functions)
+			 (if (find-symbol (symbol-name (first functions))
+					  :cl)
+			     (list functions)
+			     functions)
+			 (list functions)))))
 
 (defmacro declaim-freeze-type (&rest types)
   "Declare that TYPES is not going to change.

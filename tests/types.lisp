@@ -17,6 +17,16 @@
   (is (typep (list :name 1 #\a 'x)
              '(tuple :name 1 #\a 'x))))
 
+(test function-type-declaration
+  (is (equalp (macroexpand-1 '(-> function-name-1 (integer) integer))
+	      '(declaim (ftype (-> (integer) integer) function-name-1))))
+  (is (equalp (macroexpand-1 '(-> (function-name-2 function-name-3) (integer) integer))
+	      '(declaim (ftype (-> (integer) integer) function-name-2 function-name-3))))
+  (is (equalp (macroexpand-1 '(-> (setf function-name-4) (real) real))
+	      '(declaim (ftype (-> (real) real) (setf function-name-4)))))
+  (is (equalp (macroexpand-1 '(-> (function-name-5 (setf function-name-6)) (real) real))
+	      '(declaim (ftype (-> (real) real) function-name-5 (setf function-name-6))))))
+
 (test supertypep
   (is (supertypep 'rational 'integer))
   (is (supertypep 'integer 'integer)))

@@ -428,6 +428,33 @@ Even more usefully, we don’t have to worry about bugs caused by misspellings:
 [This article](https://dev.to/vindarel/compile-time-exhaustiveness-checking-in-common-lisp-with-serapeum-5c5i) has more about exhaustiveness checking in Serapeum.
 
 
+## Defer, scope guards, and RAII
+
+Some programming languages provide a way to register code to run later. Typically the programmer registers how to release a resource at the time the resource is allocated. Some languages provide this feature along lexical scopes using special syntax (Go’s and Zig’s `defer`, D’s `scope_guard`) and other languages (C++, Rust) provide it along lifetimes (“RAII”) but limit it to objects with special methods (destructors, `Drop`).
+
+Serapeum’s implementation looks like the Go/Zig/D style:
+
+``` lisp
+(with-guarded-scope ()
+ (local
+   (def x (open "foo"))
+   (defer (close x))
+   ...
+   ;; `x` is implicitly closed at the end of the block.
+))
+```
+
+But actually, Serapeum scope guards are tied to *dynamic* rather than *lexical* extents, so they implement the full generality of RAII:
+
+``` lisp
+(defun open-managed-file (&rest args)
+ (let ((handle (apply #'open args)))
+   (defer (close handle))
+   handle))
+```
+
+This is useful for working with FFIs.
+
 ## CLOS
 
 Serapeum includes some utilities for CLOS. These utilities do nothing

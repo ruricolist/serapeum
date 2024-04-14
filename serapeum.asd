@@ -15,6 +15,7 @@
                "string-case"
                "parse-number"
                ;;; Portability libraries.
+               "exit-hooks"
                "trivial-garbage"
                "bordeaux-threads"
                "parse-declarations-1.0"

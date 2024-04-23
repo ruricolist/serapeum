@@ -521,6 +521,18 @@ Burson."
      (ecase ,var
        ,@cases)))
 
+(defmacro typecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
+     (typecase ,var
+       ,@cases)))
+
+(defmacro etypecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
+     (etypecase ,var
+       ,@cases)))
+
 (defmacro comment (&body body)
   "A macro that ignores its body and does nothing. Useful for
 comments-by-example.

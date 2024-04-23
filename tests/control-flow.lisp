@@ -197,6 +197,27 @@
     (ecase-let (x 17)
       (0 x) (1 (1+ x)))))
 
+(test typecase-let
+  (is (eql 2
+	   (typecase-let (x 2)
+	     (string 20)
+	     (integer x))))
+  (is (string= "test-here"
+	       (typecase-let (y "test")
+		 (integer "not")
+		 (string (concatenate 'string y "-here"))))))
+
+(test etypecase-let
+  (is (eql 2
+	   (etypecase-let (x 'asdf)
+	     (string 20)
+	     (integer x)
+	     (symbol 2))))
+  (signals type-error
+    (etypecase-let (y 'test-symbol)
+      (integer "not")
+      (string (concatenate 'string y "-here")))))
+
 (test comment
   (is-false (comment "This is a comment")))
 

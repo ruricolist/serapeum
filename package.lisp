@@ -145,7 +145,9 @@
    #:ecase-let
    #:cond-let
    #:case-let
+   #:ccase-let
    #:typecase-let
+   #:ctypecase-let
    #:etypecase-let
    #:bcond
    #:comment

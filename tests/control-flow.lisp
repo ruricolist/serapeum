@@ -189,6 +189,14 @@
            (case-let (x 16)
              (0 3) (1 (1+ x)) (t 5)))))
 
+(test ccase-let
+  (is (eql 2
+           (ccase-let (x 1)
+             (0 3) (1 (1+ x)) (t 5))))
+  (signals type-error
+    (ccase-let (x 17)
+      (0 x) (1 (1+ x)))))
+
 (test ecase-let
   (is (eql 2
            (ecase-let (x 1)
@@ -206,6 +214,17 @@
 	       (typecase-let (y "test")
 		 (integer "not")
 		 (string (concatenate 'string y "-here"))))))
+
+(test ctypecase-let
+  (is (eql 'asdf
+	   (ctypecase-let (x 'asdf)
+	     (string 20)
+	     (integer :sdf)
+	     (symbol x))))
+  (signals type-error
+    (ctypecase-let (y 'test-symbol)
+      (integer "not")
+      (string (concatenate 'string y "-here")))))
 
 (test etypecase-let
   (is (eql 2

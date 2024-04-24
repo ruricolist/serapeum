@@ -27,3 +27,19 @@ jobs:
         run: |
           PATH="~/.roswell/bin:$PATH"
           run-fiveam -l serapeum/tests 'serapeum.tests::serapeum'
+  test-clasp:
+    name: clasp in Docker
+    runs-on: ubuntu-latest
+    container: ghcr.io/clasp-developers/clasp:latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Compile Serapeum
+        env:
+          HOME: /home/app
+        run: |
+          clasp --eval "(handler-case (ql:quickload :serapeum) (error () (uiop:quit 1)))" --quit
+      - name: Test Serapeum
+        env:
+          HOME: /home/app
+        run: |
+          clasp --eval "(handler-case (asdf:test-system :serapeum) (error () (uiop:quit 1)))" --quit

@@ -515,6 +515,12 @@ Burson."
      (case ,var
        ,@cases)))
 
+(defmacro ccase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable."
+  `(let ((,var ,expr))
+     (ccase ,var
+       ,@cases)))
+
 (defmacro ecase-let ((var expr) &body cases)
   "Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only."
   `(let1 ,var ,expr
@@ -525,6 +531,12 @@ Burson."
   "Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only."
   `(let1 ,var ,expr
      (typecase ,var
+       ,@cases)))
+
+(defmacro ctypecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable."
+  `(let ((,var ,expr))
+     (ctypecase ,var
        ,@cases)))
 
 (defmacro etypecase-let ((var expr) &body cases)

@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 487 functions)
+# Function Listing For serapeum (43 files, 489 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -1343,23 +1343,35 @@ Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
 [View source](control-flow.lisp#L512)
 
+### `(ccase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable.
+
+[View source](control-flow.lisp#L518)
+
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L518)
+[View source](control-flow.lisp#L524)
 
 ### `(typecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L524)
+[View source](control-flow.lisp#L530)
+
+### `(ctypecase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable.
+
+[View source](control-flow.lisp#L536)
 
 ### `(etypecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L530)
+[View source](control-flow.lisp#L542)
 
 ### `(comment &body body)`
 
@@ -1371,13 +1383,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L536)
+[View source](control-flow.lisp#L548)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L546)
+[View source](control-flow.lisp#L558)
 
 ### `(nix &rest places)`
 
@@ -1388,7 +1400,7 @@ If there is more than one PLACE, return their old values as multiple values.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L560)
+[View source](control-flow.lisp#L572)
 
 ### `(ensure place &body newval)`
 
@@ -1402,14 +1414,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L572)
+[View source](control-flow.lisp#L584)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L604)
+[View source](control-flow.lisp#L616)
 
 ### `(~> needle &rest holes)`
 
@@ -1423,14 +1435,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L676)
+[View source](control-flow.lisp#L688)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L694)
+[View source](control-flow.lisp#L706)
 
 ### `(nest &rest things)`
 
@@ -1464,7 +1476,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L714)
+[View source](control-flow.lisp#L726)
 
 ### `(select keyform &body clauses)`
 
@@ -1484,7 +1496,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L749)
+[View source](control-flow.lisp#L761)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1494,7 +1506,7 @@ Note that (unlike `case-using`), FN is not evaluated.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L768)
+[View source](control-flow.lisp#L780)
 
 ### `(sort-values pred &rest values)`
 
@@ -1506,7 +1518,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L887)
+[View source](control-flow.lisp#L899)
 
 ### `(eq* &rest xs)`
 
@@ -1524,7 +1536,7 @@ equivalent under `eq`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L958)
+[View source](control-flow.lisp#L970)
 
 ### `(eql* &rest xs)`
 
@@ -1542,7 +1554,7 @@ equivalent under `eql`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L960)
+[View source](control-flow.lisp#L972)
 
 ### `(equal* &rest xs)`
 
@@ -1560,7 +1572,7 @@ equivalent under `equal`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L962)
+[View source](control-flow.lisp#L974)
 
 ### `(equalp* &rest xs)`
 
@@ -1578,14 +1590,14 @@ equivalent under `equalp`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L964)
+[View source](control-flow.lisp#L976)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L974)
+[View source](control-flow.lisp#L986)
 
 ## Threads
 

@@ -37,9 +37,9 @@ jobs:
         env:
           HOME: /home/app
         run: |
-          clasp --eval "(handler-case (ql:quickload :serapeum) (error () (uiop:quit 1)))" --quit
+          clasp --eval "(handler-bind ((error (lambda (e) (uiop:print-backtrace :condition e) (uiop:quit 1)))) (ql:quickload :serapeum))" --quit
       - name: Test Serapeum
         env:
           HOME: /home/app
         run: |
-          clasp --eval "(handler-case (asdf:test-system :serapeum) (error () (uiop:quit 1)))" --quit
+          clasp --eval "(handler-bind ((error (lambda (e) (uiop:print-backtrace :condition e) (uiop:quit 1)))) (asdf:test-system :serapeum))" --quit

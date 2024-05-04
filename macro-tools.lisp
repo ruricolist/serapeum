@@ -240,7 +240,9 @@ directly into Lisp code:
                 `(if (arrayp ,seq)
                      ,vector-form
                      ,array-form))))
-    #-(or sbcl abcl ccl)
+    #+clasp
+    `(if (listp ,seq) ,list-form ,array-form)
+    #-(or sbcl abcl ccl clasp)
     `(if (listp ,seq) ,list-form ,vector-form)))
 
 (defmacro vector-dispatch (vec &body (bit-vector-form vector-form))

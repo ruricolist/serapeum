@@ -52,9 +52,10 @@
 (-> execute-extent-guards (guarded-extent) (values &optional))
 (defun execute-extent-guards (guarded-extent)
   (nlet execute-extent-guards ((extent-guards (guarded-extent-guards guarded-extent)))
-    (unwind-protect
-         (execute-extent-guard (first extent-guards))
-      (execute-extent-guards (rest extent-guards))))
+    (when extent-guards
+      (unwind-protect
+           (execute-extent-guard (first extent-guards))
+        (execute-extent-guards (rest extent-guards)))))
   (values))
 
 (defmacro unwind-protect/without-interrupts (protected &body cleanup)

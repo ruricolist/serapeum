@@ -430,21 +430,20 @@ Even more usefully, we don’t have to worry about bugs caused by misspellings:
 
 ## Defer, scope guards, and RAII
 
-Some programming languages provide a way to register code to run later. Typically the programmer registers how to release a resource at the time the resource is allocated. Some languages provide this feature along lexical scopes using special syntax (Go’s and Zig’s `defer`, D’s `scope_guard`) and other languages (C++, Rust) provide it along lifetimes (“RAII”) but limit it to objects with special methods (destructors, `Drop`).
+Some programming languages provide a way to register code to run later. Typically the programmer registers how to release a resource at the time the resource is allocated. Some languages provide this feature along lexical scopes using special syntax (Go’s and Zig’s `defer`, D’s `scope_guard`) and other languages (C++, Rust) provide it along lifetimes (what Lisp calls “extents”) but limit it to objects with special methods (C++ RAII, Rust `Drop`).
 
 Serapeum’s implementation looks like the Go/Zig/D style:
 
 ``` lisp
-(with-guarded-scope ()
- (local
-   (def x (open "foo"))
+(with-defer ()
+ (let ((x (open "foo)))
    (defer (close x))
    ...
-   ;; `x` is implicitly closed at the end of the block.
+   ;; `x` is implicitly closed at the end of `with-defer`.
 ))
 ```
 
-But actually, Serapeum scope guards are tied to *dynamic* rather than *lexical* extents, so they implement the full generality of RAII:
+Serapeum scope guards, however, are tied to *dynamic extent* (lifetime) rather than *lexical scope*, so they implement the full generality of RAII. The deferred call does not have to be in the lexical extent of `with-defer`:
 
 ``` lisp
 (defun open-managed-file (&rest args)
@@ -453,7 +452,26 @@ But actually, Serapeum scope guards are tied to *dynamic* rather than *lexical* 
    handle))
 ```
 
-This is useful for working with FFIs.
+Furthermore, “move semantics” can be implemented by giving extents names. Rather than relying on the compiler to track where the lifetime of an object ends, we can simply give the lifetime a name and use it when constructing the deferred call.
+
+``` lisp
+(defun open-managed-file (extent &rest args)
+ (let ((handle (apply #'open args)))
+   (defer (close handle) :to extent)
+   handle)))
+   
+;; Somewhere else
+(with-defer (:as file-scope)
+  ...
+  (with-defer ()
+    ...
+    (let ((file (open-managed-file 'file-scope "foo)))
+      ...))
+  ;; The deferred call from open-managed-file is run here.
+)
+```
+
+This is useful for working with FFIs, because you shouldn’t have to write C in Lisp.
 
 ## CLOS
 

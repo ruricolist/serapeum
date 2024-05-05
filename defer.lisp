@@ -5,11 +5,11 @@
 
 (declaim (inline make-extent))
 (defstruct guarded-extent
-  (name nil :type symbol)
+  (name nil :type (and symbol (not null)))
   (guards nil :type list)
   (success nil :type boolean))
 
-(defvar *static-extent* (make-guarded-extent))
+(defvar *static-extent* (make-guarded-extent :name t))
 
 (defun execute-static-extent ()
   (execute-extent-guards *static-extent*))
@@ -74,9 +74,9 @@ interrupted."
   #-(or ccl sbcl)
   `(unwind-protect ,protected ,@cleanup))
 
-(defmacro with-extent-guards ((&key (name nil)) &body body)
+(defmacro with-defer ((&key (as nil)) &body body)
   (with-unique-names (guarded-extent)
-    `(let* ((,guarded-extent (make-guarded-extent :name ',name))
+    `(let* ((,guarded-extent (make-guarded-extent :name (or ,as ',(gensym))))
             (*guarded-extents* (cons ,guarded-extent *guarded-extents*)))
        (unwind-protect/without-interrupts
            (multiple-value-prog1
@@ -110,7 +110,7 @@ interrupted."
 
 (defmacro defer ((fn . args) &key (on :exit) (to nil))
   "Define a single function call as an unconditional extent
-guard (see `with-extent-guards').
+guard (see `with-defer').
 
     (defer (fn x y z))
 
@@ -129,15 +129,15 @@ keyword argument:
 The call can be deferred to a particular named extent with the `:to`
 keyword argument.
 
-    (with-extent-guards (:as 'outer)
-      (with-extent-guards ()
+    (with-defer (:as 'outer)
+      (with-defer ()
         (defer (cleanup x) :to 'outer)))
 "
   `(call-deferred ,to ,on #',fn ,@args))
 
 (comment
   (lambda ()
-    (with-extent-guards ()
+    (with-defer ()
       (local
         (def x (open "foo"))
         (defer (close x))))))
@@ -148,7 +148,7 @@ keyword argument.
       (let ((handle (apply #'open args)))
         (defer (close handle))
         handle))
-    (with-extent-guards ()
+    (with-defer ()
       (local
         (def x (open "foo"))
         (defer (close x))))))

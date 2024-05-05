@@ -103,7 +103,8 @@
                  (:file "dispatch-case")
                  (:file "range" :depends-on ("dispatch-case"))
                  (:file "generalized-arrays" :depends-on ("range"))
-                 (:file "units")))
+                 (:file "units")
+                 (:file "defer")))
                (:module "contrib"
                 :components
                 ((:file "hooks")))))
@@ -171,6 +172,7 @@
                  (:file "range")
                  (:file "generalized-arrays")
                  (:file "units")
+                 (:file "defer")
                  (:module "contrib"
                   :components ((:file "hooks")))))))
 

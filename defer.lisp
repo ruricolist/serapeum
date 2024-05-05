@@ -74,7 +74,7 @@ interrupted."
   #-(or ccl sbcl)
   `(unwind-protect ,protected ,@cleanup))
 
-(defmacro with-guarded-extent ((&key (name nil)) &body body)
+(defmacro with-extent-guards ((&key (name nil)) &body body)
   (with-unique-names (guarded-extent)
     `(let* ((,guarded-extent (make-guarded-extent :name ',name))
             (*guarded-extents* (cons ,guarded-extent *guarded-extents*)))
@@ -84,57 +84,63 @@ interrupted."
              (setf (guard-extent-success ,guarded-extent) t))
          (execute-extent-guards ,guarded-extent)))))
 
-(defmacro with-extent-guard ((&key (on :exit) (extent nil extent-provided-p)) &body body)
-  (with-unique-names (guarded-extent)
-    `(let ((,guarded-extent
-             ,(if extent-provided-p
-                  `(find-guarded-extent ,extent)
-                  `(enclosing-extent))))
-       ,(ecase-of extent-condition on
-          (:exit
-           `(push
-             (make-extent-guard
-              (lambda ()
-                ,@body
-                (values)))
-             ,guarded-extent))
-          (:success
-           `(with-extent-guard (:extent ,extent)
-              (when (guarded-extent-success ,guarded-extent)
-                ,@body)))
-          (:failure
-           `(with-extent-guard (:extent ,extent)
-              (unless (guarded-extent-success ,guarded-extent)
-                ,@body)))))))
+(defun call-deferred (extent-name extent-condition fn &rest args)
+  (let ((fn (ensure-function fn))
+        (extent (if extent-name
+                    (find-guarded-extent extent-name)
+                    (enclosing-extent))))
+    (ecase-of extent-condition extent-condition
+      (:exit
+       (push (make-extent-guard (lambda ()
+                                  (apply fn args)
+                                  (values)))
+             extent))
+      (:success
+       (call-deferred
+        extent-name :exit
+        (lambda (&rest args)
+          (when (guarded-extent-success extent)
+            (apply fn args)))))
+      (:failure
+       (call-deferred
+        extent-name :exit
+        (lambda (&rest args)
+          (unless (guarded-extent-success extent)
+            (apply fn args))))))))
 
-(defun call-deferred (extent-name fn &rest args)
-  (with-extent-guard (:on :exit :extent extent-name)
-    (apply fn args)))
-
-(defmacro defer ((fn . args))
+(defmacro defer ((fn . args) &key (on :exit) (to nil))
   "Define a single function call as an unconditional extent
-guard.
+guard (see `with-extent-guards').
 
     (defer (fn x y z))
-    ≅ (with-extent-guard (:on :exit)
-        (fn x y z))
 
-The function's arguments are executed immediately, but the
-function itself is not called until the extent guard is run."
-  `(defer-to nil (,fn ,@args)))
+The function's arguments (`x', `y', `z') are executed immediately, but
+the function itself (`fn') is not called until the enclosing extent
+exits.
 
-(defmacro defer-to (name (fn . args))
-  (with-unique-names (temp-args)
-    `(let ((,temp-args (list ,@args)))
-       (call-deferred ,name #',fn ,temp-args))))
+Running the deferred condition can be conditionalized by passing a
+keyword argument:
+
+    ;; Only call the deferred function on abnormal exit.
+    (defer (fn x y z) :on :failure)
+    ;; Only call the deferred function on normal exit.
+    (defer (fn x y z) :on :success)
+
+The call can be deferred to a particular named extent with the `:to`
+keyword argument.
+
+    (with-extent-guards (:as 'outer)
+      (with-extent-guards ()
+        (defer (cleanup x) :to 'outer)))
+"
+  `(call-deferred ,to ,on #',fn ,@args))
 
 (comment
   (lambda ()
-    (with-guarded-extent ()
+    (with-extent-guards ()
       (local
         (def x (open "foo"))
-        (defer (close x))
-        (with-extent-guard () (close x))))))
+        (defer (close x))))))
 
 (comment
   (lambda ()
@@ -142,7 +148,7 @@ function itself is not called until the extent guard is run."
       (let ((handle (apply #'open args)))
         (defer (close handle))
         handle))
-    (with-guarded-extent ()
+    (with-extent-guards ()
       (local
         (def x (open "foo"))
-        (with-extent-guard () (close x))))))
+        (defer (close x))))))

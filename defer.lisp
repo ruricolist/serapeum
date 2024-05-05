@@ -1,60 +1,60 @@
 (in-package :serapeum)
 
-(deftype scope-condition ()
+(deftype extent-condition ()
   '(member :exit :success :failure))
 
-(declaim (inline make-guarded-scope))
-(defstruct guarded-scope
+(declaim (inline make-extent))
+(defstruct guarded-extent
   (name nil :type symbol)
   (guards nil :type list)
   (success nil :type boolean))
 
-(defvar *static-scope* (make-guarded-scope))
+(defvar *static-extent* (make-guarded-extent))
 
-(defun execute-static-scope ()
-  (execute-scope-guards *static-scope*))
+(defun execute-static-extent ()
+  (execute-extent-guards *static-extent*))
 
-(exit-hooks:add-exit-hook #'execute-static-scope)
+(exit-hooks:add-exit-hook #'execute-static-extent)
 
-(defvar *guarded-scopes* (list *static-scope*)
-  "The current guarded scopes.")
+(defvar *guarded-extents* (list *static-extent*)
+  "The current guarded extents.")
 
-(defun enclosing-scope ()
-  (car *guarded-scopes*))
+(defun enclosing-extent ()
+  (car *guarded-extents*))
 
-(defun find-guarded-scope (name)
+(defun find-guarded-extent (name)
   (if name
-      (cdr (assoc name *guarded-scopes* :key #'guarded-scope-name))
-      (first *guarded-scopes*)))
+      (cdr (assoc name *guarded-extents* :key #'guarded-extent-name))
+      (first *guarded-extents*)))
 
-(declaim (inline %make-scope-guard))
-(defstruct-read-only (scope-guard (:constructor %make-scope-guard))
+(declaim (inline %make-extent-guard))
+(defstruct-read-only (extent-guard (:constructor %make-extent-guard))
   (thunk :type (function () (values &optional)))
   (called (box nil) :type box))
 
-(defun finalize-scope-guard (scope-guard)
-  (let ((called (scope-guard-called scope-guard)))
-    (tg:finalize scope-guard
+(defun finalize-extent-guard (extent-guard)
+  (let ((called (extent-guard-called extent-guard)))
+    (tg:finalize extent-guard
                  (lambda ()
                    (unless (unbox called)
-                     (error "Scope guard thunk was never called"))))))
+                     (error "Extent guard thunk was never called"))))))
 
-(defun make-scope-guard (thunk)
-  (lret ((scope-guard (%make-scope-guard :thunk thunk)))
-    (finalize-scope-guard scope-guard)))
+(defun make-extent-guard (thunk)
+  (lret ((extent-guard (%make-extent-guard :thunk thunk)))
+    (finalize-extent-guard extent-guard)))
 
-(-> execute-scope-guard (scope-guard) (values &optional))
-(defun execute-scope-guard (scope-guard)
+(-> execute-extent-guard (extent-guard) (values &optional))
+(defun execute-extent-guard (extent-guard)
   (unwind-protect
-       (funcall (scope-guard-thunk scope-guard))
-    (setf (unbox (scope-guard-called scope-guard)) t)))
+       (funcall (extent-guard-thunk extent-guard))
+    (setf (unbox (extent-guard-called extent-guard)) t)))
 
-(-> execute-scope-guards (guarded-scope) (values &optional))
-(defun execute-scope-guards (guarded-scope)
-  (nlet execute-scope-guards ((scope-guards (guarded-scope-guards guarded-scope)))
+(-> execute-extent-guards (guarded-extent) (values &optional))
+(defun execute-extent-guards (guarded-extent)
+  (nlet execute-extent-guards ((extent-guards (guarded-extent-guards guarded-extent)))
     (unwind-protect
-         (execute-scope-guard (first scope-guards))
-      (execute-scope-guards (rest scope-guards))))
+         (execute-extent-guard (first extent-guards))
+      (execute-extent-guards (rest extent-guards))))
   (values))
 
 (defmacro unwind-protect/without-interrupts (protected &body cleanup)
@@ -74,53 +74,53 @@ interrupted."
   #-(or ccl sbcl)
   `(unwind-protect ,protected ,@cleanup))
 
-(defmacro with-guarded-scope ((&key (name nil)) &body body)
-  (with-unique-names (guarded-scope)
-    `(let* ((,guarded-scope (make-guarded-scope :name ',name))
-            (*guarded-scopes* (cons ,guarded-scope *guarded-scopes*)))
+(defmacro with-guarded-extent ((&key (name nil)) &body body)
+  (with-unique-names (guarded-extent)
+    `(let* ((,guarded-extent (make-guarded-extent :name ',name))
+            (*guarded-extents* (cons ,guarded-extent *guarded-extents*)))
        (unwind-protect/without-interrupts
            (multiple-value-prog1
                (locally ,@body)
-             (setf (guard-scope-success ,guarded-scope) t))
-         (execute-scope-guards ,guarded-scope)))))
+             (setf (guard-extent-success ,guarded-extent) t))
+         (execute-extent-guards ,guarded-extent)))))
 
-(defmacro with-scope-guard ((&key (on :exit) (scope nil scope-provided-p)) &body body)
-  (with-unique-names (guarded-scope)
-    `(let ((,guarded-scope
-             ,(if scope-provided-p
-                  `(find-guarded-scope ,scope)
-                  `(enclosing-scope))))
-       ,(ecase-of scope-condition on
+(defmacro with-extent-guard ((&key (on :exit) (extent nil extent-provided-p)) &body body)
+  (with-unique-names (guarded-extent)
+    `(let ((,guarded-extent
+             ,(if extent-provided-p
+                  `(find-guarded-extent ,extent)
+                  `(enclosing-extent))))
+       ,(ecase-of extent-condition on
           (:exit
            `(push
-             (make-scope-guard
+             (make-extent-guard
               (lambda ()
                 ,@body
                 (values)))
-             ,guarded-scope))
+             ,guarded-extent))
           (:success
-           `(with-scope-guard (:scope ,scope)
-              (when (guarded-scope-success ,guarded-scope)
+           `(with-extent-guard (:extent ,extent)
+              (when (guarded-extent-success ,guarded-extent)
                 ,@body)))
           (:failure
-           `(with-scope-guard (:scope ,scope)
-              (unless (guarded-scope-success ,guarded-scope)
+           `(with-extent-guard (:extent ,extent)
+              (unless (guarded-extent-success ,guarded-extent)
                 ,@body)))))))
 
-(defun call-deferred (scope-name fn &rest args)
-  (with-scope-guard (:on :exit :scope scope-name)
+(defun call-deferred (extent-name fn &rest args)
+  (with-extent-guard (:on :exit :extent extent-name)
     (apply fn args)))
 
 (defmacro defer ((fn . args))
-  "Define a single function call as an unconditional scope
+  "Define a single function call as an unconditional extent
 guard.
 
     (defer (fn x y z))
-    ≅ (with-scope-guard (:on :exit)
+    ≅ (with-extent-guard (:on :exit)
         (fn x y z))
 
 The function's arguments are executed immediately, but the
-function itself is not called until the scope guard is run."
+function itself is not called until the extent guard is run."
   `(defer-to nil (,fn ,@args)))
 
 (defmacro defer-to (name (fn . args))
@@ -130,11 +130,11 @@ function itself is not called until the scope guard is run."
 
 (comment
   (lambda ()
-    (with-guarded-scope ()
+    (with-guarded-extent ()
       (local
         (def x (open "foo"))
         (defer (close x))
-        (with-scope-guard () (close x))))))
+        (with-extent-guard () (close x))))))
 
 (comment
   (lambda ()
@@ -142,7 +142,7 @@ function itself is not called until the scope guard is run."
       (let ((handle (apply #'open args)))
         (defer (close handle))
         handle))
-    (with-guarded-scope ()
+    (with-guarded-extent ()
       (local
         (def x (open "foo"))
-        (with-scope-guard () (close x))))))
+        (with-extent-guard () (close x))))))

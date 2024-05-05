@@ -159,6 +159,8 @@
    #:eq* #:eql* #:equal* #:equalp*
    #:recursion-forbidden
    #:without-recursion
+   #:with-defer
+   #:defer
    ;; Threads.
    #:count-cpus
    #:synchronized

@@ -28,20 +28,9 @@
       (first *guarded-extents*)))
 
 (declaim (inline %make-extent-guard))
-(defstruct-read-only (extent-guard (:constructor %make-extent-guard))
+(defstruct-read-only (extent-guard (:constructor make-extent-guard (thunk)))
   (thunk :type (function () (values &optional)))
   (called (box nil) :type box))
-
-(defun finalize-extent-guard (extent-guard)
-  (let ((called (extent-guard-called extent-guard)))
-    (tg:finalize extent-guard
-                 (lambda ()
-                   (unless (unbox called)
-                     (error "Extent guard thunk was never called"))))))
-
-(defun make-extent-guard (thunk)
-  (lret ((extent-guard (%make-extent-guard :thunk thunk)))
-    (finalize-extent-guard extent-guard)))
 
 (-> execute-extent-guard (extent-guard) (values &optional))
 (defun execute-extent-guard (extent-guard)

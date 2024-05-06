@@ -9,14 +9,7 @@
   (guards nil :type list)
   (success nil :type boolean))
 
-(defvar *static-extent* (make-guarded-extent :name t))
-
-(defun execute-static-extent ()
-  (execute-extent-guards *static-extent*))
-
-(exit-hooks:add-exit-hook #'execute-static-extent)
-
-(defvar *guarded-extents* (list *static-extent*)
+(defvar *guarded-extents* ()
   "The current guarded extents.")
 
 (defun enclosing-extent ()

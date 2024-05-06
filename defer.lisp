@@ -15,10 +15,11 @@
 (defun enclosing-extent ()
   (car *guarded-extents*))
 
-(defun find-guarded-extent (name)
-  (if name
-      (cdr (assoc name *guarded-extents* :key #'guarded-extent-name))
-      (first *guarded-extents*)))
+(defun find-guarded-extent (extent)
+  (etypecase extent
+    (null (first *guarded-extents*))
+    (symbol (cdr (assoc extent *guarded-extents* :key #'guarded-extent-name)))
+    (guarded-extent extent)))
 
 (declaim (inline %make-extent-guard))
 (defstruct-read-only (extent-guard (:constructor make-extent-guard (thunk)))

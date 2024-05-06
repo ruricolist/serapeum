@@ -90,7 +90,8 @@ interrupted."
         extent-name :exit
         (lambda (&rest args)
           (unless (guarded-extent-success extent)
-            (apply fn args))))))))
+            (apply fn args))))))
+    extent))
 
 (defmacro defer ((fn . args) &key (on :exit) (to nil))
   "Define a single function call as an unconditional extent
@@ -116,7 +117,8 @@ keyword argument.
     (with-defer (:as 'outer)
       (with-defer ()
         (defer (cleanup x) :to 'outer)))
-"
+
+Returns the target extent."
   `(call-deferred ,to ,on #',fn ,@args))
 
 (comment

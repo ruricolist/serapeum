@@ -430,6 +430,8 @@ Even more usefully, we don’t have to worry about bugs caused by misspellings:
 
 ## Defer, scope guards, and RAII
 
+A common complaint about writing code with C FFIs is that it forces you to write C in Lisp. It would be useful to have a paradigm available which, while not as safe as automatic memory management, makes manual memory management safer.
+
 Some programming languages provide a way to register code to run later. Typically the programmer registers how to release a resource at the time the resource is allocated. Some languages provide this feature along lexical scopes using special syntax (Go’s and Zig’s `defer`, D’s `scope_guard`) and other languages (C++, Rust) provide it along lifetimes (what Lisp calls “extents”) but limit it to objects with special methods (C++ RAII, Rust `Drop`).
 
 Serapeum’s implementation looks like the Go/Zig/D style:
@@ -443,7 +445,7 @@ Serapeum’s implementation looks like the Go/Zig/D style:
 ))
 ```
 
-Serapeum scope guards, however, are tied to *dynamic extent* (lifetime) rather than *lexical scope*, so they implement the full generality of RAII. The deferred call does not have to be in the lexical extent of `with-defer`:
+Serapeum scope guards, however, are tied to *dynamic extent* (lifetime) rather than *lexical scope*, so they implement the full generality of RAII. The deferred call does not have to be in the lexical scope of `with-defer`:
 
 ``` lisp
 (defun open-managed-file (&rest args)

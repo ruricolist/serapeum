@@ -16,10 +16,11 @@
   (car *guarded-extents*))
 
 (defun find-guarded-extent (extent)
-  (etypecase extent
-    (null (first *guarded-extents*))
-    (symbol (cdr (assoc extent *guarded-extents* :key #'guarded-extent-name)))
-    (guarded-extent extent)))
+  (or (etypecase extent
+        (null (first *guarded-extents*))
+        (symbol (cdr (assoc extent *guarded-extents* :key #'guarded-extent-name)))
+        (guarded-extent extent))
+      (error "No extent: ~a" extent)))
 
 (declaim (inline %make-extent-guard))
 (defstruct-read-only (extent-guard (:constructor make-extent-guard (thunk)))

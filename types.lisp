@@ -480,6 +480,9 @@ Serapeum, `with-templated-body'. One possible expansion is based on
 the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
+  #+(or clasp clisp)
+  `(locally ,@body)
+  #-(or clasp clisp)
   `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
      ,(let* ((types (simplify-subtypes types))
              (var-type (variable-type var env))

@@ -335,9 +335,12 @@ list) and `let' (which has an obvious macro-expansion in terms of
     (declare (ignore types))
     ;; Avoid multiple evaluation.
     (assert (every #'symbolp vars))
+    (assert (length= types vars))
     ;; Check that the clauses are valid.
     (loop for (types . nil) in clauses
-          do (assert (length= types vars)))
+          do (unless (length= types vars)
+               (error "Length mismatch between types ~a and vars ~a"
+                      types vars)))
     (ematch vars-and-types
       ((list) nil)
       ((list (list var type))

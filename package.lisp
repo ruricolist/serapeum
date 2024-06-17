@@ -64,6 +64,7 @@
 		#:with-unique-names
 		;; Symbols
 		#:make-gensym-list
+		#:make-keyword
 		;; Strings
 		#:string-designator
 		;; Types

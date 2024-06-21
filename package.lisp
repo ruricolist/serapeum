@@ -203,6 +203,8 @@
    #:flush-all-static-binding-groups
    #:static-let
    #:static-let*
+   #:if-not
+   #:if-not-let
    ;; Control flow.
    #:null-if
    #:eval-always

@@ -167,3 +167,45 @@
     (eval `(and-let* ((x 1)
                       (y 2))
              x))))
+
+(test if-not
+  (is (= 2 (if-not t 1 2)))
+  (is (= 2 (if-not "test" 1 2)))
+  (is (= 1 (if-not nil 1 2)))
+  (is (null (if-not t 1))))
+
+;; tests adapted from Alexandria/tests
+(declaim (notinline opaque))
+(defun opaque (x)
+  x)
+
+(test if-not-let
+  (is (eql (if-not-let (x (opaque :ok))
+	     :bad
+	     x)
+	   :ok))
+  (is (eql :ok
+	   (if-not-let (x (opaque nil))
+	     (and (not x) :ok)
+	     :bad)))
+  (is (= 3
+	 (let ((x 1))
+	   (if-not-let ((x 2)
+			(y x))
+	     :oops
+	     (+ x y)))))
+  (is (= 1
+	 (if-not-let ((x 1)
+		      (y nil))
+           (and (not y) x)
+	   :oops)))
+  (is (if-not-let (x)
+	(not x)
+	:oops))
+  (is (eql :type-error
+	   (handler-case
+	       (eval '(if-not-let x
+		       :oops
+		       :oops))
+	     (type-error ()
+	       :type-error)))))

@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 489 functions)
+# Function Listing For serapeum (43 files, 491 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -1085,6 +1085,33 @@ false.
 Also, this version makes the bindings immutable.
 
 [View source](binding.lisp#L266)
+
+### `(if-not test then &optional else)`
+
+If TEST evaluates to NIL, evaluate THEN and return its values,
+otherwise evaluate ELSE and return its values. ELSE defaults to NIL.
+
+[View source](binding.lisp#L328)
+
+### `(if-not-let bindings &body (then-form &optional else-form))`
+
+Creates new variable bindings, and conditionally executes either
+THEN-FORM or ELSE-FORM. ELSE-FORM defaults to NIL.
+BINDINGS must be either single binding of the form:
+ (variable initial-form)
+or a list of bindings of the form:
+ ((variable-1 initial-form-1)
+  (variable-2 initial-form-2)
+  ...
+  (variable-n initial-form-n))
+All initial-forms are executed sequentially in the specified order. Then all
+the variables are bound to the corresponding values.
+If one of the variables was bound to NIL, the THEN-FORM is executed with the
+bindings in effect, otherwise the ELSE-FORM is executed with the bindings in
+effect.
+Adapted from Alexandria if-let.
+
+[View source](binding.lisp#L335)
 
 ## Control Flow
 

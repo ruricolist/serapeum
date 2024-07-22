@@ -30,8 +30,7 @@
 
 (defconst si-prefixes-base-1000
   (loop for (pow long short) in si-prefixes
-        unless (and (not (zerop pow))
-                    (< (abs pow) 3))
+        unless (< 0 (abs pow) 3)
           collect (list (truncate pow 3) long short))
   "The SI prefixes as powers of 1000, with centi, deci, deca and hecto omitted.")
 

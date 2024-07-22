@@ -435,7 +435,8 @@ That is, is TYPE a subtype of SUPERTYPE?
 
 Is SUBTYPE a proper subtype of TYPE?
 
-This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the
+same type?
 
 [View source](types.lisp#L296)
 
@@ -446,7 +447,7 @@ Is SUPERTYPE a proper supertype of TYPE?
 That is, is it true that every value of TYPE is also of type
 SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
 
-[View source](types.lisp#L320)
+[View source](types.lisp#L321)
 
 ### `(vref vec index)`
 
@@ -456,7 +457,7 @@ Inside of a with-type-dispatch form, calls to `vref` may be bound to
 different accessors, such as `char` or `schar`, or `bit` or `sbit`,
 depending on the type being specialized on.
 
-[View source](types.lisp#L372)
+[View source](types.lisp#L379)
 
 ### `(with-type-dispatch (&rest types) var &body body)`
 
@@ -507,7 +508,7 @@ the `string-dispatch` macro used internally in SBCL. But most of the
 credit should go to the paper "Fast, Maintable, and Portable Sequence
 Functions", by Irène Durand and Robert Strandh.
 
-[View source](types.lisp#L435)
+[View source](types.lisp#L442)
 
 ### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
 
@@ -516,19 +517,19 @@ Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
 Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
 added to ensure that TYPE itself is handled.
 
-[View source](types.lisp#L527)
+[View source](types.lisp#L534)
 
 ### `(with-string-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `string`.
 
-[View source](types.lisp#L540)
+[View source](types.lisp#L547)
 
 ### `(with-vector-dispatch (&rest types) var &body body)`
 
 Like `with-subtype-dispatch` with an overall type of `vector`.
 
-[View source](types.lisp#L550)
+[View source](types.lisp#L557)
 
 ### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
 
@@ -536,7 +537,7 @@ Like `with-vector-dispatch` but on implementations that support it, the underlyi
 
 START and END are the offset of the original vector's data in the array it is displaced to.
 
-[View source](types.lisp#L556)
+[View source](types.lisp#L563)
 
 ### `(with-boolean (&rest branches) &body body)`
 
@@ -550,7 +551,7 @@ for brevity.)
 The first argument must be a list of symbols which name variables. This macro
 will expand into a series of conditionals
 
-[View source](types.lisp#L593)
+[View source](types.lisp#L600)
 
 ### `(boolean-if branch then &optional else)`
 
@@ -561,7 +562,7 @@ lexically enclosing WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L656)
+[View source](types.lisp#L663)
 
 ### `(boolean-when branch &body body)`
 
@@ -572,7 +573,7 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L673)
+[View source](types.lisp#L680)
 
 ### `(boolean-unless branch &body body)`
 
@@ -583,20 +584,20 @@ WITH-BOOLEAN form.
 It is an error to use this macro outside the lexical environment established by
 WITH-BOOLEAN.
 
-[View source](types.lisp#L694)
+[View source](types.lisp#L701)
 
 ### `(with-two-arg-test (test) &body body)`
 
 Specialize BODY on the most common two-arg test functions.
 
-[View source](types.lisp#L719)
+[View source](types.lisp#L726)
 
 ### `(with-member-test (test-fn &key key test test-not) &body body)`
 
 Emit BODY multiple times with specialized, inline versions of
 `member` bound to TEST-FN.
 
-[View source](types.lisp#L742)
+[View source](types.lisp#L749)
 
 ### `(with-item-key-function (key &optional (key-form key)) &body body)`
 
@@ -606,7 +607,7 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once.
 
-[View source](types.lisp#L792)
+[View source](types.lisp#L799)
 
 ### `(true x)`
 
@@ -615,7 +616,7 @@ That is, if X is null, return `nil`; otherwise return `t`.
 
 Based on an idea by Eric Naggum.
 
-[View source](types.lisp#L818)
+[View source](types.lisp#L825)
 
 ## Definitions
 
@@ -5699,7 +5700,7 @@ prefixes centi, deci, deca and hecto are also used. Base 1024 uses the
 same prefixes as 1000, but with 1024 as the base, as in vulgar file
 sizes. Base 2 uses the IEC binary prefixes.
 
-[View source](units.lisp#L60)
+[View source](units.lisp#L59)
 
 ### `(human-size-formatter size &key flavor space)`
 
@@ -5714,7 +5715,7 @@ processing format directive (~?):
         (human-size-formatter size)
       (format t "~?" control args))
 
-[View source](units.lisp#L81)
+[View source](units.lisp#L80)
 
 ### `(format-human-size stream size &key flavor space)`
 
@@ -5732,7 +5733,7 @@ etc.) are used.
 If SPACE is non-nil, include a space between the number and the
 prefix. (Defaults to T if FLAVOR is `:si`.)
 
-[View source](units.lisp#L113)
+[View source](units.lisp#L112)
 
 ## Exporting
 

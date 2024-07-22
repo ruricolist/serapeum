@@ -296,7 +296,8 @@ That is, is TYPE a subtype of SUPERTYPE?"
 (defun proper-subtype-p (subtype type &optional env)
   "Is SUBTYPE a proper subtype of TYPE?
 
-This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?"
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the
+same type?"
   ;; You might expect this would be as simple as
 
   ;; (and (subtypep subtype type)
@@ -325,6 +326,7 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
   (proper-subtype-p type supertype env))
 
 (defun sort-subtypes (subtypes)
+  "Sort SUBTYPES such that subtypes always precede supertypes."
   (let ((sorted (stable-sort subtypes #'proper-subtype-p)))
     (prog1 sorted
       ;; Subtypes must always precede supertypes.
@@ -334,6 +336,9 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
                            thereis (proper-subtype-p type2 type1)))))))
 
 (defun remove-shadowed-subtypes (subtypes)
+  "Remove shadowed types in SUBTYPES.
+Subtypes are shadowed when they are subtypes of the disjunction of all
+preceding types."
   (assert (equal subtypes (sort-subtypes subtypes)))
   (labels ((rec (subtypes supertypes)
              (if (null subtypes)
@@ -348,6 +353,8 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
     (rec subtypes nil)))
 
 (defun subtypes-exhaustive? (type subtypes &optional env)
+  "Does the disjunction of SUBTYPES exhaust TYPE?
+SUBTYPES must all be subtypes of TYPE."
   (loop for subtype in subtypes
         unless (subtypep subtype type env)
           do (error "~s is not a subtype of ~s" subtype type))

@@ -165,8 +165,6 @@ From Emacs Lisp."
              (mapconcat/list fun seq separator stream)
              (mapconcat/seq fun seq separator stream)))))))
 
-(defmacro do-strings ((s more?) &body body))
-
 (defun string-join (strings separator &key stream end)
   "Join strings in STRINGS, separated by SEPARATOR.
 

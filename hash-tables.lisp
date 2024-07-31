@@ -301,9 +301,8 @@ with HASH-TABLE-ARGS."
                (apply #'copy-hash-table/empty hash-table hash-table-args)
                hash-table)))
 
-(-> map-into-hash-table (hash-table (-> (t t) (values t t &optional))
-                                    &rest sequence)
-  hash-table)
+(-> maphash-into (hash-table function &rest sequence)
+    hash-table)
 (defun maphash-into (hash-table fn &rest seqs)
   "Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
 

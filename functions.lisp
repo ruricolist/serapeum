@@ -319,9 +319,8 @@ be negative.)"
 (defun juxt (&rest fns)
   "Clojure's `juxt'.
 
-Return a function of one argument, which, in turn, returns a list
-where each element is the result of applying one of FNS to the
-argument.
+Return a function which returns a list where each element is the
+result of applying one of FNS to the arguments.
 
 It’s actually quite simple, but easier to demonstrate than to explain.
 The classic example is to use `juxt` to implement `partition`:

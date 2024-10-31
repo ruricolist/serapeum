@@ -177,8 +177,16 @@
   (is (equal " " (collapse-whitespace whitespace))))
 
 (test mapconcat
+  (is (equal "" (mapconcat #'identity nil " ")))
+  (is (equal "" (mapconcat #'identity #() " ")))
   (is (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
   (is (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " "))))
+
+(test mapconcat-end
+  (is (equal " " (mapconcat #'identity nil " " :end t)))
+  (is (equal " " (mapconcat #'identity #() " " :end t)))
+  (is (equal "A B C " (mapconcat #'string-upcase #("a" "b" "c") " " :end t)))
+  (is (equal "A B C " (mapconcat #'string-upcase '("a" "b" "c") " " :end t))))
 
 (test string-upcase-initials
   (is (equal (string-upcase-initials "") ""))
@@ -347,6 +355,8 @@
   (is (equal "x+y" (string-join '("x" "y") #\+)))
   (is (equal "x+y" (string-join '("x" "y") :+)))
   (is (equal "x+y" (string-join '("x" "y") #\+)))
+  (is (equal "+" (string-join nil "+" :end t)))
+  (is (equal "+" (string-join #() "+" :end t)))
   (is (equal "x+y+" (string-join '("x" "y") "+" :end t)))
   (is (equal "x+y+" (string-join '("x" "y") #\+ :end t)))
   (is (equal "x+y+" (string-join '("x" "y") :+ :end t)))

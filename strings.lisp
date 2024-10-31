@@ -124,26 +124,36 @@ replaced by a single space character (or SPACE, if that is specified)."
 From Emacs Lisp."
   (apply #'concatenate 'string strings))
 
-(defun mapconcat/list (fun list sep stream)
+(defun mapconcat/list (fun list sep stream end?)
   (declare (list list) (function fun) (string sep) (optimize speed))
-  (loop for (elt . more?) on list
-        do (write-string (funcall fun elt) stream)
-        if more?
-          do (write-string sep stream)))
+  (if end?
+      (loop for elt in list
+            do (write-string (funcall fun elt) stream)
+               (write-string sep stream))
+      (loop for (elt . more?) on list
+            do (write-string (funcall fun elt) stream)
+            if more?
+              do (write-string sep stream))))
 
-(defun mapconcat/seq (fun seq sep stream)
+(defun mapconcat/seq (fun seq sep stream end?)
   (declare (function fun) (string sep))
-  (if (emptyp seq)
-      (make-string 0)
-      (let ((i 0)
-            (ult (1- (length seq))))
-        (declare (type array-index i ult))
-        (do-each (elt seq)
-          (write-string (funcall fun elt) stream)
-          (unless (= (prog1 i (incf i)) ult)
-            (write-string sep stream))))))
+  (if end?
+      (if (emptyp seq)
+          (copy-seq sep)
+          (do-each (elt seq)
+            (write-string (funcall fun elt) stream)
+            (write-string sep stream)))
+      (if (emptyp seq)
+          (make-string 0)
+          (let ((i 0)
+                (ult (1- (length seq))))
+            (declare (type array-index i ult))
+            (do-each (elt seq)
+              (write-string (funcall fun elt) stream)
+              (unless (= (prog1 i (incf i)) ult)
+                (write-string sep stream)))))))
 
-(defun mapconcat (fun seq separator &key stream)
+(defun mapconcat (fun seq separator &key stream end)
   "Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
 
@@ -157,13 +167,15 @@ like the first argument to `format'.
 From Emacs Lisp."
   (values
    (if (emptyp seq)
-       (make-string 0)
+       (if end
+           (copy-seq (string separator))
+           (make-string 0))
        (let ((fun (ensure-function fun))
              (separator (string separator)))
          (with-string (stream stream)
            (seq-dispatch seq
-             (mapconcat/list fun seq separator stream)
-             (mapconcat/seq fun seq separator stream)))))))
+             (mapconcat/list fun seq separator stream end)
+             (mapconcat/seq fun seq separator stream end)))))))
 
 (defun string-join (strings separator &key stream end)
   "Join strings in STRINGS, separated by SEPARATOR.

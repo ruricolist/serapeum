@@ -48,9 +48,10 @@ interrupted."
   #+sbcl
   `(sb-sys:without-interrupts
      (unwind-protect
-          (sb-sys:without-interrupts
+          (sb-sys:with-local-interrupts
             ,protected)
-       ,@cleanup))
+       (sb-sys:without-interrupts
+         ,@cleanup)))
   ;; CCL at least guarantees no interrupts in cleanup. TODO Does
   ;; anyone else?
   #+ccl

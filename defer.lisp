@@ -127,6 +127,14 @@ Returns the target extent."
               :on :exit
               :to extent)))))
 
+(defun move (guard)
+  (declare (extent-guard guard))
+  (match *guarded-extents*
+    ((list* extent parent-extent _)
+     (removef (extent-guards extent) guard)
+     (push guard (extent-guards parent-extent))
+     guard)
+    (otherwise guard)))
 
 (comment
   (lambda ()

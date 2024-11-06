@@ -76,38 +76,12 @@ interrupted."
              (setf (guard-extent-success ,guarded-extent) t))
          (execute-extent-guards ,guarded-extent)))))
 
-(defun call-deferred (extent-name extent-condition fn &rest args)
-  (let ((fn (ensure-function fn))
-        (extent (if extent-name
-                    (find-guarded-extent extent-name)
-                    (enclosing-extent))))
-    (ecase-of extent-condition extent-condition
-      (:exit
-       (push (make-extent-guard (lambda ()
-                                  (apply fn args)
-                                  (values)))
-             extent))
-      (:success
-       (call-deferred
-        extent-name :exit
-        (lambda (&rest args)
-          (when (guarded-extent-success extent)
-            (apply fn args)))))
-      (:failure
-       (call-deferred
-        extent-name :exit
-        (lambda (&rest args)
-          (unless (guarded-extent-success extent)
-            (apply fn args))))))
-    extent))
+(defun defer (fn arg &key (on :exit) to)
+  "Define a single function call as an extent guard (see `with-defer').
 
-(defmacro defer ((fn . args) &key (on :exit) (to nil))
-  "Define a single function call as an unconditional extent
-guard (see `with-defer').
+    (defer #'fn x)
 
-    (defer (fn x y z))
-
-The function's arguments (`x', `y', `z') are executed immediately, but
+The function's argument (`x') is executed immediately, but
 the function itself (`fn') is not called until the enclosing extent
 exits.
 
@@ -115,34 +89,60 @@ Running the deferred condition can be conditionalized by passing a
 keyword argument:
 
     ;; Only call the deferred function on abnormal exit.
-    (defer (fn x y z) :on :failure)
+    (defer #'fn x :on :failure)
     ;; Only call the deferred function on normal exit.
-    (defer (fn x y z) :on :success)
+    (defer #'fn x :on :success)
 
 The call can be deferred to a particular named extent with the `:to`
 keyword argument.
 
     (with-defer (:as 'outer)
       (with-defer ()
-        (defer (cleanup x) :to 'outer)))
+        (defer #'cleanup x :to 'outer)))
 
 Returns the target extent."
-  `(call-deferred ,to ,on #',fn ,@args))
+  (let ((fn (ensure-function fn))
+        (extent (if to
+                    (find-guarded-extent to)
+                    (enclosing-extent))))
+    (ecase-of extent-condition on
+      (:exit
+       (lret ((guard
+               (make-extent-guard (lambda ()
+                                    (funcall fn arg)
+                                    (values)))))
+         (push guard (guarded-extent-guards extent))))
+      (:success
+       (defer (lambda (arg)
+                (when (guarded-extent-success extent)
+                  (funcall fn arg)))
+              arg
+              :on :exit
+              :to extent))
+      (:failure
+       (defer (lambda (arg)
+                (unless (guarded-extent-success extent)
+                  (funcall fn arg)))
+              arg
+              :on :exit
+              :to extent)))))
+
 
 (comment
   (lambda ()
     (with-defer ()
       (local
         (def x (open "foo"))
-        (defer (close x))))))
+        (defer #'close x)))))
 
 (comment
   (lambda ()
     (defun open-managed-file (&rest args)
       (let ((handle (apply #'open args)))
-        (defer (close handle))
+        (defer #'close handle)
         handle))
-    (with-defer ()
+    (with-defer (
+                 )
       (local
         (def x (open "foo"))
-        (defer (close x))))))
+        (defer #'close x)))))

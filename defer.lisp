@@ -5,7 +5,7 @@
 
 (declaim (inline make-extent))
 (defstruct guarded-extent
-  (name nil :type (and symbol (not null)))
+  (name nil :type (and symbol (not null)) :read-only t)
   (guards nil :type list)
   (success nil :type boolean))
 

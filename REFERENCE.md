@@ -5374,7 +5374,7 @@ Returns `plus`, not 4.
 The `local` macro is loosely based on Racket's support for internal
 definitions.
 
-[View source](internal-definitions.lisp#L681)
+[View source](internal-definitions.lisp#L687)
 
 ### `(block-compile (&key entry-points (block-compile t)) &body body)`
 
@@ -5392,7 +5392,7 @@ into local `declare` forms.
 If you pass `:block-compile nil', this macro is equivalent to progn.
 This may be useful during development.
 
-[View source](internal-definitions.lisp#L795)
+[View source](internal-definitions.lisp#L801)
 
 ## Tree Case
 

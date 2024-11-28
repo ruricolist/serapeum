@@ -411,220 +411,226 @@ them sane initialization values."
 (define-env-method expand-partially (self form)
   "Macro-expand FORM until it becomes a definition form or macro expansion stops."
   (declare (notinline single))
-  (if (atom form) (step-expansion self form)
-      (destructuring-case-of internal-definition-form form
-        ;; A specific form to stop expansion.
-        ((without-internal-definitions &body _) (declare (ignore _))
-         (expansion-done self form))
+  (when (atom form)
+    (return-from expand-partially
+      (step-expansion self form)))
+  ;; Don't partially expand setq or setf.
+  (when (member (car form) '(setq setf))
+    (return-from expand-partially
+      form))
+  (destructuring-case-of internal-definition-form form
+    ;; A specific form to stop expansion.
+    ((without-internal-definitions &body _) (declare (ignore _))
+     (expansion-done self form))
 
-        ;; DEFINITION FORMS.
-        ((defmacro name args &body body)
-         (when (typep name 'internal-definition-form)
-           ;; Cf. R7RS: " it is an error for a definition to define
-           ;; an identifier whose binding has to be known in order
-           ;; to determine the meaning of the definition itself, or
-           ;; of any preceding definition that belongs to the same
-           ;; group of internal definitions."
-           (error "Cannot shadow ~a in an internal definition." name))
-         (eject-macro self name
-                      `(macrolet ((,name ,args ,@body)))))
+    ;; DEFINITION FORMS.
+    ((defmacro name args &body body)
+     (when (typep name 'internal-definition-form)
+       ;; Cf. R7RS: " it is an error for a definition to define
+       ;; an identifier whose binding has to be known in order
+       ;; to determine the meaning of the definition itself, or
+       ;; of any preceding definition that belongs to the same
+       ;; group of internal definitions."
+       (error "Cannot shadow ~a in an internal definition." name))
+     (eject-macro self name
+                  `(macrolet ((,name ,args ,@body)))))
 
-        ;; NB `define-symbol-macro' does not take documentation.
-        ((define-symbol-macro sym exp)
-         (if (at-beginning? self)
-             ;; Might as well eject the symbol macro if we're at the
-             ;; beginning, to keep things simple.
-             (eject-macro self sym
-                          `(symbol-macrolet ((,sym ,exp))))
-             (progn
-               (save-symbol-macro self sym exp)
-               `',sym)))
+    ;; NB `define-symbol-macro' does not take documentation.
+    ((define-symbol-macro sym exp)
+     (if (at-beginning? self)
+         ;; Might as well eject the symbol macro if we're at the
+         ;; beginning, to keep things simple.
+         (eject-macro self sym
+                      `(symbol-macrolet ((,sym ,exp))))
+         (progn
+           (save-symbol-macro self sym exp)
+           `',sym)))
 
-        ((declaim &rest specs)
-         (dolist (spec specs)
-           (push `(declare ,spec) decls)))
+    ((declaim &rest specs)
+     (dolist (spec specs)
+       (push `(declare ,spec) decls)))
 
-        ((def var &optional expr docstring)
-         (declare (ignore docstring))
-         (if (listp var)
-             ;; That is, (def (values ...) ...).
-             (expand-partially self (expand-in-env self form env))
-             ;; Remember `def' returns a symbol.
-             (progn
-               (shadow-symbol-macro self var)
-               (let* ((expr (expand-in-env self expr env))
-                      (var (if (in-subenv? self)
-                               (ensure-var-alias self var)
-                               var))
-                      (hoistable?
-                        (and
-                         (or (constantp expr)
-                             ;; Don't hoist if it could be altered
-                             ;; by a macro or symbol-macro, or if
-                             ;; it's in a lexical env.
-                             (and (not (in-subenv? self))
-                                  (constantp expr env)))
-                         ;;Don't hoist if null.
-                         (not (null expr))
-                         ;; Don't hoist unless this is the first
-                         ;; binding for this var.
-                         (not (or (member var vars)
-                                  (member var hoisted-vars :key #'first)))))
-                      (expr (wrap-expr self expr)))
-                 (if hoistable?
-                     (progn
-                       (push (list var expr) hoisted-vars)
-                       ;; This is needed in case the var ends up
-                       ;; being aliased. Hoisting vars isn't about
-                       ;; saving setfs, it's about type inference.
-                       `(progn (setf ,var ,expr) ',var))
-                     (progn
-                       ;; Don't duplicate the binding.
-                       (unless (member var hoisted-vars :key #'first)
-                         (pushnew var vars))
-                       `(progn (setf ,var ,expr) ',var)))))))
+    ((def var &optional expr docstring)
+     (declare (ignore docstring))
+     (if (listp var)
+         ;; That is, (def (values ...) ...).
+         (expand-partially self (expand-in-env self form env))
+         ;; Remember `def' returns a symbol.
+         (progn
+           (shadow-symbol-macro self var)
+           (let* ((expr (expand-in-env self expr env))
+                  (var (if (in-subenv? self)
+                           (ensure-var-alias self var)
+                           var))
+                  (hoistable?
+                    (and
+                     (or (constantp expr)
+                         ;; Don't hoist if it could be altered
+                         ;; by a macro or symbol-macro, or if
+                         ;; it's in a lexical env.
+                         (and (not (in-subenv? self))
+                              (constantp expr env)))
+                     ;;Don't hoist if null.
+                     (not (null expr))
+                     ;; Don't hoist unless this is the first
+                     ;; binding for this var.
+                     (not (or (member var vars)
+                              (member var hoisted-vars :key #'first)))))
+                  (expr (wrap-expr self expr)))
+             (if hoistable?
+                 (progn
+                   (push (list var expr) hoisted-vars)
+                   ;; This is needed in case the var ends up
+                   ;; being aliased. Hoisting vars isn't about
+                   ;; saving setfs, it's about type inference.
+                   `(progn (setf ,var ,expr) ',var))
+                 (progn
+                   ;; Don't duplicate the binding.
+                   (unless (member var hoisted-vars :key #'first)
+                     (pushnew var vars))
+                   `(progn (setf ,var ,expr) ',var)))))))
 
-        ((defconstant name expr &optional docstring)
-         (declare (ignore docstring))
-         (shadow-symbol-macro self name)
-         (let ((expanded (expand-in-env self expr env)))
-           (if (and (not (in-subenv? self)) (constantp expanded))
-               (expand-partially self
-                                 `(define-symbol-macro ,name ,expr))
-               (push (list name `(static-load-time-value ,(wrap-expr self expr) t)) hoisted-vars)))
-         `',name)
+    ((defconstant name expr &optional docstring)
+     (declare (ignore docstring))
+     (shadow-symbol-macro self name)
+     (let ((expanded (expand-in-env self expr env)))
+       (if (and (not (in-subenv? self)) (constantp expanded))
+           (expand-partially self
+                             `(define-symbol-macro ,name ,expr))
+           (push (list name `(static-load-time-value ,(wrap-expr self expr) t)) hoisted-vars)))
+     `',name)
 
-        ((defconst name expr &optional docstring)
-         (expand-partially self `(defconstant ,name ,expr ,docstring)))
+    ((defconst name expr &optional docstring)
+     (expand-partially self `(defconstant ,name ,expr ,docstring)))
 
-        ((defun name args &body body)
+    ((defun name args &body body)
+     (if (not (subenv-empty?))
+         (expand-partially self
+                           `(defalias ,name
+                              (named-lambda ,name ,args
+                                ,@body)))
+         (progn
+           (push `(,name ,args ,@body) labels)
+           ;; `defun' returns a symbol.
+           `',name)))
+
+    ((defalias name expr &optional docstring)
+     (declare (ignore docstring))
+     (let ((temp (string-gensym 'fn))
+           (expr (wrap-expr self expr)))
+       (push `(,temp #'identity) hoisted-vars)
+       (push `(declare (type function ,temp)) decls)
+       ;; In case of redefinition.
+       (push `(declare (ignorable ,temp)) decls)
+       (push `(,name (&rest args) (apply ,temp args)) labels)
+       `(progn (setf ,temp (ensure-function ,expr)) ',name)))
+
+    ;; SEQUENCING.
+    ((progn &body body)
+     (if (single body)
+         (expand-partially self (first body))
          (if (not (subenv-empty?))
-             (expand-partially self
-                               `(defalias ,name
-                                  (named-lambda ,name ,args
-                                    ,@body)))
-             (progn
-               (push `(,name ,args ,@body) labels)
-               ;; `defun' returns a symbol.
-               `',name)))
+             `(progn ,@(mapcar (op (expand-partially self _)) body))
+             (splice-forms self body))))
 
-        ((defalias name expr &optional docstring)
-         (declare (ignore docstring))
-         (let ((temp (string-gensym 'fn))
-               (expr (wrap-expr self expr)))
-           (push `(,temp #'identity) hoisted-vars)
-           (push `(declare (type function ,temp)) decls)
-           ;; In case of redefinition.
-           (push `(declare (ignorable ,temp)) decls)
-           (push `(,name (&rest args) (apply ,temp args)) labels)
-           `(progn (setf ,temp (ensure-function ,expr)) ',name)))
+    ((prog1 f &body body)
+     (let ((form
+             (if (constantp f)
+                 `(progn
+                    ,@body
+                    ,f)
+                 (with-unique-names (temp)
+                   `(let ((,temp ,f))
+                      ,@body
+                      ,temp)))))
+       (expand-partially self form)))
 
-        ;; SEQUENCING.
-        ((progn &body body)
-         (if (single body)
-             (expand-partially self (first body))
-             (if (not (subenv-empty?))
-                 `(progn ,@(mapcar (op (expand-partially self _)) body))
-                 (splice-forms self body))))
+    ((multiple-value-prog1 f &body body)
+     (if (constantp f)
+         `(progn
+            ,@body
+            ,f)
+         (with-unique-names (temp)
+           `(let ((,temp (multiple-value-list ,f)))
+              ,@body
+              (values-list ,temp)))))
 
-        ((prog1 f &body body)
-         (let ((form
-                 (if (constantp f)
-                     `(progn
-                        ,@body
-                        ,f)
-                     (with-unique-names (temp)
-                       `(let ((,temp ,f))
-                          ,@body
-                          ,temp)))))
-           (expand-partially self form)))
+    ((prog2 first second &body body)
+     `(progn ,first
+             (prog1 ,second
+               ,@body)))
 
-        ((multiple-value-prog1 f &body body)
-         (if (constantp f)
-             `(progn
-                ,@body
-                ,f)
-             (with-unique-names (temp)
-               `(let ((,temp (multiple-value-list ,f)))
-                  ,@body
-                  (values-list ,temp)))))
+    ((eval-when situations &body body)
+     (if (member :execute situations)
+         (expand-body self body)
+         nil))
 
-        ((prog2 first second &body body)
-         `(progn ,first
-                 (prog1 ,second
-                   ,@body)))
+    ((locally &body body)
+     (multiple-value-bind (body decls) (parse-body body)
+       `(locally ,@decls
+          ,(expand-body self body))))
 
-        ((eval-when situations &body body)
-         (if (member :execute situations)
-             (expand-body self body)
-             nil))
+    ((block name &body body)
+     (let ((*subenv* (augment/block name)))
+       `(block ,name ,(expand-body self body))))
 
-        ((locally &body body)
-         (multiple-value-bind (body decls) (parse-body body)
-           `(locally ,@decls
-              ,(expand-body self body))))
+    ((progv vars expr &body body)
+     ;; Is this really the right way to handle progv? Should we
+     ;; bother?
+     (multiple-value-bind (body decls) (parse-body body)
+       `(,(car form) ,vars ,(wrap-expr self expr)
+         ,@decls
+         ,(expand-body self body))))
 
-        ((block name &body body)
-         (let ((*subenv* (augment/block name)))
-           `(block ,name ,(expand-body self body))))
+    ;; FUNCTION BINDING FORMS.
+    (((flet labels)
+      bindings &body body)
+     (let ((*subenv* (augment/funs bindings)))
+       (multiple-value-bind (body decls) (parse-body body)
+         `(,(car form) ,(wrap-fn-bindings self bindings)
+           ,@decls
+           ,(expand-body self body)))))
 
-        ((progv vars expr &body body)
-         ;; Is this really the right way to handle progv? Should we
-         ;; bother?
-         (multiple-value-bind (body decls) (parse-body body)
-           `(,(car form) ,vars ,(wrap-expr self expr)
-             ,@decls
-             ,(expand-body self body))))
+    ;; VARIABLE BINDING FORMS.
+    ((let bindings &body body)
+     ;; NB Expand the bindings before you augment the env.
+     (let* ((bindings (wrap-bindings self bindings))
+            (*subenv* (augment/vars bindings)))
+       (multiple-value-bind (body decls) (parse-body body)
+         `(,(car form) ,bindings
+           ,@decls
+           ,(expand-body self body)))))
 
-        ;; FUNCTION BINDING FORMS.
-        (((flet labels)
-          bindings &body body)
-         (let ((*subenv* (augment/funs bindings)))
-           (multiple-value-bind (body decls) (parse-body body)
-             `(,(car form) ,(wrap-fn-bindings self bindings)
-               ,@decls
-               ,(expand-body self body)))))
+    ((let* bindings &body body)
+     ;; NB Augment the env before you wrap the bindings.
+     (let* ((*subenv* (augment/vars bindings))
+            (bindings (wrap-bindings self bindings)))
+       (multiple-value-bind (body decls) (parse-body body)
+         `(,(car form) ,bindings
+           ,@decls
+           ,(expand-body self body)))))
 
-        ;; VARIABLE BINDING FORMS.
-        ((let bindings &body body)
-         ;; NB Expand the bindings before you augment the env.
-         (let* ((bindings (wrap-bindings self bindings))
-                (*subenv* (augment/vars bindings)))
-           (multiple-value-bind (body decls) (parse-body body)
-             `(,(car form) ,bindings
-               ,@decls
-               ,(expand-body self body)))))
+    ((multiple-value-bind vars expr &body body)
+     (let ((*subenv* (augment/vars vars)))
+       (multiple-value-bind (body decls) (parse-body body)
+         `(,(car form) ,vars ,(wrap-expr self expr)
+           ,@decls
+           ,(expand-body self body)))))
 
-        ((let* bindings &body body)
-         ;; NB Augment the env before you wrap the bindings.
-         (let* ((*subenv* (augment/vars bindings))
-                (bindings (wrap-bindings self bindings)))
-           (multiple-value-bind (body decls) (parse-body body)
-             `(,(car form) ,bindings
-               ,@decls
-               ,(expand-body self body)))))
+    ;; Don't even try to handle destructuring-bind ourselves.
+    ((destructuring-bind vars expr &body body)
+     (declare (ignore vars expr body))
+     (expand-partially self (macroexpand form env)))
 
-        ((multiple-value-bind vars expr &body body)
-         (let ((*subenv* (augment/vars vars)))
-           (multiple-value-bind (body decls) (parse-body body)
-             `(,(car form) ,vars ,(wrap-expr self expr)
-               ,@decls
-               ,(expand-body self body)))))
+    ((symbol-macrolet binds &body body)
+     (multiple-value-bind (body decls) (parse-body body)
+       `(locally ,@decls
+          ,(let ((*subenv* (augment/symbol-macros binds)))
+             (expand-body self body)))))
 
-        ;; Don't even try to handle destructuring-bind ourselves.
-        ((destructuring-bind vars expr &body body)
-         (declare (ignore vars expr body))
-         (expand-partially self (macroexpand form env)))
-
-        ((symbol-macrolet binds &body body)
-         (multiple-value-bind (body decls) (parse-body body)
-           `(locally ,@decls
-              ,(let ((*subenv* (augment/symbol-macros binds)))
-                 (expand-body self body)))))
-
-        ;; Fallthrough.
-        ((otherwise &rest rest) (declare (ignore rest))
-         (step-expansion self form)))))
+    ;; Fallthrough.
+    ((otherwise &rest rest) (declare (ignore rest))
+     (step-expansion self form))))
 
 (define-env-method generate-internal-definitions (self body)
   (let* ((body (expand-top self body))

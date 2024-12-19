@@ -26,11 +26,7 @@ accessor `unbox'.
 Serapeum attempts to provide the guarantee that, on Lisps that support
 atomic operations (compare-and-swap), `unbox` on boxes should be
 updateable atomically. (See
-[atomics](https://github.com/Shinmera/atomics)).
-
-At the moment, boxes are implemented as structures, but that may
-change. In particular, you should not depend on being able to
-recognize boxes using a type or predicate."
+[atomics](https://github.com/Shinmera/atomics))."
   unbox)
 
 (declaim-freeze-type box)
@@ -60,3 +56,8 @@ recognize boxes using a type or predicate."
                     (typep ,b 'box)
                     (unbox ,b)
                     ,x)))
+
+(-> ensure-box (t) box)
+(defun ensure-box (x)
+  "Return X if boxed, otherwise a box containing X."
+  (if (boxp x) x (box x)))

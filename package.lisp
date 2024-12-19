@@ -383,6 +383,7 @@
    ;; Boxes.
    #:box
    #:unbox
+   #:ensure-box
    ;; Heaps.
    #:make-heap
    #:heap-insert

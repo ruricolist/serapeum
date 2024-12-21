@@ -1,4 +1,4 @@
-# Function Listing For serapeum (43 files, 491 functions)
+# Function Listing For serapeum (43 files, 492 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2904,6 +2904,12 @@ Box a value.
 The value in the box X.
 
 [View source](box.lisp#L11)
+
+### `(ensure-box x)`
+
+Return X if boxed, otherwise a box containing X.
+
+[View source](box.lisp#L61)
 
 ## Numbers
 

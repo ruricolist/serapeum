@@ -212,16 +212,11 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
         (rec (gethash (car keys) table) (cdr keys))
         (setf (gethash (car keys) table) value))))
 
-(flet ((expand-@ (table keys)
-         (reduce
-          (lambda (table key)
-            `(gethash ,key ,table))
-          keys
-          :initial-value table)))
-  (define-compiler-macro @ (table key &rest keys)
-      (expand-@ table (cons key keys)))
-  (define-compiler-macro (setf @) (value table key &rest keys)
-    `(setf ,(expand-@ table (cons key keys)) ,value)))
+(define-compiler-macro @ (table key &rest keys)
+    `(href ,table ,key ,@keys))
+
+(define-compiler-macro (setf @) (value table key &rest keys)
+  `(setf (href ,table ,key ,@keys) ,value))
 
 (-> pophash (t hash-table) (values t boolean &optional))
 (defun pophash (key hash-table)

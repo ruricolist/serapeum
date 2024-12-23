@@ -192,8 +192,15 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
    keys
    :initial-value table))
 
-(define-compiler-macro href (table &rest keys)
-    (expand-href table keys))
+(define-compiler-macro href (table key &rest keys)
+  (let* ((keys (cons key keys))
+         (table-tmp (gensym (string 'table)))
+         (key-tmps
+           (make-gensym-list (length keys)
+                             (string 'key))))
+    `(let ((,table-tmp ,table)
+           ,@(mapcar #'list key-tmps keys))
+       ,(expand-href table-tmp key-tmps))))
 
 (define-compiler-macro (setf href) (value table &rest keys)
   `(setf ,(expand-href table keys) ,value))

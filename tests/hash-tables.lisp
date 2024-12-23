@@ -137,3 +137,25 @@
   (dolist (test '(eq eql equal equalp))
     (is (hash-table-test-p (symbol-function test))))
   (is (not (hash-table-test-p #'car))))
+
+(test href-eval-order
+  "Test that href arguments are evaluated left-to-right.
+Regression for href/@ compiler macros."
+  (let ((table (dict :x (dict :y (dict :z 'correct))))
+        (list '()))
+    (is (eql 'correct
+             (href
+              (progn (push 4 list) table)
+              (progn (push 3 list) :x)
+              (progn (push 2 list) :y)
+              (progn (push 1 list) :z))))
+    (is (equal list '(1 2 3 4))))
+  (let ((table (dict :x (dict :y (dict :z 'correct))))
+        (list '()))
+    (is (eql 'correct
+             (@
+              (progn (push 4 list) table)
+              (progn (push 3 list) :x)
+              (progn (push 2 list) :y)
+              (progn (push 1 list) :z))))
+    (is (equal list '(1 2 3 4)))))

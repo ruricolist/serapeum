@@ -95,6 +95,8 @@
     (is (equal "abc**" (pad-end "abc" 5 "*"))))
   (is (equal "abc**" (pad-end "abc" 5 #\*))))
 
+(in-suite vectors)
+
 (test vector-conc-extend
   (let ((v (vect 1 2 3)))
     (is (= 3 (length (vector-conc-extend v '()))))
@@ -110,3 +112,11 @@
                             :fill-pointer 3
                             :initial-contents "abc")
               "xyz"))))
+
+(test bisect-left
+  (is (eql 1 (bisect-left #(1 2 2 3 5) 2 #'<)))
+  (is (eql 1 (bisect-left #(#\A #\Z #\a #\z) #\B #'char<))))
+
+(test bisect-right
+  (is (eql 3 (bisect-right #(1 2 2 3 5) 2 #'<)))
+  (is (eql 2 (bisect-right #(#\A #\Z #\a #\z) #\Z #'char<))))

@@ -3,7 +3,34 @@
 (def-suite sequences :in serapeum)
 (in-suite sequences)
 
-;;; TODO Actually test with extensible sequences.
+;;; Borrowed from the test suite of split-sequence. TODO: also test on
+;;; ABCL and Clasp.
+#+sbcl
+(progn
+  (defclass eseq (standard-object sequence)
+    ((actual-seq :type list :initarg :actual-seq :initform nil
+                 :accessor actual-seq))
+    (:documentation "Extended sequence type in SBCL"))
+  (defmethod sb-sequence:length ((s eseq))
+    (length (actual-seq s)))
+  (defmethod sb-sequence:elt ((s eseq) index)
+    (elt (actual-seq s) index))
+  (defmethod (setf sb-sequence:elt) (v (s eseq) index)
+    (setf (elt (actual-seq s) index) v))
+  (defmethod sb-sequence:adjust-sequence ((s eseq) len &rest args)
+    (setf (actual-seq s)
+          (apply #'sb-sequence:adjust-sequence (actual-seq s) len args)))
+  (defmethod sb-sequence:make-sequence-like ((s eseq) len &rest args)
+    (make-instance 'eseq :actual-seq (apply #'sb-sequence:make-sequence-like
+                                            (actual-seq s) len args)))
+  (defmethod print-object ((s eseq) stream)
+    (print-unreadable-object (s stream :type t)
+      (format stream "~a" (actual-seq s))))
+  (defun eseq (&rest args)
+    (make 'eseq :actual-seq args)))
+#-sbcl
+(defun eseq (&rest args) args)
+
 
 (test single
   ;; This is too trivial to really need a test, but it also serves a
@@ -18,7 +45,11 @@
 
   (is (not (single #())))
   (is (single #(t)))
-  (is (not (single #(t t)))))
+  (is (not (single #(t t))))
+
+  (is (not (single (eseq))))
+  (is (single (eseq t)))
+  (is (not (single (eseq t t)))))
 
 (test only-elt
   (signals error
@@ -26,13 +57,18 @@
   (signals error
     (only-elt #()))
   (signals error
+    (only-elt (eseq)))
+  (signals error
     (only-elt '(1 . 2)))
   (signals error
     (only-elt '(1 2)))
   (signals error
     (only-elt #(1 2)))
+  (signals error
+    (only-elt (eseq 1 2)))
   (is (eql 1 (only-elt '(1))))
-  (is (eql 1 (only-elt #(1)))))
+  (is (eql 1 (only-elt #(1))))
+  (is (eql 1 (only-elt (eseq 1)))))
 
 (test scan
   (is (equal '() (scan #'+ '())))
@@ -88,6 +124,12 @@
   (finishes (assort (coerce #(1 2 3) 'simple-vector)))
   (finishes (assort (coerce #(1 2 3) 'simple-vector)) :hash t))
 
+(test assort-eseq
+  (finishes (assort (eseq 1 2 3)))
+  (finishes (assort (eseq 1 2 3)))
+  (is (seq= (assort (eseq 1 2 1 2 1 2) :test #'<=)
+            '((1 1) (2 2 1 2)))))
+
 (test runs
   (is (equal '((1 2) (3 4 5 6 11 12 13))
              (runs '(1 2 3 4 5 6 11 12 13) :key (rcurry #'< 3))))
@@ -98,6 +140,8 @@
 
 (test runs-compare-first
   (is (seq= (runs #(10 2 3 10 4 5) :test #'>)
+            (runs '(10 2 3 10 4 5) :test #'>)))
+  (is (seq= (runs (eseq 10 2 3 10 4 5) :test #'>)
             (runs '(10 2 3 10 4 5) :test #'>)))
   (is (seq= (runs #(10 2 3 10 4 5) :test #'> :count 0)
             (runs '(10 2 3 10 4 5) :test #'> :count 0)))
@@ -113,6 +157,7 @@
 (test runs-count
   (is (null (runs '() :count 0)))
   (is (emptyp (runs #() :count 0)))
+  (is (eql (length (runs (eseq) :count 0)) 0))
   (is (equal '((head) (tail tail))
              (runs '(head tail tail head head tail) :count 2)))
   (for-all ((i (lambda () (random 100)))
@@ -126,6 +171,7 @@
   (is (equal '(()) (runs '() :compare-last t)))
   (is (equalp '((1)) (runs '(1) :compare-last t)))
   (is (equalp '(#()) (runs #() :compare-last t)))
+  (is (seq= (list (eseq)) (runs (eseq) :compare-last t)))
   (is (equalp '(#(1)) (runs #(1) :compare-last t)))
   (is (seq= (runs #(10 2 3 2 1) :test #'> :compare-last t)
             (runs '(10 2 3 2 1) :test #'> :compare-last t)
@@ -135,7 +181,8 @@
   (is (equal '((a b) (c d) (e)) (batches '(a b c d e) 2)))
   (is (equal '("ab" "cd" "e") (batches "abcde" 2)))
   (is (equal '("a") (batches "abc" 2 :end 1)))
-  (is (equal '((a)) (batches '(a b c) 2 :end 1))))
+  (is (equal '((a)) (batches '(a b c) 2 :end 1)))
+  (is (seq= (list (eseq 'a 'b) (eseq 'c 'd)) (batches (eseq 'a 'b 'c 'd) 2))))
 
 (test batches-even
   (signals error
@@ -161,6 +208,7 @@
 
 (test length<
   (is (length< #() 1))
+  (is (length< (eseq) 1))
   (is (length< '(1) 2))
   (is (not (length< '(1 2) 2)))
   (is (not (length< '(1 2 3) 2))))
@@ -303,7 +351,8 @@
 
 (test deltas
   (is (equal '(4 5 -14 6 1) (deltas '(4 9 -5 1 2))))
-  (is (equal '(4 5 -14 6 1) (deltas #(4 9 -5 1 2)))))
+  (is (equal '(4 5 -14 6 1) (deltas #(4 9 -5 1 2))))
+  (is (seq= '(4 5 -14 6 1) (deltas (eseq 4 9 -5 1 2)))))
 
 (test intersperse
   (is (null (intersperse 'x '())))
@@ -359,6 +408,7 @@
   (is (equal '(13 13 13) (repeat-sequence '(13) 3)))
   (is (equal '("13" "13" "13") (repeat-sequence '("13") 3)))
   (is (vector= #(13 13 13) (repeat-sequence #(13) 3)))
+  (is (seq= (eseq 13 13 13) (repeat-sequence (eseq 13) 3)))
   ;; 0 repetitions.
   (is (null (repeat-sequence '(x y z) 0)))
   (is (equal "" (repeat-sequence "foo" 0)))
@@ -397,7 +447,8 @@
   (is (equal " world" (drop-prefix '(#\h #\e #\l #\l #\o) "hello world")))
   (is (equal " world" (drop-prefix #(#\h #\e #\l #\l #\o) "hello world")))
   (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
-  (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3)))))
+  (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3))))
+  (is (seq= #(1 2 3) (drop-prefix '(0) (eseq 0 1 2 3)))))
 
 (test ensure-prefix
   (is (equal "x" (ensure-prefix "x" "")))
@@ -816,6 +867,7 @@
 (test null-if-empty
   (is (null (null-if-empty nil)))
   (is (null (null-if-empty #())))
+  (is (null (null-if-empty (eseq))))
   (is (null (null-if-empty "")))
   (is (null (null-if-empty (make-octet-vector 0))))
   (is (null (null-if-empty (make-array 0 :element-type 'bit))))

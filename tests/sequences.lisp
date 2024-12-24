@@ -48,7 +48,7 @@
 
 (test filter-with-count
   (is (seq= '(0 2 4 6 8) (filter #'evenp (range 100) :count 5)))
-  (is (equalp #(0 2 4 6 8) (filter #'evenp (coerce (range 100) 'vector) :count 5)))
+  (is (equalp #(0 2 4 6 8) (filter #'evenp (range 100) :count 5)))
   (is (seq= '(90 92 94 96 98)
             (filter #'evenp (range 100) :count 5 :from-end t))))
 

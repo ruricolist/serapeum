@@ -109,7 +109,7 @@ From Lparallel.
 
 [View source](macro-tools.lisp#L73)
 
-### `(with-thunk (var &rest args) &body body)`
+### `(with-thunk (spec &rest args) &body body)`
 
 A macro-writing macro for the `call-with-` style.
 
@@ -142,6 +142,10 @@ to be given a name (using `flet`) so it can be declared
       (with-thunk (body)
         `(call-with-foo ,body)))
 
+You can give the thunk a name for easier debugging.
+
+    (with-thunk ((body :name foo)) ...)
+
 It is also possible to construct a "thunk" with arguments.
 
     (with-thunk (body foo)
@@ -160,14 +164,14 @@ Someday this may have a better name.
 Like `macroexpand-1`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L166)
+[View source](macro-tools.lisp#L174)
 
 ### `(expand-macro-recursively form &optional env)`
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L175)
+[View source](macro-tools.lisp#L183)
 
 ### `(partition-declarations xs declarations &optional env)`
 
@@ -179,19 +183,19 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
 
-[View source](macro-tools.lisp#L188)
+[View source](macro-tools.lisp#L196)
 
 ### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
-[View source](macro-tools.lisp#L274)
+[View source](macro-tools.lisp#L282)
 
 ### `(callf2 function arg1 place &rest args)`
 
 Like CALLF, but with the place as the second argument.
 
-[View source](macro-tools.lisp#L283)
+[View source](macro-tools.lisp#L291)
 
 ### `(define-do-macro name binds &body body)`
 
@@ -229,13 +233,13 @@ Using `define-do-macro` takes care of all of this for you.
                    ,@body)
                  ,hash-table))
 
-[View source](macro-tools.lisp#L292)
+[View source](macro-tools.lisp#L300)
 
 ### `(define-post-modify-macro name lambda-list function &optional documentation)`
 
 Like `define-modify-macro`, but arranges to return the original value.
 
-[View source](macro-tools.lisp#L356)
+[View source](macro-tools.lisp#L364)
 
 ### `(parse-leading-keywords body)`
 
@@ -245,7 +249,7 @@ arguments, and the rest of the body.
 Inline keywords are like the keyword arguments to individual cases in
 `restart-case`.
 
-[View source](macro-tools.lisp#L384)
+[View source](macro-tools.lisp#L392)
 
 ### `(with-read-only-vars (&rest vars) &body body)`
 
@@ -258,7 +262,7 @@ signal a warning at compile time, and an error at run time.
 Depending on your Lisp implementation this may or may not do anything,
 and may or may not have an effect when used on special variables.
 
-[View source](macro-tools.lisp#L446)
+[View source](macro-tools.lisp#L454)
 
 ### `(define-case-macro name macro-args params &body macro-body)`
 
@@ -322,13 +326,13 @@ could define it almost trivially using `define-case-macro`:
                  collect `((eql ,expr ,key) ,@body))
          (t ,@body)))
 
-[View source](macro-tools.lisp#L492)
+[View source](macro-tools.lisp#L500)
 
 ### `(case-failure expr keys)`
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L731)
+[View source](macro-tools.lisp#L739)
 
 ### `(eval-if-constant form &optional env)`
 
@@ -348,7 +352,7 @@ Note that this function may treat a form as constant which would not
 be recognized as such by `constantp`, because we also expand compiler
 macros.
 
-[View source](macro-tools.lisp#L752)
+[View source](macro-tools.lisp#L760)
 
 ### `(expect-form-list exp)`
 
@@ -356,14 +360,14 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)
 
-[View source](macro-tools.lisp#L834)
+[View source](macro-tools.lisp#L842)
 
 ### `(expect-single-form exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
 
-[View source](macro-tools.lisp#L844)
+[View source](macro-tools.lisp#L852)
 
 ### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
 
@@ -375,7 +379,7 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
     ≡ (multiple-value-call #'unparse-ordinary-lambda-list
         (parse-ordinary-lambda-list lambda-list)
 
-[View source](macro-tools.lisp#L856)
+[View source](macro-tools.lisp#L864)
 
 ## Types
 

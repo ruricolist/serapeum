@@ -116,7 +116,7 @@ part of the arguments to compare, and compares them using TEST."
 
 (define-do-macro do-each/map ((var seq &optional return) &body body)
   "The simple, out-of-line version."
-  (with-thunk (body var)
+  (with-thunk ((body :name do-each) var)
     `(map nil ,body ,seq)))
 
 (defmacro do-each ((var seq &optional return) &body body &environment env)
@@ -130,7 +130,7 @@ If SEQ is a list, this is equivalent to `dolist'."
   ;; SBCL from spamming us with code deletion notes. (It may also be
   ;; desirable in itself to avoid needless code duplication in Lisps
   ;; without type inference.)
-  (with-thunk (body var)
+  (with-thunk ((body :name do-each) var)
     (let ((iter-spec `(,var ,seq ,@(unsplice return))))
       `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
          #+(or sbcl abcl)

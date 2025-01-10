@@ -100,7 +100,7 @@ From Lparallel."
 ;;;## `with-thunk'
 ;;; This is useful, but the name could and should be improved.
 
-(defmacro with-thunk ((var &rest args) &body body)
+(defmacro with-thunk ((spec &rest args) &body body)
   "A macro-writing macro for the `call-with-' style.
 
 In the `call-with-' style of writing macros, the macro is simply a
@@ -132,6 +132,10 @@ to be given a name (using `flet') so it can be declared
       (with-thunk (body)
         `(call-with-foo ,body)))
 
+You can give the thunk a name for easier debugging.
+
+    (with-thunk ((body :name foo)) ...)
+
 It is also possible to construct a \"thunk\" with arguments.
 
     (with-thunk (body foo)
@@ -142,22 +146,26 @@ It is also possible to construct a \"thunk\" with arguments.
         (call-with-foo #',thunk))
 
 Someday this may have a better name."
-  (let* ((stack-thunk-prefix (string 'stack-fn-))
-         (stack-thunk-name
-           (concatenate 'string
-                        stack-thunk-prefix
-                        (string var)))
-         (stack-thunk
-           (gensym stack-thunk-name)))
-    (with-gensyms (b gargs)
-      `(let ((,b ,var)
-             (,var ',stack-thunk)
-             (,gargs (list ,@args)))
-         `(flet ((,',stack-thunk ,,gargs
-                   ,@,b))
-            (declare (dynamic-extent (function ,',stack-thunk)))
-            (symbol-macrolet ((,',stack-thunk (function ,',stack-thunk)))
-              ,,@body))))))
+  ;; TODO Derive default name from &environment. Cf. log4cl.
+  (destructuring-bind (var &key name) (ensure-list spec)
+    (declare (type (and symbol (not null)) var)
+             (type symbol name))
+    (let* ((stack-fn-prefix (string 'stack-fn-))
+           (stack-fn-name
+             (or (concatenate 'string
+                              stack-fn-prefix
+                              (string (or name var)))))
+           (stack-fn
+             (gensym stack-fn-name)))
+      (with-gensyms (b gargs)
+        `(let ((,b ,var)
+               (,var ',stack-fn)
+               (,gargs (list ,@args)))
+           `(flet ((,',stack-fn ,,gargs
+                     ,@,b))
+              (declare (dynamic-extent (function ,',stack-fn)))
+              (symbol-macrolet ((,',stack-fn (function ,',stack-fn)))
+                ,,@body)))))))
 
 ;;;# Expanding macros
 ;;; Expanding macros, Swank-style. We use `labels' in these

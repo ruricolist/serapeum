@@ -76,7 +76,7 @@ functions.
                                                `(:element-type ,element-type)))
                   ,@body))))))
 
-  (with-thunk (body var)
+  (with-thunk ((body :name with-string) var)
     `(call/string #',body ,stream)))
 
 (defsubst blankp (seq)

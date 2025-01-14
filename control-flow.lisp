@@ -715,6 +715,15 @@ instead of the first."
   (check-no-underscores holes)
   (macroexpand-1 `(~>> ,needle ,@holes)))
 
+(defmacro as~> (expr name &rest forms)
+  "Like ~>, but bind NAME instead of _.
+From Clojure."
+  `(let* ((,name ,expr)
+          ,@(mapcar (lambda (form)
+                      (list name form))
+                    (butlast forms)))
+     ,(if forms name (lastcar forms))))
+
 (defun expand-nest (things)
   "Helper function for `nest'."
   (reduce (lambda (outer inner)

@@ -252,6 +252,8 @@
    #:ensure2
    #:~>
    #:~>>
+   #:as~>
+   #:let~>
    #:cond-every
    #:nest
    #:sort-values

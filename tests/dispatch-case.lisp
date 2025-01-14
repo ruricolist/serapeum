@@ -104,3 +104,12 @@
     (5am:is (eql :ys (process :y :y)))
     (5am:is (eql :x (process :x :y)))
     (5am:is (eql :y (process :y :x)))))
+
+(5am:test dispatch-case-shadow-regression
+  (flet ((test-shadow (x y)
+           (dispatch-case ((x list) (y list))
+             ((null *) "First is null")
+             ((list cons) "First is not null, second is cons")
+             ((list list) "First is not null, second is list"))))
+    (5am:is (equal "First is null"
+                   (test-shadow nil '(x))))))

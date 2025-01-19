@@ -48,18 +48,20 @@
 (defun sort-clauses (clauses &optional env)
   "Given a list of typecase clauses, order them so no preceding clause
 shadows later ones, if possible."
-  ;; NB Is using a toposort really necessary?
-  (let* ((types (mapcar #'clause-leading-type clauses))
+  (sort-types clauses :env env :key #'clause-leading-type))
+
+(defun sort-types (types &key (key #'identity) env)
+  (let* ((key (ensure-function key))
+         (types (mapcar key types))
          (constraints
            (loop for type1 in types
                  append (loop for type2 in types
                               when (proper-subtype-p type1 type2 env)
                                 collect (list type1 type2))))
-         (constraints (nub constraints))
          (ordering (toposort constraints :test #'equal)))
-    (stable-sort (copy-list clauses)
+    (stable-sort (copy-list types)
                  ordering
-                 :key #'clause-leading-type)))
+                 :key key)))
 
 (defun remove-shadowed-clauses (clauses &optional env)
   "Given a list of typecase clauses, remove any clauses that are

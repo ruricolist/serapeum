@@ -102,10 +102,7 @@
                  (:file "dispatch-case")
                  (:file "range" :depends-on ("dispatch-case"))
                  (:file "generalized-arrays" :depends-on ("range"))
-                 (:file "units")))
-               (:module "contrib"
-                :components
-                ((:file "hooks")))))
+                 (:file "units")))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."
@@ -169,9 +166,7 @@
                  (:file "dispatch-case")
                  (:file "range")
                  (:file "generalized-arrays")
-                 (:file "units")
-                 (:module "contrib"
-                  :components ((:file "hooks")))))))
+                 (:file "units")))))
 
 (defsystem "serapeum/docs"
   :description "Serapeum's documentation generator."

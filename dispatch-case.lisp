@@ -51,16 +51,18 @@ shadows later ones, if possible."
   (sort-types clauses :env env :key #'clause-leading-type))
 
 (defun sort-types (types &key (key #'identity) env)
-  (let* ((key (ensure-function key))
-         (types (mapcar key types))
-         (constraints
-           (loop for type1 in types
-                 append (loop for type2 in types
-                              when (proper-subtype-p type1 type2 env)
-                                collect (list type1 type2))))
-         (ordering (toposort constraints :test #'equal)))
+  (labels ((type-ordering (types)
+             (let* ((key (ensure-function key))
+                    (types (mapcar key types))
+                    (constraints
+                      (loop for type1 in types
+                            append (loop for type2 in types
+                                         when (proper-subtype-p type1 type2 env)
+                                           collect (list type1 type2))))
+                    (constraints (nub constraints)))
+               (toposort constraints :test #'equal))))
     (stable-sort (copy-list types)
-                 ordering
+                 (type-ordering types)
                  :key key)))
 
 (defun remove-shadowed-clauses (clauses &optional env)

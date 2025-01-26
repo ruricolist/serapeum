@@ -65,23 +65,27 @@ shadows later ones, if possible."
                  (type-ordering types)
                  :key key)))
 
+(defun remove-shadowed-types (items &key env key)
+  (with-item-key-function (key)
+    (nlet rec ((items items)
+               (types-seen '())
+               (acc '()))
+      (match items
+        ((list)
+         (nreverse acc))
+        ((list* first rest)
+         (let ((type (key first)))
+           (if (subtypep type `(or ,@types-seen) env)
+               ;; This clause is shadowed.
+               (rec rest types-seen acc)
+               (rec rest
+                    (cons type types-seen)
+                    (cons first acc)))))))))
+
 (defun remove-shadowed-clauses (clauses &optional env)
   "Given a list of typecase clauses, remove any clauses that are
 shadowed by previous clauses."
-  (nlet rec ((clauses clauses)
-             (types-seen '())
-             (acc '()))
-    (match clauses
-      ((list) (nreverse acc))
-      ((list*
-        (and clause (list* clause-type _))
-        clauses)
-       (if (subtypep clause-type `(or ,@types-seen) env)
-           ;; This clause is shadowed.
-           (rec clauses types-seen acc)
-           (rec clauses
-                (cons clause-type types-seen)
-                (cons clause acc)))))))
+  (remove-shadowed-types clauses :env env :key #'car))
 
 (defmacro etypecase-of/no-shadows (type expr &body clauses
                                    &environment env)

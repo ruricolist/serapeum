@@ -253,7 +253,7 @@ such fallthrough clauses become more useful."
 
 (defmacro dispatch-caseql ((&rest exprs-and-types) &body clauses)
   "Like `dispatch-case', but types in clauses are implicitly wrapped in `eql'.
-The syntax of `dispatch-caseql' is tohus closer to `case' than to
+The syntax of `dispatch-caseql' is thus closer to `case' than to
 `typecase'."
   (expect-form-list
    `(dispatch-case ,exprs-and-types

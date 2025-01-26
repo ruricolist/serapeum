@@ -77,7 +77,7 @@
     ((timestamp timestamp)
      (timestamp= x y))))
 
-(5am:test dispatch-case
+(5am:test dispatch-case-example
   (let* ((now/ut (get-universal-time))
          (then/ut 0)
          (then/ts (universal-to-timestamp 0))

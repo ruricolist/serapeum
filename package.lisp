@@ -344,6 +344,7 @@
    #:relative-pathname
    #:directory-pathname
    #:absolute-directory-pathname
+   #:absolute-file-pathname
    #:file-pathname
    #:path-join
    #:path-basename

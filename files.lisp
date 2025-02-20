@@ -27,6 +27,9 @@
 (deftype file-pathname ()
   '(and pathname (satisfies uiop:file-pathname-p)))
 
+(deftype absolute-file-pathname ()
+  '(and absolute-pathname file-pathname))
+
 ;;; logical-pathname is defined in CL.
 
 (deftype physical-pathname ()

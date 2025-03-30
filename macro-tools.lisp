@@ -1,4 +1,56 @@
-(in-package :serapeum)
+(defpackage :serapeum/macro-tools
+  (:documentation "Very early")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:import-from
+   :introspect-environment
+   :compiler-macroexpand
+   :compiler-macroexpand-1
+   :constant-form-value)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :build-declarations
+   :filter-declaration-env
+   :parse-declarations)
+  (:import-from
+   :trivial-cltl2
+   :variable-information)
+  (:import-from
+   :trivia
+   :ematch
+   :match)
+  (:export
+   :+merge-tail-calls+
+   :callf
+   :callf2
+   :case-failure
+   :declaim-maybe-inline
+   :define-case-macro
+   :define-do-macro
+   :define-post-modify-macro
+   :ensuring-functions
+   :eval-if-constant
+   :expand-macro
+   :expand-macro-recursively
+   :expect-form-list
+   :expect-single-form
+   :extract-function-name
+   :lambda-list-vars
+   :make-unique-name-list
+   :parse-defmethod-args
+   :parse-leading-keywords
+   :partition-declarations
+   :policy-quality
+   :rebinding-functions
+   :speed-matters?
+   :string-gensym
+   :unique-name
+   :unparse-ordinary-lambda-list
+   :unsplice
+   :variable-type
+   :with-read-only-vars
+   :with-thunk))
+(in-package :serapeum/macro-tools)
 
 ;;;# Basics
 
@@ -210,72 +262,6 @@ directly into Lisp code:
            (build (filter-declaration-env env2 :affecting xs))
            (build (filter-declaration-env env2 :not-affecting xs)))))))
 
-(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
-  "Efficiently dispatch on the type of SEQ."
-  (declare (ignorable other-form))
-  (let* ((list-form
-           `(with-read-only-vars (,seq)
-              ,list-form))
-         (array-form
-           `(with-read-only-vars (,seq)
-              ,array-form))
-         (list-form
-           `(let ((,seq (truly-the list ,seq)))
-              (declare (ignorable ,seq))
-              ,list-form))
-         (vector-form
-           ;; Create a separate branch for simple vectors.
-           `(if (simple-vector-p ,seq)
-                (let ((,seq (truly-the simple-vector ,seq)))
-                  (declare (ignorable ,seq))
-                  (with-vref simple-vector
-                    ,array-form))
-                (let ((,seq (truly-the vector ,seq)))
-                  (declare (ignorable ,seq))
-                  ,array-form))))
-    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,vector-form)
-    ;; Only SBCL and ABCL support extensible sequences right now.
-    #+(or sbcl abcl)
-    (once-only (seq)
-      `(if (listp ,seq)
-           ,list-form
-           ,(if other-form
-                `(if (arrayp ,seq)
-                     ,vector-form
-                     ,other-form)
-                ;; Duplicate the array form so that, hopefully, `elt'
-                ;; will be compiled to `aref', &c.
-                `(if (arrayp ,seq)
-                     ,vector-form
-                     ,array-form))))
-    #-(or sbcl abcl ccl)
-    `(if (listp ,seq) ,list-form ,vector-form)))
-
-(defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
-  "Efficiently dispatch on the type of VEC.
-The first form provides special handling for bit vectors. The second
-form provides generic handling for all types of vectors."
-  `(cond ((typep ,vec 'simple-bit-vector)
-          (let ((,vec (truly-the simple-bit-vector ,vec)))
-            (declare (ignorable ,vec))
-            (with-vref simple-bit-vector
-              ,bit-vector-form)))
-         ((typep ,vec 'bit-vector)
-          (let ((,vec (truly-the bit-vector ,vec)))
-            (declare (ignorable ,vec))
-            (with-vref bit-vector
-              ,bit-vector-form)))
-         ;; Omitted so we can safely nest within with-vector-dispatch.
-         ;; ((typep ,vec 'simple-vector)
-         ;;  (let ((,vec (truly-the simple-vector ,vec)))
-         ;;    (declare (ignorable ,vec))
-         ;;    (with-vref simple-vector
-         ;;      ,vector-form)))
-         (t
-          (let ((,vec (truly-the vector ,vec)))
-            (declare (ignorable ,vec))
-            ,vector-form))))
-
 ;;; `callf' and `callf2' are inspired by macros used in the
 ;;; implementation of Emacs Lisp's `cl' package.
 
@@ -314,7 +300,7 @@ Say you wanted to define a `do-hash' macro that iterates over hash
 tables. A full implementation would look like this:
 
      (defmacro do-hash ((key value hash-table &optional return) &body body)
-       (multiple-value-bind (body decls) (parse-body body)
+       (multipleo-value-bind (body decls) (parse-body body)
          `(block nil
             (maphash (lambda (,key ,value)
                        ,@decls

@@ -907,3 +907,69 @@ Equivalent to `(soft-list-of (cons KEY-TYPE VALUE-TYPE))`."
                       ;; Improper list.
                       (t (return nil)))
                  finally (return t)))))
+
+(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
+  "Efficiently dispatch on the type of SEQ."
+  (declare (ignorable other-form))
+  (let* ((list-form
+           `(with-read-only-vars (,seq)
+              ,list-form))
+         (array-form
+           `(with-read-only-vars (,seq)
+              ,array-form))
+         (list-form
+           `(let ((,seq (truly-the list ,seq)))
+              (declare (ignorable ,seq))
+              ,list-form))
+         (vector-form
+           ;; Create a separate branch for simple vectors.
+           `(if (simple-vector-p ,seq)
+                (let ((,seq (truly-the simple-vector ,seq)))
+                  (declare (ignorable ,seq))
+                  (with-vref simple-vector
+                    ,array-form))
+                (let ((,seq (truly-the vector ,seq)))
+                  (declare (ignorable ,seq))
+                  ,array-form))))
+    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,vector-form)
+    ;; Only SBCL and ABCL support extensible sequences right now.
+    #+(or sbcl abcl)
+    (once-only (seq)
+      `(if (listp ,seq)
+           ,list-form
+           ,(if other-form
+                `(if (arrayp ,seq)
+                     ,vector-form
+                     ,other-form)
+                ;; Duplicate the array form so that, hopefully, `elt'
+                ;; will be compiled to `aref', &c.
+                `(if (arrayp ,seq)
+                     ,vector-form
+                     ,array-form))))
+    #-(or sbcl abcl ccl)
+    `(if (listp ,seq) ,list-form ,vector-form)))
+
+(defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
+  "Efficiently dispatch on the type of VEC.
+The first form provides special handling for bit vectors. The second
+form provides generic handling for all types of vectors."
+  `(cond ((typep ,vec 'simple-bit-vector)
+          (let ((,vec (truly-the simple-bit-vector ,vec)))
+            (declare (ignorable ,vec))
+            (with-vref simple-bit-vector
+              ,bit-vector-form)))
+         ((typep ,vec 'bit-vector)
+          (let ((,vec (truly-the bit-vector ,vec)))
+            (declare (ignorable ,vec))
+            (with-vref bit-vector
+              ,bit-vector-form)))
+         ;; Omitted so we can safely nest within with-vector-dispatch.
+         ;; ((typep ,vec 'simple-vector)
+         ;;  (let ((,vec (truly-the simple-vector ,vec)))
+         ;;    (declare (ignorable ,vec))
+         ;;    (with-vref simple-vector
+         ;;      ,vector-form)))
+         (t
+          (let ((,vec (truly-the vector ,vec)))
+            (declare (ignorable ,vec))
+            ,vector-form))))

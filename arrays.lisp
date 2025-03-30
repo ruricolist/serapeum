@@ -19,19 +19,3 @@ Given an array and a row-major index, return a list of subscripts.
                            (car dims)))
           (rec (cons q (rplaca subs r))
                (cdr dims))))))
-
-;;; https://groups.google.com/forum/#!original/comp.lang.lisp/JF3M5kA7_vo/g3oW1UuQJ_UJ
-(defun undisplace-array (array)
-  "Recursively get the fundamental array that ARRAY is displaced to.
-
-Return the fundamental array, and the start and end positions into it.
-
-Borrowed from Erik Naggum."
-  (let ((length (length array))
-        (start 0))
-    (loop
-      (multiple-value-bind (to offset) (array-displacement array)
-        (if to
-            (setq array to
-                  start (+ start offset))
-            (return (values array start (+ start length))))))))

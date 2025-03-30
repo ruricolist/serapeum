@@ -7,7 +7,9 @@
   (:export #:sum))
 
 (defpackage #:serapeum
-  (:use :cl)
+  (:use
+   :cl
+   #:serapeum/portability)
   (:import-from #:alexandria
 		;; Binding constructs
 		#:if-let

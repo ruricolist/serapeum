@@ -1,5 +1,12 @@
 ;;;; serapeum.asd
 
+(defsystem "serapeum/portability"
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :depends-on
+  ("alexandria"
+   "trivia"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -14,7 +21,7 @@
                "split-sequence"
                "string-case"
                "parse-number"
-               ;;; Portability libraries.
+               ;; Portability libraries.
                "trivial-garbage"
                "bordeaux-threads"
                "parse-declarations-1.0"
@@ -22,12 +29,14 @@
                "trivial-cltl2"
                "global-vars"
                "trivial-file-size"
-               "trivial-macroexpand-all")
+               "trivial-macroexpand-all"
+               ;; Subsystems
+               "serapeum/portability")
   :serial t
-  :components ((:file "package")
-               ;; The basics: these files can use CL and Alexandria.
-               (:file "portability")     ;Anything not worth using a portability layer for.
-               (:file "macro-tools")     ;Very early.
+  :components (;; The basics: these files can use CL and Alexandria.
+               (:file "portability")
+               (:file "package")
+               (:file "macro-tools")    ;Very early.
                (:module "level0"
                 :serial nil
                 :pathname ""

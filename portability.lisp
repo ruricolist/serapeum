@@ -1,4 +1,14 @@
-(in-package :serapeum)
+(defpackage :serapeum/portability
+  (:documentation "Anything not worth using a portability layer for.")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:export
+   :no-applicable-method-error
+   :static-load-time-value
+   :static-load-time-value-error
+   :undisplace-array
+   :with-simple-vector))
+(in-package :serapeum/portability)
 
 ;;;#
 
@@ -57,6 +67,22 @@ shouldn't attempt to modify V."
                                      (array-element-type vector))
                          vector :start2 start :end2 end)
              0 (- end start))))
+
+;;; https://groups.google.com/forum/#!original/comp.lang.lisp/JF3M5kA7_vo/g3oW1UuQJ_UJ
+(defun undisplace-array (array)
+  "Recursively get the fundamental array that ARRAY is displaced to.
+
+Return the fundamental array, and the start and end positions into it.
+
+Borrowed from Erik Naggum."
+  (let ((length (length array))
+        (start 0))
+    (loop
+      (multiple-value-bind (to offset) (array-displacement array)
+        (if to
+            (setq array to
+                  start (+ start offset))
+            (return (values array start (+ start length))))))))
 
 (define-condition static-load-time-value-error (error)
   ((form :initarg :form)

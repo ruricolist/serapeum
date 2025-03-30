@@ -7,7 +7,10 @@
   (:export #:sum))
 
 (defpackage #:serapeum
-  (:use :cl)
+  (:use
+   :cl
+   #:serapeum/portability
+   #:serapeum/macro-tools)
   (:import-from #:alexandria
 		;; Binding constructs
 		#:if-let

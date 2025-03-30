@@ -9,7 +9,8 @@
 (defpackage #:serapeum
   (:use
    :cl
-   #:serapeum/portability)
+   #:serapeum/portability
+   #:serapeum/macro-tools)
   (:import-from #:alexandria
 		;; Binding constructs
 		#:if-let

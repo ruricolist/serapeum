@@ -7,6 +7,16 @@
   ("alexandria"
    "trivia"))
 
+(defsystem "serapeum/macro-tools"
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :depends-on
+  ("alexandria"
+   "trivia"
+   "parse-declarations-1.0"
+   "introspect-environment"
+   "trivial-cltl2"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -24,19 +34,17 @@
                ;; Portability libraries.
                "trivial-garbage"
                "bordeaux-threads"
-               "parse-declarations-1.0"
-               "introspect-environment"
-               "trivial-cltl2"
                "global-vars"
                "trivial-file-size"
                "trivial-macroexpand-all"
                ;; Subsystems
-               "serapeum/portability")
+               "serapeum/portability"
+               "serapeum/macro-tools")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "portability")
+               (:file "macro-tools")
                (:file "package")
-               (:file "macro-tools")    ;Very early.
                (:module "level0"
                 :serial nil
                 :pathname ""

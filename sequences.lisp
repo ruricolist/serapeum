@@ -1232,7 +1232,18 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
 
 (-> take-while (function sequence &key (:from-end t)) sequence)
 (defsubst take-while (pred seq &key from-end)
-  "Return the prefix of SEQ for which PRED returns true."
+  "Return the prefix of SEQ for which PRED returns true.
+
+    (take-while #'alpha-char-p \"Really!?\")
+    => \"Really\"
+
+If FROM-END is non-nil, return the suffix instead.
+
+    (take-while (complement #'alpha-char-p) \"Really!?\" :from-end t)
+    => \"!?\"
+
+If PRED returns true for all elements of SEQ, the result is a sequence
+with the same type and contents as SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (flet ((list-take-while (pred list)
            (let ((pred (ensure-function pred)))
@@ -1265,8 +1276,17 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
   "Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element.
 
-If PRED returns true for all elements of SEQ, then the result is an
-empty sequence of the same type as SEQ."
+    (drop-while #'alpha-char-p \"Really!?\")
+    => \"!?\"
+
+If FROM-END is non-nil, then drop the longest possible suffix of SEQ
+for which PRED returns true when called on the first element.
+
+    (drop-while (complement #'alpha-char-p) \"Really!?\" :from-end t)
+    => \"Really\"
+
+If PRED returns true for all elements of SEQ, then the result is
+always an empty sequence of the same type as SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (if from-end

@@ -435,7 +435,14 @@
                          (coerce "foo  " 'list)
                          :from-end t)))
   (is (equal "" (take-while #'whitespacep "foo" :from-end t)))
-  (is (equal "" (take-while #'whitespacep "" :from-end t))))
+  (is (equal "" (take-while #'whitespacep "" :from-end t)))
+  (is (equal "Really" (take-while #'alpha-char-p "Really!?")))
+  (is (equal
+       "!?"
+       (take-while
+        (complement #'alpha-char-p)
+        "Really!?"
+        :from-end t))))
 
 (test drop
   (is (equal "" (drop -3 "foo")))
@@ -451,21 +458,28 @@
   (is (equal "" (drop-while #'whitespacep "   " :from-end t)))
   (is (equal "" (drop-until (complement #'whitespacep) "   ")))
   (is (equal "" (drop-until (complement #'whitespacep) "   "
-                            :from-end t))))
+                            :from-end t)))
+  (is (equal "!?" (drop-while #'alpha-char-p "Really!?")))
+  (is (equal
+       "Really"
+       (drop-while
+        (complement #'alpha-char-p)
+        "Really!?"
+        :from-end t))))
 
 (test drop-prefix
-  (let ((seq "x"))
-    (is (eql seq (drop-prefix ":" seq)))
-    (is (eql seq (drop-prefix '(#\:) seq)))
-    (is (eql seq (drop-prefix #(#\:) seq)))
-    (is (eql seq (drop-prefix "" seq)))
-    (is (eql seq (drop-prefix nil seq))))
-  (is (equal " world" (drop-prefix "hello" "hello world")))
-  (is (equal " world" (drop-prefix '(#\h #\e #\l #\l #\o) "hello world")))
-  (is (equal " world" (drop-prefix #(#\h #\e #\l #\l #\o) "hello world")))
-  (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
-  (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3))))
-  (is (seq= #(1 2 3) (drop-prefix '(0) (eseq 0 1 2 3)))))
+      (let ((seq "x"))
+        (is (eql seq (drop-prefix ":" seq)))
+        (is (eql seq (drop-prefix '(#\:) seq)))
+        (is (eql seq (drop-prefix #(#\:) seq)))
+        (is (eql seq (drop-prefix "" seq)))
+        (is (eql seq (drop-prefix nil seq))))
+      (is (equal " world" (drop-prefix "hello" "hello world")))
+      (is (equal " world" (drop-prefix '(#\h #\e #\l #\l #\o) "hello world")))
+      (is (equal " world" (drop-prefix #(#\h #\e #\l #\l #\o) "hello world")))
+      (is (equalp #(1 2 3) (drop-prefix #(0) #(0 1 2 3))))
+      (is (equalp #(1 2 3) (drop-prefix '(0) #(0 1 2 3))))
+      (is (seq= #(1 2 3) (drop-prefix '(0) (eseq 0 1 2 3)))))
 
 (test ensure-prefix
   (is (equal "x" (ensure-prefix "x" "")))

@@ -426,7 +426,16 @@
   (is (equal "foo" (take -5 "foo"))))
 
 (test take-while
-  (is (equal "" (take-while #'whitespacep ""))))
+  (is (equal "" (take-while #'whitespacep "")))
+  (is (equal "  " (take-while #'whitespacep "foo  " :from-end t)))
+  (is (equal "  " (take-while #'whitespacep "  ")))
+  (is (equal "  " (take-while #'whitespacep "  " :from-end t)))
+  (is (equal '(#\Space #\Space)
+             (take-while #'whitespacep
+                         (coerce "foo  " 'list)
+                         :from-end t)))
+  (is (equal "" (take-while #'whitespacep "foo" :from-end t)))
+  (is (equal "" (take-while #'whitespacep "" :from-end t))))
 
 (test drop
   (is (equal "" (drop -3 "foo")))
@@ -435,8 +444,14 @@
 
 (test drop-while
   (is (equal "" (drop-while #'whitespacep "")))
+  (is (equal "" (drop-while #'whitespacep "" :from-end t)))
   (is (equal "1" (drop-while #'whitespacep "   1")))
-  (is (equal "" (drop-while #'whitespacep "   "))))
+  (is (equal "1" (drop-while #'whitespacep "1   " :from-end t)))
+  (is (equal "" (drop-while #'whitespacep "   ")))
+  (is (equal "" (drop-while #'whitespacep "   " :from-end t)))
+  (is (equal "" (drop-until (complement #'whitespacep) "   ")))
+  (is (equal "" (drop-until (complement #'whitespacep) "   "
+                            :from-end t))))
 
 (test drop-prefix
   (let ((seq "x"))

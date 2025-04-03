@@ -1230,26 +1230,38 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
         (subseq seq 0 (max 0 (+ (length seq) n)))
         (subseq seq (min (length seq) n)))))
 
-(-> take-while (function sequence) sequence)
-(defsubst take-while (pred seq)
+(-> take-while (function sequence &key (:from-end t)) sequence)
+(defsubst take-while (pred seq &key from-end)
   "Return the prefix of SEQ for which PRED returns true."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
-  (seq-dispatch seq
-    (let ((pred (ensure-function pred)))
-      (loop for x in seq
-            while (funcall pred x)
-            collect x))
-    (let ((end (position-if-not pred seq)))
-      (if end (subseq seq 0 end)
-          seq))))
+  (flet ((list-take-while (pred list)
+           (let ((pred (ensure-function pred)))
+             (loop for x in list
+                   while (funcall pred x)
+                   collect x))))
+    (declare (inline list-take-while))
+    (seq-dispatch seq
+      (if from-end
+          (nreverse (list-take-while pred (reverse seq)))
+          (list-take-while pred seq))
+      (if from-end
+          (let* ((start (position-if-not pred seq :from-end t))
+                 (start
+                   (if start
+                       (1+ start)
+                       0)))
+            (subseq seq start))
+          (let ((end (position-if-not pred seq)))
+            (if end (subseq seq 0 end)
+                seq))))))
 
-(-> take-until (function sequence) sequence)
-(defsubst take-until (pred seq)
+(-> take-until (function sequence &key (:from-end t)) sequence)
+(defsubst take-until (pred seq &key from-end)
   "Like `take-while' with the complement of PRED."
-  (take-while (complement pred) seq))
+  (take-while (complement pred) seq :from-end from-end))
 
-(-> drop-while (function sequence) sequence)
-(defsubst drop-while (pred seq)
+(-> drop-while (function sequence &key (:from-end t)) sequence)
+(defsubst drop-while (pred seq &key from-end)
   "Return the largest possible suffix of SEQ for which PRED returns
 false when called on the first element.
 
@@ -1257,15 +1269,21 @@ If PRED returns true for all elements of SEQ, then the result is an
 empty sequence of the same type as SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
-    (member-if-not pred seq)
-    (let ((start (position-if-not pred seq)))
-      (if start (subseq seq start)
-          (subseq seq (length seq))))))
+    (if from-end
+        (nreverse (member-if-not pred (reverse seq)))
+        (member-if-not pred seq))
+    (if from-end
+        (let* ((end (position-if-not pred seq :from-end t))
+               (end (if end (1+ end) 0)))
+          (subseq seq 0 end))
+        (let ((start (position-if-not pred seq)))
+          (if start (subseq seq start)
+              (subseq seq (length seq)))))))
 
-(-> drop-until (function sequence) sequence)
-(defsubst drop-until (pred seq)
+(-> drop-until (function sequence &key (:from-end t)) sequence)
+(defsubst drop-until (pred seq &key from-end)
   "Like `drop-while' with the complement of PRED."
-  (drop-while (complement pred) seq))
+  (drop-while (complement pred) seq :from-end from-end))
 
 (-> drop-prefix (sequence sequence &key (:test (or symbol function)))
     sequence)

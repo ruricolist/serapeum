@@ -1251,13 +1251,16 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
 (-> drop-while (function sequence) sequence)
 (defsubst drop-while (pred seq)
   "Return the largest possible suffix of SEQ for which PRED returns
-false when called on the first element."
+false when called on the first element.
+
+If PRED returns true for all elements of SEQ, then the result is an
+empty sequence of the same type as SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
     (member-if-not pred seq)
     (let ((start (position-if-not pred seq)))
       (if start (subseq seq start)
-          seq))))
+          (subseq seq (length seq))))))
 
 (-> drop-until (function sequence) sequence)
 (defsubst drop-until (pred seq)

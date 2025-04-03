@@ -434,7 +434,9 @@
   (is (equal "f" (drop -2 "foo"))))
 
 (test drop-while
-  (is (equal "" (drop-while #'whitespacep ""))))
+  (is (equal "" (drop-while #'whitespacep "")))
+  (is (equal "1" (drop-while #'whitespacep "   1")))
+  (is (equal "" (drop-while #'whitespacep "   "))))
 
 (test drop-prefix
   (let ((seq "x"))

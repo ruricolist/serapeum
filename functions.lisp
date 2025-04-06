@@ -487,13 +487,13 @@ This has a compiler macro for reasonable efficiency.
 From Clojure."
   (declare (optimize (debug 0)))
   (ensuring-functions (fn)
-    (labels ((rec (fn defaults)
-               (if (null defaults) fn
-                   (let ((default (first defaults)))
-                     (rec (lambda (arg &rest args)
-                            (apply fn (or arg default) args))
-                          (rest defaults))))))
-      (rec fn (reverse defaults)))))
+    (lambda (&rest args)
+      (multiple-value-call fn
+        (values-list
+         (loop for default in defaults
+               for arg = (pop args)
+               collect (or default args)))
+        (values-list args)))))
 
 (define-compiler-macro fnil (fn &rest defaults)
   (when (null defaults)

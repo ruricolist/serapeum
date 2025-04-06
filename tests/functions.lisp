@@ -171,7 +171,10 @@
   (locally (declare (notinline fnil))
     (is (every #'numberp
                (mapcar (fnil #'1+ 0)
-                       '(1 2 nil 4 6))))))
+                       '(1 2 nil 4 6)))))
+  (locally (declare (notinline fnil))
+    (is (equal '(1 2)
+               (funcall (serapeum:fnil #'list 1 2) nil nil)))))
 
 (test variadic->unary
   (is (= (max 1 2 3)

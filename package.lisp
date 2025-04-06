@@ -6,118 +6,115 @@
   ;; SUM being defined in a FLET
   (:export #:sum))
 
-(defpackage #:serapeum
+(uiop:define-package #:serapeum
+  (:use-reexport
+   #:serapeum/portability)
   (:use
    :cl
-   #:serapeum/portability
+   #:serapeum/portability/private
    #:serapeum/macro-tools)
   (:import-from #:alexandria
-		;; Binding constructs
-		#:if-let
-		#:when-let
-		#:when-let*
-		;; Definitions
-		#:define-constant
-		;; Hash tables
-		#:copy-hash-table
-		#:ensure-gethash
-		#:hash-table-values
-		#:plist-hash-table
-		;; Functions
-		#:compose
-		#:curry
-		#:disjoin
-		#:ensure-function
-		#:named-lambda
-		;; Lists
-		#:appendf
-		#:doplist
-		#:ensure-car
-		#:ensure-list
-		#:flatten
-		#:lastcar
-		#:mappend
-		#:proper-list-p
-		#:remove-from-plist
-		#:setp
-		;; Numbers
-		#:clamp
-		;; Arrays
-		#:array-index
-		#:array-length
-		;; Sequences
-		#:copy-sequence
-		#:emptyp
-		#:last-elt
-		#:ends-with-subseq
-		#:extremum
-		#:first-elt
-		#:length=
-		#:random-elt
-		#:removef
-		#:rotate
-		#:sequence-of-length-p
-		#:shuffle
-		#:starts-with-subseq
-		;; Macros
-		#:once-only
-		#:parse-body
-		#:parse-ordinary-lambda-list
-		#:with-gensyms
-		#:with-unique-names
-		;; Symbols
-		#:make-gensym-list
-		#:make-keyword
-		;; Strings
-		#:string-designator
-		;; Types
-		#:non-negative-integer
-		#:of-type
-		#:type=
-		;; Conditions
-		#:required-argument
-		#:ignore-some-conditions
-		#:simple-style-warning
-		#:simple-program-error
-		;; Functions
-		#:copy-stream
-		;; io
-		#:with-input-from-file
-		#:with-output-to-file
-		;; new additions
-		#:symbolicate)
+                ;; Binding constructs
+                #:if-let
+                #:when-let
+                #:when-let*
+                ;; Definitions
+                #:define-constant
+                ;; Hash tables
+                #:copy-hash-table
+                #:ensure-gethash
+                #:hash-table-values
+                #:plist-hash-table
+                ;; Functions
+                #:compose
+                #:curry
+                #:disjoin
+                #:ensure-function
+                #:named-lambda
+                ;; Lists
+                #:appendf
+                #:doplist
+                #:ensure-car
+                #:ensure-list
+                #:flatten
+                #:lastcar
+                #:mappend
+                #:proper-list-p
+                #:remove-from-plist
+                #:setp
+                ;; Numbers
+                #:clamp
+                ;; Arrays
+                #:array-index
+                #:array-length
+                ;; Sequences
+                #:copy-sequence
+                #:emptyp
+                #:last-elt
+                #:ends-with-subseq
+                #:extremum
+                #:first-elt
+                #:length=
+                #:random-elt
+                #:removef
+                #:rotate
+                #:sequence-of-length-p
+                #:shuffle
+                #:starts-with-subseq
+                ;; Macros
+                #:once-only
+                #:parse-body
+                #:parse-ordinary-lambda-list
+                #:with-gensyms
+                #:with-unique-names
+                ;; Symbols
+                #:make-gensym-list
+                #:make-keyword
+                ;; Strings
+                #:string-designator
+                ;; Types
+                #:non-negative-integer
+                #:of-type
+                #:type=
+                ;; Conditions
+                #:required-argument
+                #:ignore-some-conditions
+                #:simple-style-warning
+                #:simple-program-error
+                ;; Functions
+                #:copy-stream
+                ;; io
+                #:with-input-from-file
+                #:with-output-to-file
+                ;; new additions
+                #:symbolicate)
   (:import-from #:tcr.parse-declarations-1.0
-		#:map-declaration-env
-		#:filter-declaration-env
-		#:parse-declarations
-		#:build-declarations)
+                #:map-declaration-env
+                #:filter-declaration-env
+                #:parse-declarations
+                #:build-declarations)
   (:import-from #:split-sequence
-		#:split-sequence
-		#:split-sequence-if
-		#:split-sequence-if-not)
+                #:split-sequence
+                #:split-sequence-if
+                #:split-sequence-if-not)
   (:import-from #:parse-number
-		#:parse-number
-		#:parse-positive-real-number
-		#:parse-real-number
-		#:invalid-number
-		#:invalid-number-value
-		#:invalid-number-reason)
+                #:parse-number
+                #:parse-positive-real-number
+                #:parse-real-number
+                #:invalid-number
+                #:invalid-number-value
+                #:invalid-number-reason)
   (:import-from #:introspect-environment
-		#:compiler-macroexpand #:compiler-macroexpand-1
-		#:constant-form-value #:typexpand #:typexpand-1)
+                #:compiler-macroexpand #:compiler-macroexpand-1
+                #:constant-form-value #:typexpand #:typexpand-1)
   (:import-from #:trivia
-		#:match #:ematch :defpattern)
+                #:match #:ematch :defpattern)
   (:import-from #:trivial-file-size
-		#:file-size-in-octets)
+                #:file-size-in-octets)
   (:import-from #:serapeum.sum
-		#:sum)
+                #:sum)
   (:documentation "Utilities beyond Alexandria.")
-  #+sb-package-locks (:lock t)
   (:export
-   ;; Portability.
-   #:static-load-time-value
-   #:static-load-time-value-error
-   #:no-applicable-method-error
    ;; Macro tools.
    #:unsplice
    #:string-gensym
@@ -366,7 +363,6 @@
    #:bound-value
    ;; Arrays.
    #:array-index-row-major
-   #:undisplace-array
    ;; Queues.
    #:queue
    #:queuep
@@ -634,6 +630,9 @@
    #:si-prefix
    #:human-size-formatter
    #:format-human-size))
+
+#+sb-package-locks
+(sb-ext:lock-package :serapeum)
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

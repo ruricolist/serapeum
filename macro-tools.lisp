@@ -2,6 +2,33 @@
   (:documentation "Very early")
   #+sb-package-locks (:lock t)
   (:use :cl :alexandria)
+  (:export
+   :+merge-tail-calls+
+   :callf
+   :callf2
+   :case-failure
+   :define-case-macro
+   :define-do-macro
+   :define-post-modify-macro
+   :eval-if-constant
+   :expand-macro
+   :expand-macro-recursively
+   :expect-form-list
+   :expect-single-form
+   :make-unique-name-list
+   :parse-defmethod-args
+   :parse-leading-keywords
+   :partition-declarations
+   :string-gensym
+   :unique-name
+   :unparse-ordinary-lambda-list
+   :unsplice
+   :with-read-only-vars
+   :with-thunk))
+
+(uiop:define-package :serapeum/macro-tools/private
+  ;; #+sb-package-locks (:implement :serapeum/macro-tools)
+  (:use :cl :alexandria)
   (:import-from
    :introspect-environment
    :compiler-macroexpand
@@ -19,38 +46,23 @@
    :trivia
    :ematch
    :match)
+  (:use-reexport :serapeum/macro-tools)
   (:export
-   :+merge-tail-calls+
-   :callf
-   :callf2
-   :case-failure
    :declaim-maybe-inline
-   :define-case-macro
-   :define-do-macro
-   :define-post-modify-macro
    :ensuring-functions
-   :eval-if-constant
-   :expand-macro
-   :expand-macro-recursively
-   :expect-form-list
-   :expect-single-form
    :extract-function-name
    :lambda-list-vars
-   :make-unique-name-list
-   :parse-defmethod-args
-   :parse-leading-keywords
-   :partition-declarations
    :policy-quality
    :rebinding-functions
    :speed-matters?
-   :string-gensym
-   :unique-name
-   :unparse-ordinary-lambda-list
-   :unsplice
-   :variable-type
-   :with-read-only-vars
-   :with-thunk))
-(in-package :serapeum/macro-tools)
+   :variable-type))
+#+sb-package-locks
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-ext:add-implementation-package
+   :serapeum/macro-tools/private
+   :serapeum/macro-tools))
+
+(in-package :serapeum/macro-tools/private)
 
 ;;;# Basics
 

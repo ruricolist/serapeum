@@ -8,11 +8,12 @@
 
 (uiop:define-package #:serapeum
   (:use-reexport
-   #:serapeum/portability)
+   #:serapeum/portability
+   #:serapeum/macro-tools)
   (:use
    :cl
    #:serapeum/portability/private
-   #:serapeum/macro-tools)
+   #:serapeum/macro-tools/private)
   (:import-from #:alexandria
                 ;; Binding constructs
                 #:if-let
@@ -115,28 +116,6 @@
                 #:sum)
   (:documentation "Utilities beyond Alexandria.")
   (:export
-   ;; Macro tools.
-   #:unsplice
-   #:string-gensym
-   #:unique-name
-   #:unique-name-list
-   #:with-thunk
-   #:expand-macro
-   #:expand-macro-recursively
-   #:partition-declarations
-   #:callf #:callf2
-   #:define-do-macro
-   #:define-post-modify-macro
-   #:case-failure
-   #:define-case-macro
-   #:eval-if-constant
-   #:parse-leading-keywords
-   #:with-read-only-vars
-   #:+merge-tail-calls+
-   #:expect-form-list
-   #:expect-single-form
-   #:unparse-ordinary-lambda-list
-   #:parse-method-args
    ;; Types.
    #:supertypep
    #:proper-subtype-p

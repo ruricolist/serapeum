@@ -492,6 +492,8 @@
    #:plist-values
    #:stable-set-difference
    #:intersectionp
+   #:append-longest
+   #:mappend-longest
    ;; Strings.
    #:ascii-char-p
    #:whitespace

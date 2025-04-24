@@ -417,3 +417,22 @@ Two empty lists are not considered to intersect."
             (unless (mem (key elt) list2)
               (collect elt))))
         list1)))
+
+(defun append-longest (&rest lists)
+  "Like `append', but without guarantees as to order.
+This is to allow always putting the longest list in LISTs last, to
+maximize structure sharing.
+
+This also ignores nil, so `(append-longest list nil)' will return its
+first argument unchanged."
+  (let ((lists (remove nil lists)))
+    (cond ((no lists) nil)
+          ((single lists) (car lists))
+          (t (let ((longest (longest lists)))
+               (multiple-value-call #'append
+                 (values-list (remove longest lists))
+                 longest))))))
+
+(defun mappend-longest (fn &rest lists)
+  "Like `mappend', but using `append-longest'."
+  (apply #'append-longest (mapcar fn lists)))

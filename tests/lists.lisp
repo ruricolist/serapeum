@@ -283,3 +283,10 @@
   (is (null (intersectionp '() '(1))))
   (is (intersectionp '(1) '(1 2)))
   (is (intersectionp '(1 2) '(1))))
+
+(test append-longest
+  (let ((list '(a b c)))
+    (is (eq list (append-longest nil list nil))))
+  (let ((lists '((a b c d) (d e) (f))))
+    (is (loop for tail on (apply #'append-longest lists)
+              thereis (eq tail (car lists))))))

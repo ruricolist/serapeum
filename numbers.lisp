@@ -12,14 +12,37 @@
 The second value is T if X was nonzero."
   (null-if x 0 :test #'=))
 
-(define-post-modify-macro finc (&optional (delta 1)) +
+;;; DEPRECATED
+(defmacro finc (place &optional (delta 1))
+  "DEPRECATED: use `shift-incf' instead."
+  (simple-style-warning "~s is deprecated, use ~s instead"
+                        'finc 'shift-incf)
+  `(shift-incf ,place ,delta))
+
+(define-post-modify-macro shift-incf (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
+
+    (shift-incf x n)
+    ≡ (shiftf x (+ x n))
+
+In C terms, this is a postincrement while `incf' is a preincrement.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.")
 
-(define-post-modify-macro fdec (&optional (delta 1)) -
-  "Like `decf', but returns the old value instead of the new.")
+(defmacro fdec (place &optional (delta 1))
+  "DEPRECATED: use `shift-decf' instead."
+  (simple-style-warning "~s is deprecated, use ~s instead"
+                        'finc 'shift-incf)
+  `(shift-decf ,place ,delta))
+
+(define-post-modify-macro shift-decf (&optional (delta 1)) -
+  "Like `decf', but returns the old value instead of the new.
+
+    (shift-decf x n)
+    ≡ (shiftf x (- x n))
+
+In C terms, this is a postdecrement while `decf' is a predecrement.")
 
 ;;; Loose adaption of the parser in SBCL's reader.lisp.
 

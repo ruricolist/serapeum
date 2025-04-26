@@ -412,7 +412,9 @@
    #:unbits
    #:round-to
    #:finc
+   #:shift-incf
    #:fdec
+   #:shift-decf
    #:shrink
    #:grow
    #:shrinkf

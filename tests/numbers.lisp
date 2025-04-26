@@ -18,11 +18,25 @@
     (is (eql (finc x 12) 1))
     (is (eql x 13))))
 
+(test shift-incf
+  (let ((x 0))
+    (is (eql (shift-incf x) 0))
+    (is (eql x 1))
+    (is (eql (shift-incf x 12) 1))
+    (is (eql x 13))))
+
 (test fdec
   (let ((x 100))
     (is (eql (fdec x) 100))
     (is (eql x 99))
     (is (eql (fdec x 17) 99))
+    (is (eql x 82))))
+
+(test shift-decf
+  (let ((x 100))
+    (is (eql (shift-decf x) 100))
+    (is (eql x 99))
+    (is (eql (shift-decf x 17) 99))
     (is (eql x 82))))
 
 (test parse-float

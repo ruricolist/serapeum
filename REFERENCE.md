@@ -1,4 +1,4 @@
-# Function Listing For serapeum (42 files, 463 functions)
+# Function Listing For serapeum (42 files, 465 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -3826,6 +3826,22 @@ Two empty lists are not considered to intersect.
 Like `set-difference`, but preserve the order of LIST1's elements.
 
 [View source](lists.lisp#L410)
+
+### `(append-longest &rest lists)`
+
+Like `append`, but without guarantees as to order.
+The longest list in LISTs is put last, to maximize structure sharing.
+
+This also ignores nil, so `(append-longest list nil)' will return its
+first argument unchanged.
+
+[View source](lists.lisp#L421)
+
+### `(mappend-longest fn &rest lists)`
+
+Like `mappend`, but using `append-longest`.
+
+[View source](lists.lisp#L435)
 
 ## Sequences
 

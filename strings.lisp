@@ -781,19 +781,23 @@ From Arc."
       (or (not ms) (= ms end1))))
 
   ;; Optimization: the prefix is a single character.
-  (macrolet ((dcm (name test)
+  (macrolet ((dcm (name test &key caseless)
                `(define-compiler-macro ,name (&whole call prefix string &rest args)
                   (if args call
-                      (if (and (stringp prefix)
-                               (= (length prefix) 1))
-                          `((lambda (s)
-                              (and (plusp (length s))
-                                   (,',test ,(character prefix)
-                                            (aref s 0))))
-                            (string ,string))
+                      (if (stringp prefix)
+                          (or (and ',caseless
+                                   (notany #'both-case-p prefix)
+                                   `(,',caseless ,prefix ,string ,@args))
+                              (if (length= 1 prefix)
+                                  `((lambda (s)
+                                      (and (plusp (length s))
+                                           (,',test ,(character prefix)
+                                             (aref s 0))))
+                                    (string ,string))
+                                  call))
                           call)))))
     (dcm string^= char=)
-    (dcm string-prefix-p char-equal))
+    (dcm string-prefix-p char-equal :caseless string^=))
 
   (defcmp (string$= string-suffix-p) (suffix string)
     "Is SUFFIX a suffix of STRING?"
@@ -801,19 +805,23 @@ From Arc."
       (or (not ms) (= ms start1))))
 
   ;; Optimization: the suffix is a single character.
-  (macrolet ((dcm (name test)
+  (macrolet ((dcm (name test &key caseless)
                `(define-compiler-macro ,name (&whole call suffix string &rest args)
                   (if args call
-                      (if (and (stringp suffix)
-                               (= (length suffix) 1))
-                          `((lambda (s)
-                              (and (plusp (length s))
-                                   (,',test ,(character suffix)
-                                            (aref s (1- (length s))))))
-                            (string ,string))
+                      (if (stringp suffix)
+                          (or (and ',caseless
+                                   (notany #'both-case-p suffix)
+                                   `(,',caseless ,suffix ,string ,@args))
+                              (if (= (length suffix) 1)
+                                  `((lambda (s)
+                                      (and (plusp (length s))
+                                           (,',test ,(character suffix)
+                                             (aref s (1- (length s))))))
+                                    (string ,string))
+                                  call))
                           call)))))
     (dcm string$= char=)
-    (dcm string-suffix-p char-equal))
+    (dcm string-suffix-p char-equal  :caseless string$=))
 
   (defcmp (string*= string-contains-p) (substring string)
     "Is SUBSTRING a substring of STRING?
@@ -827,15 +835,21 @@ This is similar, but not identical, to SEARCH.
     (call search substring string))
 
   ;; Optimization: the substring is a single character.
-  (macrolet ((dcm (name test)
+  (macrolet ((dcm (name test &key caseless)
                `(define-compiler-macro ,name (&whole call substring string &rest args)
                   (if args call
-                      (if (and (stringp substring)
-                               (= (length substring) 1))
-                          `(position ,(character substring) (string ,string) :test #',',test)
+                      (if (stringp substring)
+                          (or (and ',caseless
+                                   (notany #'both-case-p substring)
+                                   `(,',caseless ,substring ,string ,@args))
+                              (if (= (length substring) 1)
+                                  `(position ,(character substring)
+                                             (string ,string)
+                                             :test #',',test)
+                                  call))
                           call)))))
     (dcm string*= char=)
-    (dcm string-contains-p char-equal))
+    (dcm string-contains-p char-equal :caseless string*=))
 
   (defcmp (string~= string-token-p) (token string)
     "Does TOKEN occur in STRING as a token?
@@ -860,8 +874,8 @@ but without consing."
               for right of-type array-length
                 = (min (or (position-if #'whitespacep string :start left) len)
                        end)
-                  thereis (and (not (= right left))
-                               (compare-segment left right))
+              thereis (and (not (= right left))
+                           (compare-segment left right))
               until (>= right end))))))
 
 (-> string-replace-all

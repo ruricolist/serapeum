@@ -222,6 +222,8 @@
   (is (string^= "a long string" "string" :start1 (length "a long ")))
   (is (not (string^= "a" "")))
   (is (string^= "a" "abe"))
+  (is (string^= "^" "^abe"))
+  (is (string-prefix-p "^" "^abe"))
   (is (string^= "a" '|abc|))
   (is (not (string^= "a" "be"))))
 
@@ -231,6 +233,7 @@
   (is (not (string$= "bar" "ar")))
   (is (not (string$= "1x" "2x")))
   (is (string$= "/" "foo/"))
+  (is (string-suffix-p "/" "foo/"))
   (is (not (string$= "/" "")))
   (is (string$= "c" '|abc|))
   (is (string$= "/" "/")))
@@ -241,6 +244,8 @@
   (is (string*= nil "NIL"))
   (is (not (string*= "a" "")))
   (is (string*= "a" "a"))
+  (is (string*= "-" "a-"))
+  (is (string-contains-p "-" "a-"))
   (is (string*= "a" '|abc|))
   (is (string*= "a" "abe")))
 

@@ -1,4 +1,4 @@
-# Function Listing For serapeum (42 files, 465 functions)
+# Function Listing For serapeum (42 files, 467 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2929,20 +2929,42 @@ The second value is T if X was nonzero.
 
 [View source](numbers.lisp#L10)
 
-### `(finc ref &optional (delta 1))`
+### `(finc place &optional (delta 1))`
+
+DEPRECATED: use `shift-incf` instead.
+
+[View source](numbers.lisp#L16)
+
+### `(shift-incf ref &optional (delta 1))`
 
 Like `incf`, but returns the old value instead of the new.
+
+    (shift-incf x n)
+    ≡ (shiftf x (+ x n))
+
+In C terms, this is a postincrement while `incf` is a preincrement.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.
 
-[View source](numbers.lisp#L15)
+[View source](numbers.lisp#L22)
 
-### `(fdec ref &optional (delta 1))`
+### `(fdec place &optional (delta 1))`
+
+DEPRECATED: use `shift-decf` instead.
+
+[View source](numbers.lisp#L33)
+
+### `(shift-decf ref &optional (delta 1))`
 
 Like `decf`, but returns the old value instead of the new.
 
-[View source](numbers.lisp#L21)
+    (shift-decf x n)
+    ≡ (shiftf x (- x n))
+
+In C terms, this is a postdecrement while `decf` is a predecrement.
+
+[View source](numbers.lisp#L39)
 
 ### `(parse-float string &key start end junk-allowed type)`
 
@@ -2960,7 +2982,7 @@ The type of the float is determined by, in order:
 Of course you could just use `parse-number`, but sometimes only a
 float will do.
 
-[View source](numbers.lisp#L110)
+[View source](numbers.lisp#L133)
 
 ### `(round-to number &optional divisor)`
 
@@ -2969,45 +2991,45 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
-[View source](numbers.lisp#L147)
+[View source](numbers.lisp#L170)
 
 ### `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L156)
+[View source](numbers.lisp#L179)
 
 ### `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L178)
+[View source](numbers.lisp#L201)
 
 ### `(shrink n by)`
 
 Decrease N by a factor.
 
-[View source](numbers.lisp#L195)
+[View source](numbers.lisp#L218)
 
 ### `(grow n by)`
 
 Increase N by a factor.
 
-[View source](numbers.lisp#L199)
+[View source](numbers.lisp#L222)
 
 ### `(shrinkf g n)`
 
 Shrink the value in a place by a factor.
 
-[View source](numbers.lisp#L203)
+[View source](numbers.lisp#L226)
 
 ### `(growf g n)`
 
 Grow the value in a place by a factor.
 
-[View source](numbers.lisp#L206)
+[View source](numbers.lisp#L229)
 
 ### `(random-in-range low high)`
 
@@ -3025,7 +3047,7 @@ would cause a floating-point overflow.
 
 From Zetalisp.
 
-[View source](numbers.lisp#L209)
+[View source](numbers.lisp#L232)
 
 ### `(float-precision-contagion &rest ns)`
 
@@ -3038,7 +3060,7 @@ floating-point arguments to the function".
 This does nothing but numeric contagion: the number of arguments
 returned is the same as the number of arguments given.
 
-[View source](numbers.lisp#L289)
+[View source](numbers.lisp#L312)
 
 ## Octets
 
@@ -3830,7 +3852,7 @@ Like `set-difference`, but preserve the order of LIST1's elements.
 ### `(append-longest &rest lists)`
 
 Like `append`, but without guarantees as to order.
-The longest list in LISTs is put last, to maximize structure sharing.
+The longest list in LISTS is put last, to maximize structure sharing.
 
 This also ignores nil, so `(append-longest list nil)' will return its
 first argument unchanged.

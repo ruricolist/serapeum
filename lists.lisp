@@ -420,7 +420,7 @@ Two empty lists are not considered to intersect."
 
 (defun append-longest (&rest lists)
   "Like `append', but without guarantees as to order.
-The longest list in LISTs is put last, to maximize structure sharing.
+The longest list in LISTS is put last, to maximize structure sharing.
 
 This also ignores nil, so `(append-longest list nil)' will return its
 first argument unchanged."

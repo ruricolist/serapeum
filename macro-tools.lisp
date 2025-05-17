@@ -26,7 +26,7 @@
    :with-read-only-vars
    :with-thunk))
 
-(uiop:define-package :serapeum/macro-tools/private
+(uiop:define-package :serapeum/macro-tools/internal
   ;; #+sb-package-locks (:implement :serapeum/macro-tools)
   (:use :cl :alexandria)
   (:import-from
@@ -59,10 +59,10 @@
 #+sb-package-locks
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-ext:add-implementation-package
-   :serapeum/macro-tools/private
+   :serapeum/macro-tools/internal
    :serapeum/macro-tools))
 
-(in-package :serapeum/macro-tools/private)
+(in-package :serapeum/macro-tools/internal)
 
 ;;;# Basics
 

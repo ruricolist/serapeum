@@ -8,7 +8,7 @@
       :static-load-time-value-error
       :undisplace-array))
 
-(uiop:define-package :serapeum/portability/private
+(uiop:define-package :serapeum/portability/internal
   ;; #+sb-package-locks (:implement :serapeum/portability)
   (:use :cl :alexandria)
   (:use-reexport :serapeum/portability)
@@ -16,10 +16,10 @@
 #+sb-package-locks
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (sb-ext:add-implementation-package
-   :serapeum/portability/private
+   :serapeum/portability/internal
    :serapeum/portability))
 
-(in-package :serapeum/portability/private)
+(in-package :serapeum/portability/internal)
 
 ;;;#
 

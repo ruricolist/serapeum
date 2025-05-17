@@ -12,8 +12,8 @@
    #:serapeum/macro-tools)
   (:use
    :cl
-   #:serapeum/portability/private
-   #:serapeum/macro-tools/private)
+   #:serapeum/portability/internal
+   #:serapeum/macro-tools/internal)
   (:import-from #:alexandria
                 ;; Binding constructs
                 #:if-let

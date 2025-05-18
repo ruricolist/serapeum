@@ -35,7 +35,9 @@ This saves needless updates to the documentation."
            append (asdf-components c)))))
 
 (defun function-reference-data (package-name system-name)
-  (let* ((package (find-package package-name))
+  (let* ((package
+           (or (find-package package-name)
+               (error "No such package as ~a" package-name)))
          (data (collect-reference-data package))
          (system (asdf:find-system system-name))
          (by-file (assort data :key (op (getf _ :file)) :test 'equal))

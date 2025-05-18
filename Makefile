@@ -4,7 +4,7 @@ source_files := $(wildcard *.lisp)
 
 CCL := ccl
 
-DOC_PACKAGES := :serapeum.portability :serapeum.macro-tools :serapeum :serapeum.exporting :serapeum.docs
+DOC_PACKAGES := :serapeum/portability :serapeum/macro-tools :serapeum :serapeum.exporting :serapeum.docs
 
 all: REFERENCE.md
 

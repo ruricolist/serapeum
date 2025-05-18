@@ -5922,7 +5922,7 @@ If it is nil, then the functio will return output as a string.
 In case of string or a pathname, output will be rendered into the
 file with that name, superseding it if it is already exists.
 
-[View source](docs.lisp#L85)
+[View source](docs.lisp#L87)
 
 ### `(update-function-reference filename system &optional packages)`
 
@@ -5942,5 +5942,5 @@ Example usage:
 
 
 
-[View source](docs.lisp#L155)
+[View source](docs.lisp#L157)
 

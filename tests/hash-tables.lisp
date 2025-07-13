@@ -47,6 +47,14 @@
     (signals error
       (ht :y 2))))
 
+(test hash-table-function/strict-read
+  (fbind ((ht (hash-table-function (dict :x 1) :strict :read)))
+    (is (= 1 (ht :x)))
+    (signals error
+      (ht :y))
+    (ht :y 2)
+    (is (= 2 (ht :y)))))
+
 (test hash-table-function/key-type
   (fbind ((ht (hash-table-function (dict :x 1) :key-type 'keyword)))
     (is (= 1 (ht :x)))

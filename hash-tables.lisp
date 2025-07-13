@@ -464,7 +464,8 @@ equivalent to `(setf (gethash ...))' against HASH-TABLE.
 
 If STRICT is non-nil, then the function signals an error if it is
 called with a key that is not present in HASH-TABLE. This applies to
-setting keys, as well as looking them up.
+setting keys, as well as looking them up. Pass `:strict :read` if you
+only want strict checking for lookups.
 
 The function is able to restrict what types are permitted as keys and
 values. If KEY-TYPE is specified, an error will be signaled if an
@@ -488,14 +489,26 @@ specified."
                        (setf (gethash key ht) value)
                        (gethash key ht)))))
            (wrap-strict (fun)
-             (if (not strict) fun
-                 (if read-only
-                     (lambda (key)
-                       (strict-lookup fun key))
-                     (lambda (key &optional (value nil value?))
-                       (if value?
-                           (setf (strict-lookup fun key) value)
-                           (strict-lookup fun key))))))
+             (symbol-macrolet
+                 ((strict-reader
+                    (lambda (key)
+                      (strict-lookup fun key))))
+               (case strict
+                 ((nil) fun)
+                 (:read
+                  (if read-only
+                      strict-reader
+                      (lambda (key &optional (value nil value?))
+                        (if value?
+                            (funcall fun key value)
+                            (strict-lookup fun key)))))
+                 (otherwise
+                  (if read-only
+                      strict-reader
+                      (lambda (key &optional (value nil value?))
+                        (if value?
+                            (setf (strict-lookup fun key) value)
+                            (strict-lookup fun key))))))))
            (strict-lookup (fun key)
              (multiple-value-bind (value present?)
                  (funcall fun key)

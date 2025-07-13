@@ -446,8 +446,17 @@ opposite order."
         (gethash x hash-table)
       (values val? val))))
 
+(defun compile-type-check (type &key env)
+  (ensure-function
+   (let ((type (typexpand type env)))
+     (compile nil `(lambda (x)
+                     (unless (typep x ',type)
+                       (error 'type-error
+                              :expected-type ',type
+                              :datum x)))))))
+
 (defun hash-table-function (hash-table &key read-only strict (key-type 't) (value-type 't)
-                                            strict-types)
+                                         strict-types)
   "Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash'
@@ -477,9 +486,6 @@ pairings satisfy KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is
 also specified."
   (labels ((no-such-key (key)
              (error "Hash table ~a has no key ~a" hash-table key))
-           (check-type* (datum type)
-             (unless (typep datum type)
-               (error 'type-error :expected-type type :datum type)))
            (wrap-hash-table (ht)
              (if read-only
                  (lambda (key)
@@ -524,24 +530,28 @@ also specified."
                    (no-such-key key))))
            (wrap-key-type (fun type)
              (if (type= type t) fun
-                 (lambda (key &rest args)
-                   (check-type* key type)
-                   (apply fun key args))))
+                 (let ((checker (compile-type-check type)))
+                   (lambda (key &rest args)
+                     (funcall checker key)
+                     (apply fun key args)))))
            (wrap-value-type (fun type)
              (if (type= type t) fun
                  (if read-only fun
-                     (lambda (key &optional (value nil value?))
-                       (if (not value?)
-                           (funcall fun key)
-                           (progn
-                             (check-type* value type)
-                             (funcall fun key value))))))))
+                     (let ((checker (compile-type-check type)))
+                       (lambda (key &optional (value nil value?))
+                         (if (not value?)
+                             (funcall fun key)
+                             (progn
+                               (funcall checker value)
+                               (funcall fun key value)))))))))
     (when strict-types
       (unless (and (type= key-type t)
                    (type= value-type t))
-        (do-hash-table (k v hash-table)
-          (check-type* k key-type)
-          (check-type* v value-type))))
+        (let ((key-type-checker (compile-type-check key-type))
+              (value-type-checker (compile-type-check value-type)))
+          (do-hash-table (k v hash-table)
+            (funcall key-type-checker k)
+            (funcall value-type-checker v)))))
     (assure function
       (~> hash-table
           copy-hash-table

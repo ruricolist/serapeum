@@ -473,8 +473,8 @@ attempt is made to get or set a key that does not satisfy KEY-TYPE. If
 VALUE-TYPE is specified, an error will be signaled if an attempt is
 made to set a value that does not satisfy VALUE-TYPE. However, the
 hash table provided is *not* checked to ensure that the existing
-pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
-specified."
+pairings satisfy KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is
+also specified."
   (labels ((no-such-key (key)
              (error "Hash table ~a has no key ~a" hash-table key))
            (check-type* (datum type)

@@ -30,6 +30,13 @@
               (word-wrap "There is no way on god’s green earth I can perform that function, Will Robinson."
                          :column 40)))))
 
+(test word-wrap-regression
+  (let ((string "A really long string that requires wrapping.")
+        (column 20))
+    (is
+     (every (lambda (line) (<= (length line) column))
+            (serapeum:lines (serapeum:word-wrap string :column column))))))
+
 (test lines
   (let ((nl (string #\Newline))
         (cr uiop:+cr+)

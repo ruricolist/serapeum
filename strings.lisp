@@ -379,18 +379,20 @@ removed."
         (flet ((reset ()
                  (setq col 0)
                  (terpri s))
-               (output-word (word)
+               (output-word (word space?)
                  (write-string word s)
                  (incf col (length word))
-                 (when more
+                 (when space?
                    (write-char #\Space s)
                    (incf col))))
           (let ((projected-length (+ col (length token))))
-            (if (<= projected-length column)
-                (output-word token)
-                (progn
-                  (reset)
-                  (output-word token)))))))))
+            (cond ((= projected-length column)
+                   (output-word token nil))
+                  ((< projected-length column)
+                   (output-word token t))
+                  (t
+                   (reset)
+                   (output-word token t)))))))))
 
 (-> lines ((or null string)
            &key

@@ -66,8 +66,9 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
 
 (defun read-float-aux (stream junk-allowed type)
   #.+merge-tail-calls+
-  (labels ((junk ()
-             (error "Junk in string"))
+  (labels ((junk-found ()
+             (unless junk-allowed
+               (error "Junk in string")))
            (next ()
              (let ((char (read-char stream nil nil)))
                (values char (and char (digit-char-p char)))))
@@ -81,9 +82,10 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
                       (before-decimal (+ (* number 10) digit)))
                      ((exponent-char? char)
                       (exponent number 1 0 (exponent-char-format char)))
-                     (t (if junk-allowed
-                            number
-                            (junk))))))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      number))))
            (after-decimal (number divisor)
              (multiple-value-bind (char digit) (next)
                (cond ((null char)
@@ -94,9 +96,10 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
                      (digit
                       (after-decimal (+ (* number 10) digit)
                                      (* divisor 10)))
-                     (t (if junk-allowed
-                            (make-float number divisor)
-                            (junk))))))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      (make-float number divisor)))))
            (exponent (n d e f &optional neg)
              (multiple-value-bind (char digit) (next)
                (cond ((null char)
@@ -108,10 +111,11 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
                       (exponent n d e f t))
                      (digit
                       (exponent n d (+ (* e 10) digit) f neg))
-                     (t (if junk-allowed
-                            (let ((e (if neg (- e) e)))
-                              (make-float (* (expt 10 e) n) d f))
-                            (junk)))))))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      (let ((e (if neg (- e) e)))
+                        (make-float (* (expt 10 e) n) d f)))))))
     (before-decimal 0)))
 
 (defun read-float (stream junk-allowed type)
@@ -126,9 +130,11 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
                (eql char #\.))
            (unread-char char stream)
            (read-float-aux stream junk-allowed type))
-          (t (if junk-allowed
-                 (coerce 0 type)
-                 (error "Junk in string"))))))
+          (t
+           (unless junk-allowed
+             (error "Junk in string"))
+           (unread-char char stream)
+           (coerce 0 type)))))
 
 (defun parse-float (string &key (start 0) (end (length string)) junk-allowed
                                 (type *read-default-float-format* type-supplied-p))
@@ -139,18 +145,24 @@ The type of the float is determined by, in order:
 - The type specified in the exponent of the string;
 - or `*read-default-float-format*'.
 
-     (parse-float \"1.0\") => 1.0s0
-     (parse-float \"1.0d0\") => 1.0d0
-     (parse-float \"1.0s0\" :type 'double-float) => 1.0d0
+The second return value is upper bounding index of the substring that is parsed,
+as in `parse-integer'.
+
+     (parse-float \"1.0\") => 1.0s0, 3
+     (parse-float \"1.0d0\") => 1.0d0, 5
+     (parse-float \"1.0s0\" :type 'double-float) => 1.0d0, 5
 
 Of course you could just use `parse-number', but sometimes only a
 float will do."
   (assert (subtypep type 'float))
-  (with-input-from-string (stream string :start start :end end)
-    (let ((float (read-float stream junk-allowed type)))
-      (if type-supplied-p
-          (coerce float type)
-          float))))
+  (let (pos)
+    (values
+     (with-input-from-string (stream string :start start :end end :index pos)
+       (let ((float (read-float stream junk-allowed type)))
+         (if type-supplied-p
+             (coerce float type)
+             float)))
+     pos)))
 
 ;;; When parse-float is called with a constant `:type' argument, wrap
 ;;; it in a `the' form.

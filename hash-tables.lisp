@@ -447,7 +447,7 @@ opposite order."
       (values val? val))))
 
 (defun hash-table-function (hash-table &key read-only strict (key-type 't) (value-type 't)
-                                            strict-types)
+                                         strict-types default)
   "Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash'
@@ -467,6 +467,8 @@ called with a key that is not present in HASH-TABLE. This applies to
 setting keys, as well as looking them up. Pass `:strict :read` if you
 only want strict checking for lookups.
 
+DEFAULT is the default value to return from `gethash'.
+
 The function is able to restrict what types are permitted as keys and
 values. If KEY-TYPE is specified, an error will be signaled if an
 attempt is made to get or set a key that does not satisfy KEY-TYPE. If
@@ -483,11 +485,11 @@ also specified."
            (wrap-hash-table (ht)
              (if read-only
                  (lambda (key)
-                   (gethash key ht))
+                   (gethash key ht default))
                  (lambda (key &optional (value nil value?))
                    (if value?
                        (setf (gethash key ht) value)
-                       (gethash key ht)))))
+                       (gethash key ht default)))))
            (wrap-strict (fun)
              (symbol-macrolet
                  ((strict-reader

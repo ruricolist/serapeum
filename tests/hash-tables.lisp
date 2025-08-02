@@ -30,6 +30,10 @@
       (ht :y 2)
       (is (= 2 (ht :y))))))
 
+(test hash-table-function
+  (fbind ((ht (hash-table-function (dict) :default 0)))
+    (= 4 (+ 2 (ht :x 2)))))
+
 (test hash-table-function/read-only
   (fbind ((ht (hash-table-function (dict :x 1) :read-only t)))
     (signals error

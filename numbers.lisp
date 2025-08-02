@@ -122,7 +122,7 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
   (let ((char (read-char stream nil nil)))
     (cond ((null char)
            (if junk-allowed
-               (coerce 0 type)
+               nil
                (error "Empty string cannot be parsed as float")))
           ((eql char #\+) (read-float-aux stream junk-allowed type))
           ((eql char #\-) (- (read-float-aux stream junk-allowed type)))
@@ -137,7 +137,7 @@ In C terms, this is a postdecrement while `decf' is a predecrement.")
            (coerce 0 type)))))
 
 (defun parse-float (string &key (start 0) (end (length string)) junk-allowed
-                                (type *read-default-float-format* type-supplied-p))
+                             (type *read-default-float-format* type-supplied-p))
   "Parse STRING as a float of TYPE.
 
 The type of the float is determined by, in order:
@@ -159,24 +159,44 @@ float will do."
     (values
      (with-input-from-string (stream string :start start :end end :index pos)
        (let ((float (read-float stream junk-allowed type)))
-         (if type-supplied-p
-             (coerce float type)
-             float)))
+         (and float
+              (if type-supplied-p
+                  (coerce float type)
+                  float))))
      pos)))
 
-;;; When parse-float is called with a constant `:type' argument, wrap
-;;; it in a `the' form.
+(define-compiler-macro parse-float
+    (&whole call string &rest args
+            &key (type nil type-supplied?)
+            (junk-allowed nil junk-allowed-supplied?)
+            &allow-other-keys)
+  "When parse-float is called with a constant TYPE argument, wrap
+it with a type declaration.
 
-(define-compiler-macro parse-float (&whole decline string &rest args
-                                           &key type
-                                           &allow-other-keys)
-  (if (and type (constantp type))
-      (let ((type (eval type)))
-        (assert (subtypep type 'float))
-        `(locally (declare (notinline parse-float))
-           (truly-the ,type
-             (parse-float ,string ,@args))))
-      decline))
+If and only if JUNK-ALLOWED is provably false, the type declaration
+excludes null."
+  (flet ((expansion-with-type (float-type)
+           `(locally (declare (notinline parse-float))
+              (truly-the ,float-type
+                (parse-float ,string ,@args)))))
+    (if (not type-supplied?) call
+        (multiple-value-bind (float-type float-type-constant?)
+            (eval-if-constant type)
+          (if (not float-type-constant?) call
+              (let ((junk-allowed-expansion
+                      (expansion-with-type `(or null ,float-type)))
+                    (junk-not-allowed-expansion
+                      (expansion-with-type float-type)))
+                (assert (subtypep float-type 'float))
+                (if junk-allowed-supplied?
+                    (multiple-value-bind (junk-allowed junk-allowed-constant?)
+                        (eval-if-constant junk-allowed)
+                      (if junk-allowed-constant?
+                          (if junk-allowed
+                              junk-allowed-expansion
+                              junk-not-allowed-expansion)
+                          junk-allowed-expansion))
+                    junk-not-allowed-expansion)))))))
 
 (declaim (inline round-to))
 (defun round-to (number &optional (divisor 1))

@@ -279,20 +279,18 @@ between calls."
 (define-train once (fn)
   "Return a function that runs FN only once, caching the results
 forever."
-  (with-unique-names (gfn)
-    `(let ((,gfn (ensure-function ,fn))
-           (cache '())
-           (first-run t))
-       (lambda (&rest args)
-         (block nil
-           (tagbody
-              (when (null first-run)
-                (go :not-first-run))
-            :first-run
-              (setf first-run nil
-                    cache (multiple-value-list (apply ,gfn args)))
-            :not-first-run
-              (return (values-list cache))))))))
+  `(let ((cache '())
+         (first-run t))
+     (lambda (&rest args)
+       (block nil
+         (tagbody
+            (when (null first-run)
+              (go :not-first-run))
+          :first-run
+            (setf first-run nil
+                  cache (multiple-value-list (apply ,fn args)))
+          :not-first-run
+            (return (values-list cache)))))))
 
 (defun fuel (level)
   "Return a function to count 'fuel' consumption down from the initial level.

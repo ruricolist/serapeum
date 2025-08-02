@@ -2990,14 +2990,17 @@ The type of the float is determined by, in order:
 - The type specified in the exponent of the string;
 - or `*read-default-float-format*`.
 
-     (parse-float "1.0") => 1.0s0
-     (parse-float "1.0d0") => 1.0d0
-     (parse-float "1.0s0" :type 'double-float) => 1.0d0
+The second return value is upper bounding index of the substring that is parsed,
+as in `parse-integer`.
+
+     (parse-float "1.0") => 1.0s0, 3
+     (parse-float "1.0d0") => 1.0d0, 5
+     (parse-float "1.0s0" :type 'double-float) => 1.0d0, 5
 
 Of course you could just use `parse-number`, but sometimes only a
 float will do.
 
-[View source](numbers.lisp#L133)
+[View source](numbers.lisp#L139)
 
 ### `(round-to number &optional divisor)`
 
@@ -3006,45 +3009,45 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
-[View source](numbers.lisp#L170)
+[View source](numbers.lisp#L182)
 
 ### `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L179)
+[View source](numbers.lisp#L191)
 
 ### `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L201)
+[View source](numbers.lisp#L213)
 
 ### `(shrink n by)`
 
 Decrease N by a factor.
 
-[View source](numbers.lisp#L218)
+[View source](numbers.lisp#L230)
 
 ### `(grow n by)`
 
 Increase N by a factor.
 
-[View source](numbers.lisp#L222)
+[View source](numbers.lisp#L234)
 
 ### `(shrinkf g n)`
 
 Shrink the value in a place by a factor.
 
-[View source](numbers.lisp#L226)
+[View source](numbers.lisp#L238)
 
 ### `(growf g n)`
 
 Grow the value in a place by a factor.
 
-[View source](numbers.lisp#L229)
+[View source](numbers.lisp#L241)
 
 ### `(random-in-range low high)`
 
@@ -3062,7 +3065,7 @@ would cause a floating-point overflow.
 
 From Zetalisp.
 
-[View source](numbers.lisp#L232)
+[View source](numbers.lisp#L244)
 
 ### `(float-precision-contagion &rest ns)`
 
@@ -3075,7 +3078,7 @@ floating-point arguments to the function".
 This does nothing but numeric contagion: the number of arguments
 returned is the same as the number of arguments given.
 
-[View source](numbers.lisp#L312)
+[View source](numbers.lisp#L324)
 
 ## Octets
 

@@ -2528,7 +2528,7 @@ opposite order.
 
 [View source](hash-tables.lisp#L439)
 
-### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types)`
+### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types default)`
 
 Return a function for accessing HASH-TABLE.
 
@@ -2549,6 +2549,8 @@ called with a key that is not present in HASH-TABLE. This applies to
 setting keys, as well as looking them up. Pass `:strict :read` if you
 only want strict checking for lookups.
 
+DEFAULT is the default value to return from `gethash`.
+
 The function is able to restrict what types are permitted as keys and
 values. If KEY-TYPE is specified, an error will be signaled if an
 attempt is made to get or set a key that does not satisfy KEY-TYPE. If
@@ -2566,14 +2568,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L553)
+[View source](hash-tables.lisp#L555)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L561)
+[View source](hash-tables.lisp#L563)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2586,7 +2588,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L570)
+[View source](hash-tables.lisp#L572)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2610,7 +2612,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L592)
+[View source](hash-tables.lisp#L594)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2619,7 +2621,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L642)
+[View source](hash-tables.lisp#L644)
 
 ## Files
 

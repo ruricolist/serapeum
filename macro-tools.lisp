@@ -26,8 +26,8 @@
    :with-read-only-vars
    :with-thunk))
 
-(uiop:define-package :serapeum/macro-tools/internal
-  ;; #+sb-package-locks (:implement :serapeum/macro-tools)
+(serapeum/internal-package:define-internal-package :serapeum/macro-tools/internal
+    :serapeum/macro-tools
   (:use :cl :alexandria)
   (:import-from
    :introspect-environment
@@ -46,7 +46,6 @@
    :trivia
    :ematch
    :match)
-  (:use-reexport :serapeum/macro-tools)
   (:export
    :declaim-maybe-inline
    :ensuring-functions
@@ -56,11 +55,6 @@
    :rebinding-functions
    :speed-matters?
    :variable-type))
-#+sb-package-locks
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-ext:add-implementation-package
-   :serapeum/macro-tools/internal
-   :serapeum/macro-tools))
 
 (in-package :serapeum/macro-tools/internal)
 

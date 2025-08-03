@@ -34,8 +34,9 @@
    :with-type-dispatch
    :with-vector-dispatch))
 
-(uiop:define-package :serapeum/types/internal
-  ;; #+sb-package-locks (:implement :serapeum/types)
+(serapeum/internal-package:define-internal-package
+    :serapeum/types/internal
+    :serapeum/types
   (:use
    :cl
    :alexandria
@@ -46,7 +47,6 @@
    :introspect-environment
    :constant-form-value
    :typexpand)
-  (:use-reexport :serapeum/types)
   (:export
    :canonicalize-key
    :canonicalize-test
@@ -57,11 +57,6 @@
    :vector-dispatch
    :with-simple-vector-dispatch
    :with-type-declarations-trusted))
-#+sb-package-locks
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-ext:add-implementation-package
-   :serapeum/types/internal
-   :serapeum/types))
 
 (in-package :serapeum/types/internal)
 

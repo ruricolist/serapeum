@@ -2,22 +2,17 @@
   (:documentation "Anything not worth using a portability layer for.")
   #+sb-package-locks (:lock t)
   (:use :cl :alexandria)
-  #1=(:export
-      :no-applicable-method-error
-      :static-load-time-value
-      :static-load-time-value-error
-      :undisplace-array))
+  (:export
+   :no-applicable-method-error
+   :static-load-time-value
+   :static-load-time-value-error
+   :undisplace-array))
 
-(uiop:define-package :serapeum/portability/internal
-  ;; #+sb-package-locks (:implement :serapeum/portability)
+(serapeum/internal-package:define-internal-package
+    :serapeum/portability/internal
+    :serapeum/portability
   (:use :cl :alexandria)
-  (:use-reexport :serapeum/portability)
   (:export :with-simple-vector))
-#+sb-package-locks
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (sb-ext:add-implementation-package
-   :serapeum/portability/internal
-   :serapeum/portability))
 
 (in-package :serapeum/portability/internal)
 

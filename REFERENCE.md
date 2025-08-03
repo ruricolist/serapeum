@@ -2016,7 +2016,7 @@ The two return values are a boolean indicating whether the available
 fuel has been exceeded followed by the current fuel level (which may
 be negative.)
 
-[View source](functions.lisp#L297)
+[View source](functions.lisp#L295)
 
 ### `(juxt &rest fns)`
 
@@ -2034,7 +2034,7 @@ The classic example is to use `juxt` to implement `partition`:
 
 The general idea is that `juxt` takes things apart.
 
-[View source](functions.lisp#L319)
+[View source](functions.lisp#L317)
 
 ### `(dynamic-closure symbols fn)`
 
@@ -2059,7 +2059,7 @@ propagate the current value of `*standard-output*`:
             (let ((*standard-output* temp))
               ...))))
 
-[View source](functions.lisp#L348)
+[View source](functions.lisp#L346)
 
 ### `(hook f g)`
 
@@ -2077,7 +2077,7 @@ integer, by asking whether it is equal to its own floor.
 
 AKA Schoenfinkel's S combinator.
 
-[View source](functions.lisp#L381)
+[View source](functions.lisp#L379)
 
 ### `(fork g f h)`
 
@@ -2101,7 +2101,7 @@ you can write a (numerically unstable) `mean` using `fork`.
 
 From J.
 
-[View source](functions.lisp#L398)
+[View source](functions.lisp#L396)
 
 ### `(hook2 f g)`
 
@@ -2117,7 +2117,7 @@ hours.
 
 From J.
 
-[View source](functions.lisp#L423)
+[View source](functions.lisp#L421)
 
 ### `(fork2 g f h)`
 
@@ -2137,7 +2137,7 @@ written as a dyadic fork.
 
 From J.
 
-[View source](functions.lisp#L439)
+[View source](functions.lisp#L437)
 
 ### `(capped-fork g h)`
 
@@ -2147,7 +2147,7 @@ Like a monadic fork, but F is omitted.
 
 Effectively the composition of G and H.
 
-[View source](functions.lisp#L460)
+[View source](functions.lisp#L458)
 
 ### `(capped-fork2 g h)`
 
@@ -2155,7 +2155,7 @@ J's capped fork (dyadic).
 
 Like a dyadic fork, but F is omitted.
 
-[View source](functions.lisp#L469)
+[View source](functions.lisp#L467)
 
 ### `(fnil fn &rest defaults)`
 
@@ -2171,7 +2171,7 @@ This has a compiler macro for reasonable efficiency.
 
 From Clojure.
 
-[View source](functions.lisp#L476)
+[View source](functions.lisp#L474)
 
 ### `(variadic->unary fn)`
 
@@ -2180,7 +2180,7 @@ applies FN to it.
 
 Practically equivalent to `(curry #'apply FN arguments...)'.
 
-[View source](functions.lisp#L515)
+[View source](functions.lisp#L513)
 
 ### `(unary->variadic fn)`
 
@@ -2190,14 +2190,14 @@ on them as a list.
 Wraps a function that expects a single argument, a list, so it can be
 used variadically.
 
-[View source](functions.lisp#L525)
+[View source](functions.lisp#L523)
 
 ### `(mvconstantly &rest values)`
 
 Like `constantly`, but returns all of VALUES as multiple values.
 If there are not VALUES, returns nothing.
 
-[View source](functions.lisp#L535)
+[View source](functions.lisp#L533)
 
 ### `(do-nothing &rest args)`
 
@@ -2206,7 +2206,7 @@ This function is meant as a placeholder for a function argument.
 
 From LispWorks.
 
-[View source](functions.lisp#L571)
+[View source](functions.lisp#L569)
 
 ### `(repeat-until-stable fn x &key test max-depth)`
 
@@ -2217,7 +2217,7 @@ then FN will be called at most MAX-DEPTH times even if the result is still chang
 Returns two values, the stable result of FN and the remainder of
 MAX-DEPTH. (If this value is 0, the result is unstable.)
 
-[View source](functions.lisp#L583)
+[View source](functions.lisp#L581)
 
 ## Trees
 

@@ -1,5 +1,69 @@
-;;; Definitions of types.
-(in-package :serapeum)
+(defpackage :serapeum/types
+  (:documentation "Utility types and type utilities.")
+  #+sb-package-locks (:lock t)
+  (:use :cl)
+  (:export
+   :*boolean-bypass*
+   :->
+   :assure
+   :assuref
+   :boolean-if
+   :boolean-unless
+   :boolean-when
+   :input-stream
+   :nor
+   :octet
+   :octet-vector
+   :output-stream
+   :proper-subtype-p
+   :proper-supertype-p
+   :soft-alist-of
+   :soft-list-of
+   :supertypep
+   :true
+   :tuple
+   :vref
+   :wholenum
+   :with-boolean
+   :with-item-key-function
+   :with-member-test
+   :with-simple-vector-dispatch
+   :with-string-dispatch
+   :with-subtype-dispatch
+   :with-two-arg-test
+   :with-type-dispatch
+   :with-vector-dispatch))
+
+(uiop:define-package :serapeum/types/internal
+  ;; #+sb-package-locks (:implement :serapeum/types)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/macro-tools/internal
+   :serapeum/portability/internal
+   :trivia)
+  (:import-from
+   :introspect-environment
+   :constant-form-value
+   :typexpand)
+  (:use-reexport :serapeum/types)
+  (:export
+   :canonicalize-key
+   :canonicalize-test
+   :declaim-freeze-type
+   :declaim-constant-function
+   :seq-dispatch
+   :truly-the
+   :vector-dispatch
+   :with-simple-vector-dispatch
+   :with-type-declarations-trusted))
+#+sb-package-locks
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-ext:add-implementation-package
+   :serapeum/types/internal
+   :serapeum/types))
+
+(in-package :serapeum/types/internal)
 
 (deftype octet ()
   '(unsigned-byte 8))

@@ -19,6 +19,14 @@
    "introspect-environment"
    "trivial-cltl2"))
 
+(defsystem "serapeum/types"
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :components ((:file "types"))
+  :depends-on
+  ("serapeum/portability"
+   "serapeum/macro-tools"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -41,7 +49,8 @@
                "trivial-macroexpand-all"
                ;; Subsystems
                "serapeum/portability"
-               "serapeum/macro-tools")
+               "serapeum/macro-tools"
+               "serapeum/types")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -49,8 +58,7 @@
                 :serial nil
                 :pathname ""
                 :components
-                ((:file "types")
-                 (:file "definitions"
+                ((:file "definitions"
                   :depends-on ("iter" "defining-types"))
                  (:file "defining-types"
                   :depends-on ("iter"))
@@ -61,26 +69,31 @@
                  (:file "iter")
                  (:file "conditions")
                  (:file "op")
+                 ;; Depends on types.
                  (:file "functions"
-                  :depends-on ("types" "iter"))
+                  :depends-on ("iter"))
                  (:file "trees")
+                 ;; Depends on types.
                  (:file "hash-tables"
-                  :depends-on ("iter" "types" "control-flow" "binding"))
-                 (:file "files"
-                  :depends-on ("types"))
+                  :depends-on ("iter" "control-flow" "binding"))
+                 ;; Depends on types.
+                 (:file "files")
                  (:file "symbols")
                  (:file "arrays")
-                 (:file "queue"
-                  :depends-on ("types"))
+                 ;; Depends on types.
+                 (:file "queue")
+                 ;; Depends on types.
                  (:file "box"
-                  :depends-on ("types" "definitions"))
+                  :depends-on ("definitions"))
+                 ;; Depends on types.
                  (:file "numbers"
-                  :depends-on ("types" "op"))
-                 (:file "octets"
-                  :depends-on ("types"))
+                  :depends-on ("op"))
+                 ;; Depends on types.
+                 (:file "octets")
                  (:file "time")
+                 ;; Depends on types.
                  (:file "clos"
-                  :depends-on ("binding" "types"))
+                  :depends-on ("binding"))
                  (:file "hooks"
                   :depends-on ("threads"))
                  (:file "fbind"
@@ -90,8 +103,8 @@
                  (:file "reader"
                   :depends-on ("definitions"))
                  (:file "packages")
-                 (:file "heap"
-                  :depends-on ("types" "fbind"))))
+                 ;; Depends on types.
+                 (:file "heap")))
                ;; Level 1 files can use CL, Alexandria, and any
                ;; Serapeum utilities defined at level 0. Intended for
                ;; functions on sequences.

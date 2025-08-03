@@ -9,11 +9,13 @@
 (uiop:define-package #:serapeum
   (:use-reexport
    #:serapeum/portability
-   #:serapeum/macro-tools)
+   #:serapeum/macro-tools
+   #:serapeum/types)
   (:use
    :cl
    #:serapeum/portability/internal
-   #:serapeum/macro-tools/internal)
+   #:serapeum/macro-tools/internal
+   #:serapeum/types/internal)
   (:import-from #:alexandria
                 ;; Binding constructs
                 #:if-let
@@ -116,31 +118,6 @@
                 #:sum)
   (:documentation "Utilities beyond Alexandria.")
   (:export
-   ;; Types.
-   #:supertypep
-   #:proper-subtype-p
-   #:proper-supertype-p
-   #:->
-   #:assure
-   #:assuref
-   #:wholenum
-   #:tuple
-   #:input-stream
-   #:output-stream
-   #:with-type-dispatch
-   #:vref
-   #:*boolean-bypass*
-   #:with-boolean #:boolean-if #:boolean-when #:boolean-unless
-   #:with-subtype-dispatch
-   #:with-string-dispatch
-   #:with-vector-dispatch
-   #:with-simple-vector-dispatch
-   #:true
-   #:soft-list-of
-   #:soft-alist-of
-   #:with-item-key-function
-   #:with-two-arg-test
-   #:with-member-test
    ;; Definitions.
    #:defconst
    #:defsubst
@@ -401,8 +378,6 @@
    #:float-precision-contagion
    #:range
    ;; Octets.
-   #:octet
-   #:octet-vector
    #:octet-vector-p
    #:make-octet-vector
    #:octets
@@ -612,6 +587,12 @@
 
 #+sb-package-locks
 (sb-ext:lock-package :serapeum)
+
+#+sb-package-locks
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-ext:add-implementation-package
+   :serapeum
+   :serapeum/types))
 
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))

@@ -1,7 +1,23 @@
 (defpackage :serapeum/types
   (:documentation "Utility types and type utilities.")
   #+sb-package-locks (:lock t)
-  (:use :cl)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/macro-tools
+   :trivia)
+  (:import-from
+   :introspect-environment
+   :constant-form-value
+   :typexpand)
+  (:import-from
+   :serapeum/macro-tools
+   :policy-quality
+   :speed-matters?
+   :variable-type)
+  (:import-from
+   :serapeum/portability
+   :with-simple-vector)
   (:export
    :*boolean-bypass*
    :->
@@ -34,31 +50,7 @@
    :with-type-dispatch
    :with-vector-dispatch))
 
-(serapeum/internal-package:define-internal-package
-    :serapeum/types/internal
-    :serapeum/types
-  (:use
-   :cl
-   :alexandria
-   :serapeum/macro-tools/internal
-   :serapeum/portability/internal
-   :trivia)
-  (:import-from
-   :introspect-environment
-   :constant-form-value
-   :typexpand)
-  (:export
-   :canonicalize-key
-   :canonicalize-test
-   :declaim-freeze-type
-   :declaim-constant-function
-   :seq-dispatch
-   :truly-the
-   :vector-dispatch
-   :with-simple-vector-dispatch
-   :with-type-declarations-trusted))
-
-(in-package :serapeum/types/internal)
+(in-package :serapeum/types)
 
 (deftype octet ()
   '(unsigned-byte 8))

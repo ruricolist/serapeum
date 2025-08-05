@@ -8,13 +8,7 @@
    :static-load-time-value-error
    :undisplace-array))
 
-(serapeum/internal-package:define-internal-package
-    :serapeum/portability/internal
-    :serapeum/portability
-  (:use :cl :alexandria)
-  (:export :with-simple-vector))
-
-(in-package :serapeum/portability/internal)
+(in-package :serapeum/portability)
 
 ;;;#
 

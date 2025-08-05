@@ -1,17 +1,11 @@
 ;;;; serapeum.asd
 
-(defsystem "serapeum/internal-package"
-  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
-  :license "MIT"
-  :components ((:file "internal-package")))
-
 (defsystem "serapeum/portability"
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :components ((:file "portability"))
   :depends-on
   ("alexandria"
-   "serapeum/internal-package"
    "trivia"))
 
 (defsystem "serapeum/macro-tools"

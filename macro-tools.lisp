@@ -1,7 +1,24 @@
 (defpackage :serapeum/macro-tools
-  (:documentation "Very early")
+  (:documentation "Tools for defining macros")
   #+sb-package-locks (:lock t)
   (:use :cl :alexandria)
+  (:import-from
+   :introspect-environment
+   :compiler-macroexpand
+   :compiler-macroexpand-1
+   :constant-form-value)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :build-declarations
+   :filter-declaration-env
+   :parse-declarations)
+  (:import-from
+   :trivia
+   :ematch
+   :match)
+  (:import-from
+   :trivial-cltl2
+   :variable-information)
   (:export
    :+merge-tail-calls+
    :callf
@@ -26,37 +43,7 @@
    :with-read-only-vars
    :with-thunk))
 
-(serapeum/internal-package:define-internal-package :serapeum/macro-tools/internal
-    :serapeum/macro-tools
-  (:use :cl :alexandria)
-  (:import-from
-   :introspect-environment
-   :compiler-macroexpand
-   :compiler-macroexpand-1
-   :constant-form-value)
-  (:import-from
-   :tcr.parse-declarations-1.0
-   :build-declarations
-   :filter-declaration-env
-   :parse-declarations)
-  (:import-from
-   :trivial-cltl2
-   :variable-information)
-  (:import-from
-   :trivia
-   :ematch
-   :match)
-  (:export
-   :declaim-maybe-inline
-   :ensuring-functions
-   :extract-function-name
-   :lambda-list-vars
-   :policy-quality
-   :rebinding-functions
-   :speed-matters?
-   :variable-type))
-
-(in-package :serapeum/macro-tools/internal)
+(in-package :serapeum/macro-tools)
 
 ;;;# Basics
 

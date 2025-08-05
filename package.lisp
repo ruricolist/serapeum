@@ -11,11 +11,7 @@
    #:serapeum/portability
    #:serapeum/macro-tools
    #:serapeum/types)
-  (:use
-   :cl
-   #:serapeum/portability/internal
-   #:serapeum/macro-tools/internal
-   #:serapeum/types/internal)
+  (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
                 #:if-let
@@ -116,6 +112,27 @@
                 #:file-size-in-octets)
   (:import-from #:serapeum.sum
                 #:sum)
+  (:import-from
+   #:serapeum/macro-tools
+   #:declaim-maybe-inline
+   #:ensuring-functions
+   #:extract-function-name
+   #:lambda-list-vars
+   #:policy-quality
+   #:rebinding-functions
+   #:speed-matters?
+   #:variable-type)
+  (:import-from
+   #:serapeum/types
+   #:canonicalize-key
+   #:canonicalize-test
+   #:declaim-freeze-type
+   #:declaim-constant-function
+   #:seq-dispatch
+   #:truly-the
+   #:vector-dispatch
+   #:with-simple-vector-dispatch
+   #:with-type-declarations-trusted)
   (:documentation "Utilities beyond Alexandria.")
   (:export
    ;; Definitions.

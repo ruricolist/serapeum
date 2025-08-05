@@ -106,7 +106,7 @@
 
 (test faux-case
   (dolist (target '(tagbody flet))
-    (let ((serapeum/macro-tools/internal::*case-macro-target* target))
+    (let ((*case-macro-target* target))
       (is (eql 'bit
                (funcall
                 (compile

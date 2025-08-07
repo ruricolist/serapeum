@@ -1,6 +1,7 @@
 ;;;; serapeum.asd
 
 (defsystem "serapeum/portability"
+  :description "Subtrivial portability."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :components ((:file "portability"))
@@ -9,6 +10,7 @@
    "trivia"))
 
 (defsystem "serapeum/macro-tools"
+  :description "Tools for writing macros."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :components ((:file "macro-tools"))
@@ -18,6 +20,7 @@
    "trivial-cltl2"))
 
 (defsystem "serapeum/types"
+  :description "Utility types and type utilities."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :components ((:file "types"))

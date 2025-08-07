@@ -258,9 +258,17 @@ to collect KEYPLACE and try again."
      (case-using #'eql x ...)
      ≡ (case x ...).
 
-Note that, no matter the predicate, the keys are not evaluated. (But see `selector'.)
+Note that, no matter the predicate, the keys are not evaluated. (But
+see `selector'.)
 
 The PRED form is evaluated.
+
+When PRED is invoked, KEYFORM is its first argument. You can use
+`flip' if you want the arguments passed the other way around. For
+example, to dispatch on potential elements of a list:
+
+    (case-using list (flip member)
+      (:item1 ...))
 
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
@@ -782,6 +790,9 @@ From Zetalisp."
   "Like `select', but compare using FN.
 
 Note that (unlike `case-using'), FN is not evaluated.
+
+Prefer `selector' to `case-using' when FN is a macro, or has a
+compiler macro.
 
 From Zetalisp."
   `(cond

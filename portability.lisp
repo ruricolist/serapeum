@@ -1,5 +1,5 @@
 (defpackage :serapeum/portability
-  (:documentation "Anything not worth using a portability layer for.")
+  (:documentation "Subtrivial portability.")
   #+sb-package-locks (:lock t)
   (:use :cl :alexandria)
   (:export

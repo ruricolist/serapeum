@@ -1,5 +1,5 @@
 (defpackage :serapeum/macro-tools
-  (:documentation "Tools for defining macros")
+  (:documentation "Tools for writing macros.")
   #+sb-package-locks (:lock t)
   (:use :cl :alexandria)
   (:import-from

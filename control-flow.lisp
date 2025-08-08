@@ -267,7 +267,7 @@ When PRED is invoked, KEYFORM is its first argument. You can use
 `flip' if you want the arguments passed the other way around. For
 example, to dispatch on potential elements of a list:
 
-    (case-using list (flip member)
+    (case-using list (flip #'member)
       (:item1 ...))
 
 This version supports both single-item clauses (x ...) and

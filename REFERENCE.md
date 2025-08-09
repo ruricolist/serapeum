@@ -1,8 +1,7 @@
-# Function Listing For serapeum (42 files, 469 functions)
+# Function Listing For serapeum (41 files, 447 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
-- [Types](#types)
 - [Definitions](#definitions)
 - [Defining Types](#defining-types)
 - [Binding](#binding)
@@ -53,7 +52,7 @@ Return the fundamental array, and the start and end positions into it.
 
 Borrowed from Erik Naggum.
 
-[View source](portability.lisp#L83)
+[View source](portability.lisp#L72)
 
 ### `(static-load-time-value form &optional (read-only-p nil read-only-p-supplied?))`
 
@@ -69,7 +68,7 @@ When `static-load-time-value` is compiled, it behaves exactly like
 `load-time-value`. Otherwise it conducts a run-time check to ensure
 that `load-time-value` preserves identity.
 
-[View source](portability.lisp#L118)
+[View source](portability.lisp#L107)
 
 ## Macro Tools
 
@@ -83,19 +82,19 @@ respects the current read table.
 The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
 in every other macro.
 
-[View source](macro-tools.lisp#L113)
+[View source](macro-tools.lisp#L94)
 
 ### `(unique-name x)`
 
 Alias for `string-gensym`.
 
-[View source](macro-tools.lisp#L125)
+[View source](macro-tools.lisp#L106)
 
 ### `(make-unique-name-list length &optional x)`
 
 Alias for `alexandria:make-gensym-list`.
 
-[View source](macro-tools.lisp#L129)
+[View source](macro-tools.lisp#L110)
 
 ### `(unsplice form)`
 
@@ -122,7 +121,7 @@ You can simply write:
 
 From Lparallel.
 
-[View source](macro-tools.lisp#L137)
+[View source](macro-tools.lisp#L118)
 
 ### `(with-thunk (spec &rest args) &body body)`
 
@@ -172,21 +171,21 @@ It is also possible to construct a "thunk" with arguments.
 
 Someday this may have a better name.
 
-[View source](macro-tools.lisp#L167)
+[View source](macro-tools.lisp#L148)
 
 ### `(expand-macro form &optional env)`
 
 Like `macroexpand-1`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L238)
+[View source](macro-tools.lisp#L219)
 
 ### `(expand-macro-recursively form &optional env)`
 
 Like `macroexpand`, but also expand compiler macros.
 From Swank.
 
-[View source](macro-tools.lisp#L247)
+[View source](macro-tools.lisp#L228)
 
 ### `(partition-declarations xs declarations &optional env)`
 
@@ -198,19 +197,19 @@ directly into Lisp code:
 
      (locally ,@(partition-declarations vars decls) ...)
 
-[View source](macro-tools.lisp#L260)
+[View source](macro-tools.lisp#L241)
 
 ### `(callf function place &rest args)`
 
 Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
 
-[View source](macro-tools.lisp#L280)
+[View source](macro-tools.lisp#L261)
 
 ### `(callf2 function arg1 place &rest args)`
 
 Like CALLF, but with the place as the second argument.
 
-[View source](macro-tools.lisp#L289)
+[View source](macro-tools.lisp#L270)
 
 ### `(define-do-macro name binds &body body)`
 
@@ -248,13 +247,13 @@ Using `define-do-macro` takes care of all of this for you.
                    ,@body)
                  ,hash-table))
 
-[View source](macro-tools.lisp#L298)
+[View source](macro-tools.lisp#L279)
 
 ### `(define-post-modify-macro name lambda-list function &optional documentation)`
 
 Like `define-modify-macro`, but arranges to return the original value.
 
-[View source](macro-tools.lisp#L362)
+[View source](macro-tools.lisp#L343)
 
 ### `(parse-leading-keywords body)`
 
@@ -264,7 +263,7 @@ arguments, and the rest of the body.
 Inline keywords are like the keyword arguments to individual cases in
 `restart-case`.
 
-[View source](macro-tools.lisp#L390)
+[View source](macro-tools.lisp#L371)
 
 ### `(with-read-only-vars (&rest vars) &body body)`
 
@@ -277,7 +276,7 @@ signal a warning at compile time, and an error at run time.
 Depending on your Lisp implementation this may or may not do anything,
 and may or may not have an effect when used on special variables.
 
-[View source](macro-tools.lisp#L452)
+[View source](macro-tools.lisp#L433)
 
 ### `(define-case-macro name macro-args params &body macro-body)`
 
@@ -341,13 +340,13 @@ could define it almost trivially using `define-case-macro`:
                  collect `((eql ,expr ,key) ,@body))
          (t ,@body)))
 
-[View source](macro-tools.lisp#L498)
+[View source](macro-tools.lisp#L479)
 
 ### `(case-failure expr keys)`
 
 Signal an error of type `case-failure`.
 
-[View source](macro-tools.lisp#L737)
+[View source](macro-tools.lisp#L718)
 
 ### `(eval-if-constant form &optional env)`
 
@@ -367,7 +366,7 @@ Note that this function may treat a form as constant which would not
 be recognized as such by `constantp`, because we also expand compiler
 macros.
 
-[View source](macro-tools.lisp#L758)
+[View source](macro-tools.lisp#L739)
 
 ### `(expect-form-list exp)`
 
@@ -375,14 +374,14 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)
 
-[View source](macro-tools.lisp#L840)
+[View source](macro-tools.lisp#L821)
 
 ### `(expect-single-form exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
 
-[View source](macro-tools.lisp#L850)
+[View source](macro-tools.lisp#L831)
 
 ### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
 
@@ -394,7 +393,7 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
     ≡ (multiple-value-call #'unparse-ordinary-lambda-list
         (parse-ordinary-lambda-list lambda-list)
 
-[View source](macro-tools.lisp#L862)
+[View source](macro-tools.lisp#L843)
 
 ### `(parse-defmethod-args args)`
 
@@ -402,248 +401,7 @@ Parse the args to defmethod (everything except the name).
 Returns three values: a list of qualifiers, the specialized
 lambda-list, and the forms that make up the body.
 
-[View source](macro-tools.lisp#L892)
-
-## Types
-
-### `(-> functions (&rest args) &optional values)`
-
-Declaim the ftype of one or multiple FUNCTIONS from ARGS to VALUES.
-
-     (-> mod-fixnum+ (fixnum fixnum) fixnum)
-     (defun mod-fixnum+ (x y) ...)
-
-     (-> (mod-float+ mod-single-float+) (float float) float)
-     (defun mod-float+ (x y) ...)
-     (defun mode-single-float+ (x y) ...)
-
-[View source](types.lisp#L57)
-
-### `(assure type-spec &body (form))`
-
-Macro for inline type checking.
-
-`assure` is to `the` as `check-type` is to `declare`.
-
-     (the string 1)    => undefined
-     (assure string 1) => error
-
-The value returned from the `assure` form is guaranteed to satisfy
-TYPE-SPEC. If FORM does not return a value of that type, then a
-correctable error is signaled. You can supply a value of the correct
-type with the `use-value` restart.
-
-Note that the supplied value is *not* saved into the place designated
-by FORM. (But see `assuref`.)
-
-Using `values` types is supported, with caveats:
-- The types of `&rest` arguments are enforced using `soft-list-of`.
-- Types defined with `deftype` that expand into values types may not be checked in some Lisps.
-
-From ISLISP.
-
-[View source](types.lisp#L171)
-
-### `(assuref place type-spec)`
-
-Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
-PLACE only once.
-
-[View source](types.lisp#L258)
-
-### `(supertypep supertype type &optional env)`
-
-Is SUPERTYPE a supertype of TYPE?
-That is, is TYPE a subtype of SUPERTYPE?
-
-[View source](types.lisp#L290)
-
-### `(proper-subtype-p subtype type &optional env)`
-
-Is SUBTYPE a proper subtype of TYPE?
-
-This is, is it true that SUBTYPE is a subtype of TYPE, but not the
-same type?
-
-[View source](types.lisp#L296)
-
-### `(proper-supertype-p supertype type &optional env)`
-
-Is SUPERTYPE a proper supertype of TYPE?
-
-That is, is it true that every value of TYPE is also of type
-SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
-
-[View source](types.lisp#L321)
-
-### `(vref vec index)`
-
-When used globally, same as `aref`.
-
-Inside of a with-type-dispatch form, calls to `vref` may be bound to
-different accessors, such as `char` or `schar`, or `bit` or `sbit`,
-depending on the type being specialized on.
-
-[View source](types.lisp#L379)
-
-### `(with-type-dispatch (&rest types) var &body body)`
-
-A macro for writing fast sequence functions (among other things).
-
-In the simplest case, this macro produces one copy of BODY for each
-type in TYPES, with the appropriate declarations to induce your Lisp
-to optimize that version of BODY for the appropriate type.
-
-Say VAR is a string. With this macro, you can trivially emit optimized
-code for the different kinds of string that VAR might be. And
-then (ideally) instead of getting code that dispatches on the type of
-VAR every time you call `aref`, you get code that dispatches on the
-type of VAR once, and then uses the appropriately specialized
-accessors. (But see `with-string-dispatch`.)
-
-But that's the simplest case. Using `with-type-dispatch` also provides
-*transparent portability*. It examines TYPES to deduplicate types that
-are not distinct on the current Lisp, or that are shadowed by other
-provided types. And the expansion strategy may differ from Lisp to
-Lisp: ideally, you should not have to pay for good performance on
-Lisps with type inference with pointless code bloat on other Lisps.
-
-There is an additional benefit for vector types. Around each version
-of BODY, the definition of `vref` is shadowed to expand into an
-appropriate accessor. E.g., within a version of BODY where VAR is
-known to be a `simple-string`, `vref` expands into `schar`.
-
-Using `vref` instead of `aref` is obviously useful on Lisps that do
-not do type inference, but even on Lisps with type inference it can
-speed compilation times (compiling `aref` is relatively slow on SBCL).
-
-Within `with-type-dispatch`, VAR should be regarded as read-only.
-
-Note that `with-type-dispatch` is intended to be used around
-relatively expensive code, particularly loops. For simpler code, the
-gains from specialized compilation may not justify the overhead of the
-initial dispatch and the increased code size.
-
-Note also that `with-type-dispatch` is relatively low level. You may
-want to use one of the other macros in the same family, such as
-`with-subtype-dispatch`, `with-string-dispatch`, or so forth.
-
-The design and implementation of `with-type-dispatch` is based on a
-few sources. It replaces a similar macro formerly included in
-Serapeum, `with-templated-body`. One possible expansion is based on
-the `string-dispatch` macro used internally in SBCL. But most of the
-credit should go to the paper "Fast, Maintable, and Portable Sequence
-Functions", by Irène Durand and Robert Strandh.
-
-[View source](types.lisp#L442)
-
-### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
-
-Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
-
-Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
-added to ensure that TYPE itself is handled.
-
-[View source](types.lisp#L534)
-
-### `(with-string-dispatch (&rest types) var &body body)`
-
-Like `with-subtype-dispatch` with an overall type of `string`.
-
-[View source](types.lisp#L547)
-
-### `(with-vector-dispatch (&rest types) var &body body)`
-
-Like `with-subtype-dispatch` with an overall type of `vector`.
-
-[View source](types.lisp#L557)
-
-### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
-
-Like `with-vector-dispatch` but on implementations that support it, the underlying simple vector of a displaced array is first dereferenced, so the type is guaranteed to be a subtype of simple-array (but not actually `simple-vector`).
-
-START and END are the offset of the original vector's data in the array it is displaced to.
-
-[View source](types.lisp#L563)
-
-### `(with-boolean (&rest branches) &body body)`
-
-Establishes a lexical environment in which it is possible to use
-macroexpand-time branching. Within the lexical scope of
-`with-boolean`, it is possible to use `boolean-if`, `boolean-when`,
-and `boolean-unless` to conditionalize whether some forms are included
-at compilation time. (You may also use `:if`, `:when`, or `:unless`
-for brevity.)
-
-The first argument must be a list of symbols which name variables. This macro
-will expand into a series of conditionals
-
-[View source](types.lisp#L600)
-
-### `(boolean-if branch then &optional else)`
-
-Chooses between the forms to include based on whether a macroexpand-time
-branch is true. The first argument must be a symbol naming a branch in the
-lexically enclosing WITH-BOOLEAN form.
-
-It is an error to use this macro outside the lexical environment established by
-WITH-BOOLEAN.
-
-[View source](types.lisp#L663)
-
-### `(boolean-when branch &body body)`
-
-Includes some forms based on whether a macroexpand-time branch is true. The
-first argument must be a symbol naming a branch in the lexically enclosing
-WITH-BOOLEAN form.
-
-It is an error to use this macro outside the lexical environment established by
-WITH-BOOLEAN.
-
-[View source](types.lisp#L680)
-
-### `(boolean-unless branch &body body)`
-
-Includes some forms based on whether a macroexpand-time branch is false. The
-first argument must be a symbol naming a branch in the lexically enclosing
-WITH-BOOLEAN form.
-
-It is an error to use this macro outside the lexical environment established by
-WITH-BOOLEAN.
-
-[View source](types.lisp#L701)
-
-### `(with-two-arg-test (test) &body body)`
-
-Specialize BODY on the most common two-arg test functions.
-
-[View source](types.lisp#L726)
-
-### `(with-member-test (test-fn &key key test test-not) &body body)`
-
-Emit BODY multiple times with specialized, inline versions of
-`member` bound to TEST-FN.
-
-[View source](types.lisp#L749)
-
-### `(with-item-key-function (key &optional (key-form key)) &body body)`
-
-For each of the most common key functions used in sequences, emit a
-copy of BODY with KEY bound to a local macro that calls KEY-FORM.
-
-If current optimization declarations favor space over speed, or
-compilation speed over runtime speed, then BODY is only emitted once.
-
-[View source](types.lisp#L799)
-
-### `(true x)`
-
-Coerce X to a boolean.
-That is, if X is null, return `nil`; otherwise return `t`.
-
-Based on an idea by Eric Naggum.
-
-[View source](types.lisp#L825)
+[View source](macro-tools.lisp#L873)
 
 ## Definitions
 
@@ -1175,14 +933,6 @@ From SQL.
 
 [View source](control-flow.lisp#L24)
 
-### `(nor &rest forms)`
-
-Equivalent to (not (or ...)).
-
-From Arc.
-
-[View source](control-flow.lisp#L34)
-
 ### `(nand &rest forms)`
 
 Equivalent to (not (and ...)).
@@ -1266,9 +1016,17 @@ ISLISP's case-using.
      (case-using #'eql x ...)
      ≡ (case x ...).
 
-Note that, no matter the predicate, the keys are not evaluated. (But see `selector`.)
+Note that, no matter the predicate, the keys are not evaluated. (But
+see `selector`.)
 
 The PRED form is evaluated.
+
+When PRED is invoked, KEYFORM is its first argument. You can use
+`flip` if you want the arguments passed the other way around. For
+example, to dispatch on potential elements of a list:
+
+    (case-using list (flip #'member)
+      (:item1 ...))
 
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
@@ -1280,7 +1038,7 @@ multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
 
 Exhaustive variant of `case-using`.
 
-[View source](control-flow.lisp#L289)
+[View source](control-flow.lisp#L297)
 
 ### `(string-case stringform &body clauses)`
 
@@ -1290,7 +1048,7 @@ Note that string matching is always case-sensitive.
 
 This uses Paul Khuong's `string-case` macro internally.
 
-[View source](control-flow.lisp#L300)
+[View source](control-flow.lisp#L308)
 
 ### `(string-ecase stringform &body clauses)`
 
@@ -1300,7 +1058,7 @@ Note that string matching is always case-sensitive.
 
 Cf. `string-case`.
 
-[View source](control-flow.lisp#L331)
+[View source](control-flow.lisp#L339)
 
 ### `(eif test then &optional (else nil else?))`
 
@@ -1313,21 +1071,21 @@ warn you if you forget a branch.
 
 Short for “exhaustive if”.
 
-[View source](control-flow.lisp#L347)
+[View source](control-flow.lisp#L355)
 
 ### `(eif-let binds &body (then &optional (else nil else?)))`
 
 Like `alexandria:if-let`, but expects two branches.
 Compare `eif`.
 
-[View source](control-flow.lisp#L361)
+[View source](control-flow.lisp#L369)
 
 ### `(econd &rest clauses)`
 
 Like `cond`, but signal an error of type `econd-failure` if no
 clause succeeds.
 
-[View source](control-flow.lisp#L378)
+[View source](control-flow.lisp#L386)
 
 ### `(cond-let var &body clauses)`
 
@@ -1339,13 +1097,13 @@ Cross between COND and LET.
 
 Cf. `acond` in Anaphora.
 
-[View source](control-flow.lisp#L387)
+[View source](control-flow.lisp#L395)
 
 ### `(econd-let symbol &body clauses)`
 
 Like `cond-let` for `econd`.
 
-[View source](control-flow.lisp#L411)
+[View source](control-flow.lisp#L419)
 
 ### `(cond-every &body clauses)`
 
@@ -1363,7 +1121,7 @@ any of the forms.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L424)
+[View source](control-flow.lisp#L432)
 
 ### `(bcond &body clauses)`
 
@@ -1390,43 +1148,43 @@ of the Lisp Machines. I do not know who was first to use it, but the
 oldest examples I have found are by Michael Parker and Scott L.
 Burson.
 
-[View source](control-flow.lisp#L459)
+[View source](control-flow.lisp#L467)
 
 ### `(case-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L512)
+[View source](control-flow.lisp#L520)
 
 ### `(ccase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable.
 
-[View source](control-flow.lisp#L518)
+[View source](control-flow.lisp#L526)
 
 ### `(ecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L524)
+[View source](control-flow.lisp#L532)
 
 ### `(typecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L530)
+[View source](control-flow.lisp#L538)
 
 ### `(ctypecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable.
 
-[View source](control-flow.lisp#L536)
+[View source](control-flow.lisp#L544)
 
 ### `(etypecase-let (var expr) &body cases)`
 
 Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only.
 
-[View source](control-flow.lisp#L542)
+[View source](control-flow.lisp#L550)
 
 ### `(comment &body body)`
 
@@ -1438,13 +1196,13 @@ silly macro, but used inside of other macros or code generation
 facilities it is very useful - you can see comments in the (one-time)
 macro expansion!"
 
-[View source](control-flow.lisp#L548)
+[View source](control-flow.lisp#L556)
 
 ### `(example &body body)`
 
 Like `comment`.
 
-[View source](control-flow.lisp#L558)
+[View source](control-flow.lisp#L566)
 
 ### `(nix &rest places)`
 
@@ -1455,7 +1213,7 @@ If there is more than one PLACE, return their old values as multiple values.
 This may be more efficient than (shiftf place nil), because it only
 sets PLACE when it is not already null.
 
-[View source](control-flow.lisp#L572)
+[View source](control-flow.lisp#L580)
 
 ### `(ensure place &body newval)`
 
@@ -1469,14 +1227,14 @@ Note that ENSURE is `setf`-able, so you can do things like
 
 Cf. `ensure2`.
 
-[View source](control-flow.lisp#L584)
+[View source](control-flow.lisp#L592)
 
 ### `(ensure2 place &body newval)`
 
 Like `ensure`, but specifically for accessors that return a second
 value like `gethash`.
 
-[View source](control-flow.lisp#L616)
+[View source](control-flow.lisp#L624)
 
 ### `(~> needle &rest holes)`
 
@@ -1490,14 +1248,14 @@ As an extension, an underscore in the argument list is replaced with
 the needle, so you can pass the needle as an argument other than the
 first.
 
-[View source](control-flow.lisp#L688)
+[View source](control-flow.lisp#L696)
 
 ### `(~>> needle &rest holes)`
 
 Like `~>` but, by default, thread NEEDLE as the last argument
 instead of the first.
 
-[View source](control-flow.lisp#L706)
+[View source](control-flow.lisp#L714)
 
 ### `(nest &rest things)`
 
@@ -1531,7 +1289,7 @@ If the outer macro has no arguments, you may omit the parentheses.
 
 From UIOP, based on a suggestion by Marco Baringer.
 
-[View source](control-flow.lisp#L726)
+[View source](control-flow.lisp#L734)
 
 ### `(select keyform &body clauses)`
 
@@ -1551,7 +1309,7 @@ must add an extra set of parentheses.
 
 From Zetalisp.
 
-[View source](control-flow.lisp#L761)
+[View source](control-flow.lisp#L769)
 
 ### `(selector keyform fn &body clauses)`
 
@@ -1559,9 +1317,12 @@ Like `select`, but compare using FN.
 
 Note that (unlike `case-using`), FN is not evaluated.
 
+Prefer `selector` to `case-using` when FN is a macro, or has a
+compiler macro.
+
 From Zetalisp.
 
-[View source](control-flow.lisp#L780)
+[View source](control-flow.lisp#L788)
 
 ### `(sort-values pred &rest values)`
 
@@ -1573,7 +1334,7 @@ Equivalent to
 
 But with less consing, and potentially faster.
 
-[View source](control-flow.lisp#L899)
+[View source](control-flow.lisp#L910)
 
 ### `(eq* &rest xs)`
 
@@ -1591,7 +1352,7 @@ equivalent under `eq`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L970)
+[View source](control-flow.lisp#L981)
 
 ### `(eql* &rest xs)`
 
@@ -1609,7 +1370,7 @@ equivalent under `eql`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L972)
+[View source](control-flow.lisp#L983)
 
 ### `(equal* &rest xs)`
 
@@ -1627,7 +1388,7 @@ equivalent under `equal`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L974)
+[View source](control-flow.lisp#L985)
 
 ### `(equalp* &rest xs)`
 
@@ -1645,14 +1406,14 @@ equivalent under `equalp`.
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand.
 
-[View source](control-flow.lisp#L976)
+[View source](control-flow.lisp#L987)
 
 ### `(without-recursion (&key) &body body)`
 
 If BODY calls itself, at any depth, signal a (continuable) error of
 type `recursion-forbidden`.
 
-[View source](control-flow.lisp#L986)
+[View source](control-flow.lisp#L997)
 
 ## Threads
 
@@ -3095,12 +2856,6 @@ Is X an octet vector?
 Make an octet vector of SIZE elements.
 
 [View source](octets.lisp#L9)
-
-### `(octet-vector &rest args)`
-
-Constructor an octet vector from ARGS.
-
-[View source](octets.lisp#L14)
 
 ### `(octets n &key big-endian)`
 

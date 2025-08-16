@@ -91,9 +91,9 @@ This saves needless updates to the documentation."
 
 If it is a stream, then output will be written to that stream.
 
-If it is nil, then the functio will return output as a string.
-In case of string or a pathname, output will be rendered into the
-file with that name, superseding it if it is already exists."
+If it is nil, then the function will return output as a string. In
+case of a string or a pathname, output will be rendered into the file
+with that name, superseding it if it is already exists."
   (labels ((render (stream)
              (let ((data
                      (mappend (op (function-reference-data _ system-name))

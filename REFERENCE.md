@@ -1,7 +1,10 @@
-# Function Listing For serapeum (41 files, 447 functions)
+# Function Listing For serapeum (44 files, 469 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
+- [Types](#types)
+- [Control Flow](#control-flow)
+- [Octets](#octets)
 - [Definitions](#definitions)
 - [Defining Types](#defining-types)
 - [Binding](#binding)
@@ -402,6 +405,265 @@ Returns three values: a list of qualifiers, the specialized
 lambda-list, and the forms that make up the body.
 
 [View source](macro-tools.lisp#L873)
+
+## Types
+
+### `(-> functions (&rest args) &optional values)`
+
+Declaim the ftype of one or multiple FUNCTIONS from ARGS to VALUES.
+
+     (-> mod-fixnum+ (fixnum fixnum) fixnum)
+     (defun mod-fixnum+ (x y) ...)
+
+     (-> (mod-float+ mod-single-float+) (float float) float)
+     (defun mod-float+ (x y) ...)
+     (defun mode-single-float+ (x y) ...)
+
+[View source](types.lisp#L108)
+
+### `(assure type-spec &body (form))`
+
+Macro for inline type checking.
+
+`assure` is to `the` as `check-type` is to `declare`.
+
+     (the string 1)    => undefined
+     (assure string 1) => error
+
+The value returned from the `assure` form is guaranteed to satisfy
+TYPE-SPEC. If FORM does not return a value of that type, then a
+correctable error is signaled. You can supply a value of the correct
+type with the `use-value` restart.
+
+Note that the supplied value is *not* saved into the place designated
+by FORM. (But see `assuref`.)
+
+Using `values` types is supported, with caveats:
+- The types of `&rest` arguments are enforced using `soft-list-of`.
+- Types defined with `deftype` that expand into values types may not be checked in some Lisps.
+
+From ISLISP.
+
+[View source](types.lisp#L222)
+
+### `(assuref place type-spec)`
+
+Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
+PLACE only once.
+
+[View source](types.lisp#L309)
+
+### `(supertypep supertype type &optional env)`
+
+Is SUPERTYPE a supertype of TYPE?
+That is, is TYPE a subtype of SUPERTYPE?
+
+[View source](types.lisp#L341)
+
+### `(proper-subtype-p subtype type &optional env)`
+
+Is SUBTYPE a proper subtype of TYPE?
+
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the
+same type?
+
+[View source](types.lisp#L347)
+
+### `(proper-supertype-p supertype type &optional env)`
+
+Is SUPERTYPE a proper supertype of TYPE?
+
+That is, is it true that every value of TYPE is also of type
+SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
+
+[View source](types.lisp#L372)
+
+### `(vref vec index)`
+
+When used globally, same as `aref`.
+
+Inside of a with-type-dispatch form, calls to `vref` may be bound to
+different accessors, such as `char` or `schar`, or `bit` or `sbit`,
+depending on the type being specialized on.
+
+[View source](types.lisp#L430)
+
+### `(with-type-dispatch (&rest types) var &body body)`
+
+A macro for writing fast sequence functions (among other things).
+
+In the simplest case, this macro produces one copy of BODY for each
+type in TYPES, with the appropriate declarations to induce your Lisp
+to optimize that version of BODY for the appropriate type.
+
+Say VAR is a string. With this macro, you can trivially emit optimized
+code for the different kinds of string that VAR might be. And
+then (ideally) instead of getting code that dispatches on the type of
+VAR every time you call `aref`, you get code that dispatches on the
+type of VAR once, and then uses the appropriately specialized
+accessors. (But see `with-string-dispatch`.)
+
+But that's the simplest case. Using `with-type-dispatch` also provides
+*transparent portability*. It examines TYPES to deduplicate types that
+are not distinct on the current Lisp, or that are shadowed by other
+provided types. And the expansion strategy may differ from Lisp to
+Lisp: ideally, you should not have to pay for good performance on
+Lisps with type inference with pointless code bloat on other Lisps.
+
+There is an additional benefit for vector types. Around each version
+of BODY, the definition of `vref` is shadowed to expand into an
+appropriate accessor. E.g., within a version of BODY where VAR is
+known to be a `simple-string`, `vref` expands into `schar`.
+
+Using `vref` instead of `aref` is obviously useful on Lisps that do
+not do type inference, but even on Lisps with type inference it can
+speed compilation times (compiling `aref` is relatively slow on SBCL).
+
+Within `with-type-dispatch`, VAR should be regarded as read-only.
+
+Note that `with-type-dispatch` is intended to be used around
+relatively expensive code, particularly loops. For simpler code, the
+gains from specialized compilation may not justify the overhead of the
+initial dispatch and the increased code size.
+
+Note also that `with-type-dispatch` is relatively low level. You may
+want to use one of the other macros in the same family, such as
+`with-subtype-dispatch`, `with-string-dispatch`, or so forth.
+
+The design and implementation of `with-type-dispatch` is based on a
+few sources. It replaces a similar macro formerly included in
+Serapeum, `with-templated-body`. One possible expansion is based on
+the `string-dispatch` macro used internally in SBCL. But most of the
+credit should go to the paper "Fast, Maintable, and Portable Sequence
+Functions", by Irène Durand and Robert Strandh.
+
+[View source](types.lisp#L493)
+
+### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
+
+Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
+
+Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
+added to ensure that TYPE itself is handled.
+
+[View source](types.lisp#L585)
+
+### `(with-string-dispatch (&rest types) var &body body)`
+
+Like `with-subtype-dispatch` with an overall type of `string`.
+
+[View source](types.lisp#L598)
+
+### `(with-vector-dispatch (&rest types) var &body body)`
+
+Like `with-subtype-dispatch` with an overall type of `vector`.
+
+[View source](types.lisp#L608)
+
+### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
+
+Like `with-vector-dispatch` but on implementations that support it, the underlying simple vector of a displaced array is first dereferenced, so the type is guaranteed to be a subtype of simple-array (but not actually `simple-vector`).
+
+START and END are the offset of the original vector's data in the array it is displaced to.
+
+[View source](types.lisp#L614)
+
+### `(with-boolean (&rest branches) &body body)`
+
+Establishes a lexical environment in which it is possible to use
+macroexpand-time branching. Within the lexical scope of
+`with-boolean`, it is possible to use `boolean-if`, `boolean-when`,
+and `boolean-unless` to conditionalize whether some forms are included
+at compilation time. (You may also use `:if`, `:when`, or `:unless`
+for brevity.)
+
+The first argument must be a list of symbols which name variables. This macro
+will expand into a series of conditionals
+
+[View source](types.lisp#L651)
+
+### `(boolean-if branch then &optional else)`
+
+Chooses between the forms to include based on whether a macroexpand-time
+branch is true. The first argument must be a symbol naming a branch in the
+lexically enclosing WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L714)
+
+### `(boolean-when branch &body body)`
+
+Includes some forms based on whether a macroexpand-time branch is true. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L731)
+
+### `(boolean-unless branch &body body)`
+
+Includes some forms based on whether a macroexpand-time branch is false. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L752)
+
+### `(with-two-arg-test (test) &body body)`
+
+Specialize BODY on the most common two-arg test functions.
+
+[View source](types.lisp#L777)
+
+### `(with-member-test (test-fn &key key test test-not) &body body)`
+
+Emit BODY multiple times with specialized, inline versions of
+`member` bound to TEST-FN.
+
+[View source](types.lisp#L800)
+
+### `(with-item-key-function (key &optional (key-form key)) &body body)`
+
+For each of the most common key functions used in sequences, emit a
+copy of BODY with KEY bound to a local macro that calls KEY-FORM.
+
+If current optimization declarations favor space over speed, or
+compilation speed over runtime speed, then BODY is only emitted once.
+
+[View source](types.lisp#L850)
+
+### `(true x)`
+
+Coerce X to a boolean.
+That is, if X is null, return `nil`; otherwise return `t`.
+
+Based on an idea by Eric Naggum.
+
+[View source](types.lisp#L876)
+
+## Control Flow
+
+### `(nor &rest forms)`
+
+Equivalent to (not (or ...)).
+
+From Arc.
+
+[View source](control-flow.lisp#L34)
+
+## Octets
+
+### `(octet-vector &rest args)`
+
+Constructor an octet vector from ARGS.
+
+[View source](octets.lisp#L14)
 
 ## Definitions
 

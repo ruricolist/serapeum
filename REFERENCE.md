@@ -1,7 +1,5 @@
-# Function Listing For serapeum (41 files, 447 functions)
+# Function Listing For serapeum (46 files, 477 functions)
 
-- [Portability](#portability)
-- [Macro Tools](#macro-tools)
 - [Definitions](#definitions)
 - [Defining Types](#defining-types)
 - [Binding](#binding)
@@ -39,369 +37,15 @@
 - [Range](#range)
 - [Generalized Arrays](#generalized-arrays)
 - [Units](#units)
-- [Exporting](#exporting)
 - [Docs](#docs)
-
-## Portability
-
-### `(undisplace-array array)`
-
-Recursively get the fundamental array that ARRAY is displaced to.
-
-Return the fundamental array, and the start and end positions into it.
-
-Borrowed from Erik Naggum.
-
-[View source](portability.lisp#L72)
-
-### `(static-load-time-value form &optional (read-only-p nil read-only-p-supplied?))`
-
-Like `load-time-value`, but signals an error if it cannot preserve identity.
-
-On close reading of the standard, in a function that is evaluated but
-not compiled, it is permissible for implementations to repeatedly
-execute a `load-time-value` form, and in fact some implementations do
-this (including, at the time of writing, ABCL, CLISP, Allegro and
-LispWorks).
-
-When `static-load-time-value` is compiled, it behaves exactly like
-`load-time-value`. Otherwise it conducts a run-time check to ensure
-that `load-time-value` preserves identity.
-
-[View source](portability.lisp#L107)
-
-## Macro Tools
-
-### `(string-gensym x)`
-
-Equivalent to (gensym (string x)).
-
-Generally preferable to calling GENSYM with a string, because it
-respects the current read table.
-
-The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
-in every other macro.
-
-[View source](macro-tools.lisp#L94)
-
-### `(unique-name x)`
-
-Alias for `string-gensym`.
-
-[View source](macro-tools.lisp#L106)
-
-### `(make-unique-name-list length &optional x)`
-
-Alias for `alexandria:make-gensym-list`.
-
-[View source](macro-tools.lisp#L110)
-
-### `(unsplice form)`
-
-If FORM is non-nil, wrap it in a list.
-
-This is useful with ,@ in macros, and with `mapcan`.
-
-E.g., instead of writing:
-
-    `(.... ,@(when flag '((code))))
-
-You can write:
-
-    `(.... ,@(unsplice (when flag '(code))))
-
-It may be especially helpful when splicing in variables. Instead of
-writing:
-
-    `(.... ,@(and docstring `(,docstring)))
-
-You can simply write:
-
-   `(.... ,@(unsplice docstring))
-
-From Lparallel.
-
-[View source](macro-tools.lisp#L118)
-
-### `(with-thunk (spec &rest args) &body body)`
-
-A macro-writing macro for the `call-with-` style.
-
-In the `call-with-` style of writing macros, the macro is simply a
-syntactic convenience that wraps its body in a thunk and a call to the
-function that does the actual work.
-
-    (defmacro with-foo (&body body)
-      `(call-with-foo (lambda () ,@body)))
-
-The `call-with-` style has many advantages. Functions are easier to
-write than macros; you can change the behavior of a function without
-having to recompile all its callers; functions can be traced, appear
-in backtraces, etc.
-
-But meanwhile, all those thunks are being allocated on the heap. Can
-we avoid this? Yes, but at a high cost in boilerplate: the closure has
-to be given a name (using `flet`) so it can be declared
-`dynamic-extent`.
-
-    (defmacro with-foo (&body body)
-      (with-gensyms (thunk)
-        `(flet ((,thunk () ,@body))
-           (declare (dynamic-extent #',thunk))
-           (call-with-foo #',thunk))))
-
-`with-thunk` avoids the boilerplate:
-
-    (defmacro with-foo (&body body)
-      (with-thunk (body)
-        `(call-with-foo ,body)))
-
-You can give the thunk a name for easier debugging.
-
-    (with-thunk ((body :name foo)) ...)
-
-It is also possible to construct a "thunk" with arguments.
-
-    (with-thunk (body foo)
-      `(call-with-foo ,body))
-    ≡ `(flet ((,thunk (,foo)
-          ,@body))
-        (declare (dynamic-extent #',thunk))
-        (call-with-foo #',thunk))
-
-Someday this may have a better name.
-
-[View source](macro-tools.lisp#L148)
-
-### `(expand-macro form &optional env)`
-
-Like `macroexpand-1`, but also expand compiler macros.
-From Swank.
-
-[View source](macro-tools.lisp#L219)
-
-### `(expand-macro-recursively form &optional env)`
-
-Like `macroexpand`, but also expand compiler macros.
-From Swank.
-
-[View source](macro-tools.lisp#L228)
-
-### `(partition-declarations xs declarations &optional env)`
-
-Split DECLARATIONS into those that do and do not apply to XS.
-Return two values, one with each set.
-
-Both sets of declarations are returned in a form that can be spliced
-directly into Lisp code:
-
-     (locally ,@(partition-declarations vars decls) ...)
-
-[View source](macro-tools.lisp#L241)
-
-### `(callf function place &rest args)`
-
-Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
-
-[View source](macro-tools.lisp#L261)
-
-### `(callf2 function arg1 place &rest args)`
-
-Like CALLF, but with the place as the second argument.
-
-[View source](macro-tools.lisp#L270)
-
-### `(define-do-macro name binds &body body)`
-
-Define an iteration macro like `dolist`.
-
-Writing a macro like `dolist` is more complicated than it looks. For
-consistency with the rest of CL, you have to do all of the following:
-
-- The entire loop must be surrounded with an implicit `nil` block.
-- The body of the loop must be an implicit `tagbody`.
-- There must be an optional `return` form which, if given, supplies
-  the values to return from the loop.
-- While this return form is being evaluated, the iteration variables
-  must be bound to `nil`.
-
-Say you wanted to define a `do-hash` macro that iterates over hash
-tables. A full implementation would look like this:
-
-     (defmacro do-hash ((key value hash-table &optional return) &body body)
-       (multiple-value-bind (body decls) (parse-body body)
-         `(block nil
-            (maphash (lambda (,key ,value)
-                       ,@decls
-                       (tagbody
-                          ,@body))
-                     ,hash-table)
-            ,(when return
-               `(let (,key ,value)
-                  ,return)))))
-
-Using `define-do-macro` takes care of all of this for you.
-
-     (define-do-macro do-hash ((key value hash-table &optional return) &body body)
-       `(maphash (lambda (,key ,value)
-                   ,@body)
-                 ,hash-table))
-
-[View source](macro-tools.lisp#L279)
-
-### `(define-post-modify-macro name lambda-list function &optional documentation)`
-
-Like `define-modify-macro`, but arranges to return the original value.
-
-[View source](macro-tools.lisp#L343)
-
-### `(parse-leading-keywords body)`
-
-Given BODY, return two values: a list of the leading inline keyword
-arguments, and the rest of the body.
-
-Inline keywords are like the keyword arguments to individual cases in
-`restart-case`.
-
-[View source](macro-tools.lisp#L371)
-
-### `(with-read-only-vars (&rest vars) &body body)`
-
-Make VARS read-only within BODY.
-
-That is, within BODY, each var in VARS is bound as a symbol macro,
-which expands into a macro whose setf expander, in turn, is defined to
-signal a warning at compile time, and an error at run time.
-
-Depending on your Lisp implementation this may or may not do anything,
-and may or may not have an effect when used on special variables.
-
-[View source](macro-tools.lisp#L433)
-
-### `(define-case-macro name macro-args params &body macro-body)`
-
-Define a macro like `case`.
-
-A case-like macro is one that supports the following syntax:
-
-- A list of keys is treated as matching any key in the list.
-- An empty list matches nothing.
-- The atoms T or `otherwise` introduce a default clause.
-- There can only be one default clause.
-- The default clause must come last.
-- Any atom besides the empty list, T, or `otherwise` matches itself.
-
-As a consequence of the above, to match against the empty list, T, or
-`otherwise`, they must be wrapped in a list.
-
-    (case x
-      ((nil) "Matched nil.")
-      ((t) "Matched t.")
-      ((otherwise) "Matched `otherwise`.")
-      (otherwise "Didn't match anything."))
-
-A macro defined using `define-case-macro` can ignore all of the above.
-It receives three arguments: the expression, already protected against
-multiple evaluation; a normalized list of clauses; and, optionally, a
-default clause.
-
-The clauses are normalized as a list of `(key . body)', where each key
-is an atom. (That includes nil, T, and `otherwise`.) Nonetheless, each
-body passed to the macro will only appear once in the expansion; there
-will be no duplicated code.
-
-The body of the default clause is passed separately,
-bound to the value of the `:default` keyword in PARAMS.
-
-    (define-case-macro my-case (expr &body clauses)
-        (:default default)
-      ....)
-
-Note that in this case, `default` will be bound to the clause's body
--- a list of forms -- and not to the whole clause. The key of the
-default clause is discarded.
-
-If no binding is specified for the default clause, then no default
-clause is allowed.
-
-One thing you do still have to consider is the handling of duplicated
-keys. The macro defined by `define-case-macro` will reject case sets
-that contains duplicate keys under `eql`, but depending on the
-semantics of your macro, you may need to check for duplicates under a
-looser definition of equality.
-
-As a final example, if the `case` macro did not already exist, you
-could define it almost trivially using `define-case-macro`:
-
-    (define-case-macro my-case (expr &body clause)
-        (:default default)
-      `(cond
-         ,@(loop for (key . body) in clauses
-                 collect `((eql ,expr ,key) ,@body))
-         (t ,@body)))
-
-[View source](macro-tools.lisp#L479)
-
-### `(case-failure expr keys)`
-
-Signal an error of type `case-failure`.
-
-[View source](macro-tools.lisp#L718)
-
-### `(eval-if-constant form &optional env)`
-
-Try to reduce FORM to a constant, using ENV.
-If FORM cannot be reduced, return it unaltered.
-
-Also return a second value, T if the form could be reduced to a
-constant, or nil otherwise. (Note that the second value may be T if
-FORM was already a constant; think of it as a "green light" to treat
-the value as a constant.)
-
-This is equivalent to testing if FORM is constant, then evaluating it,
-except that FORM is macro-expanded in ENV (taking compiler macros into
-account) before doing the test.
-
-Note that this function may treat a form as constant which would not
-be recognized as such by `constantp`, because we also expand compiler
-macros.
-
-[View source](macro-tools.lisp#L739)
-
-### `(expect-form-list exp)`
-
-Sanity-check EXP, a macro expansion, assuming it is supposed to be
-  a series of forms suitable for splicing into a progn (implicit or
-  explicit.)
-
-[View source](macro-tools.lisp#L821)
-
-### `(expect-single-form exp)`
-
-Sanity-check EXP, a macro expansion, assuming it is supposed to be
-  a single form suitable for inserting intact.
-
-[View source](macro-tools.lisp#L831)
-
-### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
-
-Put together an ordinary lambda list from its constituent parts.
-
-This is the inverse of `alexandria:parse-ordinary-lambda-list`.
-
-    lambda-list
-    ≡ (multiple-value-call #'unparse-ordinary-lambda-list
-        (parse-ordinary-lambda-list lambda-list)
-
-[View source](macro-tools.lisp#L843)
-
-### `(parse-defmethod-args args)`
-
-Parse the args to defmethod (everything except the name).
-Returns three values: a list of qualifiers, the specialized
-lambda-list, and the forms that make up the body.
-
-[View source](macro-tools.lisp#L873)
+- [Generalized Arrays](#generalized-arrays)
+- [Exporting](#exporting)
+- [Generalized Arrays](#generalized-arrays)
+- [Types](#types)
+- [Control Flow](#control-flow)
+- [Octets](#octets)
+- [Macro Tools](#macro-tools)
+- [Portability](#portability)
 
 ## Definitions
 
@@ -5579,6 +5223,101 @@ prefix. (Defaults to T if FLAVOR is `:si`.)
 
 [View source](units.lisp#L112)
 
+## Docs
+
+### `(render-function-reference-as-markdown package-names system-name &key stream)`
+
+Renders API reference for given `PACKAGE-NAMES` of system named `SYSTEM-NAME`.
+
+`STREAM` argument can be nil, stream, string or a pathname.
+
+If it is a stream, then output will be written to that stream.
+
+If it is nil, then the function will return output as a string. In
+case of a string or a pathname, output will be rendered into the file
+with that name, superseding it if it is already exists.
+
+[View source](docs.lisp#L109)
+
+### `(update-function-reference filename system &optional packages)`
+
+A short hand for calling `RENDER-FUNCTION-REFERENCE-AS-MARKDOWN`.
+
+It accepts a short `FILENAME` and the result will be written to the `SYSTEM``s folder.
+
+Also, you can omit `PACKAGES` if your system provides only one package with the
+same name.
+
+Example usage:
+
+    (ql:quickload :serapeum/docs)
+    (serapeum.docs:update-function-reference
+        "REFERENCE.md"
+        :my-system)
+
+
+
+[View source](docs.lisp#L179)
+
+## Generalized Arrays
+
+Some operations on “generalized arrays.”
+
+Functions on generalized arrays are total: they work on arrays, of course, but also on sequences (which are treated as one-dimensional arrays) and atoms (which are treated as zero-dimensional arrays).
+
+### A note for array programmers
+
+The semantics of generalized arrays in Serapeum is based on the “array theory” formalism of Trenchard More, as implemented in [Nial][]. Note that this is different from the MOA (“Mathematics of Arrays”) formalism on which direct descendants of APL, such as J, are based.
+
+Nial programmers might be surprised that we rely on the v4, rather than the v6, version of array theory. This is because, in Common Lisps, it is possible to have empty arrays of different element types, and such arrays are not considered equivalent.
+
+[Nial]: https://en.wikipedia.org/wiki/Nial
+
+
+### `(tally array)`
+
+Return the total size of ARRAY, a generalized array.
+For a true array this is equivalent to `array-total-size`.
+
+[View source](generalized-arrays.lisp#L15)
+
+### `(valence array)`
+
+Return the number of dimensions of ARRAY, a generalized array.
+For a true array this is equivalent to `array-rank`.
+
+[View source](generalized-arrays.lisp#L33)
+
+### `(tell shape)`
+
+NO DOCS!
+
+[View source](generalized-arrays.lisp#L192)
+
+### `(array= x y)`
+
+NO DOCS!
+
+[View source](generalized-arrays.lisp#L202)
+
+### `(each fn array &key element-type)`
+
+NO DOCS!
+
+[View source](generalized-arrays.lisp#L221)
+
+### `(each-left array fn fixed &key element-type)`
+
+The left refers to the position of the array.
+
+[View source](generalized-arrays.lisp#L241)
+
+### `(each-right fixed fn array &key element-type)`
+
+NO DOCS!
+
+[View source](generalized-arrays.lisp#L248)
+
 ## Exporting
 
 ### `(defclass name supers &body (slots . options))`
@@ -5669,39 +5408,645 @@ Like `defmethod`, with implicit export of NAME.
 
 [View source](exporting.lisp#L85)
 
-## Docs
+## Generalized Arrays
 
-### `(render-function-reference-as-markdown package-names system-name &key stream)`
+Some operations on “generalized arrays.”
 
-Renders API reference for given `PACKAGE-NAMES` of system named `SYSTEM-NAME`.
+Functions on generalized arrays are total: they work on arrays, of course, but also on sequences (which are treated as one-dimensional arrays) and atoms (which are treated as zero-dimensional arrays).
 
-`STREAM` argument can be nil, stream, string or a pathname.
+### A note for array programmers
 
-If it is a stream, then output will be written to that stream.
+The semantics of generalized arrays in Serapeum is based on the “array theory” formalism of Trenchard More, as implemented in [Nial][]. Note that this is different from the MOA (“Mathematics of Arrays”) formalism on which direct descendants of APL, such as J, are based.
 
-If it is nil, then the functio will return output as a string.
-In case of string or a pathname, output will be rendered into the
-file with that name, superseding it if it is already exists.
+Nial programmers might be surprised that we rely on the v4, rather than the v6, version of array theory. This is because, in Common Lisps, it is possible to have empty arrays of different element types, and such arrays are not considered equivalent.
 
-[View source](docs.lisp#L87)
-
-### `(update-function-reference filename system &optional packages)`
-
-A short hand for calling `RENDER-FUNCTION-REFERENCE-AS-MARKDOWN`.
-
-It accepts a short `FILENAME` and the result will be written to the `SYSTEM``s folder.
-
-Also, you can omit `PACKAGES` if your system provides only one package with the
-same name.
-
-Example usage:
-
-    (ql:quickload :serapeum/docs)
-    (serapeum.docs:update-function-reference
-        "REFERENCE.md"
-        :my-system)
+[Nial]: https://en.wikipedia.org/wiki/Nial
 
 
+### `(sum array)`
 
-[View source](docs.lisp#L157)
+Return the sum of all of the elements of ARRAY, a generalized array.
+Operates pairwise for numerical stability.
+
+[View source](generalized-arrays.lisp#L320)
+
+## Types
+
+### `(-> functions (&rest args) &optional values)`
+
+Declaim the ftype of one or multiple FUNCTIONS from ARGS to VALUES.
+
+     (-> mod-fixnum+ (fixnum fixnum) fixnum)
+     (defun mod-fixnum+ (x y) ...)
+
+     (-> (mod-float+ mod-single-float+) (float float) float)
+     (defun mod-float+ (x y) ...)
+     (defun mode-single-float+ (x y) ...)
+
+[View source](types.lisp#L108)
+
+### `(assure type-spec &body (form))`
+
+Macro for inline type checking.
+
+`assure` is to `the` as `check-type` is to `declare`.
+
+     (the string 1)    => undefined
+     (assure string 1) => error
+
+The value returned from the `assure` form is guaranteed to satisfy
+TYPE-SPEC. If FORM does not return a value of that type, then a
+correctable error is signaled. You can supply a value of the correct
+type with the `use-value` restart.
+
+Note that the supplied value is *not* saved into the place designated
+by FORM. (But see `assuref`.)
+
+Using `values` types is supported, with caveats:
+- The types of `&rest` arguments are enforced using `soft-list-of`.
+- Types defined with `deftype` that expand into values types may not be checked in some Lisps.
+
+From ISLISP.
+
+[View source](types.lisp#L222)
+
+### `(assuref place type-spec)`
+
+Like `(progn (check-type PLACE TYPE-SPEC) PLACE)`, but evaluates
+PLACE only once.
+
+[View source](types.lisp#L309)
+
+### `(supertypep supertype type &optional env)`
+
+Is SUPERTYPE a supertype of TYPE?
+That is, is TYPE a subtype of SUPERTYPE?
+
+[View source](types.lisp#L341)
+
+### `(proper-subtype-p subtype type &optional env)`
+
+Is SUBTYPE a proper subtype of TYPE?
+
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the
+same type?
+
+[View source](types.lisp#L347)
+
+### `(proper-supertype-p supertype type &optional env)`
+
+Is SUPERTYPE a proper supertype of TYPE?
+
+That is, is it true that every value of TYPE is also of type
+SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?
+
+[View source](types.lisp#L372)
+
+### `(vref vec index)`
+
+When used globally, same as `aref`.
+
+Inside of a with-type-dispatch form, calls to `vref` may be bound to
+different accessors, such as `char` or `schar`, or `bit` or `sbit`,
+depending on the type being specialized on.
+
+[View source](types.lisp#L430)
+
+### `(with-type-dispatch (&rest types) var &body body)`
+
+A macro for writing fast sequence functions (among other things).
+
+In the simplest case, this macro produces one copy of BODY for each
+type in TYPES, with the appropriate declarations to induce your Lisp
+to optimize that version of BODY for the appropriate type.
+
+Say VAR is a string. With this macro, you can trivially emit optimized
+code for the different kinds of string that VAR might be. And
+then (ideally) instead of getting code that dispatches on the type of
+VAR every time you call `aref`, you get code that dispatches on the
+type of VAR once, and then uses the appropriately specialized
+accessors. (But see `with-string-dispatch`.)
+
+But that's the simplest case. Using `with-type-dispatch` also provides
+*transparent portability*. It examines TYPES to deduplicate types that
+are not distinct on the current Lisp, or that are shadowed by other
+provided types. And the expansion strategy may differ from Lisp to
+Lisp: ideally, you should not have to pay for good performance on
+Lisps with type inference with pointless code bloat on other Lisps.
+
+There is an additional benefit for vector types. Around each version
+of BODY, the definition of `vref` is shadowed to expand into an
+appropriate accessor. E.g., within a version of BODY where VAR is
+known to be a `simple-string`, `vref` expands into `schar`.
+
+Using `vref` instead of `aref` is obviously useful on Lisps that do
+not do type inference, but even on Lisps with type inference it can
+speed compilation times (compiling `aref` is relatively slow on SBCL).
+
+Within `with-type-dispatch`, VAR should be regarded as read-only.
+
+Note that `with-type-dispatch` is intended to be used around
+relatively expensive code, particularly loops. For simpler code, the
+gains from specialized compilation may not justify the overhead of the
+initial dispatch and the increased code size.
+
+Note also that `with-type-dispatch` is relatively low level. You may
+want to use one of the other macros in the same family, such as
+`with-subtype-dispatch`, `with-string-dispatch`, or so forth.
+
+The design and implementation of `with-type-dispatch` is based on a
+few sources. It replaces a similar macro formerly included in
+Serapeum, `with-templated-body`. One possible expansion is based on
+the `string-dispatch` macro used internally in SBCL. But most of the
+credit should go to the paper "Fast, Maintable, and Portable Sequence
+Functions", by Irène Durand and Robert Strandh.
+
+[View source](types.lisp#L493)
+
+### `(with-subtype-dispatch type (&rest subtypes) var &body body)`
+
+Like `with-type-dispatch`, but SUBTYPES must be subtypes of TYPE.
+
+Furthermore, if SUBTYPES are not exhaustive, an extra clause will be
+added to ensure that TYPE itself is handled.
+
+[View source](types.lisp#L585)
+
+### `(with-string-dispatch (&rest types) var &body body)`
+
+Like `with-subtype-dispatch` with an overall type of `string`.
+
+[View source](types.lisp#L598)
+
+### `(with-vector-dispatch (&rest types) var &body body)`
+
+Like `with-subtype-dispatch` with an overall type of `vector`.
+
+[View source](types.lisp#L608)
+
+### `(with-simple-vector-dispatch (&rest types) (var start end) &body body)`
+
+Like `with-vector-dispatch` but on implementations that support it, the underlying simple vector of a displaced array is first dereferenced, so the type is guaranteed to be a subtype of simple-array (but not actually `simple-vector`).
+
+START and END are the offset of the original vector's data in the array it is displaced to.
+
+[View source](types.lisp#L614)
+
+### `(with-boolean (&rest branches) &body body)`
+
+Establishes a lexical environment in which it is possible to use
+macroexpand-time branching. Within the lexical scope of
+`with-boolean`, it is possible to use `boolean-if`, `boolean-when`,
+and `boolean-unless` to conditionalize whether some forms are included
+at compilation time. (You may also use `:if`, `:when`, or `:unless`
+for brevity.)
+
+The first argument must be a list of symbols which name variables. This macro
+will expand into a series of conditionals
+
+[View source](types.lisp#L651)
+
+### `(boolean-if branch then &optional else)`
+
+Chooses between the forms to include based on whether a macroexpand-time
+branch is true. The first argument must be a symbol naming a branch in the
+lexically enclosing WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L714)
+
+### `(boolean-when branch &body body)`
+
+Includes some forms based on whether a macroexpand-time branch is true. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L731)
+
+### `(boolean-unless branch &body body)`
+
+Includes some forms based on whether a macroexpand-time branch is false. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN.
+
+[View source](types.lisp#L752)
+
+### `(with-two-arg-test (test) &body body)`
+
+Specialize BODY on the most common two-arg test functions.
+
+[View source](types.lisp#L777)
+
+### `(with-member-test (test-fn &key key test test-not) &body body)`
+
+Emit BODY multiple times with specialized, inline versions of
+`member` bound to TEST-FN.
+
+[View source](types.lisp#L800)
+
+### `(with-item-key-function (key &optional (key-form key)) &body body)`
+
+For each of the most common key functions used in sequences, emit a
+copy of BODY with KEY bound to a local macro that calls KEY-FORM.
+
+If current optimization declarations favor space over speed, or
+compilation speed over runtime speed, then BODY is only emitted once.
+
+[View source](types.lisp#L850)
+
+### `(true x)`
+
+Coerce X to a boolean.
+That is, if X is null, return `nil`; otherwise return `t`.
+
+Based on an idea by Eric Naggum.
+
+[View source](types.lisp#L876)
+
+## Control Flow
+
+### `(nor &rest forms)`
+
+Equivalent to (not (or ...)).
+
+From Arc.
+
+[View source](control-flow.lisp#L34)
+
+## Octets
+
+### `(octet-vector &rest args)`
+
+Constructor an octet vector from ARGS.
+
+[View source](octets.lisp#L14)
+
+## Macro Tools
+
+### `(string-gensym x)`
+
+Equivalent to (gensym (string x)).
+
+Generally preferable to calling GENSYM with a string, because it
+respects the current read table.
+
+The alternative to writing `(mapcar (compose #'gensym #'string) ...)'
+in every other macro.
+
+[View source](macro-tools.lisp#L94)
+
+### `(unique-name x)`
+
+Alias for `string-gensym`.
+
+[View source](macro-tools.lisp#L106)
+
+### `(make-unique-name-list length &optional x)`
+
+Alias for `alexandria:make-gensym-list`.
+
+[View source](macro-tools.lisp#L110)
+
+### `(unsplice form)`
+
+If FORM is non-nil, wrap it in a list.
+
+This is useful with ,@ in macros, and with `mapcan`.
+
+E.g., instead of writing:
+
+    `(.... ,@(when flag '((code))))
+
+You can write:
+
+    `(.... ,@(unsplice (when flag '(code))))
+
+It may be especially helpful when splicing in variables. Instead of
+writing:
+
+    `(.... ,@(and docstring `(,docstring)))
+
+You can simply write:
+
+   `(.... ,@(unsplice docstring))
+
+From Lparallel.
+
+[View source](macro-tools.lisp#L118)
+
+### `(with-thunk (spec &rest args) &body body)`
+
+A macro-writing macro for the `call-with-` style.
+
+In the `call-with-` style of writing macros, the macro is simply a
+syntactic convenience that wraps its body in a thunk and a call to the
+function that does the actual work.
+
+    (defmacro with-foo (&body body)
+      `(call-with-foo (lambda () ,@body)))
+
+The `call-with-` style has many advantages. Functions are easier to
+write than macros; you can change the behavior of a function without
+having to recompile all its callers; functions can be traced, appear
+in backtraces, etc.
+
+But meanwhile, all those thunks are being allocated on the heap. Can
+we avoid this? Yes, but at a high cost in boilerplate: the closure has
+to be given a name (using `flet`) so it can be declared
+`dynamic-extent`.
+
+    (defmacro with-foo (&body body)
+      (with-gensyms (thunk)
+        `(flet ((,thunk () ,@body))
+           (declare (dynamic-extent #',thunk))
+           (call-with-foo #',thunk))))
+
+`with-thunk` avoids the boilerplate:
+
+    (defmacro with-foo (&body body)
+      (with-thunk (body)
+        `(call-with-foo ,body)))
+
+You can give the thunk a name for easier debugging.
+
+    (with-thunk ((body :name foo)) ...)
+
+It is also possible to construct a "thunk" with arguments.
+
+    (with-thunk (body foo)
+      `(call-with-foo ,body))
+    ≡ `(flet ((,thunk (,foo)
+          ,@body))
+        (declare (dynamic-extent #',thunk))
+        (call-with-foo #',thunk))
+
+Someday this may have a better name.
+
+[View source](macro-tools.lisp#L148)
+
+### `(expand-macro form &optional env)`
+
+Like `macroexpand-1`, but also expand compiler macros.
+From Swank.
+
+[View source](macro-tools.lisp#L219)
+
+### `(expand-macro-recursively form &optional env)`
+
+Like `macroexpand`, but also expand compiler macros.
+From Swank.
+
+[View source](macro-tools.lisp#L228)
+
+### `(partition-declarations xs declarations &optional env)`
+
+Split DECLARATIONS into those that do and do not apply to XS.
+Return two values, one with each set.
+
+Both sets of declarations are returned in a form that can be spliced
+directly into Lisp code:
+
+     (locally ,@(partition-declarations vars decls) ...)
+
+[View source](macro-tools.lisp#L241)
+
+### `(callf function place &rest args)`
+
+Set PLACE to the value of calling FUNCTION on PLACE, with ARGS.
+
+[View source](macro-tools.lisp#L261)
+
+### `(callf2 function arg1 place &rest args)`
+
+Like CALLF, but with the place as the second argument.
+
+[View source](macro-tools.lisp#L270)
+
+### `(define-do-macro name binds &body body)`
+
+Define an iteration macro like `dolist`.
+
+Writing a macro like `dolist` is more complicated than it looks. For
+consistency with the rest of CL, you have to do all of the following:
+
+- The entire loop must be surrounded with an implicit `nil` block.
+- The body of the loop must be an implicit `tagbody`.
+- There must be an optional `return` form which, if given, supplies
+  the values to return from the loop.
+- While this return form is being evaluated, the iteration variables
+  must be bound to `nil`.
+
+Say you wanted to define a `do-hash` macro that iterates over hash
+tables. A full implementation would look like this:
+
+     (defmacro do-hash ((key value hash-table &optional return) &body body)
+       (multiple-value-bind (body decls) (parse-body body)
+         `(block nil
+            (maphash (lambda (,key ,value)
+                       ,@decls
+                       (tagbody
+                          ,@body))
+                     ,hash-table)
+            ,(when return
+               `(let (,key ,value)
+                  ,return)))))
+
+Using `define-do-macro` takes care of all of this for you.
+
+     (define-do-macro do-hash ((key value hash-table &optional return) &body body)
+       `(maphash (lambda (,key ,value)
+                   ,@body)
+                 ,hash-table))
+
+[View source](macro-tools.lisp#L279)
+
+### `(define-post-modify-macro name lambda-list function &optional documentation)`
+
+Like `define-modify-macro`, but arranges to return the original value.
+
+[View source](macro-tools.lisp#L343)
+
+### `(parse-leading-keywords body)`
+
+Given BODY, return two values: a list of the leading inline keyword
+arguments, and the rest of the body.
+
+Inline keywords are like the keyword arguments to individual cases in
+`restart-case`.
+
+[View source](macro-tools.lisp#L371)
+
+### `(with-read-only-vars (&rest vars) &body body)`
+
+Make VARS read-only within BODY.
+
+That is, within BODY, each var in VARS is bound as a symbol macro,
+which expands into a macro whose setf expander, in turn, is defined to
+signal a warning at compile time, and an error at run time.
+
+Depending on your Lisp implementation this may or may not do anything,
+and may or may not have an effect when used on special variables.
+
+[View source](macro-tools.lisp#L433)
+
+### `(define-case-macro name macro-args params &body macro-body)`
+
+Define a macro like `case`.
+
+A case-like macro is one that supports the following syntax:
+
+- A list of keys is treated as matching any key in the list.
+- An empty list matches nothing.
+- The atoms T or `otherwise` introduce a default clause.
+- There can only be one default clause.
+- The default clause must come last.
+- Any atom besides the empty list, T, or `otherwise` matches itself.
+
+As a consequence of the above, to match against the empty list, T, or
+`otherwise`, they must be wrapped in a list.
+
+    (case x
+      ((nil) "Matched nil.")
+      ((t) "Matched t.")
+      ((otherwise) "Matched `otherwise`.")
+      (otherwise "Didn't match anything."))
+
+A macro defined using `define-case-macro` can ignore all of the above.
+It receives three arguments: the expression, already protected against
+multiple evaluation; a normalized list of clauses; and, optionally, a
+default clause.
+
+The clauses are normalized as a list of `(key . body)', where each key
+is an atom. (That includes nil, T, and `otherwise`.) Nonetheless, each
+body passed to the macro will only appear once in the expansion; there
+will be no duplicated code.
+
+The body of the default clause is passed separately,
+bound to the value of the `:default` keyword in PARAMS.
+
+    (define-case-macro my-case (expr &body clauses)
+        (:default default)
+      ....)
+
+Note that in this case, `default` will be bound to the clause's body
+-- a list of forms -- and not to the whole clause. The key of the
+default clause is discarded.
+
+If no binding is specified for the default clause, then no default
+clause is allowed.
+
+One thing you do still have to consider is the handling of duplicated
+keys. The macro defined by `define-case-macro` will reject case sets
+that contains duplicate keys under `eql`, but depending on the
+semantics of your macro, you may need to check for duplicates under a
+looser definition of equality.
+
+As a final example, if the `case` macro did not already exist, you
+could define it almost trivially using `define-case-macro`:
+
+    (define-case-macro my-case (expr &body clause)
+        (:default default)
+      `(cond
+         ,@(loop for (key . body) in clauses
+                 collect `((eql ,expr ,key) ,@body))
+         (t ,@body)))
+
+[View source](macro-tools.lisp#L479)
+
+### `(case-failure expr keys)`
+
+Signal an error of type `case-failure`.
+
+[View source](macro-tools.lisp#L718)
+
+### `(eval-if-constant form &optional env)`
+
+Try to reduce FORM to a constant, using ENV.
+If FORM cannot be reduced, return it unaltered.
+
+Also return a second value, T if the form could be reduced to a
+constant, or nil otherwise. (Note that the second value may be T if
+FORM was already a constant; think of it as a "green light" to treat
+the value as a constant.)
+
+This is equivalent to testing if FORM is constant, then evaluating it,
+except that FORM is macro-expanded in ENV (taking compiler macros into
+account) before doing the test.
+
+Note that this function may treat a form as constant which would not
+be recognized as such by `constantp`, because we also expand compiler
+macros.
+
+[View source](macro-tools.lisp#L739)
+
+### `(expect-form-list exp)`
+
+Sanity-check EXP, a macro expansion, assuming it is supposed to be
+  a series of forms suitable for splicing into a progn (implicit or
+  explicit.)
+
+[View source](macro-tools.lisp#L821)
+
+### `(expect-single-form exp)`
+
+Sanity-check EXP, a macro expansion, assuming it is supposed to be
+  a single form suitable for inserting intact.
+
+[View source](macro-tools.lisp#L831)
+
+### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
+
+Put together an ordinary lambda list from its constituent parts.
+
+This is the inverse of `alexandria:parse-ordinary-lambda-list`.
+
+    lambda-list
+    ≡ (multiple-value-call #'unparse-ordinary-lambda-list
+        (parse-ordinary-lambda-list lambda-list)
+
+[View source](macro-tools.lisp#L843)
+
+### `(parse-defmethod-args args)`
+
+Parse the args to defmethod (everything except the name).
+Returns three values: a list of qualifiers, the specialized
+lambda-list, and the forms that make up the body.
+
+[View source](macro-tools.lisp#L873)
+
+## Portability
+
+### `(undisplace-array array)`
+
+Recursively get the fundamental array that ARRAY is displaced to.
+
+Return the fundamental array, and the start and end positions into it.
+
+Borrowed from Erik Naggum.
+
+[View source](portability.lisp#L72)
+
+### `(static-load-time-value form &optional (read-only-p nil read-only-p-supplied?))`
+
+Like `load-time-value`, but signals an error if it cannot preserve identity.
+
+On close reading of the standard, in a function that is evaluated but
+not compiled, it is permissible for implementations to repeatedly
+execute a `load-time-value` form, and in fact some implementations do
+this (including, at the time of writing, ABCL, CLISP, Allegro and
+LispWorks).
+
+When `static-load-time-value` is compiled, it behaves exactly like
+`load-time-value`. Otherwise it conducts a run-time check to ensure
+that `load-time-value` preserves identity.
+
+[View source](portability.lisp#L107)
 

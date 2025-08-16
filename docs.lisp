@@ -34,7 +34,8 @@ This saves needless updates to the documentation."
                      comp)
            append (asdf-components c)))))
 
-(defun function-reference-data (package-name system-name)
+(defun function-reference-data-1 (package-name system-name)
+  (declare (string package-name system-name))
   (let* ((package
            (or (find-package package-name)
                (error "No such package as ~a" package-name)))
@@ -52,6 +53,27 @@ This saves needless updates to the documentation."
                                          :key (op (getf _ :position)))))
           order
           :key #'car)))
+
+(defun function-reference-data (package-name system-name)
+  (let* ((package
+           (or (find-package package-name)
+               (error "No such package as ~a" package-name)))
+         (prefixes
+           (list
+            (string+ (package-name package) "/")
+            (string+ (package-name package) ".")))
+         (subpackages
+           (filter
+            (lambda (p)
+              (some (lambda (prefix)
+                      (string^= prefix (package-name p)))
+                    prefixes))
+            (list-all-packages))))
+    (mappend (lambda (p)
+               (function-reference-data-1
+                (package-name p)
+                system-name))
+             (cons package subpackages))))
 
 (defun collect-reference-data (package)
   (collecting

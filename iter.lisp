@@ -39,9 +39,10 @@ Beware: because of the way it is written (literally, a GOTO with
 arguments), `nlet' is limited: self calls must be tail calls. That is,
 you cannot use `nlet' for true recursion.
 
-The name comes from `Let Over Lambda', but this is a more careful
-implementation: the function is not bound while the initial arguments
-are being evaluated, and it is safe to close over the arguments."
+NAME is not bound while the initial arguments are being evaluated, and
+it is safe to close over the arguments in BINDINGS.
+
+The name comes from `Let Over Lambda'."
   (setf bindings (loop for binding in bindings
                        if (symbolp binding)
                          collect `(,binding ,binding)

@@ -1,4 +1,32 @@
-(in-package #:serapeum)
+(defpackage :serapeum/iter/sum
+  (:use)
+  ;; Create this in an unlocked package to prevent SBCL package
+  ;; locking from keeping SUM being defined in a FLET
+  (:export #:sum))
+
+(defpackage :serapeum/iter
+  (:documentation "Iteration utilities")
+  #+sb-package-locks (:lock t)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/iter/sum
+   :serapeum/portability
+   :serapeum/macro-tools)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :build-declarations
+   :map-declaration-env
+   :parse-declarations)
+  (:export
+   :collecting
+   :nlet
+   :sum
+   :summing
+   :with-collector
+   :with-collectors))
+
+(in-package :serapeum/iter)
 
 ;;;# nlet
 

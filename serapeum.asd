@@ -28,6 +28,15 @@
   ("serapeum/portability"
    "serapeum/macro-tools"))
 
+(defsystem "serapeum/iter"
+  :description "Iteration utilities."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :components ((:file "iter"))
+  :depends-on
+  ("serapeum/portability"
+   "serapeum/macro-tools"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -51,7 +60,8 @@
                ;; Subsystems
                "serapeum/portability"
                "serapeum/macro-tools"
-               "serapeum/types")
+               "serapeum/types"
+               "serapeum/iter")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -60,23 +70,20 @@
                 :pathname ""
                 :components
                 ((:file "definitions"
-                  :depends-on ("iter" "defining-types"))
-                 (:file "defining-types"
-                  :depends-on ("iter"))
+                  :depends-on ("defining-types"))
+                 (:file "defining-types")
                  (:file "binding")
                  (:file "control-flow"
                   :depends-on ("definitions"))
                  (:file "threads")
-                 (:file "iter")
                  (:file "conditions")
                  (:file "op")
                  ;; Depends on types.
-                 (:file "functions"
-                  :depends-on ("iter"))
+                 (:file "functions")
                  (:file "trees")
                  ;; Depends on types.
                  (:file "hash-tables"
-                  :depends-on ("iter" "control-flow" "binding"))
+                  :depends-on ("control-flow" "binding"))
                  ;; Depends on types.
                  (:file "files")
                  (:file "symbols")
@@ -98,7 +105,7 @@
                  (:file "hooks"
                   :depends-on ("threads"))
                  (:file "fbind"
-                  :depends-on ("binding" "control-flow" "op" "iter" "trees"))
+                  :depends-on ("binding" "control-flow" "op" "trees"))
                  (:file "static-let"
                   :depends-on ("fbind"))
                  (:file "reader"

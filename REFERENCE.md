@@ -3034,45 +3034,45 @@ Like `round`, but return the resulting number.
      (round 15 10) => 2
      (round-to 15 10) => 20
 
-[View source](numbers.lisp#L182)
+[View source](numbers.lisp#L202)
 
 ### `(bits int &key big-endian)`
 
 Return a bit vector of the bits in INT.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L191)
+[View source](numbers.lisp#L211)
 
 ### `(unbits bits &key big-endian)`
 
 Turn a sequence of BITS into an integer.
 Defaults to little-endian.
 
-[View source](numbers.lisp#L213)
+[View source](numbers.lisp#L233)
 
 ### `(shrink n by)`
 
 Decrease N by a factor.
 
-[View source](numbers.lisp#L230)
+[View source](numbers.lisp#L250)
 
 ### `(grow n by)`
 
 Increase N by a factor.
 
-[View source](numbers.lisp#L234)
+[View source](numbers.lisp#L254)
 
 ### `(shrinkf g n)`
 
 Shrink the value in a place by a factor.
 
-[View source](numbers.lisp#L238)
+[View source](numbers.lisp#L258)
 
 ### `(growf g n)`
 
 Grow the value in a place by a factor.
 
-[View source](numbers.lisp#L241)
+[View source](numbers.lisp#L261)
 
 ### `(random-in-range low high)`
 
@@ -3090,7 +3090,7 @@ would cause a floating-point overflow.
 
 From Zetalisp.
 
-[View source](numbers.lisp#L244)
+[View source](numbers.lisp#L264)
 
 ### `(float-precision-contagion &rest ns)`
 
@@ -3103,7 +3103,7 @@ floating-point arguments to the function".
 This does nothing but numeric contagion: the number of arguments
 returned is the same as the number of arguments given.
 
-[View source](numbers.lisp#L324)
+[View source](numbers.lisp#L344)
 
 ## Octets
 

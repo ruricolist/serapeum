@@ -417,6 +417,7 @@
    #:defmethods
    #:slot-value-safe
    ;; MOP.
+   #:abstract-standard-class
    #:standard/context
    #:topmost-object-class
    ;; Hooks.

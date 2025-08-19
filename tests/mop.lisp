@@ -48,3 +48,11 @@
 
 (test topmost-object
   (is (typep (make-instance 'my-class) 'my-topmost-object)))
+
+(defclass abstract-class ()
+  ()
+  (:metaclass abstract-standard-class))
+
+(test abstract-class
+  (signals error
+    (make-instance 'abstract-class)))

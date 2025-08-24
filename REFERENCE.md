@@ -5,12 +5,12 @@
 - [Types](#types)
 - [Control Flow](#control-flow)
 - [Octets](#octets)
+- [Iter](#iter)
 - [Definitions](#definitions)
 - [Defining Types](#defining-types)
 - [Binding](#binding)
 - [Control Flow](#control-flow)
 - [Threads](#threads)
-- [Iter](#iter)
 - [Conditions](#conditions)
 - [Op](#op)
 - [Functions](#functions)
@@ -664,6 +664,81 @@ From Arc.
 Constructor an octet vector from ARGS.
 
 [View source](octets.lisp#L14)
+
+## Iter
+
+### `(nlet name (&rest bindings) &body body)`
+
+Within BODY, bind NAME as a function, somewhat like LABELS, but
+with the guarantee that recursive calls to NAME will not grow the
+stack.
+
+`nlet` resembles Scheme’s named let, and is used for the same purpose:
+writing loops using tail recursion. You could of course do this with
+`labels` as well, at least under some Lisp implementations, but `nlet`
+guarantees tail call elimination anywhere and everywhere.
+
+    (nlet rec ((i 1000000))
+      (if (= i 0)
+          0
+          (rec (1- i))))
+    => 0
+
+Beware: because of the way it is written (literally, a GOTO with
+arguments), `nlet` is limited: self calls must be tail calls. That is,
+you cannot use `nlet` for true recursion.
+
+The name comes from `Let Over Lambda', but this is a more careful
+implementation: the function is not bound while the initial arguments
+are being evaluated, and it is safe to close over the arguments.
+
+[View source](iter.lisp#L40)
+
+### `(with-collector (collector) &body body)`
+
+Within BODY, bind COLLECTOR to a function of one argument that
+accumulates all the arguments it has been called with in order, like
+the collect clause in `loop`, finally returning the collection.
+
+To see the collection so far, call COLLECTOR with no arguments.
+
+Note that this version binds COLLECTOR to a closure, not a macro: you
+can pass the collector around or return it like any other function.
+
+[View source](iter.lisp#L119)
+
+### `(collecting &body body)`
+
+Like `with-collector`, with the collector bound to the result of
+interning `collect` in the current package.
+
+[View source](iter.lisp#L142)
+
+### `(with-collectors (&rest collectors) &body body)`
+
+Like `with-collector`, with multiple collectors.
+Returns the final value of each collector as multiple values.
+
+     (with-collectors (x y z)
+       (x 1)
+       (y 2)
+       (z 3))
+     => '(1) '(2) '(3)
+
+[View source](iter.lisp#L149)
+
+### `(summing &body body)`
+
+Within BODY, bind `sum` to a function that gathers numbers to sum.
+
+If the first form in BODY is a literal number, it is used instead of 0
+as the initial sum.
+
+To see the running sum, call `sum` with no arguments.
+
+Return the total.
+
+[View source](iter.lisp#L174)
 
 ## Definitions
 
@@ -1707,81 +1782,6 @@ object created (as the argument to `bt:make-recursive-lock`).
 Return a unique lock associated with OBJECT.
 
 [View source](threads.lisp#L156)
-
-## Iter
-
-### `(nlet name (&rest bindings) &body body)`
-
-Within BODY, bind NAME as a function, somewhat like LABELS, but
-with the guarantee that recursive calls to NAME will not grow the
-stack.
-
-`nlet` resembles Scheme’s named let, and is used for the same purpose:
-writing loops using tail recursion. You could of course do this with
-`labels` as well, at least under some Lisp implementations, but `nlet`
-guarantees tail call elimination anywhere and everywhere.
-
-    (nlet rec ((i 1000000))
-      (if (= i 0)
-          0
-          (rec (1- i))))
-    => 0
-
-Beware: because of the way it is written (literally, a GOTO with
-arguments), `nlet` is limited: self calls must be tail calls. That is,
-you cannot use `nlet` for true recursion.
-
-The name comes from `Let Over Lambda', but this is a more careful
-implementation: the function is not bound while the initial arguments
-are being evaluated, and it is safe to close over the arguments.
-
-[View source](iter.lisp#L22)
-
-### `(with-collector (collector) &body body)`
-
-Within BODY, bind COLLECTOR to a function of one argument that
-accumulates all the arguments it has been called with in order, like
-the collect clause in `loop`, finally returning the collection.
-
-To see the collection so far, call COLLECTOR with no arguments.
-
-Note that this version binds COLLECTOR to a closure, not a macro: you
-can pass the collector around or return it like any other function.
-
-[View source](iter.lisp#L101)
-
-### `(collecting &body body)`
-
-Like `with-collector`, with the collector bound to the result of
-interning `collect` in the current package.
-
-[View source](iter.lisp#L124)
-
-### `(with-collectors (&rest collectors) &body body)`
-
-Like `with-collector`, with multiple collectors.
-Returns the final value of each collector as multiple values.
-
-     (with-collectors (x y z)
-       (x 1)
-       (y 2)
-       (z 3))
-     => '(1) '(2) '(3)
-
-[View source](iter.lisp#L131)
-
-### `(summing &body body)`
-
-Within BODY, bind `sum` to a function that gathers numbers to sum.
-
-If the first form in BODY is a literal number, it is used instead of 0
-as the initial sum.
-
-To see the running sum, call `sum` with no arguments.
-
-Return the total.
-
-[View source](iter.lisp#L156)
 
 ## Conditions
 

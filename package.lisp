@@ -1,15 +1,11 @@
 ;;;; package.lisp
-(defpackage #:serapeum.sum
-  (:use)
-  ;; Create this in another package than SERAPEUM
-  ;; to prevent SBCL package locking from keeping
-  ;; SUM being defined in a FLET
-  (:export #:sum))
 
 (uiop:define-package #:serapeum
   (:use-reexport
-   #:serapeum/portability
+   #:serapeum/iter
    #:serapeum/macro-tools
+   #:serapeum/portability
+   #:serapeum/sum
    #:serapeum/types)
   (:use :cl)
   (:import-from #:alexandria
@@ -110,8 +106,9 @@
                 #:match #:ematch :defpattern)
   (:import-from #:trivial-file-size
                 #:file-size-in-octets)
-  (:import-from #:serapeum.sum
-                #:sum)
+  (:import-from
+   #:serapeum/sum
+   #:sum)
   (:import-from
    #:serapeum/macro-tools
    #:declaim-maybe-inline
@@ -133,6 +130,9 @@
    #:vector-dispatch
    #:with-simple-vector-dispatch
    #:with-type-declarations-trusted)
+  (:import-from
+   #:serapeum/iter
+   #:collecting*)
   (:documentation "Utilities beyond Alexandria.")
   (:export
    ;; Definitions.

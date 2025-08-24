@@ -1,4 +1,22 @@
-(in-package #:serapeum)
+(defpackage :serapeum/iter
+  (:documentation "Iteration constructs and utilities.")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:export
+   :collecting
+   :nlet
+   :summing
+   :with-collector
+   :with-collectors)
+  (:import-from
+   :serapeum/macro-tools
+   :string-gensym)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :map-declaration-env
+   :parse-declarations
+   :build-declarations))
+(in-package :serapeum/iter)
 
 ;;;# nlet
 

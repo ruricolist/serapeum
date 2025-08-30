@@ -470,16 +470,12 @@ own individual type."
        (fmakunbound ',ctor)
        ',name)))
 
-;;; Hack to work around an SBCL bug.
-(defpackage #:serapeum.unlocked
-  (:use)
-  (:export :%union))
-
-(define-symbol-macro serapeum.unlocked:%union nil)
+;;; Use an unlocked symbol to work around an SBCL bug.
+(define-symbol-macro serapeum/unlocked:%union nil)
 
 (defun env-super (env &optional default)
   "Look for the superclass bound in ENV."
-  (or (macroexpand-1 'serapeum.unlocked:%union env) default))
+  (or (macroexpand-1 'serapeum/unlocked:%union env) default))
 
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.
@@ -512,7 +508,7 @@ angle brackets around it."
            ,@(unsplice docstring)))
        ;; NB The declarations are not currently used, due to an SBCL bug.
        (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
-         (symbol-macrolet ((serapeum.unlocked:%union ,super))
+         (symbol-macrolet ((serapeum/unlocked:%union ,super))
            (declare #+sbcl (sb-ext:enable-package-locks %union))
            (deftype ,union ()
              ,@(unsplice docstring)

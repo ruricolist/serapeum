@@ -698,7 +698,16 @@ element of the run:
 The COUNT argument limits how many runs are returned.
 
     (runs '(head tail tail head head tail) :count 2)
-    => '((head) (tail tail))"
+    => '((head) (tail tail))
+
+If COUNT is zero, `runs' returns an empty list. Otherwise, since
+`runs' always returns a list of subsequences of SEQ, if SEQ is empty,
+the return value will be a single-element list having the original
+sequence as its only value:
+
+    (runs \"\") -> '(\"\")
+    (runs #())  -> '(#())
+    (runs '())  -> '(())"
   (declare ((and fixnum unsigned-byte) count))
   (declare (dynamic-extent key test))
   (cond ((zerop count) (list))

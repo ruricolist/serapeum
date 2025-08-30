@@ -13,7 +13,8 @@
   :description "Tools for writing macros."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
-  :components ((:file "macro-tools"))
+  :components
+  ((:file "macro-tools"))
   :depends-on
   ("parse-declarations-1.0"
    "introspect-environment"
@@ -28,16 +29,23 @@
   ("serapeum/portability"
    "serapeum/macro-tools"))
 
+(defsystem "serapeum/unlocked"
+  :description "Helper system to export symbols from an unlocked package"
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components
+  ((:file "unlocked")))
+
 (defsystem "serapeum/iter"
   :description "Iteration constructs and utilities."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t
-  :components
-  ((:file "sum")
-   (:file "iter"))
+  :components ((:file "iter"))
   :depends-on
-  ("alexandria"))
+  ("alexandria"
+   "serapeum/unlocked"))
 
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."

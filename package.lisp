@@ -5,7 +5,7 @@
    #:serapeum/iter
    #:serapeum/macro-tools
    #:serapeum/portability
-   #:serapeum/sum
+   #:serapeum/unlocked
    #:serapeum/types)
   (:use :cl)
   (:import-from #:alexandria
@@ -107,7 +107,7 @@
   (:import-from #:trivial-file-size
                 #:file-size-in-octets)
   (:import-from
-   #:serapeum/sum
+   #:serapeum/unlocked
    #:sum)
   (:import-from
    #:serapeum/macro-tools

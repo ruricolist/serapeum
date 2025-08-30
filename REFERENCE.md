@@ -1057,7 +1057,7 @@ UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it.
 
-[View source](defining-types.lisp#L484)
+[View source](defining-types.lisp#L480)
 
 ### `(match-of union expr &body clauses)`
 
@@ -1077,7 +1077,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L570)
+[View source](defining-types.lisp#L566)
 
 ## Binding
 

@@ -131,7 +131,9 @@ Note that `dict' can also be used for destructuring (with Trivia).
 (-> dict* (hash-table &rest t) hash-table)
 (defun dict* (dict &rest args)
   "Merge new bindings into DICT.
-Roughly equivalent to `(merge-tables DICT (dict args...))'."
+Roughly equivalent to `(merge-tables* DICT (dict args...))'
+
+DICT argument is modified and returned as the result."
   (doplist (k v args)
     (setf (gethash k dict) v))
   dict)
@@ -320,7 +322,10 @@ FN is required to return two values, and key and a value."
              seqs))))
 
 ;; Clojure
-(defun merge-tables! (table &rest tables)
+(defun merge-tables* (table &rest tables)
+  "Modifies the first TABLE by merging all keys from other TABLES into it.
+
+Returns the first TABLE."
   (reduce (lambda (ht1 ht2)
             (check-same-test ht1 ht2)
             (do-hash-table (k v ht2)
@@ -354,7 +359,7 @@ Clojure's `merge'.
                               :key #'hash-table-count
                               :initial-value (hash-table-count table)))))
        (values
-        (apply #'merge-tables!
+        (apply #'merge-tables*
                (copy-hash-table table :size size)
                tables))))))
 

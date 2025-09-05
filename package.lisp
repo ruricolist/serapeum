@@ -295,6 +295,7 @@
    #:href #:@
    #:href-default
    #:merge-tables
+   #:merge-tables*
    #:flip-hash-table
    #:hash-fold
    #:maphash-return

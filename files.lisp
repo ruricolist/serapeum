@@ -27,6 +27,9 @@
 (deftype file-pathname ()
   '(and pathname (satisfies uiop:file-pathname-p)))
 
+(deftype absolute-file-pathname ()
+  '(and absolute-pathname file-pathname))
+
 ;;; logical-pathname is defined in CL.
 
 (deftype physical-pathname ()
@@ -40,9 +43,17 @@
     ((1)
      `(with-open-file ,(first args) ,@body))
     (t `(with-open-file ,(first args)
-	  (with-open-files
-	      ,(rest args) ,@body)))))
+          (with-open-files
+              ,(rest args) ,@body)))))
 
+(defun path-basename (pathname)
+  "Return the basename, that is:
+- if it's a directory, the name of the directory,
+- if it's a file, the name of the file including its type (extension)."
+  (first (last (pathname-directory (uiop:ensure-directory-pathname pathname)))))
+
+(-> path-join (&rest (or string stream pathname))
+  (values pathname &optional))
 (defun path-join (&rest pathnames)
   "Build a pathname by merging from right to left.
 With `path-join' you can pass the elements of the pathname being built
@@ -57,12 +68,57 @@ Note that `path-join' does not coerce the parts of the pathname into
 directories; you have to do that yourself.
 
     (path-join \"dir1\" \"dir2\" \"file\") -> #p\"file\"
-    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\""
+    (path-join \"dir1/\" \"dir2/\" \"file\") -> #p\"dir1/dir2/file\"
+
+Cf. `base-path-join' for a similar function with more intuitive
+behavior."
   (the pathname
        (reduce (lambda (x y)
                  (uiop:merge-pathnames* y x))
                pathnames
                :initial-value (make-pathname))))
+
+(-> base-path-join ((or string stream pathname) &rest (or string stream pathname))
+  (values pathname &optional))
+(defun base-path-join (base &rest suffixes)
+  "Build a pathname by appending SUFFIXES to BASE.
+For `path-join-base', the path on the left is always the *base* and
+the path on the right is always the *suffix*. This means that even if
+the right hand path is absolute, it will be treated as if it were
+relative.
+
+    (base-path-join #p\"foo/bar\" #p\"/baz\")
+    => #p\"foo/bar/baz\")
+
+Also, a bare file name as a suffix does not override but is appended
+to the accumulated file name. This includes the extension.
+
+    (base-path-join #p\"foo/bar\" \"baz\")
+    => #p\"foo/barbaz\")
+
+    (base-path-join #p\"foo/bar.x\" \"baz.y\")
+    => #p\"foo/bar.xbaz.y\")
+
+See `path-join' for a similar function with more consistent behavior."
+  ;; Contributed by Pierre Niedhardt (@ambrevar).
+  ;; https://github.com/ruricolist/serapeum/issues/127
+  (if (null suffixes)
+      (the (values pathname &optional)
+           (uiop:ensure-pathname base))
+      (reduce (lambda (path1 path2)
+                (if (or (null (pathname-name path1))
+                        (pathname-directory path2))
+                    (uiop:merge-pathnames*
+                     (uiop:relativize-pathname-directory
+                      (uiop:ensure-pathname path2))
+                     (uiop:ensure-pathname path1 :ensure-directory t))
+                    (let ((new-base (string+ (path-basename path1)
+                                             (path-basename path2))))
+                      (make-pathname :defaults path1
+                                     :type (pathname-type new-base)
+                                     :name (pathname-name new-base)))))
+              suffixes
+              :initial-value base)))
 
 (defun write-stream-into-file (stream pathname &key (if-exists :error) if-does-not-exist)
   "Read STREAM and write the contents into PATHNAME.
@@ -91,8 +147,7 @@ STREAM will be closed afterwards, so wrap it with
 (defun file= (file1 file2 &key (buffer-size 4096))
   "Compare FILE1 and FILE2 octet by octet, \(possibly) using buffers
 of BUFFER-SIZE."
-  (declare (optimize speed)
-           (ignorable buffer-size))
+  (declare (ignorable buffer-size))
   (let ((file1 (truename file1))
         (file2 (truename file2)))
     (or (equal file1 file2)
@@ -129,8 +184,7 @@ as vectors."
   (declare
    (type pathname file1 file2)
    (type array-length buffer-size)
-   (optimize (speed 3) (safety 1)
-             (debug 0) (compilation-speed 0)))
+   (optimize (safety 1) (debug 0) (compilation-speed 0)))
   (flet ((make-buffer ()
            (make-array buffer-size
                        :element-type 'octet
@@ -140,15 +194,16 @@ as vectors."
                       (file2 file2 :element-type 'octet :direction :input))
       (and (= (file-length file1)
               (file-length file2))
-           (loop with buffer1 = (make-buffer)
-                 with buffer2 = (make-buffer)
-                 for end1 = (read-sequence buffer1 file1)
-                 for end2 = (read-sequence buffer2 file2)
-                 until (or (zerop end1) (zerop end2))
-                 always (and (= end1 end2)
-                             (octet-vector= buffer1 buffer2
-                                            :end1 end1
-                                            :end2 end2)))))))
+           (locally (declare (optimize speed))
+             (loop with buffer1 = (make-buffer)
+                   with buffer2 = (make-buffer)
+                   for end1 = (read-sequence buffer1 file1)
+                   for end2 = (read-sequence buffer2 file2)
+                   until (or (zerop end1) (zerop end2))
+                   always (and (= end1 end2)
+                               (octet-vector= buffer1 buffer2
+                                              :end1 end1
+                                              :end2 end2))))))))
 
 (defun file-size (file &key (element-type '(unsigned-byte 8)))
   "The size of FILE, in units of ELEMENT-TYPE (defaults to bytes).

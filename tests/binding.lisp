@@ -64,27 +64,26 @@
   (is (equal '(1 2 3)
              (receive (one two three) (values 1 2 3)
                (list one two three))))
-  (signals error
-    (eval
-     '(receive (one two &optional three) (values 1 2 3)
-       (list one two three))))
 
   (is (null (receive () (values) nil)))
   (is (null (receive x (values) x)))
 
-  ;; SBCL as of 1.4.2 refuses to even compile these.
-  #-sbcl
+;;; See https://gitlab.com/embeddable-common-lisp/ecl/-/issues/672
+  #-ecl
   (progn
     (signals error
-      (receive (one two) (values 1 2 3)
-        (list one two)))
+      (eval* `(receive (one two &optional three) (values 1 2 3)
+                (list one two three))))
     (signals error
-      (receive (one two three four) (values 1 2 3)
-        (list one two three four)))
+      (eval* `(receive (one two) (values 1 2 3)
+                (list one two))))
     (signals error
-      (receive () (values 1)))
+      (eval* `(receive (one two three four) (values 1 2 3)
+                (list one two three four))))
     (signals error
-      (receive (x) (values) x))))
+      (eval* `(receive () (values 1))))
+    (signals error
+      (eval* `(receive (x) (values) x)))))
 
 (test mvlet*
   (is (= 2 (let ((x 1)) x
@@ -161,3 +160,52 @@
     (expect  '(let ((x 0)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) nil)
     (expect  '(let ((x nil)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) nil)
     (expect  '(let ((x 3)) (and-let* (x (y (- x 1)) ((plusp y))) (/ x y))) (/ 3 2))))
+
+#+(or sbcl ccl)
+(test and-let-unused ()
+  (signals style-warning
+    (eval `(and-let* ((x 1)
+                      (y 2))
+             x))))
+
+(test if-not
+  (is (= 2 (if-not t 1 2)))
+  (is (= 2 (if-not "test" 1 2)))
+  (is (= 1 (if-not nil 1 2)))
+  (is (null (if-not t 1))))
+
+;; tests adapted from Alexandria/tests
+(declaim (notinline opaque))
+(defun opaque (x)
+  x)
+
+(test if-not-let
+  (is (eql (if-not-let (x (opaque :ok))
+	     :bad
+	     x)
+	   :ok))
+  (is (eql :ok
+	   (if-not-let (x (opaque nil))
+	     (and (not x) :ok)
+	     :bad)))
+  (is (= 3
+	 (let ((x 1))
+	   (if-not-let ((x 2)
+			(y x))
+	     :oops
+	     (+ x y)))))
+  (is (= 1
+	 (if-not-let ((x 1)
+		      (y nil))
+           (and (not y) x)
+	   :oops)))
+  (is (if-not-let (x)
+	(not x)
+	:oops))
+  (is (eql :type-error
+	   (handler-case
+	       (eval '(if-not-let x
+		       :oops
+		       :oops))
+	     (type-error ()
+	       :type-error)))))

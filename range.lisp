@@ -155,9 +155,9 @@ STOP by STEP."
       (with-boolean (in-order?)
         (nlet lp ((i 0)
                   (n start))
-          (if (if in-order?
-                  (>= n stop)
-                  (<= n stop))
+          (if (boolean-if in-order?
+                          (>= n stop)
+                          (<= n stop))
               vect
               (progn
                 (setf (vref vect i) n)

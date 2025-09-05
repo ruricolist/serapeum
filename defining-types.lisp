@@ -126,9 +126,11 @@ designed to facilitate working with immutable data."
   (flet ((car-safe (x) (if (consp x) (car x) nil)))
     (let ((docstring (and (stringp (first slots)) (pop slots))))
       (destructuring-bind (name . opts) (ensure-list name-and-opts)
-        (when (find :copier opts :key #'ensure-car)
-          (error "Read only struct ~a does not need a copier."
-                 name))
+        (when-let (copier (find :copier opts :key #'ensure-car))
+          (if (null (second copier))
+              (removef opts copier)
+              (error "Read only struct ~a does not need a copier."
+                     name)))
         (when-let (clause (find :type opts :key #'car-safe))
           (error "Read-only structs may not use the ~s option: ~a"
                  :type clause))
@@ -321,10 +323,8 @@ some implementation tricks from `cl-algebraic-data-type'."
                                    type-name)))))
          (constructor type-name)
          (slot-names (mapcar #'first slots))
-         (conc-name
-           (symbolicate type-name '-))
          (readers
-           (mapcar (curry #'symbolicate conc-name)
+           (mapcar (curry #'symbolicate type-name '-)
                    slot-names))
          (copier-name (symbolicate 'copy- type-name)))
     `(progn
@@ -337,7 +337,6 @@ some implementation tricks from `cl-algebraic-data-type'."
            (,type-name
             ,@(unsplice (and super `(:include ,super)))
             (:constructor ,constructor ,slot-names)
-            (:conc-name ,conc-name)
             (:predicate nil)
             (:print-function
              (lambda (object stream depth)
@@ -431,11 +430,12 @@ overriding some or all of its slots." type-name)
 
 (defvar *units* (make-hash-table))
 
-(defun intern-unit (name ctor)
-  (synchronized ('*units*)
-    (or (gethash name *units*)
-        (setf (gethash name *units*)
-              (funcall ctor)))))
+(let ((units-lock (bt:make-lock)))
+  (defun intern-unit (name ctor)
+    (bt:with-lock-held (units-lock)
+      (or (gethash name *units*)
+          (setf (gethash name *units*)
+                (funcall ctor))))))
 
 (defmacro defunit (name &optional docstring
                    &environment env)
@@ -470,16 +470,12 @@ own individual type."
        (fmakunbound ',ctor)
        ',name)))
 
-;;; Hack to work around an SBCL bug.
-(defpackage #:serapeum.unlocked
-  (:use)
-  (:export :%union))
-
-(define-symbol-macro serapeum.unlocked:%union nil)
+;;; Use an unlocked symbol to work around an SBCL bug.
+(define-symbol-macro serapeum/unlocked:%union nil)
 
 (defun env-super (env &optional default)
   "Look for the superclass bound in ENV."
-  (or (macroexpand-1 'serapeum.unlocked:%union env) default))
+  (or (macroexpand-1 'serapeum/unlocked:%union env) default))
 
 (defmacro defunion (union &body variants)
   "Define an algebraic data type.
@@ -491,6 +487,7 @@ defines a read-only structure, as with `defconstructor').
 UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it."
+  (declare (notinline filter))          ;phasing
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
          (ctors (filter #'listp variants))
@@ -504,22 +501,22 @@ angle brackets around it."
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defstruct (,super
-                      (:constructor nil)
-                      (:copier nil)
-                      (:predicate nil)
-                      (:include %read-only-struct))
+                     (:constructor nil)
+                     (:copier nil)
+                     (:predicate nil)
+                     (:include %read-only-struct))
            ,@(unsplice docstring)))
        ;; NB The declarations are not currently used, due to an SBCL bug.
        (locally (declare #+sbcl (sb-ext:disable-package-locks %union))
-         (symbol-macrolet ((serapeum.unlocked:%union ,super))
+         (symbol-macrolet ((serapeum/unlocked:%union ,super))
            (declare #+sbcl (sb-ext:enable-package-locks %union))
-           ,@(loop for type in units
-                collect `(defunit ,type))
-           ,@(loop for (type . slots) in ctors
-                collect `(defconstructor ,type ,@slots))
            (deftype ,union ()
              ,@(unsplice docstring)
              '(or ,@types))
+           ,@(loop for type in units
+                   collect `(defunit ,type))
+           ,@(loop for (type . slots) in ctors
+                   collect `(defconstructor ,type ,@slots))
            (declaim-freeze-type ,super)
            ',union)))))
 
@@ -527,6 +524,12 @@ angle brackets around it."
 (defun pattern-type (pattern union)
   "Return two values: the type and the final pattern."
   (match pattern
+    ((list 'eql type)
+     (values `(eql ,type) `(eql ,type)))
+    ((and lit (type (or number keyword)))
+     (pattern-type `(eql ,lit) union))
+    ((list 'quote object)
+     (pattern-type `(eql ',object) union))
     ((and type (type symbol))
      (if (string= pattern "_")
          (values union `(and _ (type ,union)))

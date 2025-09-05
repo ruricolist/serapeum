@@ -56,7 +56,7 @@ shadows later ones, if possible."
                               when (proper-subtype-p type1 type2 env)
                                 collect (list type1 type2))))
          (constraints (nub constraints))
-         (ordering (toposort constraints)))
+         (ordering (toposort constraints :test #'equal)))
     (stable-sort (copy-list clauses)
                  ordering
                  :key #'clause-leading-type)))
@@ -134,7 +134,7 @@ represented both as universal times, and as instances of
     (defpackage :dispatch-case-example
       (:use :cl :alexandria :serapeum :local-time)
       (:shadow :time))
-    (in-package :dispatch-case-example)
+    \(in-package :dispatch-case-example)
 
     (deftype universal-time ()
       '(integer 0 *))
@@ -194,8 +194,8 @@ Using `dispatch-case' instead gives you the readability of
 `defgeneric' with the efficiency and safety of `etypecase-of'.
 
     (defun time= (t1 t2)
-      (dispatch-case ((time t1)
-                      (time t2))
+      (dispatch-case ((t1 time)
+                      (t2 time))
         ((universal-time universal-time)
          (= t1 t2))
         ((timestamp timestamp)
@@ -217,12 +217,16 @@ write that using `dispatch-case' like so:
     (defun time= (x y)
       (dispatch-case ((x time)
                       (y time))
-        ((time universal-time)
+        ((* universal-time)
          (time= x (universal-to-timestamp y)))
-        ((universal-time time)
+        ((universal-time *)
          (time= (universal-to-timestamp x) y))
         ((timestamp timestamp)
          (timestamp= x y))))
+
+\(In the list of types, you can use as asterisk as a shorthand for the
+type of the corresponding argument to `dispatch-case'; in that above,
+`time'.)
 
 Note that this requires only three clauses, where writing it out using
 nested `etypecase-of' forms would require four clauses. This is a
@@ -235,6 +239,21 @@ such fallthrough clauses become more useful."
                 for var = (string-gensym 'arg)
                 collect `((,var ,type) ,expr))
        ,@clauses)))
+
+(defun expand-dispatch-caseql-clauses (clauses)
+  (expect-form-list
+   (loop for (keys . body) in clauses
+         collect (cons (loop for key in keys
+                             collect `(eql ,key))
+                       body))))
+
+(defmacro dispatch-caseql ((&rest exprs-and-types) &body clauses)
+  "Like `dispatch-case', but types in clauses are implicitly wrapped in `eql'.
+The syntax of `dispatch-caseql' is tohus closer to `case' than to
+`typecase'."
+  (expect-form-list
+   `(dispatch-case ,exprs-and-types
+      ,@(expand-dispatch-caseql-clauses clauses))))
 
 (defmacro dispatch-case-let ((&rest bindings) &body clauses &environment env)
   "Like `dispatch-case', but establish new bindings for each expression.
@@ -271,16 +290,32 @@ list) and `let' (which has an obvious macro-expansion in terms of
                (vars-out var)
                (types-out type)
                (exprs-out expr))))))
-    (with-unique-names (block)
-      (multiple-value-bind (tags clauses)
-          (hoist-clause-bodies block clauses env)
-        `(let ,(mapcar #'list vars exprs)
-           (with-read-only-vars ,vars
-             (block ,block
-               (tagbody
-                  (dispatch-case/nobindings ,(mapcar #'list vars types)
-                    ,@clauses)
-                  ,@tags))))))))
+    (let ((normalized-clauses
+            ;; Normalize asterisks into the types of the corresponding
+            ;; variables.
+            (loop for (clause-types . clause-body) in clauses
+                  collect (cons
+                           (loop for clause-type in clause-types
+                                 for type in types
+                                 if (eql clause-type '*)
+                                   collect type
+                                 else collect clause-type)
+                           clause-body))))
+      (with-unique-names (block)
+        (multiple-value-bind (tags final-clauses)
+            (hoist-clause-bodies block normalized-clauses env)
+          `(let ,(mapcar #'list vars exprs)
+             (with-read-only-vars ,vars
+               (block ,block
+                 (tagbody
+                    (dispatch-case/nobindings ,(mapcar #'list vars types)
+                      ,@final-clauses)
+                    ,@tags)))))))))
+
+(defmacro dispatch-caseql-let ((&rest bindings) &body clauses)
+  "Like `dispatch-case-let', but using the clause syntax of `dispatch-caseql'."
+  `(dispatch-case-let ,bindings
+     ,@(expand-dispatch-caseql-clauses clauses)))
 
 ;;; TODO The problem with this expansion is that each branch only sees
 ;;; one value, which yields error messages that are hard to

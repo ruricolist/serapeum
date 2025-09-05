@@ -7,6 +7,7 @@
 (declaim (inline make-queue queuep))
 
 (defstruct (queue (:constructor make-queue (&aux (cons (make-queue-cons))))
+                  (:copier nil)
                   (:predicate queuep))
   "Basic cons queues, with an implementation based on PAIP and the
 original Norvig & Waters paper, and an API mostly borrowed from Arc.
@@ -30,7 +31,7 @@ Add items with `enq':
 
 Remove an item with `deq':
 
-    (deq (queue 1 2 3)) => 3
+    (deq (queue 1 2 3)) => 1
 
 Prepend an item with `undeq':
 
@@ -49,6 +50,8 @@ The rest of the API:
 - `qback' Get the last element of the queue
 - `queue-empty-p' Test if the queue is empty
 - `qappend' Non-destructively join a list to the end of the queue
+- `qconc' Destructively join a list to the end of the queue
+- `qprepend' Non-destructively join a list to the front of the queue
 
 Note that support for both `deq' and `undeq' means that a queue is
 also effectively a stack. (But not quite a double-ended queue: you can
@@ -169,7 +172,7 @@ This is called `undeq' because it can be used to undo a `deq'."
             value))
   value)
 
-(-> qback (queue) t)
+(-> qback (queue) (values t &optional))
 (defun qback (queue)
   "Get the last element of a queue."
   (unless (queue-empty-p queue)
@@ -202,3 +205,21 @@ Return the queue."
       ;; it than to access the queue for each element.
       (qconc queue (copy-list list))
       queue))
+
+(defun qprepend (list queue)
+  "Insert ITEMS at the beginning of QUEUE."
+  (qpreconc (copy-list list) queue))
+
+(defun qpreconc (list queue)
+  "Destructively splice LIST at the beginning of QUEUE."
+  (let ((q (queue-cons queue)))
+    (if (cdr q)
+        (setf (cdr q)
+              (nconc list (cdr q)))
+        (qconc queue list))
+    queue))
+
+(-> copy-queue (queue) (values queue &optional))
+(defun copy-queue (queue)
+  "Copy QUEUE as another queue."
+  (qappend (queue) (qlist queue)))

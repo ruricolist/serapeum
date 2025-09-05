@@ -30,6 +30,13 @@
               (word-wrap "There is no way on god’s green earth I can perform that function, Will Robinson."
                          :column 40)))))
 
+(test word-wrap-regression
+  (let ((string "A really long string that requires wrapping.")
+        (column 20))
+    (is
+     (every (lambda (line) (<= (length line) column))
+            (serapeum:lines (serapeum:word-wrap string :column column))))))
+
 (test lines
   (let ((nl (string #\Newline))
         (cr uiop:+cr+)
@@ -123,6 +130,32 @@
                                            #.(code-char #x2029)))
                           :honor-crlf t)))))))
 
+(test compile-fmt-extra-args
+  ;; Test that fmt raises an error/warning for a wrong number of
+  ;; arguments, but only if this Lisp actually checks that in general.
+  (handler-case
+      (compile nil
+               (eval
+                '(lambda () (format nil "~a" "x" "y"))))
+    ((or error warning) ()
+      (signals ((or error warning))
+        (compile nil
+                 (eval
+                  '(lambda () (fmt "~a" "x" "y"))))))))
+
+(test fmt-compiler-macro-print-numeric
+  ;; Test that the compiler macro for fmt handles numeric types correctly.
+  (dolist (*read-default-float-format* '(single-float double-float))
+    (dolist (float '(0.0s0 0.0d0))
+      (is (equal (format nil "~f" float) (fmt "~f" float)))))
+  (dolist (*read-default-float-format* '(single-float double-float))
+    (dolist (float '(0.0s0 0.0d0))
+      (is (equal (format nil "~g" float)
+                 (fmt "~g" float)))))
+  (is (equal "10"
+             (let ((*print-base* 8))
+               (fmt "~d" 10)))))
+
 (test lines/count
   (is (null (lines "" :count 50)))
   (is (null (lines "" :count 0)))
@@ -151,8 +184,16 @@
   (is (equal " " (collapse-whitespace whitespace))))
 
 (test mapconcat
+  (is (equal "" (mapconcat #'identity nil " ")))
+  (is (equal "" (mapconcat #'identity #() " ")))
   (is (equal "A B C" (mapconcat #'string-upcase #("a" "b" "c") " ")))
   (is (equal "A B C" (mapconcat #'string-upcase '("a" "b" "c") " "))))
+
+(test mapconcat-end
+  (is (equal " " (mapconcat #'identity nil " " :end t)))
+  (is (equal " " (mapconcat #'identity #() " " :end t)))
+  (is (equal "A B C " (mapconcat #'string-upcase #("a" "b" "c") " " :end t)))
+  (is (equal "A B C " (mapconcat #'string-upcase '("a" "b" "c") " " :end t))))
 
 (test string-upcase-initials
   (is (equal (string-upcase-initials "") ""))
@@ -212,6 +253,12 @@
 
 (test string~=
   (is (string~= "foo" "foo bar"))
+  (signals error
+    (string~= "foo " "foo bar"))
+  (signals error
+    (string~= " foo " "foo bar"))
+  (signals error
+    (string~= " " "foo bar"))
   (is (string~= "foo" "bar foo"))
   (is (string~= "foo" "bar foo baz"))
   (is (not (string~= "foo" "barfoo baz")))
@@ -267,6 +314,33 @@
     (let ((*print-array* nil))
       (is (string^= "#<" (string+ my-vec))))))
 
+(test positive-numeric-string+
+  (for-all ((base (lambda () (random-in-range 2 36)))
+            (n (lambda () (random 1000))))
+    (let ((range (shuffle (range n)))
+          (*print-base* base))
+      (is (equal (apply #'string+ (coerce range 'list))
+                 (with-output-to-string (s)
+                   (do-each (n range)
+                     (princ n s))))))))
+
+(test negative-numeric-string+
+  (for-all ((base (lambda () (random-in-range 2 36)))
+            (n (lambda () (random 1000))))
+    (let ((range (shuffle (range (- n) 0)))
+          (*print-base* base))
+      (is (equal (apply #'string+ (coerce range 'list))
+                 (with-output-to-string (s)
+                   (do-each (n range)
+                     (princ n s))))))))
+
+(test nil-string+
+  (locally (declare (notinline string+))
+    (is (equal "" (string+ nil)))
+    (is (equal "xz" (string+ "x" nil "z"))))
+  (is (equal "" (string+ nil)))
+  (is (equal "xz" (string+ "x" nil "z"))))
+
 (test print-case-string+
   "Check that print case is respected even for constant symbols."
   (is (equal "foo1" (string+ '|foo| 1)))
@@ -274,3 +348,23 @@
   (let ((*print-case* :downcase))
     (is (equal "foo1" (string+ :|FOO| 1)))
     (is (equal "foo1" (string+ '|FOO| 1)))))
+
+(test string-join
+  (is (equal "" (string-join #() "")))
+  (is (equal "" (string-join '("") "")))
+  (is (equal "" (string-join #("") "")))
+  (is (equal "" (string-join '("") "+")))
+  (is (equal "" (string-join '("") #\+)))
+  (is (equal "+" (string-join '("") "+" :end t)))
+  (is (equal "+" (string-join '("") #\+ :end t)))
+  (is (equal "xy" (string-join '("x" "y") "")))
+  (is (equal "x+y" (string-join '("x" "y") "+")))
+  (is (equal "x+y" (string-join '("x" "y") #\+)))
+  (is (equal "x+y" (string-join '("x" "y") :+)))
+  (is (equal "x+y" (string-join '("x" "y") #\+)))
+  (is (equal "+" (string-join nil "+" :end t)))
+  (is (equal "+" (string-join #() "+" :end t)))
+  (is (equal "x+y+" (string-join '("x" "y") "+" :end t)))
+  (is (equal "x+y+" (string-join '("x" "y") #\+ :end t)))
+  (is (equal "x+y+" (string-join '("x" "y") :+ :end t)))
+  (is (equal "x+y+" (string-join #("x" "y") :+ :end t))))

@@ -1,0 +1,29 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  GITHUB_WORKSPACE: $HOME/common-lisp/serapeum
+
+jobs:
+  test:
+    name: ${{ matrix.lisp }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        lisp: [sbcl-bin, ccl-bin/1.12.1, ecl/21.2.1]
+        os: [ubuntu-latest, macOS-13] # macos-latest when Clozure supports arm64?
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Roswell
+        env:
+          LISP: ${{ matrix.lisp }}
+        run: |
+          curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+      - name: Install ci-utils
+        run: ros install ci-utils
+      - name: Run tests
+        run: |
+          PATH="~/.roswell/bin:$PATH"
+          run-fiveam -l serapeum/tests 'serapeum.tests::serapeum'

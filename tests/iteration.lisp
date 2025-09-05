@@ -38,5 +38,12 @@
                 (x 1) (y 2) (z 3))))))
 
 (test summing
+  (is (= (summing) 0))
+  (is (= (summing 0.0) 0.0))
+  (is (= (summing 0.0 (sum 1)) 1.0))
   (is-true (equal 6 (summing (sum 1) (sum 2) (sum 3))))
-  (is-true (equal 16 (summing 10 (sum 1) (sum 5)))))
+  (summing (sum 1) (sum 2) (sum 3)
+    (is (= (sum) 6)))
+  (is-true (equal 16 (summing 10 (sum 1) (sum 5))))
+  (summing 10 (sum 1) (sum 5)
+    (is (= (sum) 16))))

@@ -52,6 +52,53 @@
     (is (equal (append1 nil nil) '(nil)))
     (is (equal (append1 '(a b c) '(d e)) '(a b c (d e))))))
 
+(test nconc1
+  (with-notinline (nconc1)
+    (is (equal (nconc1 nil 'a) '(a)))
+    (is (equal (nconc1 nil nil) '(nil)))
+    (is (equal (nconc1 (list 'a 'b 'c) '(d e))
+               '(a b c (d e))))))
+
+(test prepend
+  (with-notinline (prepend)
+    (is (equal (prepend) nil))
+    (is (equal (prepend '(4 5 6) '(1 2 3)) '(1 2 3 4 5 6)))
+    (is (equal (prepend '(5 6) '(3 4) '(1 2)) '(1 2 3 4 5 6)))))
+
+(test prependf
+  (with-notinline (prepend)
+    (let ((xs (list)))
+      (prependf xs '(4 5 6))
+      (is (equal xs '(4 5 6))))
+    (let ((xs (list 4 5 6)))
+      (prependf xs '(1 2 3))
+      (is (equal xs '(1 2 3 4 5 6))))))
+
+(test push-end
+  (let ((xs (list)))
+    (push-end 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1)))
+    (push-end 2 xs)
+    (is (equal '(1 2) xs))))
+
+(test push-end-new
+  (let ((xs (list)))
+    (push-end-new 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1)))
+    (push-end-new 2 xs)
+    (is (equal '(1 2) xs)))
+  (let ((xs (list 1)))
+    (push-end-new 1 xs)
+    (is (equal '(1) xs)))
+  (let ((xs (list 1.0)))
+    (push-end-new 1 xs :test #'=)
+    (is (equal '(1.0) xs)))
+  (let ((xs (list "1")))
+    (push-end-new 1 xs :test #'equal :key #'parse-integer)
+    (is (equal '("1") xs))))
+
 (test in
   (with-notinline (in)
     (is (eql (in 'a 'b 'c) nil))
@@ -71,7 +118,7 @@
     (is (equal (multiple-value-list (assocdr 'a '((b . a) (a . b) (c . d))))
                '(b (a . b))))))
 
-(test assocdr
+(test assocadr
   (with-notinline (assocadr)
     (is (equal (multiple-value-list (assocadr 'a nil))
                '(nil nil)))
@@ -79,6 +126,15 @@
                '(b (a b))))
     (is (equal (multiple-value-list (assocadr 'a '((b a) (a b) (c d))))
                '(b (a b))))))
+
+(test assocar
+  (with-notinline (assocar)
+    (is (equal (multiple-value-list (assocar 'a nil))
+               '(nil nil)))
+    (is (equal (multiple-value-list (assocar 'a '((a . b))))
+               '(a (a . b))))
+    (is (equal (multiple-value-list (assocar 'a '((b . a) (a . b) (c . d))))
+               '(a (a . b))))))
 
 (test rassocar
   (with-notinline (rassocar)
@@ -88,6 +144,15 @@
                '(b (b . a))))
     (is (equal (multiple-value-list (rassocar 'a '((c . b) (b . a) (d . a))))
                '(b (b . a))))))
+
+(test rassocdr
+  (with-notinline (rassocdr)
+    (is (equal (multiple-value-list (rassocdr 'a nil))
+               '(nil nil)))
+    (is (equal (multiple-value-list (rassocdr 'a '((b . a))))
+               '(a (b . a))))
+    (is (equal (multiple-value-list (rassocdr 'a '((c . b) (b . a) (d . a))))
+               '(a (b . a))))))
 
 (test firstn
   (with-notinline (firstn)
@@ -171,3 +236,57 @@
       (setf acc nil)
       (%f #'%a '(a b c d e) :start 1 :end 4)
       (is (equal acc '(b c d))))))
+
+(test stable-set-difference
+  (is (null (stable-set-difference nil nil)))
+  (is (equal '(1 2 3 4)
+             (stable-set-difference '(1 2 3 4) nil)))
+  (is (equal '(1 3 4)
+             (stable-set-difference '(1 2 3 4) '(2))))
+  (is (equal '(4 3 1)
+             (stable-set-difference '(4 3 2 1) '(2))))
+  (for-all ((list1.list2
+             (lambda ()
+               (let* ((v1 (range 100))
+                      (v2 (shuffle (map-into (make-array (length v1))
+                                             (op (whichever _ nil))
+                                             v1))))
+                 (cons (coerce v1 'list)
+                       (coerce v2 'list))))))
+    (destructuring-bind (list1 . list2) list1.list2
+      (let ((sdiff (stable-set-difference list1 list2)))
+        (is (set-equal sdiff (set-difference list1 list2)))
+        (is (every #'< sdiff (rest sdiff)))))
+    (destructuring-bind (list1 . list2) list1.list2
+      (let ((sdiff (stable-set-difference list1 list2
+                                          :test-not (complement #'eql))))
+        (is (set-equal sdiff (set-difference list1 list2 :test-not (complement #'eql))))
+        (is (every #'< sdiff (rest sdiff)))))))
+
+(test with-member-test/simple-expansion
+  "Test expansion of with-member-test when speed is not the priority."
+  (locally (declare (optimize (safety 3) (speed 0)))
+    (with-member-test (mem :key nil :test nil)
+      (is-true (mem 1 '(1 2 3)))
+      (is-false (mem 4 '(1 2 3))))))
+
+(test with-member-test/complex-expansion
+  "Test expansion of with-member-test when speed is the priority."
+  (locally (declare (optimize (speed 3) (space 0) (compilation-speed 0) (debug 0)))
+    (with-member-test (mem :key nil :test nil)
+      (is-true (mem 1 '(1 2 3)))
+      (is-false (mem 4 '(1 2 3))))))
+
+(test intersectionp
+  (is (null (intersectionp '() '())))
+  (is (null (intersectionp '(1) '())))
+  (is (null (intersectionp '() '(1))))
+  (is (intersectionp '(1) '(1 2)))
+  (is (intersectionp '(1 2) '(1))))
+
+(test append-longest
+  (let ((list '(a b c)))
+    (is (eq list (append-longest nil list nil))))
+  (let ((lists '((a b c d) (d e) (f))))
+    (is (loop for tail on (apply #'append-longest lists)
+              thereis (eq tail (car lists))))))

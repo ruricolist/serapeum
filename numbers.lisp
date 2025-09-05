@@ -4,14 +4,45 @@
   "Same as `(typep N 'fixnum)'."
   (typep n 'fixnum))
 
-(define-post-modify-macro finc (&optional (delta 1)) +
+(declaim (ftype (function (t) (values (not (member 0 0.0s0 0.0d0 -0.0s0 -0.0d0))
+                                      boolean &optional))
+                null-if-zero))
+(defun null-if-zero (x)
+  "If X is a nonzero number, return it, otherwise return nil.
+The second value is T if X was nonzero."
+  (null-if x 0 :test #'=))
+
+;;; DEPRECATED
+(defmacro finc (place &optional (delta 1))
+  "DEPRECATED: use `shift-incf' instead."
+  (simple-style-warning "~s is deprecated, use ~s instead"
+                        'finc 'shift-incf)
+  `(shift-incf ,place ,delta))
+
+(define-post-modify-macro shift-incf (&optional (delta 1)) +
   "Like `incf', but returns the old value instead of the new.
+
+    (shift-incf x n)
+    ≡ (shiftf x (+ x n))
+
+In C terms, this is a postincrement while `incf' is a preincrement.
 
 An alternative to using -1 as the starting value of a counter, which
 can prevent optimization.")
 
-(define-post-modify-macro fdec (&optional (delta 1)) -
-  "Like `decf', but returns the old value instead of the new.")
+(defmacro fdec (place &optional (delta 1))
+  "DEPRECATED: use `shift-decf' instead."
+  (simple-style-warning "~s is deprecated, use ~s instead"
+                        'finc 'shift-incf)
+  `(shift-decf ,place ,delta))
+
+(define-post-modify-macro shift-decf (&optional (delta 1)) -
+  "Like `decf', but returns the old value instead of the new.
+
+    (shift-decf x n)
+    ≡ (shiftf x (- x n))
+
+In C terms, this is a postdecrement while `decf' is a predecrement.")
 
 ;;; Loose adaption of the parser in SBCL's reader.lisp.
 
@@ -34,10 +65,10 @@ can prevent optimization.")
     (#\l 'long-float)))
 
 (defun read-float-aux (stream junk-allowed type)
-  (declare (optimize (speed 3)))
   #.+merge-tail-calls+
-  (labels ((junk ()
-             (error "Junk in string"))
+  (labels ((junk-found ()
+             (unless junk-allowed
+               (error "Junk in string")))
            (next ()
              (let ((char (read-char stream nil nil)))
                (values char (and char (digit-char-p char)))))
@@ -49,9 +80,12 @@ can prevent optimization.")
                       (after-decimal number 1))
                      (digit
                       (before-decimal (+ (* number 10) digit)))
-                     (t (if junk-allowed
-                            number
-                            (junk))))))
+                     ((exponent-char? char)
+                      (exponent number 1 0 (exponent-char-format char)))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      number))))
            (after-decimal (number divisor)
              (multiple-value-bind (char digit) (next)
                (cond ((null char)
@@ -62,9 +96,10 @@ can prevent optimization.")
                      (digit
                       (after-decimal (+ (* number 10) digit)
                                      (* divisor 10)))
-                     (t (if junk-allowed
-                            (make-float number divisor)
-                            (junk))))))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      (make-float number divisor)))))
            (exponent (n d e f &optional neg)
              (multiple-value-bind (char digit) (next)
                (cond ((null char)
@@ -76,29 +111,33 @@ can prevent optimization.")
                       (exponent n d e f t))
                      (digit
                       (exponent n d (+ (* e 10) digit) f neg))
-                     (t (if junk-allowed
-                            (let ((e (if neg (- e) e)))
-                              (make-float (* (expt 10 e) n) d f))
-                            (junk)))))))
+                     (t
+                      (junk-found)
+                      (unread-char char stream)
+                      (let ((e (if neg (- e) e)))
+                        (make-float (* (expt 10 e) n) d f)))))))
     (before-decimal 0)))
 
 (defun read-float (stream junk-allowed type)
   (let ((char (read-char stream nil nil)))
     (cond ((null char)
            (if junk-allowed
-               (coerce 0 type)
+               nil
                (error "Empty string cannot be parsed as float")))
           ((eql char #\+) (read-float-aux stream junk-allowed type))
           ((eql char #\-) (- (read-float-aux stream junk-allowed type)))
-          ((digit-char-p char)
+          ((or (digit-char-p char)
+               (eql char #\.))
            (unread-char char stream)
            (read-float-aux stream junk-allowed type))
-          (t (if junk-allowed
-                 (coerce 0 type)
-                 (error "Junk in string"))))))
+          (t
+           (unless junk-allowed
+             (error "Junk in string"))
+           (unread-char char stream)
+           (coerce 0 type)))))
 
 (defun parse-float (string &key (start 0) (end (length string)) junk-allowed
-                                (type *read-default-float-format* type-supplied-p))
+                             (type *read-default-float-format* type-supplied-p))
   "Parse STRING as a float of TYPE.
 
 The type of the float is determined by, in order:
@@ -106,32 +145,58 @@ The type of the float is determined by, in order:
 - The type specified in the exponent of the string;
 - or `*read-default-float-format*'.
 
-     (parse-float \"1.0\") => 1.0s0
-     (parse-float \"1.0d0\") => 1.0d0
-     (parse-float \"1.0s0\" :type 'double-float) => 1.0d0
+The second return value is upper bounding index of the substring that is parsed,
+as in `parse-integer'.
+
+     (parse-float \"1.0\") => 1.0s0, 3
+     (parse-float \"1.0d0\") => 1.0d0, 5
+     (parse-float \"1.0s0\" :type 'double-float) => 1.0d0, 5
 
 Of course you could just use `parse-number', but sometimes only a
 float will do."
   (assert (subtypep type 'float))
-  (with-input-from-string (stream string :start start :end end)
-    (let ((float (read-float stream junk-allowed type)))
-      (if type-supplied-p
-          (coerce float type)
-          float))))
+  (let (pos)
+    (values
+     (with-input-from-string (stream string :start start :end end :index pos)
+       (let ((float (read-float stream junk-allowed type)))
+         (and float
+              (if type-supplied-p
+                  (coerce float type)
+                  float))))
+     pos)))
 
-;;; When parse-float is called with a constant `:type' argument, wrap
-;;; it in a `the' form.
+(define-compiler-macro parse-float
+    (&whole call string &rest args
+            &key (type nil type-supplied?)
+            (junk-allowed nil junk-allowed-supplied?)
+            &allow-other-keys)
+  "When parse-float is called with a constant TYPE argument, wrap
+it with a type declaration.
 
-(define-compiler-macro parse-float (&whole decline string &rest args
-                                           &key type
-                                           &allow-other-keys)
-  (if (and type (constantp type))
-      (let ((type (eval type)))
-        (assert (subtypep type 'float))
-        `(locally (declare (notinline parse-float))
-           (truly-the ,type
-             (parse-float ,string ,@args))))
-      decline))
+If and only if JUNK-ALLOWED is provably false, the type declaration
+excludes null."
+  (flet ((expansion-with-type (float-type)
+           `(locally (declare (notinline parse-float))
+              (truly-the ,float-type
+                (parse-float ,string ,@args)))))
+    (if (not type-supplied?) call
+        (multiple-value-bind (float-type float-type-constant?)
+            (eval-if-constant type)
+          (if (not float-type-constant?) call
+              (let ((junk-allowed-expansion
+                      (expansion-with-type `(or null ,float-type)))
+                    (junk-not-allowed-expansion
+                      (expansion-with-type float-type)))
+                (assert (subtypep float-type 'float))
+                (if junk-allowed-supplied?
+                    (multiple-value-bind (junk-allowed junk-allowed-constant?)
+                        (eval-if-constant junk-allowed)
+                      (if junk-allowed-constant?
+                          (if junk-allowed
+                              junk-allowed-expansion
+                              junk-not-allowed-expansion)
+                          junk-allowed-expansion))
+                    junk-not-allowed-expansion)))))))
 
 (declaim (inline round-to))
 (defun round-to (number &optional (divisor 1))

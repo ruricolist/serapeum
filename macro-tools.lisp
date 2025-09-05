@@ -1,15 +1,58 @@
-(in-package :serapeum)
-(in-readtable :fare-quasiquote)
+(defpackage :serapeum/macro-tools
+  (:documentation "Tools for writing macros.")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:import-from
+   :introspect-environment
+   :compiler-macroexpand
+   :compiler-macroexpand-1
+   :constant-form-value)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :build-declarations
+   :filter-declaration-env
+   :parse-declarations)
+  (:import-from
+   :trivia
+   :ematch
+   :match)
+  (:import-from
+   :trivial-cltl2
+   :variable-information)
+  (:export
+   :+merge-tail-calls+
+   :callf
+   :callf2
+   :case-failure
+   :define-case-macro
+   :define-do-macro
+   :define-post-modify-macro
+   :eval-if-constant
+   :expand-macro
+   :expand-macro-recursively
+   :expect-form-list
+   :expect-single-form
+   :make-unique-name-list
+   :parse-defmethod-args
+   :parse-leading-keywords
+   :partition-declarations
+   :string-gensym
+   :unique-name
+   :unparse-ordinary-lambda-list
+   :unsplice
+   :with-read-only-vars
+   :with-thunk))
+
+(in-package :serapeum/macro-tools)
 
 ;;;# Basics
 
-;;; Borrowed from the internals of Alexandria.
-
 (defun extract-function-name (x)
   "If possible, extract the name from X, a function designator."
+  ;;; Borrowed from the internals of Alexandria.
   (match x
-    (`(function ,name) name)
-    (`(quote ,name) name)
+    ((list 'function name) name)
+    ((list 'quote name) name)
     (otherwise nil)))
 
 (defmacro rebinding-functions (bindings &body body)
@@ -102,7 +145,7 @@ From Lparallel."
 ;;;## `with-thunk'
 ;;; This is useful, but the name could and should be improved.
 
-(defmacro with-thunk ((var &rest args) &body body)
+(defmacro with-thunk ((spec &rest args) &body body)
   "A macro-writing macro for the `call-with-' style.
 
 In the `call-with-' style of writing macros, the macro is simply a
@@ -134,6 +177,10 @@ to be given a name (using `flet') so it can be declared
       (with-thunk (body)
         `(call-with-foo ,body)))
 
+You can give the thunk a name for easier debugging.
+
+    (with-thunk ((body :name foo)) ...)
+
 It is also possible to construct a \"thunk\" with arguments.
 
     (with-thunk (body foo)
@@ -144,22 +191,26 @@ It is also possible to construct a \"thunk\" with arguments.
         (call-with-foo #',thunk))
 
 Someday this may have a better name."
-  (let* ((stack-thunk-prefix (string 'stack-fn-))
-         (stack-thunk-name
-           (concatenate 'string
-                        stack-thunk-prefix
-                        (string var)))
-         (stack-thunk
-           (gensym stack-thunk-name)))
-    (with-gensyms (b gargs)
-      `(let ((,b ,var)
-             (,var ',stack-thunk)
-             (,gargs (list ,@args)))
-         `(flet ((,',stack-thunk ,,gargs
-                   ,@,b))
-            (declare (dynamic-extent (function ,',stack-thunk)))
-            (symbol-macrolet ((,',stack-thunk (function ,',stack-thunk)))
-              ,,@body))))))
+  ;; TODO Derive default name from &environment. Cf. log4cl.
+  (destructuring-bind (var &key name) (ensure-list spec)
+    (declare (type (and symbol (not null)) var)
+             (type symbol name))
+    (let* ((stack-fn-prefix (string 'stack-fn-))
+           (stack-fn-name
+             (or (concatenate 'string
+                              stack-fn-prefix
+                              (string (or name var)))))
+           (stack-fn
+             (gensym stack-fn-name)))
+      (with-gensyms (b gargs)
+        `(let ((,b ,var)
+               (,var ',stack-fn)
+               (,gargs (list ,@args)))
+           `(flet ((,',stack-fn ,,gargs
+                     ,@,b))
+              (declare (dynamic-extent (function ,',stack-fn)))
+              (symbol-macrolet ((,',stack-fn (function ,',stack-fn)))
+                ,,@body)))))))
 
 ;;;# Expanding macros
 ;;; Expanding macros, Swank-style. We use `labels' in these
@@ -203,72 +254,6 @@ directly into Lisp code:
           (values
            (build (filter-declaration-env env2 :affecting xs))
            (build (filter-declaration-env env2 :not-affecting xs)))))))
-
-(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
-  "Efficiently dispatch on the type of SEQ."
-  (declare (ignorable other-form))
-  (let* ((list-form
-           `(with-read-only-vars (,seq)
-              ,list-form))
-         (array-form
-           `(with-read-only-vars (,seq)
-              ,array-form))
-         (list-form
-           `(let ((,seq (truly-the list ,seq)))
-              (declare (ignorable ,seq))
-              ,list-form))
-         (vector-form
-           ;; Create a separate branch for simple vectors.
-           `(if (simple-vector-p ,seq)
-                (let ((,seq (truly-the simple-vector ,seq)))
-                  (declare (ignorable ,seq))
-                  (with-vref simple-vector
-                    ,array-form))
-                (let ((,seq (truly-the vector ,seq)))
-                  (declare (ignorable ,seq))
-                  ,array-form))))
-    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,vector-form)
-    ;; Only SBCL and ABCL support extensible sequences right now.
-    #+(or sbcl abcl)
-    (once-only (seq)
-      `(if (listp ,seq)
-           ,list-form
-           ,(if other-form
-                `(if (arrayp ,seq)
-                     ,vector-form
-                     ,other-form)
-                ;; Duplicate the array form so that, hopefully, `elt'
-                ;; will be compiled to `aref', &c.
-                `(if (arrayp ,seq)
-                     ,vector-form
-                     ,other-form))))
-    #-(or sbcl abcl ccl)
-    `(if (listp ,seq) ,list-form ,vector-form)))
-
-(defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
-  "Efficiently dispatch on the type of VEC.
-The first form provides special handling for bit vectors. The second
-form provides generic handling for all types of vectors."
-  `(cond ((typep ,vec 'simple-bit-vector)
-          (let ((,vec (truly-the simple-bit-vector ,vec)))
-            (declare (ignorable ,vec))
-            (with-vref simple-bit-vector
-              ,bit-vector-form)))
-         ((typep ,vec 'bit-vector)
-          (let ((,vec (truly-the bit-vector ,vec)))
-            (declare (ignorable ,vec))
-            (with-vref bit-vector
-              ,bit-vector-form)))
-         ;; Omitted so we can safely nest within with-vector-dispatch.
-         ;; ((typep ,vec 'simple-vector)
-         ;;  (let ((,vec (truly-the simple-vector ,vec)))
-         ;;    (declare (ignorable ,vec))
-         ;;    (with-vref simple-vector
-         ;;      ,vector-form)))
-         (t
-          (let ((,vec (truly-the vector ,vec)))
-            (declare (ignorable ,vec))
-            ,vector-form))))
 
 ;;; `callf' and `callf2' are inspired by macros used in the
 ;;; implementation of Emacs Lisp's `cl' package.
@@ -432,6 +417,11 @@ Returns 1 when the environment cannot be accessed."
 (defun policy> (env policy1 policy2)
   (> (policy-quality policy1 env)
      (policy-quality policy2 env)))
+
+(defun speed-matters? (env)
+  "Return T if ENV says we should prefer space to speed."
+  (not (or (policy> env 'space 'speed)
+           (policy> env 'compilation-speed 'speed))))
 
 (defun variable-type (var &optional env)
   (if (fboundp 'trivial-cltl2:variable-information)
@@ -615,6 +605,14 @@ Otherwise, leave the keylist alone."
         else
           collect clause))
 
+(defparameter *case-macro-target*
+  (case uiop:*implementation-type*
+    ((:sbcl :cmu) 'flet)
+    (t 'tagbody))
+  "Implementation-appropriate target syntax clause deduplication.
+How should repeated clauses in a case macro be deduplicated? With flet
+or a tagbody?")
+
 (defun expand-case-macro (cont expr clauses
                           &key (default-keys '(t otherwise)) error
                                (macro-name 'custom-case))
@@ -657,9 +655,9 @@ Otherwise, leave the keylist alone."
                 ;; might even be worth using different expansions on
                 ;; different Lisps.)
                 (let ((expander
-                        (case uiop:*implementation-type*
-                          ((:sbcl :cmu) #'expand-case-macro/flet)
-                          (t #'expand-case-macro/tagbody))))
+                        (ecase *case-macro-target*
+                          ((flet) #'expand-case-macro/flet)
+                          ((tagbody) #'expand-case-macro/tagbody))))
                   (funcall expander
                            cont expr-temp clauses default
                            :macro-name macro-name))))))))
@@ -711,7 +709,7 @@ Otherwise, leave the keylist alone."
               ,(funcall cont expr-temp default clauses))
             ,@(loop for (sym . body) in dests
                     append `(,sym (return-from ,case-block
-                                    ,@body))))))))
+                                    (progn ,@body)))))))))
 
 (define-condition case-failure (type-error)
   ()
@@ -820,7 +818,7 @@ This may not work at all on some Lisps.")
   "Symbols that should not occur in the head of a list of forms.
 E.g. `progn', `locally'.")
 
-(defun sane-body-for-splice (exp)
+(defun expect-form-list (exp)
   "Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)"
@@ -830,7 +828,7 @@ E.g. `progn', `locally'.")
              exp)
       exp))
 
-(defun sane-form-for-eval (exp)
+(defun expect-single-form (exp)
   "Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact."
   (if (match exp
@@ -871,3 +869,15 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list'.
              `(&key ,@keywords))
       ,@(and aok? '(&allow-other-keys))
       ,@(and aux `(&aux ,@aux)))))
+
+(defun parse-defmethod-args (args)
+  "Parse the args to defmethod (everything except the name).
+Returns three values: a list of qualifiers, the specialized
+lambda-list, and the forms that make up the body."
+  (let* ((lambda-list.body (member-if (of-type 'list) args))
+         (qualifiers (ldiff args lambda-list.body))
+         (lambda-list (car lambda-list.body))
+         (body (cdr lambda-list.body)))
+    (values qualifiers
+            lambda-list
+            body)))

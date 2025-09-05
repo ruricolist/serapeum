@@ -1,5 +1,4 @@
 (in-package :serapeum)
-(in-readtable :fare-quasiquote)
 
 ;;; * Functions
 
@@ -143,10 +142,10 @@ If you've ever caught yourself trying to do something like
 
     (mapcar #'second xs ys)
 
-then `nth-arg` is what you need.
+then `nth-arg' is what you need.
 
-If `hash-table-keys` were not already defined by Alexandria, you could
-define it thus:
+If `hash-table-keys' were not already defined by Alexandria, you could
+define it as:
 
     (defun hash-table-keys (table)
       (maphash-return (nth-arg 0) table))"
@@ -161,9 +160,12 @@ define it thus:
          (declare (ignore ,@leading ,rest))
          ,arg))))
 
+(defconst +alist-breakeven+ 25)
+
 (defun distinct (&key (key #'identity)
-                      (test 'equal))
-  "Return a function that echoes only values it has not seen before.
+                      (test 'equal)
+                      (synchronized nil))
+  "Return a closure returning only values it has not seen before.
 
     (defalias test (distinct))
     (test 'foo) => foo, t
@@ -176,16 +178,50 @@ TEST must be a valid test for a hash table.
 This has many uses, for example:
 
     (count-if (distinct) seq)
-    ≡ (length (remove-duplicates seq))"
-  (let ((dict (make-hash-table :test test))
-        (key-fn (ensure-function key)))
-    (lambda (arg)
-      (let ((key (funcall key-fn arg)))
-        (if (nth-value 1 (gethash key dict))
-            (values nil nil)
-            (values (setf (gethash key dict)
-                          arg)
-                    t))))))
+    ≡ (length (remove-duplicates seq))
+
+If SYNCHRONIZED is non-nil, then `distinct' can safely be used from
+multiple threads. Otherwise it is not thread-safe.
+
+Note the closure returned by `distinct' changes how it tracks unique
+items based on the number of items it is tracking, so it is suitable
+for all sizes of set."
+  (unless (hash-table-test-p test)
+    (error "Not a hash table test: ~a" test))
+  (let ((set '())
+        (set-len 0)
+        (dict nil)
+        (test (ensure-function test)))
+    (declare ((integer 0 #.+alist-breakeven+) set-len))
+    (labels ((dict-init ()
+               (set-hash-table (shiftf set nil) :test test :strict nil))
+             (distinct ()
+               (with-item-key-function (key)
+                 (lambda (arg)
+                   (let ((key (key arg)))
+                     ;; Swap the representation based on the number of items
+                     ;; being tracked.
+                     (if (< set-len +alist-breakeven+)
+                         (if (member key set :test test)
+                             (values nil nil)
+                             (progn
+                               (push key set)
+                               (incf set-len)
+                               (values arg t)))
+                         (let ((dict (or dict (setf dict (dict-init)))))
+                           (declare (hash-table dict))
+                           (if (nth-value 1 (gethash key dict))
+                               (values nil nil)
+                               (progn
+                                 (setf (gethash key dict) t)
+                                 (values arg t))))))))))
+      (declare (dynamic-extent #'dict-init))
+      (let ((distinct (distinct)))
+        (if (not synchronized) distinct
+            (let ((lock (bt:make-lock)))
+              (lambda (arg)
+                (bt:with-lock-held (lock)
+                  (funcall distinct arg)))))))))
 
 (defun throttle (fn wait &key synchronized memoized)
   "Wrap FN so it can be called no more than every WAIT seconds.
@@ -243,27 +279,46 @@ between calls."
 (define-train once (fn)
   "Return a function that runs FN only once, caching the results
 forever."
-  (with-unique-names (gfn)
-    `(let ((,gfn (ensure-function ,fn))
-           (cache '())
-           (first-run t))
-       (lambda (&rest args)
-         (block nil
-           (tagbody
-              (when (null first-run)
-                (go :not-first-run))
-            :first-run
-              (setf first-run nil
-                    cache (multiple-value-list (apply ,gfn args)))
-            :not-first-run
-              (return (values-list cache))))))))
+  `(let ((cache '())
+         (first-run t))
+     (lambda (&rest args)
+       (block nil
+         (tagbody
+            (when (null first-run)
+              (go :not-first-run))
+          :first-run
+            (setf first-run nil
+                  cache (multiple-value-list (apply ,fn args)))
+          :not-first-run
+            (return (values-list cache)))))))
+
+(defun fuel (level)
+  "Return a function to count 'fuel' consumption down from the initial level.
+
+The function takes one argument and subtracts its value from the
+current fuel level.
+
+The two return values are a boolean indicating whether the available
+fuel has been exceeded followed by the current fuel level (which may
+be negative.)"
+  (lambda (consumption)
+    (let ((old-level level)
+          (remaining (decf level consumption)))
+      ;; Signal an error in the special case when LEVEL is a large
+      ;; float, CONSUMPTION is a small float, and subtraction does
+      ;; nothing.
+      (when (and (floatp consumption)
+                 (not (zerop consumption))
+                 (= old-level level))
+        (error "Fuel not consumed: level ~a, consumption ~a"
+               level consumption))
+      (values (>= remaining 0) remaining))))
 
 (defun juxt (&rest fns)
   "Clojure's `juxt'.
 
-Return a function of one argument, which, in turn, returns a list
-where each element is the result of applying one of FNS to the
-argument.
+Return a function which returns a list where each element is the
+result of applying one of FNS to the arguments.
 
 It’s actually quite simple, but easier to demonstrate than to explain.
 The classic example is to use `juxt` to implement `partition`:
@@ -430,13 +485,13 @@ This has a compiler macro for reasonable efficiency.
 From Clojure."
   (declare (optimize (debug 0)))
   (ensuring-functions (fn)
-    (labels ((rec (fn defaults)
-               (if (null defaults) fn
-                   (let ((default (first defaults)))
-                     (rec (lambda (arg &rest args)
-                            (apply fn (or arg default) args))
-                          (rest defaults))))))
-      (rec fn (reverse defaults)))))
+    (lambda (&rest args)
+      (multiple-value-call fn
+        (values-list
+         (loop for default in defaults
+               for arg = (pop args)
+               collect (or default args)))
+        (values-list args)))))
 
 (define-compiler-macro fnil (fn &rest defaults)
   (when (null defaults)
@@ -457,9 +512,9 @@ From Clojure."
 
 (define-train variadic->unary (fn)
   "Return a function that takes a single argument, a list, and
-applies VARIADIC to it.
+applies FN to it.
 
-Practically equivalent to `(curry #'apply VARIADIC arguments...)'."
+Practically equivalent to `(curry #'apply FN arguments...)'."
   (with-unique-names (list)
     `(lambda (,list)
        (declare (list ,list))
@@ -497,10 +552,51 @@ If there are not VALUES, returns nothing."
         ((null (cdr values))
          `(constantly ,(car values)))
         (t
-         #+cmucl `(constantly ,values)
+         #+cmucl `(constantly ,@values)
          #-cmucl
          (let ((temps (make-gensym-list (length values))))
            `(let ,(mapcar #'list temps values)
               (lambda (&rest args)
                 (declare (ignore args))
                 (values ,@temps)))))))
+
+
+(define-compiler-macro do-nothing (&rest args)
+  `(progn ,@args (values)))
+
+(-> do-nothing (&rest t) (values &optional))
+(declaim (inline do-nothing))
+(defun do-nothing (&rest args)
+  "Do nothing and return nothing.
+This function is meant as a placeholder for a function argument.
+
+From LispWorks."
+  (declare (ignore args))
+  (values))
+
+(-> repeat-until-stable ((or symbol function) t
+                         &key (:test (or symbol function))
+                         (:max-depth (or null (integer 0))))
+    (values t (or null (integer 0))))
+(defun repeat-until-stable (fn x &key (test 'eql) max-depth)
+  "Takes a single-argument FN and calls (fn x), then (fn (fn x)), and so on
+until the result doesn't change according to TEST. If MAX-DEPTH is specified
+then FN will be called at most MAX-DEPTH times even if the result is still changing.
+
+Returns two values, the stable result of FN and the remainder of
+MAX-DEPTH. \(If this value is 0, the result is unstable.)"
+  (declare ((or symbol function) fn test)
+           ((or (integer 0) null) max-depth))
+  (let ((fn (ensure-function fn)))
+    (with-two-arg-test (test)
+      (with-boolean (max-depth)
+        (nlet repeat-until-stable ((x x)
+                                   (max-depth max-depth))
+          (if (eql 0 max-depth)
+              (values x max-depth)
+              (let ((next (funcall fn x)))
+                (if (funcall test next x)
+                    (values x max-depth)
+                    (repeat-until-stable next
+                                         (boolean-when max-depth
+                                           (1- max-depth)))))))))))

@@ -1,7 +1,10 @@
 (defpackage #:serapeum/mop
   (:use #:c2cl #:alexandria)
-  (:import-from #:serapeum
-    #:standard/context #:topmost-object-class
+  (:import-from
+    #:serapeum
+    #:abstract-standard-class
+    #:standard/context
+    #:topmost-object-class
     #:supertypep)
   #+sb-package-locks (:implement :serapeum :serapeum/mop))
 
@@ -14,7 +17,12 @@
   ((around (:around))
    (context (:context) :order :most-specific-last)
    (before (:before))
-   (primary () :required t)
+   ;; In the example standard method combination in the CL spec, they
+   ;; have `(primary () :required t)`, but this is bad UI: with
+   ;; `:required t' we get an opaque `method-combination-error' rather
+   ;; than a useful `no-applicable-method` error that tells us what
+   ;; the arguments were.
+   (primary ())
    (after (:after)))
   (flet ((call-methods (methods)
            (mapcar (lambda (method)
@@ -102,3 +110,32 @@ In many cases context methods can simplify implementation by avoiding the need t
                                                             direct-superclasses)
                     initargs)))))
 
+
+
+;;; Abstract standard class.
+
+(defclass abstract-standard-class (standard-class)
+  ()
+  (:documentation "Metaclass for abstract classes"))
+
+(defmethod allocate-instance ((a abstract-standard-class)
+                              &rest initargs)
+  (declare (ignore initargs))
+  (error "Cannot allocate instances of abstract class ~s"
+         (class-name a)))
+
+(defmethod validate-superclass ((class abstract-standard-class)
+                                (superclass standard-class))
+  t)
+
+(defmethod validate-superclass ((class abstract-standard-class)
+                                (superclass cl:standard-class))
+  t)
+
+(defmethod validate-superclass ((class standard-class)
+                                (superclass abstract-standard-class))
+  t)
+
+(defmethod validate-superclass ((class cl:standard-class)
+                                (superclass abstract-standard-class))
+  t)

@@ -2,26 +2,27 @@
 **Table of Contents**
 
 - [Overview](#overview)
+- [Installation](#installation)
 - [Commentary](#commentary)
-    - [A note about strings](#a-note-about-strings)
-    - [Dividing sequences](#dividing-sequences)
-    - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
-    - [Internal definitions](#internal-definitions)
-        - [Example: macros that work locally and globally](#example-macros-that-work-locally-and-globally)
-        - [Example: block compiling](#example-block-compiling)
-    - [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
-        - [Example: enums](#example-enums)
-        - [Example: union types](#example-union-types)
-    - [CLOS](#clos)
-        - [Method combination: standard with context](#method-combination-standard-with-context)
-        - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
+  - [A note about strings](#a-note-about-strings)
+  - [Dividing sequences](#dividing-sequences)
+  - [Binding values in the function namespace](#binding-values-in-the-function-namespace)
+  - [Internal definitions](#internal-definitions)
+    - [Example: macros that work locally and globally](#example-macros-that-work-locally-and-globally)
+    - [Example: block compiling](#example-block-compiling)
+  - [Compile-time exhaustiveness checking](#compile-time-exhaustiveness-checking)
+    - [Example: enums](#example-enums)
+    - [Example: union types](#example-union-types)
+  - [CLOS](#clos)
+    - [Method combination: standard with context](#method-combination-standard-with-context)
+    - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
 - [Function reference](#function-reference)
 
 <!-- markdown-toc end -->
     
 # Overview
 
-[![Build Status](https://travis-ci.org/ruricolist/serapeum.svg?branch=master)](https://travis-ci.org/ruricolist/serapeum)
+[![CI](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml)
 
 Serapeum is a conservative library of Common Lisp utilities. It is a
 supplement, not a competitor, to [Alexandria][]. That means it is safe to
@@ -30,6 +31,12 @@ do:
     (defpackage ... (:use #:cl #:alexandria #:serapeum),
 
 without package conflicts.
+
+Alternatively, now that package-local nicknames are generally
+available, the `serapeum/bundle` package reexports the symbols of both
+(along with other utilities used by Serapeum itself):
+
+    (defpackage ... (:local-nicknames (:util :serapeum/bundle)))
 
 There may already be too many utility libraries for Common Lisp.
 Releasing another has become something to apologize for, not
@@ -59,6 +66,15 @@ Serapeum is intended to be portable, but it is principally tested
 where it is developed, on [SBCL][] and [Clozure CL][]. Patches and bug
 reports for other Lisps are always welcome, however, including
 implementation-specific optimizations.
+
+# Installation
+
+The preferred way to install Serapeum by using [Quicklisp][]:
+
+    (ql:quickload "serapeum")
+    
+If you want the very latest version of Serapeum, you can check out the
+repository into your `~/quicklisp/local-projects` directory.
 
 # Commentary
 
@@ -407,6 +423,8 @@ Even more usefully, we don’t have to worry about bugs caused by misspellings:
 => No warning
 ```
 
+[This article](https://dev.to/vindarel/compile-time-exhaustiveness-checking-in-common-lisp-with-serapeum-5c5i) has more about exhaustiveness checking in Serapeum.
+
 
 ## CLOS
 
@@ -468,14 +486,6 @@ Note that, since the topmost object is usually a standard class, there
 is a `validate-superclass` method which allows an instance of
 `topmost-object-class` to inherit from a standard class.
 
-# Contributions
-
-The contrib/ directory holds large contributions to Serapeum (ones that add a lot of new exports). 
-
-## Hooks
-
-The package `:serapeum/contrib/hooks` holds an enhanced implementation of hooks (extension points) contributed by the maintainers of the [Nyxt](https://nyxt.atlas.engineer/) web browser. This is fully compatible with the existing Serapeum functions for hooks (`add-hook`, `run-hook`, etc.).
-
 # Function reference
 
 The complete reference is in a [separate file](REFERENCE.md).
@@ -488,3 +498,4 @@ be edited by hand.)
 [Clozure CL]: http://clozure.com
 [ECL]: https://common-lisp.net/project/ecl/
 [Allegro]: https://franz.com/products/allegrocl/
+[Quicklisp]: https://www.quicklisp.org/beta/

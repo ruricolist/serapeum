@@ -11,14 +11,14 @@ on:
 
 jobs:
   build_docs:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Show env
         run: 'env | sort -u'
       - name: Install Roswell
         env:
-          LISP: ccl-bin
+          LISP: ccl-bin/1.12.1
         run: |
           curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
           echo /home/runner/.roswell/bin >> $GITHUB_PATH

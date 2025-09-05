@@ -290,12 +290,18 @@ Also, this version makes the bindings immutable."
                   ((list* (and var (type symbol)) clauses)
                    `(and ,var ,@(expand clauses body)))
                   ((list* (list var expr) clauses)
-                   (multiple-value-bind (local other)
-                       (partition-declarations (list var) decls env)
-                     `(let1 ,var ,expr
-                        ,@local
-                        (and ,var ,@(expand clauses
-                                            (append other body))))))
+                   (let ((temp (gensym (string var))))
+                     (multiple-value-bind (local-decls other-decls)
+                         (partition-declarations (list var) decls env)
+                       ;; The use of the temporary here is so we still
+                       ;; get style warnings if the variable is
+                       ;; unused.
+                       `(let* ((,temp ,expr)
+                               (,var ,temp))
+                          ,@local-decls
+                          (and ,temp
+                               ,@(expand clauses
+                                         (append other-decls body)))))))
                   ((list* (list expr) clauses)
                    `(and ,expr ,@(expand clauses body)))))))
       (car (expand clauses body)))))
@@ -318,3 +324,35 @@ Also, this version makes the bindings immutable."
                                           `(function ,(car binding)))
                                         bindings)))
      ,@body))
+
+(defmacro if-not (test then &optional else)
+  "If TEST evaluates to NIL, evaluate THEN and return its values,
+otherwise evaluate ELSE and return its values. ELSE defaults to NIL."
+  `(if (not ,test)
+       ,then
+       ,else))
+
+(defmacro if-not-let (bindings &body (then-form &optional else-form))
+  "Creates new variable bindings, and conditionally executes either
+THEN-FORM or ELSE-FORM. ELSE-FORM defaults to NIL.
+BINDINGS must be either single binding of the form:
+ (variable initial-form)
+or a list of bindings of the form:
+ ((variable-1 initial-form-1)
+  (variable-2 initial-form-2)
+  ...
+  (variable-n initial-form-n))
+All initial-forms are executed sequentially in the specified order. Then all
+the variables are bound to the corresponding values.
+If one of the variables was bound to NIL, the THEN-FORM is executed with the
+bindings in effect, otherwise the ELSE-FORM is executed with the bindings in
+effect.
+Adapted from Alexandria if-let."
+  (let* ((binding-list (if (and (consp bindings) (symbolp (car bindings)))
+                           (list bindings)
+                           bindings))
+         (variables (mapcar #'car binding-list)))
+    `(let ,binding-list
+       (if-not (and ,@variables)
+	       ,then-form
+	       ,else-form))))

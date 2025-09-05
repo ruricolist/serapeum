@@ -50,25 +50,25 @@
     (symbol-macrolet ((x 1))
       (is (eql 1 (constant-value/env x))))))
 
-(test sane-form-for-eval
+(test expect-single-form
   (finishes
-    (sane-form-for-eval (list '(lambda ()))))
+    (expect-single-form (list '(lambda ()))))
   (finishes
-    (sane-form-for-eval nil))
+    (expect-single-form nil))
   (finishes
-    (sane-form-for-eval (list nil)))
+    (expect-single-form (list nil)))
   (signals error
-    (sane-form-for-eval (list '(+ 1 2)))))
+    (expect-single-form (list '(+ 1 2)))))
 
-(test sane-body-for-splice
+(test expect-form-list
   (signals error
-    (sane-body-for-splice '(progn)))
+    (expect-form-list '(progn)))
   (signals error
-    (sane-body-for-splice '(locally)))
+    (expect-form-list '(locally)))
   (signals error
-    (sane-body-for-splice 'x))
+    (expect-form-list 'x))
   (finishes
-    (sane-body-for-splice nil)))
+    (expect-form-list nil)))
 
 (defun my-plus (x y)
   (+ x y))
@@ -97,3 +97,27 @@
   (is (= 42
          (let ((x 42))
            (my-incf* x)))))
+
+(define-case-macro faux-case (expr &body clauses)
+    (:default default)
+  `(cond ,@(loop for (key . body) in clauses
+                 collect `((eql ,expr ,key) ,@body))
+         (t ,@default)))
+
+(test faux-case
+  (dolist (target '(tagbody flet))
+    (let ((*case-macro-target* target))
+      (is (eql 'bit
+               (funcall
+                (compile
+                 nil
+                 (eval
+                  `(lambda (x)
+                     (faux-case x
+                       ((0 1)
+                        ;; Multiple forms.
+                        (let ((*standard-output* (make-broadcast-stream)))
+                          (print "hello"))
+                        'bit)
+                       (t 'non-bit)))))
+                1))))))

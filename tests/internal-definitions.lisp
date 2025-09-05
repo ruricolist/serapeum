@@ -326,3 +326,14 @@
                (prog1 (progn 'hello 'world)
                  ;; Make sure this branch is not eliminated.
                  (return 'goodbye)))))))
+
+(define-symbol-macro global-symbol-macro 1)
+
+(test symbol-macro-setf-values-scope
+  (is (eql 4
+           (local
+             ;; This expands into a `(setf (values ..))` form. If we
+             ;; macroexpand the setf, we get a (nonexistent) backing
+             ;; variable for the global symbol macro.
+             (def (values global-symbol-macro x) 4 'x)
+             global-symbol-macro))))

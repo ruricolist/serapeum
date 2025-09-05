@@ -1,5 +1,56 @@
-;;; Definitions of types.
-(in-package :serapeum)
+(defpackage :serapeum/types
+  (:documentation "Utility types and type utilities.")
+  #+sb-package-locks (:lock t)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/macro-tools
+   :trivia)
+  (:import-from
+   :introspect-environment
+   :constant-form-value
+   :typexpand)
+  (:import-from
+   :serapeum/macro-tools
+   :policy-quality
+   :speed-matters?
+   :variable-type)
+  (:import-from
+   :serapeum/portability
+   :with-simple-vector)
+  (:export
+   :*boolean-bypass*
+   :->
+   :assure
+   :assuref
+   :boolean-if
+   :boolean-unless
+   :boolean-when
+   :input-stream
+   :nor
+   :octet
+   :octet-vector
+   :output-stream
+   :proper-subtype-p
+   :proper-supertype-p
+   :soft-alist-of
+   :soft-list-of
+   :supertypep
+   :true
+   :tuple
+   :vref
+   :wholenum
+   :with-boolean
+   :with-item-key-function
+   :with-member-test
+   :with-simple-vector-dispatch
+   :with-string-dispatch
+   :with-subtype-dispatch
+   :with-two-arg-test
+   :with-type-dispatch
+   :with-vector-dispatch))
+
+(in-package :serapeum/types)
 
 (deftype octet ()
   '(unsigned-byte 8))
@@ -49,16 +100,28 @@ Literal keywords, numbers, and characters are also treated as `eql' type specifi
 (defpattern tuple (&rest args)
   `(list ,@args))
 
-(deftype -> (args values)
+(deftype -> (args &optional values)
   "The type of a function from ARGS to VALUES."
-  `(function ,args ,values))
+  `(function ,args ,@(when values
+                       (list values))))
 
-(defmacro -> (function args values)
-  "Declaim the ftype of FUNCTION from ARGS to VALUES.
+(defmacro -> (functions (&rest args) &optional values)
+  "Declaim the ftype of one or multiple FUNCTIONS from ARGS to VALUES.
 
      (-> mod-fixnum+ (fixnum fixnum) fixnum)
-     (defun mod-fixnum+ (x y) ...)"
-  `(declaim (ftype (-> ,args ,values) ,function)))
+     (defun mod-fixnum+ (x y) ...)
+
+     (-> (mod-float+ mod-single-float+) (float float) float)
+     (defun mod-float+ (x y) ...)
+     (defun mode-single-float+ (x y) ...)"
+  `(declaim (ftype (-> (,@args) ,@(when values
+                                    (list values)))
+		   ,@(if (consp functions)
+			 (if (find-symbol (symbol-name (first functions))
+					  :cl)
+			     (list functions)
+			     functions)
+			 (list functions)))))
 
 (defmacro declaim-freeze-type (&rest types)
   "Declare that TYPES is not going to change.
@@ -173,7 +236,7 @@ Note that the supplied value is *not* saved into the place designated
 by FORM. (But see `assuref'.)
 
 Using `values' types is supported, with caveats:
-- The types of `&rest' arguments are not currently checked.
+- The types of `&rest' arguments are enforced using `soft-list-of'.
 - Types defined with `deftype' that expand into values types may not be checked in some Lisps.
 
 From ISLISP."
@@ -197,8 +260,16 @@ From ISLISP."
            (unless (subtypep type-spec declared-type)
              (warn "Required type ~a is not a subtypep of declared type ~a"
                    type-spec declared-type)))))
-     ;; `values' is hand-holding for SBCL.
-     `(the ,type-spec (values (require-type ,form ',type-spec))))))
+     #+sbcl
+     ;; For SBCL, create a temporary binding so SBCL will print a
+     ;; warning if it can infer the declared type is wrong.
+     (with-unique-names (assure-temp)
+       `(let ((,assure-temp ,form))
+          (declare (type ,type-spec ,assure-temp))
+          ;; `values' is hand-holding for SBCL.
+          (the ,type-spec (values (require-type ,assure-temp ',type-spec)))))
+     #-sbcl
+     `(the ,type-spec (require-type ,form ',type-spec)))))
 
 (defmacro assure-values (typespecs &body (form))
   (flet ((lambda-list-keyword? (x)
@@ -209,7 +280,7 @@ From ISLISP."
                    if (lambda-list-keyword? spec)
                      collect spec
                    else collect (gensym))))
-      (multiple-value-bind (required optional rest?)
+      (multiple-value-bind (required optional rest)
           (parse-ordinary-lambda-list lambda-list)
         (let ((optional
                 (loop for (arg default nil) in optional
@@ -218,7 +289,7 @@ From ISLISP."
           `(multiple-value-call
                (lambda (,@required
                    ,@(and optional `(&optional ,@optional))
-                   ,@(and rest? `(&rest ,rest?)))
+                   ,@(and rest `(&rest ,rest)))
                  (multiple-value-call #'values
                    ,@(loop for arg in required
                            for type in types
@@ -229,8 +300,10 @@ From ISLISP."
                              collect `(if ,arg-supplied?
                                           (assure ,type ,arg)
                                           (values))))
-                   ,@(and rest?
-                          `((values-list ,rest?)))))
+                   ,@(and rest
+                          `((values-list
+                             (assure (soft-list-of ,(lastcar types))
+                               ,rest))))))
              ,form))))))
 
 (defmacro assuref (place type-spec)
@@ -274,7 +347,8 @@ That is, is TYPE a subtype of SUPERTYPE?"
 (defun proper-subtype-p (subtype type &optional env)
   "Is SUBTYPE a proper subtype of TYPE?
 
-This is, is it true that SUBTYPE is a subtype of TYPE, but not the same type?"
+This is, is it true that SUBTYPE is a subtype of TYPE, but not the
+same type?"
   ;; You might expect this would be as simple as
 
   ;; (and (subtypep subtype type)
@@ -303,6 +377,7 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
   (proper-subtype-p type supertype env))
 
 (defun sort-subtypes (subtypes)
+  "Sort SUBTYPES such that subtypes always precede supertypes."
   (let ((sorted (stable-sort subtypes #'proper-subtype-p)))
     (prog1 sorted
       ;; Subtypes must always precede supertypes.
@@ -312,6 +387,9 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
                            thereis (proper-subtype-p type2 type1)))))))
 
 (defun remove-shadowed-subtypes (subtypes)
+  "Remove shadowed types in SUBTYPES.
+Subtypes are shadowed when they are subtypes of the disjunction of all
+preceding types."
   (assert (equal subtypes (sort-subtypes subtypes)))
   (labels ((rec (subtypes supertypes)
              (if (null subtypes)
@@ -326,6 +404,8 @@ SUPERTYPE, but not every value of SUPERTYPE is of type TYPE?"
     (rec subtypes nil)))
 
 (defun subtypes-exhaustive? (type subtypes &optional env)
+  "Does the disjunction of SUBTYPES exhaust TYPE?
+SUBTYPES must all be subtypes of TYPE."
   (loop for subtype in subtypes
         unless (subtypep subtype type env)
           do (error "~s is not a subtype of ~s" subtype type))
@@ -458,51 +538,49 @@ Serapeum, `with-templated-body'. One possible expansion is based on
 the `string-dispatch' macro used internally in SBCL. But most of the
 credit should go to the paper \"Fast, Maintable, and Portable Sequence
 Functions\", by Irène Durand and Robert Strandh."
-  (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
-  (let* ((types (simplify-subtypes types))
-         (var-type (variable-type var env))
-         ;; If the var has a declared type, remove excluded types.
-         (types (remove-if-not (lambda (type)
-                                 (subtypep type var-type env))
-                               types)))
-    (cond ((null types)
-           `(locally ,@body))
-          ((or (policy> env 'space 'speed)
-               (policy> env 'compilation-speed 'speed))
-           (simple-style-warning "Not using type dispatch due to optimize declarations.")
-           `(locally ,@body))
-          ;; The advantage of the CMUCL/SBCL way (I hope) is that the
-          ;; compiler can decide /not/ to bother inlining if the type
-          ;; is such that it cannot do any meaningful optimization.
-          ((or #+(or cmucl sbcl) t)
-           ;; Cf. sb-impl::string-dispatch.
-           (with-unique-names ((fun type-dispatch-fun))
-             `(flet ((,fun (,var)
-                       (with-read-only-vars (,var)
-                         ,@body)))
-                (declare (inline ,fun))
-                (etypecase ,var
-                  ,@(loop for type in types
-                          collect `(,type (,fun (truly-the ,type ,var))))))))
-          ((or #+ccl t)
-           `(with-type-declarations-trusted ()
-              (etypecase ,var
-                ,@(loop for type in types
-                        collect `(,type
-                                  (locally (declare (type ,type ,var))
-                                    (with-read-only-vars (,var)
-                                      (with-vref ,type
-                                        ,@body))))))))
-          (t
-           `(with-type-declarations-trusted ()
-              (etypecase ,var
-                ,@(loop for type in types
-                        collect `(,type
-                                  (let ((,var ,var))
-                                    (declare (type ,type ,var))
-                                    (with-read-only-vars (,var)
-                                      (with-vref ,type
-                                        ,@body)))))))))))
+  `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+     ,(let* ((types (simplify-subtypes types))
+             (var-type (variable-type var env))
+             ;; If the var has a declared type, remove excluded types.
+             (types (remove-if-not (lambda (type)
+                                     (subtypep type var-type env))
+                                   types)))
+        (cond ((null types)
+               `(locally ,@body))
+              ((not (speed-matters? env))
+               `(locally ,@body))
+              ;; The advantage of the CMUCL/SBCL way (I hope) is that the
+              ;; compiler can decide /not/ to bother inlining if the type
+              ;; is such that it cannot do any meaningful optimization.
+              ((or #+(or cmucl sbcl) t)
+               ;; Cf. sb-impl::string-dispatch.
+               (with-unique-names ((fun type-dispatch-fun))
+                 `(flet ((,fun (,var)
+                           (with-read-only-vars (,var)
+                             ,@body)))
+                    (declare (inline ,fun))
+                    (etypecase ,var
+                      ,@(loop for type in types
+                              collect `(,type (,fun (truly-the ,type ,var))))))))
+              ((or #+ccl t)
+               `(with-type-declarations-trusted ()
+                  (etypecase ,var
+                    ,@(loop for type in types
+                            collect `(,type
+                                      (locally (declare (type ,type ,var))
+                                        (with-read-only-vars (,var)
+                                          (with-vref ,type
+                                            ,@body))))))))
+              (t
+               `(with-type-declarations-trusted ()
+                  (etypecase ,var
+                    ,@(loop for type in types
+                            collect `(,type
+                                      (let ((,var ,var))
+                                        (declare (type ,type ,var))
+                                        (with-read-only-vars (,var)
+                                          (with-vref ,type
+                                            ,@body))))))))))))
 
 (defmacro with-subtype-dispatch (type (&rest subtypes) var &body body
                                  &environment env)
@@ -547,61 +625,227 @@ START and END are the offset of the original vector's data in the array it is di
                (simple-vector ,@types) ,var
              ,@body)))
     (if (or #+(or sbcl cmu scl openmcl allegro) t)
-        `(babel-encodings:with-simple-vector ((,var ,var)
-                                              (,start 0)
-                                              (,end (length ,var)))
+        `(with-simple-vector ((,var ,var)
+                              (,start 0)
+                              (,end (length ,var)))
            ,inner)
         `(let* ((,var ,var)
                 (,start 0)
                 (,end (length ,var)))
            ,inner))))
 
-;;; Are these worth exporting?
+(defvar *boolean-bypass* nil
+  "Bypasses macroexpand-time branching of WITH-BOOLEAN. The bypass inhibits all
+macroexpand-time branching and instead defers all checks in expanded code to
+runtime in the following manner:
+\
+* WITH-BOOLEAN -> PROGN
+* BOOLEAN-IF -> IF
+* BOOLEAN-WHEN -> WHEN
+* BOOLEAN-UNLESS -> UNLESS")
 
-(defmacro with-boolean ((var) &body body)
-  "Emit BODY twice: once for the case where VAR is true, once for the
-  case where VAR is false.
+(define-symbol-macro %in-branching% nil)
 
-This lets you write an algorithm naturally, testing the value of VAR
-as much as you like -- perhaps even in each iteration of a loop --
-knowing that VAR will only actually be tested once.
+(define-symbol-macro %all-branches% ())
 
-Around each specialized body VAR is bound to a symbol macro whose
-value is `t' or `nil'. This allows macros to recognize VAR as a
-constant."
-  (check-type var symbol)
-  `(if ,var
-       (symbol-macrolet ((,var t))
-         ,@body)
-       (symbol-macrolet ((,var nil))
-         ,@body)))
+(defmacro with-boolean ((&rest branches) &body body
+                        &environment env)
+  "Establishes a lexical environment in which it is possible to use
+macroexpand-time branching. Within the lexical scope of
+`with-boolean', it is possible to use `boolean-if', `boolean-when',
+and `boolean-unless' to conditionalize whether some forms are included
+at compilation time. (You may also use `:if', `:when', or `:unless'
+for brevity.)
+\
+The first argument must be a list of symbols which name variables. This macro
+will expand into a series of conditionals"
+  (cond (*boolean-bypass*
+         `(progn ,@body))
+        (t (let ((all-branches (macroexpand-1 '%all-branches% env)))
+             `(macrolet ((:if (cond then else)
+                              (list 'boolean-if cond then else))
+                         (:when (cond &body then)
+                           (list* 'boolean-when cond then))
+                         (:unless (cond &body then)
+                           (list* 'boolean-unless cond then)))
+                (locally
+                    (declare #+sbcl (sb-ext:disable-package-locks
+                                     %in-branching% %all-branches%)
+                             #+sbcl (sb-ext:muffle-conditions
+                                     sb-ext:code-deletion-note))
+                  (symbol-macrolet ((%in-branching% t)
+                                    (%all-branches% (,@branches ,@all-branches))
+                                    (%true-branches% ()))
+                    (locally (declare #+sbcl (sb-ext:enable-package-locks
+                                              %in-branching% %all-branches%))
+                      (%with-boolean ,branches ,@body)))))))))
+
+(defmacro %with-boolean ((&rest branches) &body body
+                         &environment env)
+  (cond ((not (null branches))
+         (destructuring-bind (branch . other-branches) branches
+           (check-type branch symbol)
+           (let ((true-branches (macroexpand-1 '%true-branches% env)))
+             `(if ,branch
+                  (symbol-macrolet
+                      ((%true-branches% (,branch . ,true-branches)))
+                    (%with-boolean (,@other-branches)
+                      ,@body))
+                  (%with-boolean (,@other-branches)
+                    ,@body)))))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
+
+(defun conditional-error (name)
+  `(simple-program-error
+    "~A must be used inside the lexical scope established by ~
+     WITH-BOOLEAN."
+    ',name))
+
+(defun missing-branch (name)
+  `(simple-program-error
+    "The macroexpand-time branch ~S was not defined in any encloding
+     WITH-BOOLEAN form."
+    ',name))
+
+(defmacro boolean-if (branch then &optional else &environment env)
+  "Chooses between the forms to include based on whether a macroexpand-time
+branch is true. The first argument must be a symbol naming a branch in the
+lexically enclosing WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond (*boolean-bypass*
+         `(if ,branch ,then ,else))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'if))
+        ((member branch (macroexpand-1 '%true-branches% env))
+         then)
+        (t (or else `(progn)))))
+
+(defmacro boolean-when (branch &body body &environment env)
+  "Includes some forms based on whether a macroexpand-time branch is true. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond (*boolean-bypass*
+         `(when ,branch ,@body))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'when))
+        ((not (member branch (macroexpand-1 '%true-branches% env)))
+         `(progn))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
+
+(defmacro boolean-unless (branch &body body &environment env)
+  "Includes some forms based on whether a macroexpand-time branch is false. The
+first argument must be a symbol naming a branch in the lexically enclosing
+WITH-BOOLEAN form.
+\
+It is an error to use this macro outside the lexical environment established by
+WITH-BOOLEAN."
+  (cond (*boolean-bypass*
+         `(unless ,branch ,@body))
+        ((not (member branch (macroexpand-1 '%all-branches% env)))
+         (missing-branch branch))
+        ((not (macroexpand-1 '%in-branching% env))
+         (conditional-error 'unless))
+        ((member branch (macroexpand-1 '%true-branches% env))
+         `(progn))
+        ((= 0 (length body))
+         `(progn))
+        ((= 1 (length body))
+         (car body))
+        (t `(progn ,@body))))
 
 (defmacro with-nullable ((var type) &body body)
   `(with-type-dispatch (null ,type) ,var
      ,@body))
 
-(defmacro with-test-fn ((test) &body body
-                        &environment env)
-  "Specialize BODY on the most common test functions."
+(defmacro with-two-arg-test ((test) &body body
+                             &environment env)
+  "Specialize BODY on the most common two-arg test functions."
   (check-type test symbol)
-  (if (or (policy> env 'space 'speed)
-          (policy> env 'compilation-speed 'speed))
-      `(locally ,@body)
-      `(cond ((eql ,test #'eq)
-              (macrolet ((,test (x y) `(eq ,x ,y)))
-                ,@body))
-             ((eql ,test #'eql)
-              (macrolet ((,test (x y) `(eql ,x ,y)))
-                ,@body))
-             ((eql ,test #'equal)
-              (macrolet ((,test (x y) `(equal ,x ,y)))
-                ,@body))
-             ;; ((eql ,test #'equalp)
-             ;;  (macrolet ((,test (x y) `(equalp ,x ,y)))
-             ;;    ,@body))
-             (t (let ((,test (ensure-function ,test)))
-                  (macrolet ((,test (x y) (list 'funcall ',test x y)))
-                    ,@body))))))
+  (let ((default
+          `(let ((,test (ensure-function ,test)))
+             (macrolet ((,test (x y) (list 'funcall ',test x y)))
+               ,@body))))
+    (if (not (speed-matters? env)) default
+        `(cond ((eql ,test #'eq)
+                (macrolet ((,test (x y) `(eq ,x ,y)))
+                  ,@body))
+               ((eql ,test #'eql)
+                (macrolet ((,test (x y) `(eql ,x ,y)))
+                  ,@body))
+               ((eql ,test #'equal)
+                (macrolet ((,test (x y) `(equal ,x ,y)))
+                  ,@body))
+               ;; ((eql ,test #'equalp)
+               ;;  (macrolet ((,test (x y) `(equalp ,x ,y)))
+               ;;    ,@body))
+               (t ,default)))))
+
+(defmacro with-member-test ((test-fn &key key test test-not) &body body
+                            &environment env)
+  "Emit BODY multiple times with specialized, inline versions of
+`member' bound to TEST-FN."
+  (if (not (speed-matters? env))
+      (with-unique-names (ukey utest utest-not)
+        `(let ((,ukey ,key)
+               (,utest ,test)
+               (,utest-not ,test-not))
+           (macrolet ((,test-fn (item list)
+                        (list 'multiple-value-call
+                              '(function member)
+                              item list
+                              :key ',ukey
+                              (list 'if ',utest
+                                    '(values :test ',utest)
+                                    '(values))
+                              (list 'if ',utest-not
+                                    '(values :test-not ',utest-not)
+                                    '(values)))))
+             ,@body)))
+      (let ((test? test)
+            (test (or test (gensym (string 'test))))
+            (test-not? test-not)
+            (test-not (or test-not (gensym (string 'test-not))))
+            (key? key)
+            (key (or key (gensym (string 'key)))))
+        `(let ((,test (canonicalize-test
+                       ,(and test? test)
+                       ,(and test-not? test-not)))
+               (,key ,(and key? key)))
+           (with-item-key-function (,key)
+             (with-two-arg-test (,test)
+               (macrolet ((,test-fn (x l)
+                            (let ((test ',test)
+                                  (key ',key))
+                              (with-unique-names (ul ux mem)
+                                `(let ((,ul ,l)
+                                       (,ux ,x))
+                                   (declare (optimize (safety 0) (debug 0))
+                                            (list ,ul))
+                                   (block ,mem
+                                     (tagbody loop
+                                        (when ,ul
+                                          (unless (,test ,ux (,key (first ,ul)))
+                                            (setf ,ul (cdr ,ul))
+                                            (go loop)))
+                                        (return-from ,mem ,ul))))))))
+                 ,@body)))))))
 
 (defmacro with-item-key-function ((key &optional (key-form key))
                                   &body body &environment env)
@@ -611,17 +855,21 @@ copy of BODY with KEY bound to a local macro that calls KEY-FORM.
 If current optimization declarations favor space over speed, or
 compilation speed over runtime speed, then BODY is only emitted once."
   (check-type key symbol)
-  `(let ((,key (canonicalize-key ,key-form)))
-     ,@(sane-body-for-splice
-        (if (or (policy> env 'space 'speed)
-                (policy> env 'compilation-speed 'speed))
-            `((macrolet ((,key (x) (list 'funcall ',key x)))
-                ,@body))
-            `((cond ((eql ,key #'identity)
-                     (macrolet ((,key (x) x))
-                       ,@body))
-                    (t (macrolet ((,key (x) (list 'funcall ',key x)))
-                         ,@body))))))))
+  (with-unique-names (ukey)
+    `(let* ((,key (canonicalize-key ,key-form))
+            (,ukey ,key))
+       ,@(expect-form-list
+          (if (not (speed-matters? env))
+              `((macrolet ((,key (x) (list 'funcall ',ukey x)))
+                  ,@body))
+              `((cond ((eql ,ukey #'identity)
+                       (macrolet ((,key (x) x))
+                         ,@body))
+                      (t (macrolet ((,key (x) (list 'funcall ',ukey x)))
+                           ,@body)))))))))
+
+(deftype true () '(eql t))
+(deftype false () '(eql nil))
 
 (declaim (ftype (function (t) boolean) true))
 (declaim (inline true))
@@ -634,3 +882,145 @@ Based on an idea by Eric Naggum."
 
 (define-compiler-macro true (x)
   `(not (null ,x)))
+
+;;; Should this be exported?
+(declaim (type (integer 0 *) *soft-list-cutoff*))
+(defparameter *soft-list-cutoff* 20)
+
+(deftype soft-list-of (type)
+  "A soft constraint for the elements of a list.
+
+The elements are restricted only as far as is practical, which is not
+very far, using heuristics which will not be specified here because
+they may improve over time. That said, since the goal of this type is
+to be practically useful, it will avoid any checks that would be O(n)
+in the length of the list."
+  `(or null
+       (cons ,type
+             (and list
+                  ,(if (subtypep type 'cons)
+                       `(satisfies proper-alist?)
+                       (multiple-value-bind (allows-null? for-sure?)
+                           (subtypep 'null type)
+                         (if (and (not allows-null?)
+                                  for-sure?)
+                             '(satisfies proper-list-without-nil?)
+                             '(satisfies proper-list?))))))))
+
+(deftype soft-alist-of (key-type value-type)
+  "A soft constraint for the elements of an alist.
+
+Equivalent to `(soft-list-of (cons KEY-TYPE VALUE-TYPE))`."
+  `(soft-list-of (cons ,key-type ,value-type)))
+
+(declaim (ftype (function (t &optional (integer 0 *))
+                          (values boolean &optional))
+                proper-list? proper-list-without-nil?))
+
+(defun proper-list? (x &optional (cutoff *soft-list-cutoff*))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      (null)
+                      (cons)
+                      ;; Improper list.
+                      (t (return nil)))
+                 finally (return t)))))
+
+(defun proper-alist? (x &optional (cutoff *soft-list-cutoff*))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      (null)
+                      (cons
+                       (unless (consp (car tail))
+                         (return nil)))
+                      ;; Improper list.
+                      (t (return nil)))
+                 finally (return t)))))
+
+(defun proper-list-without-nil? (x &optional (cutoff *soft-list-cutoff*))
+  (or (null x)
+      (and (consp x)
+           (loop for tail on x
+                 repeat cutoff
+                 do (typecase tail
+                      ;; Done.
+                      (null)
+                      ;; Contains null.
+                      (cons
+                       (when (null (car tail))
+                         (return nil)))
+                      ;; Improper list.
+                      (t (return nil)))
+                 finally (return t)))))
+
+(defmacro seq-dispatch (seq &body (list-form array-form &optional other-form))
+  "Efficiently dispatch on the type of SEQ."
+  (declare (ignorable other-form))
+  (let* ((list-form
+           `(with-read-only-vars (,seq)
+              ,list-form))
+         (array-form
+           `(with-read-only-vars (,seq)
+              ,array-form))
+         (list-form
+           `(let ((,seq (truly-the list ,seq)))
+              (declare (ignorable ,seq))
+              ,list-form))
+         (vector-form
+           ;; Create a separate branch for simple vectors.
+           `(if (simple-vector-p ,seq)
+                (let ((,seq (truly-the simple-vector ,seq)))
+                  (declare (ignorable ,seq))
+                  (with-vref simple-vector
+                    ,array-form))
+                (let ((,seq (truly-the vector ,seq)))
+                  (declare (ignorable ,seq))
+                  ,array-form))))
+    #+ccl `(ccl::seq-dispatch ,seq ,list-form ,vector-form)
+    ;; Only SBCL and ABCL support extensible sequences right now.
+    #+(or sbcl abcl)
+    (once-only (seq)
+      `(if (listp ,seq)
+           ,list-form
+           ,(if other-form
+                `(if (arrayp ,seq)
+                     ,vector-form
+                     ,other-form)
+                ;; Duplicate the array form so that, hopefully, `elt'
+                ;; will be compiled to `aref', &c.
+                `(if (arrayp ,seq)
+                     ,vector-form
+                     ,array-form))))
+    #-(or sbcl abcl ccl)
+    `(if (listp ,seq) ,list-form ,vector-form)))
+
+(defmacro vector-dispatch (vec &body (bit-vector-form vector-form))
+  "Efficiently dispatch on the type of VEC.
+The first form provides special handling for bit vectors. The second
+form provides generic handling for all types of vectors."
+  `(cond ((typep ,vec 'simple-bit-vector)
+          (let ((,vec (truly-the simple-bit-vector ,vec)))
+            (declare (ignorable ,vec))
+            (with-vref simple-bit-vector
+              ,bit-vector-form)))
+         ((typep ,vec 'bit-vector)
+          (let ((,vec (truly-the bit-vector ,vec)))
+            (declare (ignorable ,vec))
+            (with-vref bit-vector
+              ,bit-vector-form)))
+         ;; Omitted so we can safely nest within with-vector-dispatch.
+         ;; ((typep ,vec 'simple-vector)
+         ;;  (let ((,vec (truly-the simple-vector ,vec)))
+         ;;    (declare (ignorable ,vec))
+         ;;    (with-vref simple-vector
+         ;;      ,vector-form)))
+         (t
+          (let ((,vec (truly-the vector ,vec)))
+            (declare (ignorable ,vec))
+            ,vector-form))))

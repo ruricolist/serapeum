@@ -1,4 +1,22 @@
-(in-package #:serapeum)
+(defpackage :serapeum/iter
+  (:documentation "Iteration constructs and utilities.")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:export
+   :collecting
+   :nlet
+   :summing
+   :with-collector
+   :with-collectors)
+  (:import-from
+   :serapeum/macro-tools
+   :string-gensym)
+  (:import-from
+   :tcr.parse-declarations-1.0
+   :map-declaration-env
+   :parse-declarations
+   :build-declarations))
+(in-package :serapeum/iter)
 
 ;;;# nlet
 
@@ -74,7 +92,7 @@ are being evaluated, and it is safe to close over the arguments."
                          (let ,(mapcar #'list vars temps)
                            ,@body))))))))))
 
-(defmacro with-syms (syms &body body)
+(defmacro with-current-package-symbols (syms &body body)
   "Like `with-gensyms', but binds SYMS in the current package."
   `(let ,(loop for sym in syms
                if (symbolp sym)
@@ -86,7 +104,7 @@ are being evaluated, and it is safe to close over the arguments."
 (defmacro collecting* (&body body)
   "Intern COLLECT in the current package and bind it as a collector
 with MACROLET."
-  (with-syms (collect)
+  (with-current-package-symbols (collect)
     (with-gensyms (head tail)
       `(let* ((,head (list nil))
               (,tail ,head))
@@ -116,15 +134,15 @@ can pass the collector around or return it like any other function."
                     (dolist (x xs)
                       (setf (cdr ,tail) (setf ,tail (list x))))
                     (cdr ,head))))
-         ;; This causes problem in CCL.
-         ;; (declare (inline ,collector))
+         ;; This causes problems in CCL and ABCL.
+         #-(or ccl abcl) (declare (inline ,collector))
          ,@body
          (the list (cdr ,head))))))
 
 (defmacro collecting (&body body)
   "Like `with-collector', with the collector bound to the result of
 interning `collect' in the current package."
-  (with-syms (collect)
+  (with-current-package-symbols (collect)
     `(with-collector (,collect)
        ,@body)))
 
@@ -165,13 +183,14 @@ Return the total."
   ;; TODO This should be numerically stable, at least if the zero is a
   ;; float.
   (let ((zero (if (numberp (first body)) (pop body) 0)))
-    (with-gensyms (n x)
-      (with-syms (sum)
-        `(the number
-              (let ((,n ,zero))
-                (declare (number ,n))
-                (flet ((,sum (,x)
-                         (incf ,n ,x)))
-                  (declare (ignorable (function ,sum)))
-                  ,@body)
-                ,n))))))
+    (with-gensyms (running-total x x-supplied?)
+      (with-current-package-symbols (sum)
+        `(let ((,running-total ,zero))
+           (declare (number ,running-total))
+           (flet ((,sum (&optional (,x 0 ,x-supplied?))
+                    (if ,x-supplied?
+                        (incf ,running-total ,x)
+                        ,running-total)))
+             (declare (ignorable (function ,sum)))
+             ,@body)
+           (the number ,running-total))))))

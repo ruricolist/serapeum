@@ -1,5 +1,4 @@
 (in-package #:serapeum)
-(in-readtable :fare-quasiquote)
 
 ;;; References:
 ;;; Waddell, Sarkar, and Dybvig, "Fixing Letrec".
@@ -53,12 +52,12 @@ an ftype declaration."
   (let ((decls (partition-declarations `(#',fn) decls env)))
     (dolist (decl decls (values nil nil nil))
       (match decl
-        (`(declare (ftype ,sig ,_))
+        ((list 'declare (list 'ftype sig _))
           (return
             (match sig
-              (`(function ,args ,ret)
+              ((list 'function args ret)
                 (values args ret t))
-              (`(-> ,args ,ret)
+              ((list '-> args ret)
                 (values args ret t)))))))))
 
 (defun build-bind/ftype (fn var decls env)
@@ -113,14 +112,14 @@ analyze it into an environment, declarations, and a lambda."
   #.+merge-tail-calls+
   (match form
     ;; Special cases for `complement` and `constantly`.
-    (`(complement ,fn)
+    ((list 'complement fn)
       (with-gensyms (temp)
         (values `((,temp (ensure-function ,fn)))
                 `((function ,temp))
                 `(lambda (&rest args)
                    (declare (dynamic-extent args))
                    (not (apply ,temp args))))))
-    (`(constantly ,x)
+    ((list 'constantly x)
       (with-gensyms (temp)
         (values `((,temp ,x))
                 nil
@@ -129,7 +128,7 @@ analyze it into an environment, declarations, and a lambda."
                    ,temp))))
     ;; NB Disjoin, conjoin, and rcurry don't have compiler macros (why
     ;; not?).
-    (`(,(and fun (or 'conjoin 'disjoin)) ,pred ,@preds)
+    ((list* (and fun (or 'conjoin 'disjoin)) pred preds)
       (let* ((preds (cons pred preds))
              (temps (loop for nil in preds collect (gensym))))
         (values (mapcar (lambda (temp pred)
@@ -137,12 +136,13 @@ analyze it into an environment, declarations, and a lambda."
                         temps preds)
                 nil
                 `(lambda (&rest args)
-                   (,(case fun
-                       (conjoin 'and)
-                       (disjoin 'or))
+                   (,(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+                       (case fun
+                         (conjoin 'and)
+                         (disjoin 'or)))
                     ,@(loop for temp in temps
                             collect `(apply ,temp args)))))))
-    (`(rcurry ,fun ,@args)
+    ((list* 'rcurry fun args)
       (let ((tempfn (string-gensym 'fn))
             (temps (loop for nil in args collect (gensym))))
         (values `((,tempfn (ensure-function ,fun))
@@ -154,15 +154,15 @@ analyze it into an environment, declarations, and a lambda."
                    (declare (dynamic-extent more))
                    (multiple-value-call ,tempfn (values-list more) ,@temps)))))
     ;; TODO Special-case partial. We should be smart enough to see through this.
-    (`(partial ,fn ,@args)
+    ((list* 'partial fn args)
       (let-over-lambda `(curry ,fn ,@args) lexenv))
     ;; A plain lambda.
-    ((or `(lambda ,args ,@body)
-         `(function (lambda ,args ,@body)))
+    ((or (list* 'lambda args body)
+         (list 'function (list* 'lambda args body)))
      (values nil nil `(lambda ,args ,@body)))
-    (`(ensure-function ,fn)
+    ((list 'ensure-function fn)
       (let-over-lambda fn lexenv))
-    (`(locally ,@body)
+    ((cons 'locally body)
       (multiple-value-bind (forms decls)
           (parse-body body)
         (let-over-lambda
@@ -171,7 +171,7 @@ analyze it into an environment, declarations, and a lambda."
             ,@forms)
          lexenv)))
     ;; A literal lambda as the function.
-    (`((lambda ,lambda-list ,@body) ,@arguments)
+    ((list* (list* 'lambda lambda-list body) arguments)
       ;; Just rewrite it as a let, if possible.
       (if (intersection lambda-list lambda-list-keywords)
           (trivia.fail:fail)
@@ -181,15 +181,16 @@ analyze it into an environment, declarations, and a lambda."
            lexenv)))
     ;; let* with single binding. Note that Clozure, at least, expands
     ;; let with only one binding into let*.
-    (`(let* (,binding) ,@body)
+    ((list* 'let* (list binding) body)
       (let-over-lambda `(let ,binding ,@body) lexenv))
     ;; let-over-lambda.
-    (`(let ,(and bindings (type list)) ,@body)
+    ((list* 'let (and bindings (type list)) body)
       (multiple-value-bind (forms decls)
           (parse-body body)
         (match forms
-          (`(,(or `(lambda ,args ,@body)
-                  `(function (lambda ,args ,@body))))
+          ((list
+             (or (list* 'lambda args body)
+                 (list 'function (list* 'lambda args body))))
             (if (every #'gensym? (mapcar #'ensure-car bindings))
                 ;; If all the bindings are gensyms, don't worry about
                 ;; shadowing or duplicates.
@@ -327,12 +328,14 @@ symbol)."
            (body decls (parse-body body)))
     `(let ,env
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
+       (comment "Hidden variable bindings to close over.")
        (let ,(loop for temp in temps
                    for expr in exprs
                    collect `(,temp (ensure-function ,expr)))
          ,@(when temps
              (unsplice
               `(declare (function ,@temps))))
+         (comment "fbind: Hidden variable bindings for function values.")
          (flet (,@(loop for (name lambda) in lambdas
                         collect `(,name ,@(cdr lambda)))
                 ,@(loop for var in vars
@@ -341,13 +344,14 @@ symbol)."
                           collect (build-bind/ftype var temp decls env)))
            #-sbcl (declare (inline ,@(set-difference vars macro-vars)))
            ,@decls
+           (comment "fbind: Functions that might be sharp-quoted.")
            (macrolet (,@(loop for var in vars
                               for temp in temps
                               when (member var macro-vars)
                                 collect `(,var
                                           (&rest args)
                                           (list* 'funcall ',temp args))))
-             (comment "Macro bindings for functions that are never called.")
+             (comment "fbind: Macros for functions provably never sharp-quoted.")
              ,@body))))))
 
 (defmacro fbind* (bindings &body body &environment env)
@@ -367,6 +371,7 @@ symbol)."
          ,@body))))
 
 (defun ignored-functions-in-decls (decls)
+  (declare (notinline filter keep))         ;phasing
   ;; The names of the ignored functions.
   (mapcar #'second
           ;; Ignore declarations for functions.
@@ -408,7 +413,7 @@ BODY is needed because we detect unreferenced bindings by looking for
                ;; Note that `analyze-fbinds' has already done the work
                ;; of exposing lambda inside let.
                (match expr
-                 (`(lambda ,@_) t)))
+                 ((cons 'lambda _) t)))
              (simple? (expr)
                ;; Special cases where we can be sure the expressions
                ;; are simple -- that is, that they contain no
@@ -416,15 +421,15 @@ BODY is needed because we detect unreferenced bindings by looking for
                (let ((expr (expand-macro expr)))
                  (match expr
                    ((and _ (type symbol)) t)
-                   (`(quote ,_) t)
-                   (`(function ,_) t)
-                   (`(if ,@body)
+                   ((list 'quote _) t)
+                   ((list 'function _) t)
+                   ((cons 'if body)
                      (and (simple? (first body))
                           (if (not (second body))
                               t
                               (simple? (second body)))))
                    ;; TODO Locally.
-                   (`(progn ,@body)
+                   ((cons 'progn body)
                      (every #'simple? body))))))
       (loop for binding in fbinds
             for var = (first binding)
@@ -451,30 +456,30 @@ generates another are undefined."
            (simple complex lambda unref
             (partition-fbinds (append bindings lambdas)
                               body))
-           (temps (mapcar (compose #'gensym #'string #'first) complex))
+           (temps (mapcar (op (gensym (string (first _)))) complex))
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))
     `(let ,env
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
        ;; Simple expressions reference functions already defined
        ;; outside of the letrec, so we can handle them with fbind.
-       (comment "Simple")
+       (comment "fbind: Simple")
        (fbind ,simple
          ,@simple-decls
-         (comment "Temps for complex bindings")
+         (comment "fbind: Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
                         collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
-             (comment "Lambdas")
+             (comment "fbind: Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               (comment "Unreferenced")
+               (comment "fbind: Unreferenced")
                (progn ,@(mapcar #'second unref))
-               (comment "Complex")
+               (comment "fbind: Complex")
                (psetf ,@(loop for temp in temps
                               for (nil expr) in complex
                               append `(,temp (ensure-function ,expr))))
@@ -491,7 +496,7 @@ used in successive bindings."
            (simple complex lambda unref
             (partition-fbinds (append binds lambdas)
                               body))
-           (temps (mapcar (compose #'gensym #'string #'first) complex))
+           (temps (mapcar (op (gensym (string (first _)))) complex))
            (body decls (parse-body body))
            (simple-decls complex-decls lambda-decls others
             (partition-declarations-by-kind simple complex lambda decls)))
@@ -503,21 +508,21 @@ used in successive bindings."
                             `(,var #'invalid)
                             var))
        ,@(unsplice (and env-decls `(declare ,@env-decls)))
-       (comment "Simple bindings")
+       (comment "fbind: Simple bindings")
        (fbind ,simple
          ,@simple-decls
-         (comment "Temps for complex bindings")
+         (comment "fbind: Temps for complex bindings")
          (let ,(loop for temp in temps collect `(,temp #'invalid))
            (declare ,@(loop for temp in temps collect `(function ,temp)))
            (flet ,(loop for (name nil) in complex
                         for temp in temps
                         collect (build-bind/ftype name temp complex-decls env))
              ,@complex-decls
-             (comment "Lambdas")
+             (comment "fbind: Lambdas")
              (labels (,@(loop for (name lambda) in lambda
                               collect `(,name ,@(cdr lambda))))
                ,@lambda-decls
-               (comment "Interleave unreferenced and complex bindings in order.")
+               (comment "fbind: Interleave unreferenced and complex bindings in order.")
                ,@(remove nil
                          (loop for (name nil) in bindings
                                append (or (loop for (uname init) in unref
@@ -527,7 +532,7 @@ used in successive bindings."
                                                 for temp in temps
                                                 if (eql cname name)
                                                   return `((setf ,temp (ensure-function ,init)))))))
-               (comment "Set the `env` variables for the lambdas")
+               (comment "fbind: Set the `env` variables for the lambdas")
                (setf ,@(apply #'append env))
                (locally ,@others
                  ,@body))))))))

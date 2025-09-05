@@ -75,3 +75,28 @@
     (setf (qback q) 3)
     (is (eql 3 (qback q)))
     (is (equal '(1 3) (qlist q)))))
+
+(test copy-queue
+  (let* ((q1 (queue 1 2 3))
+         (q2 (copy-queue q1)))
+    (is (not (eq (qlist q1) (qlist q2))))
+    (enq 4 q1)
+    (enq 2 q2)
+    (is (equal (qlist q1) '(1 2 3 4)))
+    (is (equal (qlist q2) '(1 2 3 2)))))
+
+(test qprepend
+  (let ((q (queue)))
+    (qprepend '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3))))
+  (let ((q (queue 4 5 6)))
+    (qprepend '(1 2 3) q)
+    (is (equal (qlist q) '(1 2 3 4 5 6)))))
+
+(test qpreconc
+  (let ((q (queue)))
+    (qpreconc (list 1 2 3) q)
+    (is (equal (qlist q) '(1 2 3))))
+  (let ((q (queue 4 5 6)))
+    (qpreconc (list 1 2 3) q)
+    (is (equal (qlist q) '(1 2 3 4 5 6)))))

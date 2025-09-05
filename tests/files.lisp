@@ -69,3 +69,41 @@
     (uiop:delete-file-if-exists file2)
     (uiop:delete-file-if-exists empty-file)
     (uiop:delete-file-if-exists junk-file)))
+
+(test join
+  (is (uiop:pathname-equal
+       (base-path-join "foo")
+       #p"foo"))
+  (is (uiop:pathname-equal
+       (base-path-join #p"foo" "bar")
+       #p"foobar"))
+  (is (uiop:pathname-equal
+       (base-path-join #p"foo" "bar" #p"baz")
+       #p"foobarbaz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo" "bar/baz")
+                           #p"foo/bar/baz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo" "/bar/baz")
+                           #p"foo/bar/baz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo/bar" "baz")
+                           #p"foo/barbaz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo/bar.x" "bar.y")
+                           #p"foo/bar.xbar.y"))
+  (is (uiop:pathname-equal (base-path-join #p"foo/bar" "/baz")
+                           #p"foo/bar/baz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo/bar/" "baz")
+                           #p"foo/bar/baz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo/" "bar/" "baz" "qux")
+                           #p"foo/bar/bazqux"))
+  (is (uiop:pathname-equal (base-path-join #p"foo.txt" "bar/baz")
+                           #p"foo.txt/bar/baz"))
+  (is (uiop:pathname-equal (base-path-join #p"foo.txt" "bar.ext")
+                           #p"foo.txtbar.ext")))
+
+(test basename
+  (is (null (path-basename "")))
+  (is (equal (path-basename "foo/bar") "bar"))
+  (is (null (path-basename #p"")))
+  (is (equal (path-basename #p"/foo/bar/baz") "baz"))
+  (is (equal (path-basename #p"/foo/bar/baz/") "baz"))
+  (is (equal (path-basename #p"/foo/bar/baz.ext") "baz.ext"))
+  (is (equal (path-basename #p"foo/bar/baz.ext") "baz.ext")))

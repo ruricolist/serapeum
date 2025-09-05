@@ -57,6 +57,55 @@ From Emacs Lisp."
     ≡ (append list (list item))"
   (append list (list item)))
 
+(defsubst nconc1 (list item)
+  "Like `append1', but destructive."
+  (nconc list (list item)))
+
+(defsubst prepend (&rest lists)
+  "Construct and return a list by concatenating LISTS in reverse order.
+
+    (prepend list-1 list-2)
+    ≡ (append list-2 list-1)"
+  (apply #'append (reverse lists)))
+
+(define-modify-macro prependf (&rest lists) prepend
+  "Modify-macro for prepend. Prepends LISTS to the PLACE designated by the first argument.")
+
+(defmacro push-end (item place &environment env)
+  "Destructively push ITEM to the end of PLACE.
+Like `push', but affects the last item rather than the first.
+
+You may want to use `enq' on a `queue' instead.
+
+From LispWorks."
+  (multiple-value-bind (dummies vals temps setter getter)
+      (get-setf-expansion place env)
+    (when (rest temps) (error "Invalid place for push-end"))
+    (let ((temp (car temps)))
+      `(let* (,@(mapcar #'list dummies vals)
+              (,temp ,getter))
+         (setf ,temp (nconc1 ,temp ,item))
+         ,setter))))
+
+(defmacro push-end-new (item place
+                        &rest kwargs
+                        &key key test test-not
+                        &environment env)
+  "Pushes ITEM to the end of place (like `push-end') but only if it not already a member of PLACE (like `pushnew').
+
+For the use of KEY, TEST, and TEST-NOT, see `pushnew'."
+  (declare (ignore key test test-not))
+  (once-only (item)
+    (multiple-value-bind (dummies vals temps setter getter)
+        (get-setf-expansion place env)
+      (when (rest temps) (error "Invalid place for push-end"))
+      (let ((temp (car temps)))
+        `(let* (,@(mapcar #'list dummies vals)
+                (,temp ,getter))
+           (unless (member ,item ,temp ,@kwargs)
+             (setf ,temp (nconc1 ,temp ,item)))
+           ,setter)))))
+
 (defun in (x &rest items)
   "Is X equal to any of ITEMS?
 
@@ -86,7 +135,7 @@ From Arc."
 (-> memq (t list) list)
 (declaim-maybe-inline memq)
 (defun memq (item list)
-  "Like (member ... :test #'eq).
+  "Like (member ITEM LIST :test #'eq).
 Should only be used for symbols."
   (declare (optimize (speed 3) (safety 0) (debug 0))
            (list list))
@@ -188,6 +237,11 @@ But the actual implementation is more efficient.
   (let ((found (apply #'assoc item alist args)))
     (values (cdr found) found)))
 
+(defsubst assocar (item alist &rest args &key &allow-other-keys)
+  "Like (car (assoc ...))"
+  (let ((found (apply #'assoc item alist args)))
+    (values (car found) found)))
+
 (defsubst assocadr (item alist &rest args &key &allow-other-keys)
   "Like `assocdr' for alists of proper lists.
 
@@ -200,6 +254,11 @@ But the actual implementation is more efficient.
   "Like (car (rassoc ...))"
   (let ((found (apply #'rassoc item alist args)))
     (values (car found) found)))
+
+(defsubst rassocdr (item alist &rest args &key &allow-other-keys)
+  "Like (cdr (rassoc ...))"
+  (let ((found (apply #'rassoc item alist args)))
+    (values (cdr found) found)))
 
 (defsubst firstn (n list)
   "The first N elements of LIST, as a fresh list:
@@ -333,3 +392,46 @@ presented at ECLS 2015, “Processing List Elements in Reverse Order.”"
           (list+length list start end)
         (declare (fixnum length) (list list))
         (aux3 fun list length)))))
+
+(defun intersectionp (list1 list2 &key key test test-not)
+  "Return T if LIST1 and LIST2 intersect.
+Equivalent to `(and (intersection list1 list2) t)`, without
+intermediate consing.
+
+Two empty lists are not considered to intersect."
+
+  (declare (list list1 list2))
+  (when (and list1 list2)
+    (with-member-test (mem :key key :test test :test-not test-not)
+      (dolist (elt list1)
+        (when (mem (key elt) list2)
+          (return t))))))
+
+(defun stable-set-difference (list1 list2 &key key test test-not)
+  "Like `set-difference', but preserve the order of LIST1's elements."
+  (declare (list list1 list2))
+  (with-member-test (mem :key key :test test :test-not test-not)
+    (if list2
+        (collecting
+          (dolist (elt list1)
+            (unless (mem (key elt) list2)
+              (collect elt))))
+        list1)))
+
+(defun append-longest (&rest lists)
+  "Like `append', but without guarantees as to order.
+The longest list in LISTS is put last, to maximize structure sharing.
+
+This also ignores nil, so `(append-longest list nil)' will return its
+first argument unchanged."
+  (let ((lists (remove nil lists)))
+    (cond ((no lists) nil)
+          ((single lists) (car lists))
+          (t (let ((longest (longest lists)))
+               (multiple-value-call #'append
+                 (values-list (remove longest lists))
+                 longest))))))
+
+(defun mappend-longest (fn &rest lists)
+  "Like `mappend', but using `append-longest'."
+  (apply #'append-longest (mapcar fn lists)))

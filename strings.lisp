@@ -8,11 +8,11 @@
   #+(or abcl lispworks) (code-char 160))
 
 (defconst whitespace
-  #.(remove-duplicates
-     (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
-                   #\Vt                 ;Vertical tab.
-                   no-break-space)
-             'string))
+  (remove-duplicates
+   (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
+                 #\Vt                   ;Vertical tab.
+                 no-break-space)
+           'string))
   "Whitespace characters.")
 
 (defsubst whitespacep (char)
@@ -45,7 +45,9 @@ are considered whitespace."
          (fn s)))
       (output-stream (fn stream)))))
 
-(defmacro with-string ((var &optional stream) &body body)
+(defmacro with-string ((var &optional stream
+                        &key (element-type nil element-type-supplied?))
+                       &body body)
   "Bind VAR to the character stream designated by STREAM.
 
 STREAM is resolved like the DESTINATION argument to `format': it can
@@ -60,6 +62,7 @@ functions.
     (defun format-x (x &key stream)
       (with-string (s stream)
         ...))"
+  (declare #+sbcl (sb-ext:muffle-conditions style-warning))
   (when (constantp stream)
     (let ((stream (eval stream)))
       (cond ((eql stream t)
@@ -68,10 +71,12 @@ functions.
                   ,@body)))
             ((null stream)
              (return-from with-string
-               `(with-output-to-string (,var)
+               `(with-output-to-string (,var
+                                        ,@(and element-type-supplied?
+                                               `(:element-type ,element-type)))
                   ,@body))))))
 
-  (with-thunk (body var)
+  (with-thunk ((body :name with-string) var)
     `(call/string #',body ,stream)))
 
 (defsubst blankp (seq)
@@ -119,26 +124,36 @@ replaced by a single space character (or SPACE, if that is specified)."
 From Emacs Lisp."
   (apply #'concatenate 'string strings))
 
-(defun mapconcat/list (fun list sep stream)
+(defun mapconcat/list (fun list sep stream end?)
   (declare (list list) (function fun) (string sep) (optimize speed))
-  (loop for (elt . more?) on list
-        do (write-string (funcall fun elt) stream)
-        if more?
-          do (write-string sep stream)))
+  (if end?
+      (loop for elt in list
+            do (write-string (funcall fun elt) stream)
+               (write-string sep stream))
+      (loop for (elt . more?) on list
+            do (write-string (funcall fun elt) stream)
+            if more?
+              do (write-string sep stream))))
 
-(defun mapconcat/seq (fun seq sep stream)
+(defun mapconcat/seq (fun seq sep stream end?)
   (declare (function fun) (string sep))
-  (if (emptyp seq)
-      (make-string 0)
-      (let ((i 0)
-            (ult (1- (length seq))))
-        (declare (type array-index i ult))
-        (do-each (elt seq)
-          (write-string (funcall fun elt) stream)
-          (unless (= (prog1 i (incf i)) ult)
-            (write-string sep stream))))))
+  (if end?
+      (if (emptyp seq)
+          (copy-seq sep)
+          (do-each (elt seq)
+            (write-string (funcall fun elt) stream)
+            (write-string sep stream)))
+      (if (emptyp seq)
+          (make-string 0)
+          (let ((i 0)
+                (ult (1- (length seq))))
+            (declare (type array-index i ult))
+            (do-each (elt seq)
+              (write-string (funcall fun elt) stream)
+              (unless (= (prog1 i (incf i)) ult)
+                (write-string sep stream)))))))
 
-(defun mapconcat (fun seq separator &key stream)
+(defun mapconcat (fun seq separator &key stream end)
   "Build a string by mapping FUN over SEQ.
 Separate each value with SEPARATOR.
 
@@ -152,23 +167,88 @@ like the first argument to `format'.
 From Emacs Lisp."
   (values
    (if (emptyp seq)
-       (make-string 0)
-       (let ((fun (ensure-function fun)))
-         (check-type separator string)
+       (if end
+           (copy-seq (string separator))
+           (make-string 0))
+       (let ((fun (ensure-function fun))
+             (separator (string separator)))
          (with-string (stream stream)
            (seq-dispatch seq
-             (mapconcat/list fun seq separator stream)
-             (mapconcat/seq fun seq separator stream)))))))
+             (mapconcat/list fun seq separator stream end)
+             (mapconcat/seq fun seq separator stream end)))))))
 
 (defun string-join (strings separator &key stream end)
-  "Like `(mapconcat #'string STRINGS (string SEPARATOR))'."
-  (with-string (s stream)
-    (mapconcat #'string strings (string separator)
-               :stream s)
-    (when end
-      (write-string (string separator) s))))
+  "Join strings in STRINGS, separated by SEPARATOR.
 
-(-> string-upcase-initials (string-designator) string)
+SEPARATOR can be any string designator.
+
+If STREAM is provided, write to STREAM rather than returning a string.
+
+If END is provided, then insert SEPARATOR after the last string, as
+well as between strings.
+
+Equivalent to `(mapconcat #'string STRINGS SEPARATOR)'."
+  (if stream
+      (with-string (s stream)
+        (mapconcat #'string strings separator :stream s)
+        (when end
+          (write-string (string separator) s)))
+      (let* ((separator (coerce (string separator)
+                                '(simple-array character (*))))
+             (sep-len (length separator))
+             (separator? (not (zerop sep-len))))
+        (macrolet ((do-strings ((s more?) &body body)
+                     (with-unique-names (i last)
+                       `(if (listp strings)
+                            (loop for (,s . ,more?) on strings
+                                  do (progn ,@body))
+                            (let ((,last (max 0 (1- (length strings))))
+                                  (,i 0))
+                              (declare (array-index ,i ,last))
+                              (do-each (,s strings)
+                                (let ((,more? (< ,i ,last)))
+                                  (declare (ignorable ,more?))
+                                  ,@body)
+                                (incf ,i)))))))
+          (with-boolean (separator?)
+            (let ((len 0))
+              (declare (array-length len))
+              (locally (declare (optimize speed))
+                (do-strings (s more?)
+                  (etypecase s
+                    (string (incf len (length s)))
+                    (character (incf len 1))
+                    (symbol (incf len (length (symbol-name s)))))
+                  (boolean-when separator?
+                    (when more?
+                      (incf len sep-len))))
+                (boolean-when separator?
+                  (when end
+                    (incf len sep-len)))
+                (lret ((start 0)
+                       (result (make-array len :element-type 'character)))
+                  (declare (array-index start)
+                           ((simple-array character (*)) result))
+                  (do-strings (s more?)
+                    (nlet rec (s)
+                      (etypecase s
+                        (string
+                         (with-string-dispatch () s
+                           (replace result s :start1 start)
+                           (incf start (length s))))
+                        (character
+                         (setf (schar result start) s)
+                         (incf start))
+                        (symbol (rec (symbol-name s)))))
+                    (boolean-when separator?
+                      (when more?
+                        (replace result separator :start1 start)
+                        (incf start sep-len))))
+                  (boolean-when separator?
+                    (when end
+                      (replace result separator :start1 start)))))))))))
+
+(-> string-upcase-initials (string-designator) (values string &optional))
 (defun string-upcase-initials (string)
   "Return STRING with the first letter of each word capitalized.
 This differs from STRING-CAPITALIZE in that the other characters in
@@ -299,18 +379,20 @@ removed."
         (flet ((reset ()
                  (setq col 0)
                  (terpri s))
-               (output-word (word)
+               (output-word (word space?)
                  (write-string word s)
                  (incf col (length word))
-                 (when more
+                 (when space?
                    (write-char #\Space s)
                    (incf col))))
           (let ((projected-length (+ col (length token))))
-            (if (<= projected-length column)
-                (output-word token)
-                (progn
-                  (reset)
-                  (output-word token)))))))))
+            (cond ((= projected-length column)
+                   (output-word token nil))
+                  ((< projected-length column)
+                   (output-word token t))
+                  (t
+                   (reset)
+                   (output-word token t)))))))))
 
 (-> lines ((or null string)
            &key
@@ -557,19 +639,32 @@ Has a compiler macro with `formatter'."
                ((not (find #\~ control-string))
                 `(copy-seq ,control-string))
                ;; Same as `princ'.
-               ((member control-string '("~a" "~d" "~f" "~g")
-                        :test #'equalp)
+               ((equalp control-string "~a")
                 (destructuring-bind (arg) args
-                  `(let (*print-pretty*)
-                     (princ-to-string ,arg))))
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape nil
+                    :readably nil)))
                ;; Same as `prin1'.
                ((equalp control-string "~s")
                 (destructuring-bind (arg) args
-                  `(let (*print-pretty*)
-                     (prin1-to-string ,arg))))
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape t)))
+               ((equalp control-string "~s")
+                (destructuring-bind (arg) args
+                  `(write-to-string
+                    ,arg
+                    :pretty nil
+                    :escape nil
+                    :radix nil
+                    :base 10
+                    :readably nil)))
                (t
                 `(let (*print-pretty*)
-                   (format nil (formatter ,control-string) ,@args))))
+                   (format nil ,control-string ,@args))))
              `(let (*print-pretty*)
                 (format nil ,control-string ,@args)))))
 
@@ -751,6 +846,9 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing."
     ;; Adapted from split-sequence.
+    (assert (not (or (whitespacep (first-elt token))
+                     (whitespacep (last-elt token))))
+      () "Token must not begin or end with whitespace: ~a" token)
     (let ((len (length string))
           (end end2))
       (declare (array-length len end))
@@ -885,6 +983,23 @@ Takes care that the longest suffix is always removed first."
               hits
               (rec (+ match len) (1+ hits))))))))
 
+(deftype fixed-print-length-type ()
+  '(or string character symbol pathname fixnum))
+
+(declaim (ftype (function ((integer 0 #.most-positive-fixnum)
+                           &optional (integer 2 36))
+                          (integer 0 #.(integer-length most-positive-fixnum)))))
+(defun digit-length (n &optional (base *print-base*))
+  (declare ((integer 0 #.most-positive-fixnum) n)
+           (optimize speed (safety 1)))
+  ;; TODO Optimize for powers of 2.
+  (let ((len 0))
+    (declare ((integer 0 #.(integer-length most-positive-fixnum)) len))
+    (loop for q = (truncate n base)
+          do (incf len)
+          until (zerop (setf n q)))
+    len))
+
 (declaim (ftype (function (&rest t) string) string+))
 (defun string+ (&rest args)
   "Optimized function for building small strings.
@@ -894,17 +1009,101 @@ Roughly equivalent to
     (let ((*print-pretty* nil))
      (format nil \"~@{~a}\" args...))
 
-But with a compiler macro that can sometimes result in more efficient
-code."
+But may be more efficient when the arguments of certain simple
+types (such as strings, characters, symbols, pathnames, and fixnums).
+
+Note that unlike `princ', `string+' treats `nil' as the same as the
+empty string:
+
+    (string+ nil)
+    => \"\"
+
+    (string+ \"x\" nil)
+    => \"x\"
+
+This utility is inspired by the utility of the same name in Allegro."
   (declare (dynamic-extent args))
   (if (null args) ""
       (let ((*print-pretty* nil))
-        (with-output-to-string (s)
-          (dolist (arg args)
-            (typecase arg
-              (string (write-string arg s))
-              (character (write-char arg s))
-              (t (princ arg s))))))))
+        (locally (declare (optimize (speed 3) (safety 1)))
+          (tagbody
+           :use-concat
+             ;; Based on the implementation of concatenate 'string in
+             ;; SBCL (also integer printing).
+             (let ((len 0)
+                   (print-base *print-base*)
+                   (int-chars "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+               (declare (array-length len)
+                        ((integer 2 36) print-base))
+               (dolist (x args)
+                 (typecase-of fixed-print-length-type x
+                   (string (incf len (length x)))
+                   (character (incf len))
+                   (pathname
+                    (when-let (namestring (namestring x))
+                      (incf len (length namestring))))
+                   (null)
+                   (symbol (incf len (length (symbol-name x))))
+                   (fixnum
+                    (when (minusp x)
+                      (incf len))
+                    (incf len (digit-length (abs x))))
+                   (otherwise (go :use-string-stream))))
+               (let ((result (make-array len :element-type 'character))
+                     (start 0)
+                     (print-case *print-case*))
+                 (declare (array-index start)
+                          ((simple-array character (*)) result))
+                 (dolist (x args)
+                   (flet ((add-char (c)
+                            (declare (character c))
+                            (setf (schar result start) c)
+                            (incf start))
+                          (add-string (s)
+                            (declare (string s))
+                            (with-string-dispatch () s
+                              (replace result s :start1 start)
+                              (incf start (length s)))))
+                     (etypecase-of fixed-print-length-type x
+                       (string (add-string x))
+                       (character (add-char x))
+                       (pathname
+                        (when-let (namestring (namestring x))
+                          (add-string namestring)))
+                       (null)
+                       (symbol
+                        ;; Case might be affected by print-case.
+                        (if (eql print-case :upcase)
+                            (add-string (symbol-name x))
+                            (add-string (princ-to-string x))))
+                       (fixnum
+                        (when (minusp x)
+                          (add-char #\-))
+                        (let* ((x (abs x))
+                               (ptr (+ start (digit-length x))))
+                          (declare (array-length ptr))
+                          (cond
+                            ((eql x 0) (add-char #\0))
+                            ((eql x 1) (add-char #\1))
+                            (t
+                             (loop (multiple-value-bind (q r)
+                                       (truncate x print-base)
+                                     ;; Write chars backwards.
+                                     (decf ptr)
+                                     (setf (aref result ptr) (schar int-chars r))
+                                     (incf start)
+                                     (when (zerop (setq x q))
+                                       (return)))))))))))
+                 (return-from string+ result)))
+           :use-string-stream
+             (return-from string+
+               (with-output-to-string (s)
+                 (dolist (arg args)
+                   (typecase arg
+                     (string (write-string arg s))
+                     (character (write-char arg s))
+                     (null)
+                     (t (princ arg s)))))))))))
 
 (defun simplify-args-for-string-plus (args &optional env)
   (reduce (lambda (x args)
@@ -919,6 +1118,7 @@ code."
           :key (named-lambda stringify (arg)
                  ;; Stringify constant arguments when possible.
                  (trivia:match arg
+                   ((eql nil) "")
                    ((and arg (type character))
                     (string arg))
                    ((or (and sym (type keyword))
@@ -950,21 +1150,12 @@ code."
 
 (define-compiler-macro string+ (&whole call
                                        &environment env
-                                       &rest args)
-  (if (null args) ""
-      (let ((args (simplify-args-for-string-plus args env)))
-        (if (> (length args) 20) call
-            (if (= (length args) 1)
-                (if (stringp (first args))
-                    `(copy-seq ,(first args))
-                    `(princ-to-string ,(first args)))
-                ;; If the arguments are reasonably few, unroll the
-                ;; loop.
-                (with-unique-names (stream)
-                  `(let ((*print-pretty* nil))
-                     (with-output-to-string (,stream)
-                       ,@(loop for arg in args
-                               if (stringp arg)
-                                 collect `(write-string ,arg ,stream)
-                               else
-                                 collect `(princ ,arg ,stream))))))))))
+                                       &rest orig-args)
+  (if (null orig-args) ""
+      (let ((args (simplify-args-for-string-plus orig-args env)))
+        (if (= (length args) 1)
+            (if (stringp (first args))
+                `(copy-seq ,(first args))
+                `(princ-to-string ,(first args)))
+            (if (equal args orig-args) call
+                `(string+ ,@args))))))

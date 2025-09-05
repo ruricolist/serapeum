@@ -10,6 +10,14 @@ Otherwise, return a fresh cons of X and Y."
       x-y
       (cons x y)))
 
+(declaim (ftype
+          (function (list) (values t t &optional))
+          car+cdr))
+(defun car+cdr (list)
+  "Given LIST, return its car and cdr as two values."
+  (values (car list)
+          (cdr list)))
+
 (defun walk-tree (fun tree &key (tag nil tagp) (traversal :preorder))
   "Call FUN in turn over each atom and cons of TREE.
 

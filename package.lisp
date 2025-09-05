@@ -1,65 +1,140 @@
 ;;;; package.lisp
-(defpackage #:serapeum.sum
-  (:use)
-  ;; Create this in another package than SERAPEUM
-  ;; to prevent SBCL package locking from keeping
-  ;; SUM being defined in a FLET
-  (:export #:sum))
 
-(defpackage #:serapeum
-  (:use :cl :alexandria :split-sequence :parse-number
-        :named-readtables :tcr.parse-declarations-1.0)
-  (:import-from :introspect-environment
-   :compiler-macroexpand :compiler-macroexpand-1
-   :constant-form-value
-                :typexpand :typexpand-1)
-  (:import-from :trivia :match :ematch :defpattern)
-  (:import-from :trivial-file-size :file-size-in-octets)
-  (:import-from :serapeum.sum :sum)
-  (:documentation "Utilities beyond Alexandria.")
-  #+sb-package-locks (:lock t)
-  (:export
-   ;; Macro tools.
-   #:unsplice
-   #:string-gensym
-   #:unique-name
-   #:unique-name-list
-   #:with-thunk
-   #:expand-macro
-   #:expand-macro-recursively
-   #:partition-declarations
-   #:callf #:callf2
-   #:define-do-macro
-   #:define-post-modify-macro
-   #:case-failure
-   #:define-case-macro
-   #:eval-if-constant
-   #:parse-leading-keywords
-   #:with-read-only-vars
-   #:+merge-tail-calls+
-   #:sane-body-for-splice
-   #:sane-form-for-eval
-   #:unparse-ordinary-lambda-list
-   ;; Types.
-   #:supertypep
-   #:proper-subtype-p
-   #:proper-supertype-p
-   #:->
-   #:assure
-   #:assuref
-   #:wholenum
-   #:tuple
-   #:input-stream
-   #:output-stream
-   #:with-type-dispatch
-   #:vref
-   #:with-boolean
-   #:with-subtype-dispatch
-   #:with-string-dispatch
-   #:with-vector-dispatch
+(uiop:define-package #:serapeum
+  (:use-reexport
+   #:serapeum/iter
+   #:serapeum/macro-tools
+   #:serapeum/portability
+   #:serapeum/unlocked
+   #:serapeum/types)
+  (:use :cl)
+  (:import-from #:alexandria
+                ;; Binding constructs
+                #:if-let
+                #:when-let
+                #:when-let*
+                ;; Definitions
+                #:define-constant
+                ;; Hash tables
+                #:copy-hash-table
+                #:ensure-gethash
+                #:hash-table-values
+                #:plist-hash-table
+                ;; Functions
+                #:compose
+                #:curry
+                #:disjoin
+                #:ensure-function
+                #:named-lambda
+                ;; Lists
+                #:appendf
+                #:doplist
+                #:ensure-car
+                #:ensure-list
+                #:flatten
+                #:lastcar
+                #:mappend
+                #:proper-list-p
+                #:remove-from-plist
+                #:setp
+                ;; Numbers
+                #:clamp
+                ;; Arrays
+                #:array-index
+                #:array-length
+                ;; Sequences
+                #:copy-sequence
+                #:emptyp
+                #:last-elt
+                #:ends-with-subseq
+                #:extremum
+                #:first-elt
+                #:length=
+                #:random-elt
+                #:removef
+                #:rotate
+                #:sequence-of-length-p
+                #:shuffle
+                #:starts-with-subseq
+                ;; Macros
+                #:once-only
+                #:parse-body
+                #:parse-ordinary-lambda-list
+                #:with-gensyms
+                #:with-unique-names
+                ;; Symbols
+                #:make-gensym-list
+                #:make-keyword
+                ;; Strings
+                #:string-designator
+                ;; Types
+                #:non-negative-integer
+                #:of-type
+                #:type=
+                ;; Conditions
+                #:required-argument
+                #:ignore-some-conditions
+                #:simple-style-warning
+                #:simple-program-error
+                ;; Functions
+                #:copy-stream
+                ;; io
+                #:with-input-from-file
+                #:with-output-to-file
+                ;; new additions
+                #:symbolicate)
+  (:import-from #:tcr.parse-declarations-1.0
+                #:map-declaration-env
+                #:filter-declaration-env
+                #:parse-declarations
+                #:build-declarations)
+  (:import-from #:split-sequence
+                #:split-sequence
+                #:split-sequence-if
+                #:split-sequence-if-not)
+  (:import-from #:parse-number
+                #:parse-number
+                #:parse-positive-real-number
+                #:parse-real-number
+                #:invalid-number
+                #:invalid-number-value
+                #:invalid-number-reason)
+  (:import-from #:introspect-environment
+                #:compiler-macroexpand #:compiler-macroexpand-1
+                #:constant-form-value #:typexpand #:typexpand-1)
+  (:import-from #:trivia
+                #:match #:ematch :defpattern)
+  (:import-from #:trivial-file-size
+                #:file-size-in-octets)
+  (:import-from
+   #:serapeum/unlocked
+   #:sum)
+  (:import-from
+   #:serapeum/macro-tools
+   #:declaim-maybe-inline
+   #:ensuring-functions
+   #:extract-function-name
+   #:lambda-list-vars
+   #:policy-quality
+   #:rebinding-functions
+   #:speed-matters?
+   #:variable-type)
+  (:import-from
+   #:serapeum/types
+   #:canonicalize-key
+   #:canonicalize-test
+   #:declaim-freeze-type
+   #:declaim-constant-function
+   #:seq-dispatch
+   #:truly-the
+   #:vector-dispatch
    #:with-simple-vector-dispatch
-   #:true
-   #:with-item-key-function
+   #:with-type-declarations-trusted)
+  (:import-from
+   #:serapeum/iter
+   #:collecting*)
+  (:documentation "Utilities beyond Alexandria.")
+  (:export
    ;; Definitions.
    #:defconst
    #:defsubst
@@ -68,6 +143,7 @@
    #:define-values
    #:defplace
    #:defvar-unbound
+   #:defparameter-unbound
    #:defloop
    ;; Defining types.
    #:read-eval-prefix
@@ -91,7 +167,19 @@
    #:lret
    #:lret*
    #:and-let*
+   #:recklessly-continue
+   #:static-binding-flush-error
+   #:static-binding-flush-error-group
+   #:static-binding-flush-error-all-groups-p
+   #:static-binding-active-error
+   #:flush-static-binding-group
+   #:flush-all-static-binding-groups
+   #:static-let
+   #:static-let*
+   #:if-not
+   #:if-not-let
    ;; Control flow.
+   #:null-if
    #:eval-always
    #:eval-and-compile
    #:no
@@ -104,7 +192,9 @@
    #:ctypecase-of
    #:ccase-of
    #:dispatch-case
+   #:dispatch-caseql
    #:dispatch-case-let
+   #:dispatch-caseql-let
    #:dispatch-case-error
    #:destructuring-case-of
    #:destructuring-ccase-of
@@ -123,6 +213,10 @@
    #:ecase-let
    #:cond-let
    #:case-let
+   #:ccase-let
+   #:typecase-let
+   #:ctypecase-let
+   #:etypecase-let
    #:bcond
    #:comment
    #:example
@@ -177,8 +271,12 @@
    #:once
    #:fnil
    #:mvconstantly
+   #:fuel
+   #:do-nothing
+   #:repeat-until-stable
    ;; Trees.
    #:reuse-cons
+   #:car+cdr
    #:occurs
    #:occurs-if
    #:prune
@@ -200,6 +298,8 @@
    #:flip-hash-table
    #:hash-fold
    #:maphash-return
+   #:maphash-new
+   #:maphash-into
    #:set-hash-table
    #:hash-table-set
    #:hash-table-predicate
@@ -209,6 +309,7 @@
    #:pairhash
    #:pretty-print-hash-table
    #:toggle-pretty-print-hash-table
+   #:hash-table-test-p
    ;; Pathnames.
    #:wild-pathname
    #:non-wild-pathname
@@ -216,8 +317,11 @@
    #:relative-pathname
    #:directory-pathname
    #:absolute-directory-pathname
+   #:absolute-file-pathname
    #:file-pathname
    #:path-join
+   #:path-basename
+   #:base-path-join
    #:write-stream-into-file
    #:write-file-into-stream
    #:file=
@@ -232,7 +336,6 @@
    #:bound-value
    ;; Arrays.
    #:array-index-row-major
-   #:undisplace-array
    ;; Queues.
    #:queue
    #:queuep
@@ -244,12 +347,16 @@
    #:qlen
    #:qlist
    #:qconc
+   #:qpreconc
    #:qappend
+   #:qprepend
    #:queue-empty-p
    #:clear-queue
+   #:copy-queue
    ;; Boxes.
    #:box
    #:unbox
+   #:ensure-box
    ;; Heaps.
    #:make-heap
    #:heap-insert
@@ -264,6 +371,7 @@
    #:values-vector
    #:vector-conc-extend
    ;; Numbers.
+   #:null-if-zero
    #:fixnump
    #:parse-number
    #:parse-real-number
@@ -276,7 +384,9 @@
    #:unbits
    #:round-to
    #:finc
+   #:shift-incf
    #:fdec
+   #:shift-decf
    #:shrink
    #:grow
    #:shrinkf
@@ -285,8 +395,6 @@
    #:float-precision-contagion
    #:range
    ;; Octets.
-   #:octet
-   #:octet-vector
    #:octet-vector-p
    #:make-octet-vector
    #:octets
@@ -301,12 +409,15 @@
    #:time-until
    #:interval
    ;; Classes.
+   #:subclass-union
    #:class-name-of
    #:class-name-safe
    #:find-class-safe
    #:make
    #:defmethods
+   #:slot-value-safe
    ;; MOP.
+   #:abstract-standard-class
    #:standard/context
    #:topmost-object-class
    ;; Hooks.
@@ -331,9 +442,16 @@
    #:memq
    #:delq
    #:append1
+   #:nconc1
+   #:prepend
+   #:prependf
+   #:push-end
+   #:push-end-new
+   #:assocar
    #:assocdr
    #:assocadr
    #:rassocar
+   #:rassocdr
    #:firstn
    #:powerset
    #:efface
@@ -345,6 +463,10 @@
    #:nthrest
    #:plist-keys
    #:plist-values
+   #:stable-set-difference
+   #:intersectionp
+   #:append-longest
+   #:mappend-longest
    ;; Strings.
    #:ascii-char-p
    #:whitespace
@@ -407,9 +529,12 @@
    #:length>
    #:length>=
    #:longer
+   #:shorter
    #:longest
+   #:shortest
    #:ordering
    #:bisect-left
+   #:bisect-right
    #:bestn
    #:nth-best
    #:nth-best!
@@ -436,7 +561,9 @@
    #:split-sequence-if
    #:split-sequence-if-not
    #:take-while
+   #:take-until
    #:drop-while
+   #:drop-until
    #:drop-prefix
    #:ensure-prefix
    #:drop-suffix
@@ -449,6 +576,12 @@
    #:do-splits
    #:collapse-duplicates
    #:same
+   #:copy-firstn
+   #:splice-seq
+   #:nsplice-seq
+   #:splice-seqf
+   #:nsplice-seqf
+   #:null-if-empty
    ;; Generalized arrays.
    #:shape
    #:reshape
@@ -470,5 +603,21 @@
    #:human-size-formatter
    #:format-human-size))
 
+#+sb-package-locks
+(sb-ext:lock-package :serapeum)
+
+#+sb-package-locks
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (sb-ext:add-implementation-package
+   :serapeum
+   :serapeum/types))
+
 (defpackage #:serapeum-user
   (:use #:cl #:alexandria #:serapeum))
+
+(uiop:define-package :serapeum/bundle
+  (:use-reexport
+   :serapeum
+   :alexandria
+   :split-sequence
+   :parse-number))

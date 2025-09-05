@@ -22,7 +22,7 @@ limit but providing it speeds up initializing the heap.
 
 ELEMENT-TYPE is like the `:element-type' argument to `make-array'. It
 may, or may not, restrict the element type of the heap, depending on
-the request type and what the Lisp implementation supports. It is for
+the requested type and what the Lisp implementation supports. It is for
 optimization, not type safety.
 
 KEY and TEST are used to order the heap elements."

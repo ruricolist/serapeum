@@ -26,6 +26,30 @@
   "Is X a sequence?"
   (typep x 'sequence))
 
+(-> null-if-empty ((or sequence array hash-table))
+    (values (or sequence array hash-table) boolean &optional))
+(defun null-if-empty (xs)
+  "Return nil if XS is empty, XS otherwise.
+If XS was empty the second value is nil; otherwise t.
+
+This function also accepts multidimensional arrays. Arrays are
+considered empty if their total size (from `array-total-size`) is
+zero.
+
+Hash tables are considered empty if their count is 0."
+  (etypecase xs
+    (hash-table
+     (if (zerop (hash-table-count xs))
+         (values nil nil)
+         (values xs t)))
+    (sequence
+     (null-if xs 0 :test #'length=))
+    ;; Handle multidimensional arrays.
+    (array
+     (if (eql (array-total-size xs) 0)
+         (values nil nil)
+         (values xs t)))))
+
 (-> canonicalize-key (key-designator) function)
 (defun canonicalize-key (k)
   (etypecase-of key-designator k
@@ -42,9 +66,10 @@
              (function-name (fdefinition test))
              (function test))))
     (cond ((and test test-not)
-           (error "Cannot supply both ~s and ~s to a sequence function" 'test 'test-not))
+           (error "Cannot supply both ~s and ~s to a sequence function"
+                  :test :test-not))
           (test (canonicalize test))
-          (test-not (canonicalize test-not))
+          (test-not (complement (canonicalize test-not)))
           (t #'eql))))
 
 (-> key-test (key-designator test-designator &optional test-designator)
@@ -57,7 +82,7 @@ part of the arguments to compare, and compares them using TEST."
         (test (canonicalize-test test test-not)))
     (if (eql key #'identity) test
         (fbind key
-          (with-test-fn (test)
+          (with-two-arg-test (test)
             (lambda (x y)
               (test (key x) (key y))))))))
 
@@ -91,13 +116,13 @@ part of the arguments to compare, and compares them using TEST."
 
 (define-do-macro do-each/map ((var seq &optional return) &body body)
   "The simple, out-of-line version."
-  (with-thunk (body var)
+  (with-thunk ((body :name do-each) var)
     `(map nil ,body ,seq)))
 
 (defmacro do-each ((var seq &optional return) &body body &environment env)
   "Iterate over the elements of SEQ, a sequence.
 If SEQ is a list, this is equivalent to `dolist'."
-  (when (policy> env 'space 'speed)
+  (unless (speed-matters? env)
     (return-from do-each
       `(do-each/map (,var ,seq ,@(unsplice return))
          ,@body)))
@@ -105,7 +130,7 @@ If SEQ is a list, this is equivalent to `dolist'."
   ;; SBCL from spamming us with code deletion notes. (It may also be
   ;; desirable in itself to avoid needless code duplication in Lisps
   ;; without type inference.)
-  (with-thunk (body var)
+  (with-thunk ((body :name do-each) var)
     (let ((iter-spec `(,var ,seq ,@(unsplice return))))
       `(locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
          #+(or sbcl abcl)
@@ -158,16 +183,16 @@ If SEQ is a list, this is equivalent to `dolist'."
 (declaim (notinline map-subseq))
 
 (define-do-macro do-subseq ((var seq &optional return
-                                 &key start
-                                 end
-                                 from-end)
+                                 &key start end from-end)
                             &body body)
-  `(map-subseq
-    (lambda (,var)
-      ,@body)
-    ,seq
-    ,start ,end
-    ,from-end))
+  (declare #+sbcl (sb-ext:muffle-conditions style-warning))
+  `(locally (declare (inline map-subseq))
+     (map-subseq
+      (lambda (,var)
+        ,@body)
+      ,seq
+      ,start ,end
+      ,from-end)))
 
 ;;; Define a protocol for accumulators so we can write functions like
 ;;; `assort', `partition', &c. generically.
@@ -218,10 +243,10 @@ If SEQ is a list, this is equivalent to `dolist'."
          ,@body)
        (flet ((make-bucket (seq &optional (init nil initp))
                 (with-boolean (initp)
-                  (make-array (eif initp 1 0)
+                  (make-array (boolean-if initp 1 0)
                               :element-type (array-element-type seq)
                               :adjustable t
-                              :fill-pointer (eif initp 1 0)
+                              :fill-pointer (boolean-if initp 1 0)
                               :initial-contents (and initp (list init)))))
               (bucket-push (seq item bucket)
                 (declare (ignore seq))
@@ -387,6 +412,7 @@ number of items to *keep*, not remove.
 
      (filter #'oddp '(1 2 3 4 5) :count 2)
      => '(1 3)"
+  (declare (dynamic-extent pred))
   (if count
       (apply #'filter/counted pred seq args)
       (apply #'remove-if-not pred seq args)))
@@ -428,6 +454,7 @@ The difference is the handling of COUNT. For keep, COUNT is the number of items 
      (keep 'x ((x 1) (y 2) (x 3)) :key #'car)
      => '((x 1) (x 3))"
   (declare (ignore from-end key))
+  (declare (dynamic-extent key test))
   (let ((args (remove-from-plist args :test)))
     (if (null count)
         (apply #'remove item seq :test-not test args)
@@ -493,6 +520,7 @@ the sequence; `partition` always returns the “true” elements first.
 
     (assort '(1 2 3) :key #'evenp) => ((1 3) (2))
     (partition #'evenp '(1 2 3)) => (2), (1 3)"
+  (declare (dynamic-extent pred key))
   (fbind ((test (compose pred (canonicalize-key key))))
     (let ((pass (make-bucket seq))
           (fail (make-bucket seq)))
@@ -511,6 +539,7 @@ returns a filtered copy of SEQ. As a second value, it returns an extra
 sequence of the items that do not match any predicate.
 
 Items are assigned to the first predicate they match."
+  (declare (dynamic-extent preds key))
   (with-item-key-function (key)
     (with-specialized-buckets (seq)
       (let ((buckets (loop for nil in preds collect (make-bucket seq)))
@@ -535,7 +564,7 @@ agroup is immutable, the bucket itself is mutable."
   (bucket t))
 
 (defun assort (seq &key (key #'identity) (test #'eql) (start 0) end hash
-                     &aux (orig-test test))
+               &aux (orig-test test))
   "Return SEQ assorted by KEY.
 
      (assort (iota 10)
@@ -561,21 +590,24 @@ The default algorithm used by `assort' is, in the worst case, O(n) in
 the number of groups. If HASH is specified, then a hash table is used
 instead. However TEST must be acceptable as the `:test' argument to
 `make-hash-table'."
+  (declare (dynamic-extent key test))
   (fbind (test)
     (with-item-key-function (key)
       (with-boolean (hash)
         (let ((groups (queue))
-              (table (and hash (make-hash-table :test orig-test)))
+              (table (boolean-if hash (make-hash-table :test orig-test) nil))
               last-group)
+          (declare (ignorable table))
           (with-specialized-buckets (seq)
             (do-subseq (item seq nil :start start :end end)
               (let ((kitem (key item)))
                 (if-let ((group
-                          (if (match last-group
-                                ((agroup exemplar _)
-                                 (test kitem exemplar)))
-                              last-group
-                              (if hash
+                             (if (match last-group
+                                   ((agroup exemplar _)
+                                    (test kitem exemplar)))
+                                 last-group
+                                 (boolean-if
+                                  hash
                                   (gethash kitem table)
                                   (find-if
                                    (lambda (exemplar)
@@ -586,54 +618,64 @@ instead. However TEST must be acceptable as the `:test' argument to
                     (setf last-group group)
                     (bucket-push seq item (agroup-bucket group)))
                   (let ((new-group (agroup kitem (make-bucket seq item))))
-                    (when hash
+                    (boolean-when hash
                       (setf (gethash kitem table) new-group))
                     (enq new-group groups)))))
             (mapcar-into (lambda (group)
                            (bucket-seq seq (agroup-bucket group)))
                          (qlist groups))))))))
 
-(defun list-runs (list start end key test count)
+(defun list-runs (list start end key test count compare-last)
   (declare ((and fixnum unsigned-byte) count))
   (when (zerop count)
     (return-from list-runs nil))
   (fbind ((test (key-test key test)))
     (declare (dynamic-extent #'test))
-    ;; This is a little more complicated than you might expect,
-    ;; because we need to keep hold of the first element of each list.
-    (let ((runs
-            (nlet rec ((runs nil)
-                       (count count)
-                       (list
-                        (nthcdr start
-                                (if end
-                                    (ldiff list (nthcdr (- end start) list))
-                                    list))))
-              (if (endp list) runs
-                  (let ((y (car list)))
-                    (if (null runs)
-                        (rec (list (list y))
-                             count
-                             (cdr list))
-                        (let ((x (caar runs)))
-                          (if (test x y)
-                              (rec (cons (list* x y (cdar runs))
-                                         (cdr runs))
-                                   count
-                                   (rest list))
-                              (if (zerop (1- count))
-                                  runs
-                                  (rec (list* (list y)
-                                              (cons (caar runs)
-                                                    (nreverse (cdar runs)))
-                                              (cdr runs))
-                                       (1- count)
-                                       (rest list)))))))))))
-      (nreverse (cons (cons (caar runs)
-                            (nreverse (cdar runs)))
-                      (cdr runs))))))
+    (with-boolean (compare-last)
+      ;; This is a little more complicated than you might expect,
+      ;; because we need to keep hold of the first element of each list.
+      (let ((runs
+              (nlet rec ((runs nil)
+                         (count count)
+                         (list
+                          (nthcdr start
+                                  (if end
+                                      (ldiff list (nthcdr (- end start) list))
+                                      list))))
+                (if (endp list) runs
+                    (let ((y (car list)))
+                      (if (null runs)
+                          (rec (list (list y))
+                               count
+                               (cdr list))
+                          (let ((x (caar runs)))
+                            (if (test x y)
+                                (rec (cons
+                                      (boolean-if compare-last
+                                                  (cons y (car runs))
+                                                  (list* x y (cdar runs)))
+                                      (cdr runs))
+                                     count
+                                     (rest list))
+                                (if (zerop (1- count))
+                                    runs
+                                    (rec (list*
+                                          (list y)
+                                          (boolean-if compare-last
+                                                      (nreverse (car runs))
+                                                      (cons (caar runs)
+                                                            (nreverse (cdar runs))))
+                                          (cdr runs))
+                                         (1- count)
+                                         (rest list)))))))))))
+        (nreverse
+         (boolean-if compare-last
+                     (cons (nreverse (car runs)) (cdr runs))
+                     (cons (cons (caar runs)
+                                 (nreverse (cdar runs)))
+                           (cdr runs))))))))
 
-(defun runs (seq &key (start 0) end (key #'identity) (test #'eql)
+(defun runs (seq &key (start 0) end (key #'identity) (test #'eql) compare-last
                    (count most-positive-fixnum))
   "Return a list of runs of similar elements in SEQ.
 The arguments START, END, and KEY are as for `reduce'.
@@ -641,21 +683,37 @@ The arguments START, END, and KEY are as for `reduce'.
     (runs '(head tail head head tail))
     => '((head) (tail) (head head) (tail))
 
-The function TEST is called with the first element of the run as its
-first argument.
+By defualt, the function TEST is called with the first element of the
+run as its first argument.
 
-    (runs '(1 2 3 1 2 3) :test #'<)
-    => ((1 2 3) (1 2 3))
+    (runs #(10 1 5 10 1) :test #'>)
+    => (#(10 1 5) #(10))
+
+COMPARE-LAST changes this behavior to test against the previous
+element of the run:
+
+    (runs #(10 1 5 10 1) :test #'> :compare-last t)
+    (#(10 1) #(5) #(10))
 
 The COUNT argument limits how many runs are returned.
 
     (runs '(head tail tail head head tail) :count 2)
-    => '((head) (tail tail))"
+    => '((head) (tail tail))
+
+If COUNT is zero, `runs' returns an empty list. Otherwise, since
+`runs' always returns a list of subsequences of SEQ, if SEQ is empty,
+the return value will be a single-element list having the original
+sequence as its only value:
+
+    (runs \"\") -> '(\"\")
+    (runs #())  -> '(#())
+    (runs '())  -> '(())"
   (declare ((and fixnum unsigned-byte) count))
+  (declare (dynamic-extent key test))
   (cond ((zerop count) (list))
         ((emptyp seq) (list seq))
         (t (seq-dispatch seq
-             (list-runs seq start end key test count)
+             (list-runs seq start end key test count compare-last)
              (fbind ((test (key-test key test)))
                (declare (dynamic-extent #'test))
                (collecting*
@@ -663,15 +721,22 @@ The COUNT argument limits how many runs are returned.
                              (count count))
                    (when (plusp count)
                      (let* ((elt (elt seq start))
-                            (pos (position-if-not (partial #'test elt)
-                                                  seq
-                                                  :start (1+ start)
-                                                  :end end)))
-                       (if (null pos)
+                            (run-end-pos
+                              (position-if-not
+                               (if compare-last
+                                   (lambda (x)
+                                     (when (test elt x)
+                                       (setf elt x)
+                                       t))
+                                   (partial #'test elt))
+                               seq
+                               :start (1+ start)
+                               :end end)))
+                       (if (null run-end-pos)
                            (collect (subseq seq start end))
                            (progn
-                             (collect (subseq seq start pos))
-                             (runs pos (1- count)))))))))))))
+                             (collect (subseq seq start run-end-pos))
+                             (runs run-end-pos (1- count)))))))))))))
 
 (defun batches (seq n &key (start 0) end even)
   "Return SEQ in batches of N elements.
@@ -704,7 +769,7 @@ size N, with no leftovers."
                                     for (elt . rest) on seq
                                     collect elt
                                     finally (setf seq rest)
-                                            (when even
+                                            (boolean-when even
                                               (unless (= i n)
                                                 (uneven))))))
               (progn
@@ -718,7 +783,7 @@ size N, with no leftovers."
                               for (elt . rest) on seq
                               collect elt
                               finally (setf seq rest)
-                                      (when even
+                                      (boolean-when even
                                         (unless (= i m)
                                           (uneven)))))))))
         (let ((end (or end (length seq))))
@@ -731,8 +796,10 @@ size N, with no leftovers."
                          (cons (subseq seq i (min (+ i n) end))
                                acc)))))))))
 
+(-> frequencies (sequence &key (:key function) &allow-other-keys)
+  (values hash-table array-length))
 (defun frequencies (seq &rest hash-table-args &key (key #'identity)
-                                                   &allow-other-keys)
+                    &allow-other-keys)
   "Return a hash table with the count of each unique item in SEQ.
 As a second value, return the length of SEQ.
 
@@ -784,6 +851,7 @@ This is sometimes called a \"prefix sum\", \"cumulative sum\", or
 \"inclusive scan\".
 
 From APL."
+  (declare (dynamic-extent fn))
   (fbind (fn)
     (if (= start end)
         (if initial-value-supplied?
@@ -821,36 +889,38 @@ From Haskell."
   "The greatest common prefix of SEQS.
 
 If there is no common prefix, return NIL."
-  (let ((test (ensure-function test)))
-    (labels ((gcp (x y)
-               (let ((miss (mismatch x y :test test)))
-                 (cond ((not miss) x)
-                       ((> miss 0) (subseq x 0 miss))
-                       (t nil)))))
-      (block nil
-        (reduce
-         (lambda (x y)
-           (or (gcp x y)
-               (return)))
-         seqs)))))
+  (if (emptyp seqs) nil
+      (let ((test (ensure-function test)))
+        (labels ((gcp (x y)
+                   (let ((miss (mismatch x y :test test)))
+                     (cond ((not miss) x)
+                           ((> miss 0) (subseq x 0 miss))
+                           (t nil)))))
+          (block nil
+            (reduce
+             (lambda (x y)
+               (or (gcp x y)
+                   (return)))
+             seqs))))))
 
 (defun gcs (seqs &key (test #'eql))
   "The greatest common suffix of SEQS.
 
 If there is no common suffix, return NIL."
-  (let ((test (ensure-function test)))
-    (labels ((gcs (x y)
-               (let ((miss (mismatch x y :from-end t :test test)))
-                 (cond ((not miss) x)
-                       ((< miss (length x))
-                        (subseq x miss))
-                       (t nil)))))
-      (block nil
-        (reduce
-         (lambda (x y)
-           (or (gcs x y)
-               (return)))
-         seqs)))))
+  (if (emptyp seqs) nil
+      (let ((test (ensure-function test)))
+        (labels ((gcs (x y)
+                   (let ((miss (mismatch x y :from-end t :test test)))
+                     (cond ((not miss) x)
+                           ((< miss (length x))
+                            (subseq x miss))
+                           (t nil)))))
+          (block nil
+            (reduce
+             (lambda (x y)
+               (or (gcs x y)
+                   (return)))
+             seqs))))))
 
 (-> of-length (array-length) function)
 (defun of-length (length)
@@ -868,52 +938,59 @@ length LENGTH.
          (sequence-of-length-p seq ,length))
       call))
 
+(defmacro length-gt (cmp offset-fn seqs)
+  `(nlet rec ((prev most-positive-fixnum)
+              (seqs ,seqs))
+     (if (endp seqs) t
+         (destructuring-bind (seq . seqs) seqs
+           (etypecase seq
+             (array-length
+              (and (,cmp prev seq)
+                   (rec seq seqs)))
+             (list
+              (let ((len
+                      ;; Get the length of SEQ, but only up to LAST.
+                      (loop with len = 0
+                            repeat (,offset-fn prev)
+                            until (endp seq) do
+                              (incf len)
+                              (pop seq)
+                            finally (return len))))
+                (and (,cmp prev len)
+                     (rec len seqs))))
+             (sequence
+              (let ((len (length seq)))
+                (and (,cmp prev len)
+                     (rec len seqs)))))))))
+
+(defun length> (&rest seqs)
+  "Is each length-designator in SEQS longer than the next?
+A length designator may be a sequence or an integer."
+  (length-gt > identity seqs))
+
+(defun length>= (&rest seqs)
+  "Is each length-designator in SEQS longer or as long as the next?
+A length designator may be a sequence or an integer."
+  (length-gt >= 1+ seqs))
+
 (defun length< (&rest seqs)
   "Is each length-designator in SEQS shorter than the next?
 A length designator may be a sequence or an integer."
   (declare (dynamic-extent seqs))
   (apply #'length> (reverse seqs)))
 
-(defun length> (&rest seqs)
-  "Is each length-designator in SEQS longer than the next?
-A length designator may be a sequence or an integer."
-  (nlet rec ((last most-positive-fixnum)
-             (seqs seqs))
-    (if (endp seqs) t
-        (destructuring-bind (seq . seqs) seqs
-          (etypecase seq
-            (array-length
-             (and (> last seq)
-                  (rec seq seqs)))
-            (list
-             (let ((len
-                     ;; Get the length of SEQ, but only up to LAST.
-                     (loop with len = 0
-                           until (endp seq) do
-                             (incf len)
-                             (pop seq)
-                           finally (return len))))
-               (and (> last len)
-                    (rec len seqs))))
-            (sequence
-             (let ((len (length seq)))
-               (and (> last len)
-                    (rec len seqs)))))))))
-
-(defun length>= (&rest seqs)
-  "Is each length-designator in SEQS longer or as long as the next?
-A length designator may be a sequence or an integer."
-  (not (apply #'length< seqs)))
-
 (defun length<= (&rest seqs)
   "Is each length-designator in SEQS as long or shorter than the next?
 A length designator may be a sequence or an integer."
-  (not (apply #'length> seqs)))
+  (declare (dynamic-extent seqs))
+  (apply #'length>= (reverse seqs)))
 
 (defun longer (x y)
   "Return the longer of X and Y.
 
-If X and Y are of equal length, return X."
+If X and Y are of equal length, return X.
+
+If X and Y are lists, this will only traverse the shorter of X and Y."
   (check-type x sequence)
   (check-type y sequence)
   (cond ((and (listp x) (listp y))
@@ -923,28 +1000,96 @@ If X and Y are of equal length, return X."
                  ((endp ys) x)
                  ((endp xs) y)
                  (t (longer (rest xs) (rest ys))))))
-        ((listp x)
-         (if (length> x (length y))
-             x
-             y))
-        ((listp y)
-         (if (length> y (length x))
-             y
-             x))
-        ((< (length x) (length y)) y)
-        (t x)))
+        (t (if (length>= x y) x y))))
+
+(defun shorter (x y)
+  "Return the shorter of X and Y."
+  (cond ((and (listp x) (listp y))
+         (nlet shorter ((xs x)
+                        (ys y))
+           (cond ((endp xs) x)
+                 ((endp ys) y)
+                 (t (shorter (rest xs) (rest ys))))))
+        (t (if (length<= x y) x y))))
+
+(defun shortest-seq (seqs)
+  (extremum seqs #'<= :key #'length))
+
+(defun longest-seq (seqs)
+  (extremum seqs #'>= :key #'length))
+
+(defun shortest-list (lists)
+  "Find the shortest list in LISTS."
+  (let ((pairs (map 'list
+                    (lambda (list)
+                      (cons list list))
+                    lists)))
+    (loop named ret do
+      (dolist (pair pairs)
+        (when (null (pop (car pair)))
+          (return-from ret (cdr pair)))))))
+
+(defun longest-list (lists)
+  "Find the longest list in LISTS."
+  (let ((lists (map 'list
+                    (lambda (list)
+                      (cons list list))
+                    lists)))
+    (nlet rec ((prev lists))
+      (let ((maybe-longest (cdar prev))
+            (lists
+              (delete-if (lambda (cons)
+                           (null (pop (car cons))))
+                         prev)))
+        (cond ((null lists) maybe-longest)
+              ((single lists) (cdar lists))
+              (t (rec lists)))))))
+
+(defun shortest/longest (seqs extreme-seq extreme-list length-predicate)
+  (fbind (extreme-seq extreme-list length-predicate)
+    (cond ((emptyp seqs) nil)
+          ((single seqs) (elt seqs 0))
+          (t
+           (multiple-value-bind (lists non-lists)
+               (partition #'listp seqs)
+             (cond ((emptyp lists) (extreme-seq non-lists))
+                   ((emptyp non-lists) (extreme-list lists))
+                   (t (let* ((extreme-seq (extreme-seq non-lists))
+                             (extreme-list (extreme-list lists))
+                             (leftmost
+                               (find-if (lambda (item)
+                                          (or (eql item extreme-list)
+                                              (eql item extreme-seq)))
+                                        seqs))
+                             (rightmost
+                               (if (eql leftmost extreme-list)
+                                   extreme-seq
+                                   extreme-list)))
+                        ;; Make sure we return the first if there
+                        ;; is no unique extremum.
+                        (if (length-predicate rightmost leftmost) rightmost
+                            leftmost)))))))))
 
 (-> longest (sequence) sequence)
 (defun longest (seqs)
-  "Return the longest seq in SEQS."
-  (reduce #'longer seqs))
+  "Return the longest seq in SEQS.
+
+If there are lists in SEQS, then the total number of conses traversed
+will never exceed n*m, where n is the number of lists in SEQS and m
+is the length of the next-to-longest list (unless the longest list is
+not unique!)."
+  (values
+   (shortest/longest seqs #'longest-seq #'longest-list #'length>)))
 
 (-> shortest (sequence) sequence)
 (defun shortest (seqs)
-  "Return the shortest seq in SEQS."
-  (reduce (lambda (x y)
-            (if (eql (longer x y) x) y x))
-          seqs))
+  "Return the shortest seq in SEQS.
+
+If there are lists in SEQS, then the total number of conses traversed
+will never exceed n*m, where n is the number of lists in SEQS and m
+is the length of the shortest list."
+  (values
+   (shortest/longest seqs #'shortest-seq #'shortest-list #'length<)))
 
 (defsubst slice-bounds (len start end)
   "Normalize START and END, which may be negative, to offsets
@@ -982,6 +1127,10 @@ If the bounds cross in the middle, the result is an empty string:
 
     (slice \"x\" 1 -1) => \"\"
 
+Note that `slice' implicitly clamps bounds, even when they are not negative:
+
+    (slice \"x\" 0 100) => \"x\"
+
 Setf of `slice' is like setf of `ldb': afterwards, the place being set
 holds a new sequence which is not EQ to the old."
   (multiple-value-bind (start end)
@@ -1011,9 +1160,9 @@ holds a new sequence which is not EQ to the old."
                 `(slice ,getter ,s ,e))))))
 
 (defun ordering (seq &key unordered-to-end
-                          from-end
-                          (test 'eql)
-                          (key #'identity))
+                       from-end
+                       (test 'eql)
+                       (key #'identity))
   "Given a sequence, return a function that, when called with `sort',
 restores the original order of the sequence.
 
@@ -1038,9 +1187,10 @@ are left in no particular order."
     (with-item-key-function (key)
       (with-boolean (from-end)
         (do-each (item seq)
-          (if from-end
-              (setf (gethash (key item) table) (incf i))
-              (ensure-gethash (key item) table (incf i)))))
+          (boolean-if
+           from-end
+           (setf (gethash (key item) table) (incf i))
+           (ensure-gethash (key item) table (incf i)))))
 
       (let ((default
               (if unordered-to-end
@@ -1089,29 +1239,83 @@ If N is negative, then |N| elements are dropped from the end of SEQ."
         (subseq seq 0 (max 0 (+ (length seq) n)))
         (subseq seq (min (length seq) n)))))
 
-(-> take-while (function sequence) sequence)
-(defsubst take-while (pred seq)
-  "Return the prefix of SEQ for which PRED returns true."
-  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
-  (seq-dispatch seq
-    (ldiff seq (member-if-not pred seq))
-    (let ((end (position-if-not pred seq)))
-      (if end (subseq seq 0 end)
-          seq))))
+(-> take-while (function sequence &key (:from-end t)) sequence)
+(defsubst take-while (pred seq &key from-end)
+  "Return the prefix of SEQ for which PRED returns true.
 
-(-> drop-while (function sequence) sequence)
-(defsubst drop-while (pred seq)
+    (take-while #'alpha-char-p \"Really!?\")
+    => \"Really\"
+
+If FROM-END is non-nil, return the suffix instead.
+
+    (take-while (complement #'alpha-char-p) \"Really!?\" :from-end t)
+    => \"!?\"
+
+If PRED returns true for all elements of SEQ, the result is a sequence
+with the same type and contents as SEQ."
+  #+sbcl (declare (sb-ext:muffle-conditions style-warning))
+  (flet ((list-take-while (pred list)
+           (let ((pred (ensure-function pred)))
+             (loop for x in list
+                   while (funcall pred x)
+                   collect x))))
+    (declare (inline list-take-while))
+    (seq-dispatch seq
+      (if from-end
+          (nreverse (list-take-while pred (reverse seq)))
+          (list-take-while pred seq))
+      (if from-end
+          (let* ((start (position-if-not pred seq :from-end t))
+                 (start
+                   (if start
+                       (1+ start)
+                       0)))
+            (subseq seq start))
+          (let ((end (position-if-not pred seq)))
+            (if end (subseq seq 0 end)
+                seq))))))
+
+(-> take-until (function sequence &key (:from-end t)) sequence)
+(defsubst take-until (pred seq &key from-end)
+  "Like `take-while' with the complement of PRED."
+  (take-while (complement pred) seq :from-end from-end))
+
+(-> drop-while (function sequence &key (:from-end t)) sequence)
+(defsubst drop-while (pred seq &key from-end)
   "Return the largest possible suffix of SEQ for which PRED returns
-false when called on the first element."
+false when called on the first element.
+
+    (drop-while #'alpha-char-p \"Really!?\")
+    => \"!?\"
+
+If FROM-END is non-nil, then drop the longest possible suffix of SEQ
+for which PRED returns true when called on the first element.
+
+    (drop-while (complement #'alpha-char-p) \"Really!?\" :from-end t)
+    => \"Really\"
+
+If PRED returns true for all elements of SEQ, then the result is
+always an empty sequence of the same type as SEQ."
   #+sbcl (declare (sb-ext:muffle-conditions style-warning))
   (seq-dispatch seq
-    (member-if-not pred seq)
-    (let ((start (position-if-not pred seq)))
-      (if start (subseq seq start)
-          seq))))
+    (if from-end
+        (nreverse (member-if-not pred (reverse seq)))
+        (member-if-not pred seq))
+    (if from-end
+        (let* ((end (position-if-not pred seq :from-end t))
+               (end (if end (1+ end) 0)))
+          (subseq seq 0 end))
+        (let ((start (position-if-not pred seq)))
+          (if start (subseq seq start)
+              (subseq seq (length seq)))))))
+
+(-> drop-until (function sequence &key (:from-end t)) sequence)
+(defsubst drop-until (pred seq &key from-end)
+  "Like `drop-while' with the complement of PRED."
+  (drop-while (complement pred) seq :from-end from-end))
 
 (-> drop-prefix (sequence sequence &key (:test (or symbol function)))
-  sequence)
+    sequence)
 (defun drop-prefix (prefix seq &key (test #'eql))
   "If SEQ starts with PREFIX, remove it."
   (cond ((emptyp prefix) seq)
@@ -1157,25 +1361,43 @@ If SEQ already ends with SUFFIX, return SEQ."
         (concatenate (type-of seq) seq suffix))))
 
 ;;;# `bestn'
-(defun bisect-left (vec item pred &key key)
-  "Return the index in VEC to insert ITEM and keep VEC sorted."
+(defun bisect-left (vec item pred &key key (start 0) (end (length vec)))
+  "Return the index in VEC to insert ITEM and keep VEC sorted.
+
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the left of that existing item."
+  (declare (array-length start end))
   (fbind (pred)
     (with-item-key-function (key)
       (with-vector-dispatch () vec
-        (let ((start 0)
-              (end (length vec)))
-          (declare (array-length start end))
-          (let ((kitem (key item)))
-            (loop while (< start end) do
-              (let ((mid (floor (+ start end) 2)))
-                (if (pred (key (vref vec mid)) kitem)
-                    (setf start (1+ mid))
-                    (setf end mid)))
-                  finally (return start))))))))
+        (let ((kitem (key item)))
+          (loop while (< start end) do
+            (let ((mid (floor (+ start end) 2)))
+              (if (pred (key (vref vec mid)) kitem)
+                  (setf start (1+ mid))
+                  (setf end mid)))
+                finally (return start)))))))
+
+(defun bisect-right (vec item pred &key key (start 0) (end (length vec)))
+  "Return the index in VEC to insert ITEM and keep VEC sorted.
+
+If a value equivalent to ITEM already exists in VEC, then the index
+returned is to the right of that existing item."
+  (declare (array-length start end))
+  (fbind (pred)
+    (with-item-key-function (key)
+      (with-vector-dispatch () vec
+        (let ((kitem (key item)))
+          (loop while (< start end) do
+            (let ((mid (floor (+ start end) 2)))
+              (if (pred kitem (key (vref vec mid)))
+                  (setf end mid)
+                  (setf start (1+ mid))))
+                finally (return start)))))))
 
 (defun bestn (n seq pred &key (key #'identity) memo)
   "Partial sorting.
-Equivalent to (firstn N (sort SEQ PRED)), but much faster, at least
+Equivalent to (take N (sort SEQ PRED)), but much faster, at least
 for small values of N.
 
 With MEMO, use a decorate-sort-undecorate transform to ensure KEY is
@@ -1346,23 +1568,43 @@ values).
                               (setf kmin kx min x))
                              ((pred kmax kx)
                               (setf kmax kx max x)))))))
-          (declare (dynamic-extent #'update-extrema))
+          (declare (dynamic-extent #'update-extrema)
+                   (inline map-subseq))
           (map-subseq #'update-extrema seq start end))
         (values min max)))))
 
-(-> split-at (list array-index) (values list list))
+(-> split-at (list signed-array-index) (values list list))
 (defun split-at (list k)
   (declare (list list)
            (optimize speed))
-  (nlet rec ((left '())
-             (right list)
-             (k k))
-    (declare (array-index k))
-    (if (zerop k)
-        (values (nreverse left) right)
-        (rec (cons (car right) left)
-             (cdr right)
-             (1- k)))))
+  (econd
+    ((zerop k)
+     (values list nil))
+    ((minusp k)
+     ;; Adapted from the definition of `butlast' in SBCL.
+     (let* ((k (abs k))
+            (head (nthcdr (1- k) list)))
+       (if (or (endp head)
+               (endp (cdr head)))
+           (values nil list)
+           (loop for trail on list
+                 and head on head
+                 ;; HEAD is n-1 conses ahead of TRAIL;
+                 ;; when HEAD is at the last cons, return
+                 ;; the data copied so far.
+                 until (endp (cdr head))
+                 collect (car trail) into copy
+                 finally (return (values copy trail))))))
+    ((plusp k)
+     (nlet rec ((left '())
+                (right list)
+                (k k))
+       (declare (array-index k))
+       (if (or (zerop k) (endp right))
+           (values (nreverse left) right)
+           (rec (cons (car right) left)
+                (cdr right)
+                (1- k)))))))
 
 (-> halves
     (sequence &optional (or null signed-array-index))
@@ -1378,18 +1620,17 @@ single-element list, it should be returned unchanged.
 
 If SPLIT is negative, then the split is determined by counting |split|
 elements from the right (or, equivalently, length+split elements from
-the left."
+the left). Note that providing a negative argument to a list works
+similarly to `butlast' (a single traversal)."
   (declare ((or null signed-array-index) split))
   (flet ((halfway-point (seq)
            (ceiling (length seq) 2)))
     (seq-dispatch seq
-      (if split
-          (if (minusp split)
-              (split-at seq (max 0 (+ (length seq) split)))
-              ;; If we know where to split in advance we only have to
-              ;; traverse the list once.
-              (split-at seq split))
-          (split-at seq (halfway-point seq)))
+      (split-at seq
+                ;; If we know where to split in advance we only
+                ;; have to traverse the list once.
+                (or split
+                    (halfway-point seq)))
       (let* ((len (length seq))
              (split (or (and split
                              (clamp
@@ -1466,8 +1707,9 @@ Cf. `toposort'.")
   (declare (ignore constraints))
   (first min-elts))
 
-(defun tsort (elts constraints tie-breaker &key (test #'eql))
+(defun tsort/list (elts constraints tie-breaker &key (test #'eql))
   "Do the initial topological sort."
+  ;; Adapted from AOMP.
   (declare (function test tie-breaker))
   (loop while elts
         for min-elts = (or (remove-if
@@ -1490,6 +1732,51 @@ Cf. `toposort'.")
                       (member x ys :test test)))
         collect choice into results
         finally (return results)))
+
+(defun tsort/hash-table (objects constraints tie-breaker &key (test #'eql))
+  ;; Adapted from SBCL.
+  (declare (list objects constraints)
+           (function tie-breaker))
+  (let ((obj-info (make-hash-table :size (length objects) :test test))
+        (free-objs nil)
+        (result nil))
+    (loop for (obj1 obj2) in constraints do
+      (incf (first (ensure-gethash obj2 obj-info (list 0))))
+      (push obj2 (rest (ensure-gethash obj1 obj-info (list 0)))))
+    (do-hash-table (obj info obj-info)
+      (setf (gethash obj obj-info)
+            (cons (car info)
+                  (nreverse (cdr info)))))
+    (dolist (obj objects)
+      (let ((info (gethash obj obj-info)))
+        (when (or (not info) (zerop (first info)))
+          (push obj free-objs))))
+    (loop
+      (flet ((next-result (obj)
+               (push obj result)
+               (dolist (successor (rest (gethash obj obj-info)))
+                 (let* ((successor-info (gethash successor obj-info))
+                        (count (1- (first successor-info))))
+                   (setf (first successor-info) count)
+                   (when (zerop count)
+                     (push successor free-objs))))))
+        (cond ((endp free-objs)
+               (do-hash-table (obj info obj-info)
+                 (declare (ignore obj))
+                 (unless (zerop (first info))
+                   (error 'inconsistent-graph :constraints constraints)))
+               (return (nreverse result)))
+              ((endp (rest free-objs))
+               (next-result (pop free-objs)))
+              (t
+               (let ((obj (funcall tie-breaker free-objs result)))
+                 (removef free-objs obj)
+                 (next-result obj))))))))
+
+(defun tsort (elts constraints tie-breaker &key (test #'eql))
+  (if (hash-table-test-p test)
+      (tsort/hash-table elts constraints tie-breaker :test test)
+      (tsort/list elts constraints tie-breaker :test test)))
 
 (defun toposort (constraints
                  &key (test #'eql)
@@ -1522,7 +1809,9 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering'."
   ;; Adapted from AMOP.
-  (let ((elts (remove-duplicates (flatten constraints) :test test)))
+  (let ((elts (remove-duplicates
+               (apply #'append constraints)
+               :test test)))
     (ordering (tsort elts constraints tie-breaker :test test)
               :test test
               :unordered-to-end unordered-to-end
@@ -1636,7 +1925,7 @@ values. Cf. `mvfold'."
            `(reduce ,fn ,seq
                     :from-end ,from-end
                     :initial-value ,(car seeds)))
-          (t (let ((tmps (make-gensym-list (length seeds))))
+          (t (let ((tmps (make-gensym-list (length seeds) (string 'seed))))
                (with-gensyms (item)
                  (rebinding-functions (fn)
                    `(let ,(mapcar #'list tmps seeds)
@@ -1683,7 +1972,7 @@ as long as SEQ is empty.
     (repeat-sequence \"\" (1+ array-dimension-limit))
     => \"\"
 "
-  (check-type n (integer 0 *))
+  #-sbcl (check-type n (integer 0 *))
   (seq-dispatch seq
     (repeat-list seq n)
     (repeat-vector seq n)
@@ -1845,7 +2134,7 @@ but don't actually need to realize the sequences."
 
 (defun list-collapse-duplicates (test key list)
   (declare (list list))
-  (with-test-fn (test)
+  (with-two-arg-test (test)
     (with-item-key-function (key)
       (nlet rec ((list list)
                  (acc '())
@@ -1871,7 +2160,7 @@ Repetitions that are not adjacent are left alone.
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)"
   (if (listp seq)
       (list-collapse-duplicates test key seq)
-      (with-test-fn (test)
+      (with-two-arg-test (test)
         (with-item-key-function (key)
           (with-specialized-buckets (seq)
             (let ((bucket (make-bucket seq))
@@ -1896,10 +2185,210 @@ Repetitions that are not adjacent are left alone.
 (defun same (key-fn seq &key (test #'eql) (start 0) end)
   "Return true if KEY-FN returns the same value for any/all members of LIST."
   (fbind (key-fn)
-    (with-test-fn (test)
+    (with-two-arg-test (test)
       (let (init val)
         (do-subseq (item seq t :start start :end end)
           (if (null init)
               (setf val (key-fn item) init t)
               (unless (test val (key-fn item))
                 (return-from same nil))))))))
+
+(declaim (inline copy-enough-list nsplice-list splice-list))
+
+(defun copy-firstn (list n)
+  "Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
+lists gracefully."
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type fixnum n))
+  (cond ((= n 0) list)
+        ((null list) list)
+        (t (let ((result '())
+                 (cons list))
+             (dotimes (i n)
+               ;; Push at most N new conses onto the stack.
+               (push (car cons) result)
+               (setf cons (cdr cons))
+               ;; If at the end of a proper/dotted list, finish.
+               (when (atom cons) (return)))
+             ;; Nreverse the stack...
+             (prog1 (nreverse result)
+               ;; ...but set the last CDR to the shared tail.
+               (setf (cdr result) cons))))))
+
+(defun nsplice-list (list new start end)
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type (or null list) new))
+  (declare (type alexandria:array-index start end))
+  (let* ((temp-list (cons nil list))
+         (cut-start (nthcdr start temp-list))
+         (cut-end (nthcdr (- end start) (cdr cut-start))))
+    (if (null new)
+        (setf (cdr cut-start) cut-end)
+        (setf (cdr cut-start) new
+              (cdr (last new)) cut-end))
+    (cdr temp-list)))
+
+(defun splice-list (list new start end)
+  (declare (optimize speed))
+  (declare (type list list))
+  (declare (type sequence new))
+  (declare (type alexandria:array-index start end))
+  (let ((queue (queue)))
+    (declare (dynamic-extent queue))
+    (loop repeat start do
+      (enq (pop list) queue))
+    (do-each (new-elt new)
+      (enq new-elt queue))
+    (qconc queue (nthcdr (- end start) list))
+    (qlist queue)))
+
+(declaim (inline nsplice-vector splice-vector))
+
+(deftype array-size-difference ()
+  `(integer ,(- array-dimension-limit) ,array-dimension-limit))
+
+(defun nsplice-vector (vector new start end)
+  (declare (type alexandria:array-index start end))
+  (declare (type vector vector))
+  (declare (type sequence new))
+  (let ((diff-removed (- end start))
+        (diff-added (length new)))
+    (if (= diff-removed diff-added)
+        (replace vector new :start1 start)
+        (let* ((diff (- diff-added diff-removed))
+               (length (length vector)))
+          (declare (type array-size-difference diff))
+          (cond ((not (adjustable-array-p vector))
+                 ;; We must copy and overwrite the whole array.
+                 (let ((result (make-array (+ length diff) :element-type
+                                           (array-element-type vector))))
+                   ;; Copy the beginning.
+                   (replace result vector
+                            :start1 0 :end1 start
+                            :start2 0 :end2 start)
+                   ;; Copy the new part.
+                   (when new (replace result new :start1 start))
+                   ;; Copy the end.
+                   (replace result vector
+                            :start1 (+ end diff) :end1 (length result)
+                            :start2 end :end2 length)
+                   result))
+                ((plusp diff)
+                 ;; The array is adjustable and we are making it longer.
+                 ;; Adjust it and only then move the tail.
+                 (adjust-array vector (+ length diff))
+                 (replace vector vector
+                          :start1 (+ end diff) :end1 (+ length diff)
+                          :start2 end :end2 length)
+                 (when new (replace vector new :start1 start))
+                 vector)
+                (t
+                 ;; The array is adjustable and we are making it shorter.
+                 ;; Move the tail and only then adjust it.
+                 (replace vector vector
+                          :start1 (+ end diff) :end1 (+ length diff)
+                          :start2 end :end2 length)
+                 (let ((new-len (+ length diff)))
+                   (when (array-has-fill-pointer-p vector)
+                     ;; The fill pointer has to be less than the new length.
+                     (setf (fill-pointer vector)
+                           (min (fill-pointer vector) new-len)))
+                   (adjust-array vector new-len))
+                 (when new (replace vector new :start1 start))
+                 vector))))))
+
+(defun splice-vector (vector new start end)
+  (declare (type vector vector))
+  (declare (type sequence new))
+  (declare (type alexandria:array-index start end))
+  (let ((diff-removed (- end start))
+        (diff-added (length new))
+        (vector (copy-seq vector)))
+    (if (= diff-removed diff-added)
+        (replace vector new :start1 start)
+        (let* ((diff (- diff-added diff-removed))
+               (length (length vector)))
+          (declare (type array-size-difference diff))
+          ;; We must copy and overwrite the whole array.
+          (let ((result (make-array (+ length diff) :element-type
+                                    (array-element-type vector))))
+            ;; Copy the beginning.
+            (replace result vector
+                     :start1 0 :end1 start
+                     :start2 0 :end2 start)
+            ;; Copy the new part.
+            (when new (replace result new :start1 start))
+            ;; Copy the end.
+            (replace result vector
+                     :start1 (+ end diff) :end1 (length result)
+                     :start2 end :end2 length)
+            result)))))
+
+;;; TODO: there is no extensible sequence support in SPLICE/NSPLICE right now.
+;;;       Should there be? It doesn't seem like Serapeum is tested with
+;;;       extensible sequences at all.
+
+(declaim (inline splice-seq nsplice-seq))
+
+(-> splice-seq (sequence &key
+                         (:new sequence)
+                         (:start alexandria:array-index)
+                         (:end alexandria:array-index))
+    (values sequence &optional))
+(defun splice-seq (sequence &key new (start 0) (end (length sequence)))
+  "Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). Does not modify SEQUENCE or NEW, but the result
+is allowed to share structure with the original if SEQUENCE is a list.
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (splice-seq '(1 2 3 4 5) :new '(:a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)
+
+Omitting NEW removes elements from SEQUENCE:
+
+    (splice-seq '(1 2 3 4 5) :start 1 :end 3)
+    => '(1 4 5)"
+  (declare (type sequence sequence new))
+  (if (and (= start end) (emptyp new))
+      sequence
+      (etypecase sequence
+        (list (splice-list sequence new start end))
+        (vector (splice-vector sequence new start end)))))
+
+(-> nsplice-seq (sequence &key
+                          (:new sequence)
+                          (:start alexandria:array-index)
+                          (:end alexandria:array-index))
+    (values sequence &optional))
+(defun nsplice-seq (sequence &key new (start 0) (end (length sequence)))
+  "Removes a part of SEQUENCE between START and END and replaces it with
+contents of NEW (if provided). SEQUENCE and NEW may be destroyed in the process
+and the result is allowed to share structure with the original if SEQUENCE is a
+list.
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 1)
+    => (1 :A :B :C 2 3 4 5)
+
+    (nsplice-seq (list 1 2 3 4 5) :new (list :a :b :c) :start 1 :end 4)
+    => (1 :A :B :C 5)
+
+Omitting NEW removes elements from SEQUENCE:
+
+    (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
+    => '(1 4 5)"
+  (declare (type sequence sequence new))
+  (if (and (= start end) (emptyp new))
+      sequence
+      (etypecase sequence
+        (list (nsplice-list sequence (coerce new 'list) start end))
+        (vector (nsplice-vector sequence new start end)))))
+
+(define-modify-macro splice-seqf (&rest keyword-args) splice-seq
+  "Modify macro for SPLICE-SEQ.")
+
+(define-modify-macro nsplice-seqf (&rest keyword-args) nsplice-seq
+  "Modify macro for NSPLICE-seq.")

@@ -18,6 +18,16 @@ that key in TABLE is bound to VALUE."
                (return-from ,loop))
              ,@body))))))
 
+(defun hash-table-test-p (test)
+  "Is TEST a valid hash table test?"
+  (or (member test '(eq eql equal equalp) :test #'eq)
+      (member (ensure-function test)
+              (load-time-value (list #'eq #'eql #'equal #'equalp) t)
+              :test #'eq)
+      (values
+       (ignore-errors
+        (make-hash-table :test test)))))
+
 (defconstant +hash-table-default-size+
   (hash-table-size (make-hash-table)))
 
@@ -138,9 +148,11 @@ hash table is inlined as a literal object."
 
     (href (dict :x 1) :x) => 1
     (href (dict :x (dict :y 2)) :x :y)  => 2"
-  (cond ((endp keys) (values table t))
-        ((single keys) (gethash (car keys) table))
-        (t (apply #'href (gethash (car keys) table) (cdr keys)))))
+  (match keys
+    (() (values table t))
+    ((list _) (gethash (car keys) table))
+    (otherwise
+     (apply #'href (gethash (car keys) table) (cdr keys)))))
 
 
 (-> href-default (t hash-table &rest t) (values t boolean &optional))
@@ -148,26 +160,30 @@ hash table is inlined as a literal object."
   "Like `href', with a default.
 As soon as one of KEYS fails to match, DEFAULT is returned."
   (nlet href (table keys)
-    (cond ((endp keys)
-           (values default nil))
-          ((single keys)
-           (multiple-value-bind (value ok?)
-               (gethash (car keys) table)
-             (if ok?
-                 (values value t)
-                 (values default nil))))
-          (t (multiple-value-bind (value ok?)
-                 (gethash (car keys) table)
-               (if ok?
-                   (href value (cdr keys))
-                   (values default nil)))))))
+    (match keys
+      (()
+       (values default nil))
+      ((list _)
+       (multiple-value-bind (value ok?)
+           (gethash (car keys) table)
+         (if ok?
+             (values value t)
+             (values default nil))))
+      (otherwise
+       (multiple-value-bind (value ok?)
+           (gethash (car keys) table)
+         (if ok?
+             (href value (cdr keys))
+             (values default nil)))))))
 
 (defun (setf href) (value table &rest keys)
   (nlet hset ((table table)
               (keys keys))
-    (cond ((endp keys) value)
-          ((single keys) (setf (gethash (car keys) table) value))
-          (t (hset (gethash (car keys) table) (cdr keys))))))
+    (match keys
+      (() value)
+      ((list _) (setf (gethash (car keys) table) value))
+      (otherwise
+       (hset (gethash (car keys) table) (cdr keys))))))
 
 (defun expand-href (table keys)
   (reduce
@@ -176,8 +192,15 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
    keys
    :initial-value table))
 
-(define-compiler-macro href (table &rest keys)
-    (expand-href table keys))
+(define-compiler-macro href (table key &rest keys)
+  (let* ((keys (cons key keys))
+         (table-tmp (gensym (string 'table)))
+         (key-tmps
+           (make-gensym-list (length keys)
+                             (string 'key))))
+    `(let ((,table-tmp ,table)
+           ,@(mapcar #'list key-tmps keys))
+       ,(expand-href table-tmp key-tmps))))
 
 (define-compiler-macro (setf href) (value table &rest keys)
   `(setf ,(expand-href table keys) ,value))
@@ -192,20 +215,15 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
 (defun (setf @) (value table key &rest keys)
   (nlet rec ((table table)
              (keys (cons key keys)))
-    (if (single keys)
-        (setf (gethash (car keys) table) value)
-        (rec (gethash (car keys) table) (cdr keys)))))
+    (if (rest keys)
+        (rec (gethash (car keys) table) (cdr keys))
+        (setf (gethash (car keys) table) value))))
 
-(flet ((expand-@ (table keys)
-         (reduce
-          (lambda (table key)
-            `(gethash ,key ,table))
-          keys
-          :initial-value table)))
-  (define-compiler-macro @ (table key &rest keys)
-      (expand-@ table (cons key keys)))
-  (define-compiler-macro (setf @) (value table key &rest keys)
-    `(setf ,(expand-@ table (cons key keys)) ,value)))
+(define-compiler-macro @ (table key &rest keys)
+    `(href ,table ,key ,@keys))
+
+(define-compiler-macro (setf @) (value table key &rest keys)
+  `(setf (href ,table ,key ,@keys) ,value))
 
 (-> pophash (t hash-table) (values t boolean &optional))
 (defun pophash (key hash-table)
@@ -255,6 +273,52 @@ From Zetalisp."
                '()
                hash-table)))
 
+(-> maphash-new ((-> (t t) (values t t &optional))
+                 hash-table &key &allow-other-keys)
+  hash-table)
+(defun maphash-new (fn hash-table &rest hash-table-args &key &allow-other-keys)
+  "Like MAPHASH, but builds and returns a new hash table.
+
+FN is a function of two arguments, like the function argument to
+`maphash'. It is required, however, to return two values, a new key
+and a new value.
+
+If `copy-hash-table' did not exist, you could define it as:
+
+    (maphash-new #'values hash-table)
+
+Note it is not necessarily the case that the new hash table will have
+the same number of entries as the old hash table, since FN might
+evaluate to the same key more than once.
+
+By default, the new hash table has the same hash table
+properties (test, size) as HASH-TABLE, but these can be overridden
+with HASH-TABLE-ARGS."
+  (let ((fn (ensure-function fn)))
+    (hash-fold (lambda (k v new)
+                 (receive (new-k new-v)
+                     (funcall fn k v)
+                   (dict* new new-k new-v))
+                 new)
+               (apply #'copy-hash-table/empty hash-table hash-table-args)
+               hash-table)))
+
+(-> maphash-into (hash-table function &rest sequence)
+    hash-table)
+(defun maphash-into (hash-table fn &rest seqs)
+  "Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
+
+FN is required to return two values, and key and a value."
+  (prog1 hash-table
+    ;; Is this worth having a compiler macro for, so `map' is called
+    ;; with a fixed number of values?
+    (let ((fn (ensure-function fn)))
+      (apply #'map nil
+             (lambda (&rest args)
+               (receive (k v) (apply fn args)
+                 (setf (gethash k hash-table) v)))
+             seqs))))
+
 ;; Clojure
 (defun merge-tables! (table &rest tables)
   (reduce (lambda (ht1 ht2)
@@ -294,7 +358,9 @@ Clojure's `merge'.
                (copy-hash-table table :size size)
                tables))))))
 
-(defun flip-hash-table (table &key (test (constantly t)) (key #'identity))
+(defun flip-hash-table (table &rest hash-table-args
+                        &key (filter (constantly t)) (key #'identity)
+                          test size rehash-size rehash-threshold)
   "Return a table like TABLE, but with keys and values flipped.
 
      (gethash :y (flip-hash-table (dict :x :y)))
@@ -313,21 +379,24 @@ TEST allows you to filter which keys to set.
 KEY allows you to transform the keys in the old hash table.
 
      (def negative-number-names (flip-hash-table number-names :key #'-))
-     (gethash 'one negative-number-names) => -1, nil
+     (gethash 'one negative-number-names) => -1, t
 
 KEY defaults to `identity'."
-  (let ((table2 (copy-hash-table/empty table)))
-    (ensuring-functions (key test)
+  (declare (ignore test size rehash-size rehash-threshold))
+  (let ((table2 (apply #'copy-hash-table/empty table
+                       (remove-from-plist hash-table-args
+                                          :filter :key))))
+    (ensuring-functions (key filter)
       (do-hash-table (k v table)
         (let ((key (funcall key k)))
-          (when (funcall test key)
+          (when (funcall filter key)
             (setf (gethash v table2) key)))))
     table2))
 
 (defun set-hash-table (set &rest hash-table-args &key (test #'eql)
-                                                      (key #'identity)
-                                                      (strict t)
-                                                      &allow-other-keys)
+                                                   (key #'identity)
+                                                   (strict t)
+                       &allow-other-keys)
   "Return SET, a list considered as a set, as a hash table.
 This is the equivalent of Alexandria's `alist-hash-table' and
 `plist-hash-table' for a list that denotes a set.
@@ -349,10 +418,10 @@ values. That is, each element of SET is stored as if by
     (with-item-key-function (key)
       (if (not strict)
           (dolist (item set)
-            (setf (gethash (funcall key item) table) item))
+            (setf (gethash (key item) table) item))
           ;; We can check for set-ness while building the hash table.
           (dolist (item set)
-            (when (nth-value 1 (swaphash (funcall key item) item table))
+            (when (nth-value 1 (swaphash (key item) item table))
               (error "Not a set: ~a" set)))))
     table))
 
@@ -378,7 +447,7 @@ opposite order."
       (values val? val))))
 
 (defun hash-table-function (hash-table &key read-only strict (key-type 't) (value-type 't)
-                                            strict-types)
+                                         strict-types default)
   "Return a function for accessing HASH-TABLE.
 
 Calling the function with a single argument is equivalent to `gethash'
@@ -395,7 +464,10 @@ equivalent to `(setf (gethash ...))' against HASH-TABLE.
 
 If STRICT is non-nil, then the function signals an error if it is
 called with a key that is not present in HASH-TABLE. This applies to
-setting keys, as well as looking them up.
+setting keys, as well as looking them up. Pass `:strict :read` if you
+only want strict checking for lookups.
+
+DEFAULT is the default value to return from `gethash'.
 
 The function is able to restrict what types are permitted as keys and
 values. If KEY-TYPE is specified, an error will be signaled if an
@@ -403,8 +475,8 @@ attempt is made to get or set a key that does not satisfy KEY-TYPE. If
 VALUE-TYPE is specified, an error will be signaled if an attempt is
 made to set a value that does not satisfy VALUE-TYPE. However, the
 hash table provided is *not* checked to ensure that the existing
-pairings KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is also
-specified."
+pairings satisfy KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is
+also specified."
   (labels ((no-such-key (key)
              (error "Hash table ~a has no key ~a" hash-table key))
            (check-type* (datum type)
@@ -413,20 +485,32 @@ specified."
            (wrap-hash-table (ht)
              (if read-only
                  (lambda (key)
-                   (gethash key ht))
+                   (gethash key ht default))
                  (lambda (key &optional (value nil value?))
                    (if value?
                        (setf (gethash key ht) value)
-                       (gethash key ht)))))
+                       (gethash key ht default)))))
            (wrap-strict (fun)
-             (if (not strict) fun
-                 (if read-only
-                     (lambda (key)
-                       (strict-lookup fun key))
-                     (lambda (key &optional (value nil value?))
-                       (if value?
-                           (setf (strict-lookup fun key) value)
-                           (strict-lookup fun key))))))
+             (symbol-macrolet
+                 ((strict-reader
+                    (lambda (key)
+                      (strict-lookup fun key))))
+               (case strict
+                 ((nil) fun)
+                 (:read
+                  (if read-only
+                      strict-reader
+                      (lambda (key &optional (value nil value?))
+                        (if value?
+                            (funcall fun key value)
+                            (strict-lookup fun key)))))
+                 (otherwise
+                  (if read-only
+                      strict-reader
+                      (lambda (key &optional (value nil value?))
+                        (if value?
+                            (setf (strict-lookup fun key) value)
+                            (strict-lookup fun key))))))))
            (strict-lookup (fun key)
              (multiple-value-bind (value present?)
                  (funcall fun key)
@@ -531,7 +615,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
         (i 0))
     (pprint-logical-block (stream nil)
       (pprint-newline :fill stream)
-      (princ "(dict " stream)
+      (format stream "(~s " 'dict)
       (unless (eq (hash-table-test ht) 'equal)
         (princ #\' stream)
         (princ (hash-table-test ht) stream))
@@ -563,6 +647,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
     If ON is set explicitly, turn on literal printing (T), otherwise use the default (NIL).
 
     Ported from RUTILS."
+    (declare (notinline flip))          ;phasing
     (let ((off (if explicit on (not toggled))))
       (if off
           (progn

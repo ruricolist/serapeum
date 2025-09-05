@@ -47,9 +47,8 @@
   (memq uiop:*implementation-type*
         '(:ccl :sbcl :cmu :acl)))
 
-(defvar-unbound *special*
+(defparameter-unbound *special*
   "Always-unbound special variable for testing.")
-(makunbound '*special*)
 
 (defmacro with-notinline (syms &body body)
   "Expand body into two copies, one in which the SYMS

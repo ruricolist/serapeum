@@ -171,7 +171,10 @@
   (locally (declare (notinline fnil))
     (is (every #'numberp
                (mapcar (fnil #'1+ 0)
-                       '(1 2 nil 4 6))))))
+                       '(1 2 nil 4 6)))))
+  (locally (declare (notinline fnil))
+    (is (equal '(1 2)
+               (funcall (serapeum:fnil #'list 1 2) nil nil)))))
 
 (test variadic->unary
   (is (= (max 1 2 3)
@@ -199,6 +202,11 @@
 (test distinct/key
   (is (equal '(0 1)
              (filter-map (distinct :key #'evenp) (iota 10)))))
+
+(test distinct/ht
+  "Test distinct works for longer lists, with or without a key."
+  (is (length= 100 (filter-map (distinct) (iota 100))))
+  (is (length= 100 (filter-map (distinct :key #'-) (iota 100)))))
 
 (test flip
   (is (equal '(:b :a) (funcall (flip #'list) :a :b)))
@@ -236,8 +244,35 @@
                              (let* ((x 0) (y 0)
                                     (fn (mvconstantly (incf x) (incf y))))
                                (multiple-value-call #'list
-                                (funcall fn)
-                                (funcall fn))))))))
+                                 (funcall fn)
+                                 (funcall fn))))))))
     (test-body)
     (locally (declare (notinline mvconstantly))
       (test-body))))
+
+(test fuel ()
+  (let ((fuel (fuel 1)))
+    (is (null (funcall fuel 2))))
+  (let ((fuel (fuel 2)))
+    (is (eql t (funcall fuel 2)))
+    (is (null (funcall fuel 1))))
+  (let ((fuel (fuel most-positive-double-float)))
+    (signals error
+      (funcall fuel double-float-epsilon))))
+
+(test do-nothing ()
+  (is (null (do-nothing)))
+  (is (equal '() (multiple-value-list (do-nothing))))
+  ;; Make sure we preserve side effects, in order.
+  (let ((list '()))
+    (do-nothing (push 1 list) (push 2 list))
+    (is (equal list '(2 1)))))
+
+(test repeat-until-stable
+  (flet ((herons-method (S)
+           "Return a function that iteratively estimates the square root of S."
+           (lambda (n)
+             (/ (+ n (/ S n))
+                2d0))))
+    (is (= 2.23606797749979d0 (repeat-until-stable (herons-method 5) 7)))
+    (is (= 3.162319422150883d0 (repeat-until-stable (herons-method 10) 5 :max-depth 3)))))

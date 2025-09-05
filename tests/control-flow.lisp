@@ -56,6 +56,33 @@
         (is (equal :a val))
         (is-true warn)))))
 
+(deftype explodable-type ()
+  '(or x (or y z) (member :x :y)))
+
+(deftype explodable-member-type ()
+  '(member :x :y :z))
+
+(test explode-type
+  (is (type= nil '(member)))
+  ;; A member type with no arguments is impossible.
+  (is (equal '(nil) (serapeum::explode-type '(member) nil)))
+  (is (set-equal
+       (serapeum::explode-type '(member :x :y :z) nil)
+       '((eql :x) (eql :y) (eql :z))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type 'explodable-member-type nil)
+       '((eql :x) (eql :y) (eql :z))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type '(or x (or y z) (member :x :y)) nil)
+       '(x y z (eql :x) (eql :y))
+       :test #'equal))
+  (is (set-equal
+       (serapeum::explode-type 'explodable-type nil)
+       '(x y z (eql :x) (eql :y))
+       :test #'equal)))
+
 (test etypecase-of
   (is (= 2
          (eval '(etypecase-of integer 0 ((integer 1) 1) ((integer -1 0) 2)))))
@@ -162,6 +189,14 @@
            (case-let (x 16)
              (0 3) (1 (1+ x)) (t 5)))))
 
+(test ccase-let
+  (is (eql 2
+           (ccase-let (x 1)
+             (0 3) (1 (1+ x)) (t 5))))
+  (signals type-error
+    (ccase-let (x 17)
+      (0 x) (1 (1+ x)))))
+
 (test ecase-let
   (is (eql 2
            (ecase-let (x 1)
@@ -169,6 +204,38 @@
   (signals error
     (ecase-let (x 17)
       (0 x) (1 (1+ x)))))
+
+(test typecase-let
+  (is (eql 2
+	   (typecase-let (x 2)
+	     (string 20)
+	     (integer x))))
+  (is (string= "test-here"
+	       (typecase-let (y "test")
+		 (integer "not")
+		 (string (concatenate 'string y "-here"))))))
+
+(test ctypecase-let
+  (is (eql 'asdf
+	   (ctypecase-let (x 'asdf)
+	     (string 20)
+	     (integer :sdf)
+	     (symbol x))))
+  (signals type-error
+    (ctypecase-let (y 'test-symbol)
+      (integer "not")
+      (string (concatenate 'string y "-here")))))
+
+(test etypecase-let
+  (is (eql 2
+	   (etypecase-let (x 'asdf)
+	     (string 20)
+	     (integer x)
+	     (symbol 2))))
+  (signals type-error
+    (etypecase-let (y 'test-symbol)
+      (integer "not")
+      (string (concatenate 'string y "-here")))))
 
 (test comment
   (is-false (comment "This is a comment")))
@@ -308,6 +375,19 @@
   (is (eql (cond-let x (nil x) (:a x)) :a))
   (is (eql (cond-let x (nil x) (t x)) nil))
   (is (eql (cond-let x ((1+ 0))) 1)))
+
+(test cond-let/declare
+  (flet ((aux (x)
+           (cond-let y
+             ((and (minusp x) (- x 1))
+              (declare (integer y))
+              y)
+             ((and (plusp x) (+ x 1s0))
+              (declare (single-float y))
+              y))))
+    (declare (notinline aux))
+    (is (= -2 (aux -1)))
+    (is (= 2s0 (aux 1)))))
 
 (test econd-let
   (is (eql (econd-let x (10 x) (t 0)) 10))

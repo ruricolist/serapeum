@@ -1,5 +1,4 @@
 (in-package :serapeum)
-(in-readtable :fare-quasiquote)
 
 (defmacro eval-always (&body body)
   "Shorthand for
@@ -21,6 +20,16 @@ From Arc."
 
 (define-compiler-macro no (x)
   `(not ,x))
+
+(defsubst null-if (arg1 arg2 &key (test #'eql))
+  "Return nil if arguments are equal under TEST, ARG1 otherwise.
+Return a second value of nil if the arguments were equal, T
+otherwise.
+
+From SQL."
+  (if (funcall test arg1 arg2)
+      (values nil nil)
+      (values arg1 t)))
 
 (defmacro nor (&rest forms)
   "Equivalent to (not (or ...)).
@@ -49,16 +58,33 @@ From Arc."
         (values nil sure)
         (subtypep type2 type1 env))))
 
-(defun describe-non-exhaustive-match (stream partition type env)
-  (assert (not (same-type? partition type)))
+(defun explode-type (type env)
+  "Extract the individual types from a type defined as a disjunction.
+TYPE could be the actual disjunction, or the name of the type.
+
+If TYPE is not a disjunction, just return TYPE as a list.
+
+Note that `member' types are disjunctions:
+
+    (explode-type (member :x :y :z) nil)
+    => ((eql :x) (:eql y) (eql :z))"
   (labels ((explode-type (type)
              (match type
-               ((list* 'or subtypes) subtypes)
+               ((list* 'or subtypes)
+                (mappend #'explode-type subtypes))
                ((list* 'member subtypes)
-                (loop for subtype in subtypes collect `(eql ,subtype)))))
+                ;; Remember (member) is also the bottom type.
+                (if (null subtypes) (list nil)
+                    (mappend #'explode-type
+                             (loop for subtype in subtypes
+                                   collect `(eql ,subtype)))))
+               (otherwise (list type)))))
+    (explode-type (typexpand type env))))
 
-           (extra-types (partition)
-             (loop for subtype in (explode-type partition)
+(defun describe-non-exhaustive-match (stream partition type env)
+  (assert (not (same-type? partition type)))
+  (labels ((extra-types (partition)
+             (loop for subtype in (explode-type partition env)
                    unless (subtypep subtype type env)
                      collect subtype))
 
@@ -67,11 +93,9 @@ From Arc."
                (format stream "~&There are extra types: ~s" et)))
 
            (missing-types (partition)
-             (multiple-value-bind (exp exp?) (typexpand type env)
-               (and exp?
-                    (set-difference (explode-type exp)
-                                    (explode-type partition)
-                                    :test #'type=))))
+             (remove-if (lambda (type)
+                          (subtypep type partition env))
+                        (explode-type type env)))
 
            (format-missing-types (stream partition)
              (when-let (mt (missing-types partition))
@@ -234,9 +258,17 @@ to collect KEYPLACE and try again."
      (case-using #'eql x ...)
      ≡ (case x ...).
 
-Note that, no matter the predicate, the keys are not evaluated. (But see `selector'.)
+Note that, no matter the predicate, the keys are not evaluated. (But
+see `selector'.)
 
 The PRED form is evaluated.
+
+When PRED is invoked, KEYFORM is its first argument. You can use
+`flip' if you want the arguments passed the other way around. For
+example, to dispatch on potential elements of a list:
+
+    (case-using list (flip #'member)
+      (:item1 ...))
 
 This version supports both single-item clauses (x ...) and
 multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
@@ -370,16 +402,19 @@ clause succeeds."
 Cf. `acond' in Anaphora."
   (match clauses
     (() nil)
-    (`((,test) ,@clauses)
-      `(if-let1 ,var ,test
-         ,var
-         (cond-let ,var ,@clauses)))
-    (`((t ,@body) ,@_)
-      `(progn ,@body))
-    (`((,test ,@body) ,@clauses)
-      `(if-let1 ,var ,test
-         (progn ,@body)
-         (cond-let ,var ,@clauses)))))
+    ((list* (list test) clauses)
+     `(if-let1 ,var ,test
+        ,var
+        (cond-let ,var ,@clauses)))
+    ((list* (list* t body) _)
+     `(progn ,@body))
+    ((list* (list* test body) clauses)
+     `(let ((,var ,test))
+        (if ,var
+            ;; Rebind the variables for declarations.
+            (let1 ,var ,var
+              ,@body)
+            (cond-let ,var ,@clauses))))))
 
 (defmacro econd-let (symbol &body clauses)
   "Like `cond-let' for `econd'."
@@ -414,8 +449,9 @@ From Zetalisp."
     `(let* ,(loop for temp in temps
                   for (test . nil) in test-clauses
                   collect `(,temp ,test))
-       (if (not (or ,@temps))
-           (progn ,@(rest otherwise-clause))
+       ;; Work around Iterate bug. See
+       ;; <https://gitlab.common-lisp.net/iterate/iterate/-/issues/11>.
+       (if (or ,@temps)
            ,(with-gensyms (ret)
               `(let (,ret)
                  ,@(loop for temp in temps
@@ -425,7 +461,8 @@ From Zetalisp."
                                           ,(if (null body)
                                                temp
                                                `(progn ,@body)))))
-                 ,ret))))))
+                 ,ret))
+           (progn ,@(rest otherwise-clause))))))
 
 (defmacro bcond (&body clauses)
   "Scheme's extended COND.
@@ -486,10 +523,34 @@ Burson."
      (case ,var
        ,@cases)))
 
+(defmacro ccase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable."
+  `(let ((,var ,expr))
+     (ccase ,var
+       ,@cases)))
+
 (defmacro ecase-let ((var expr) &body cases)
   "Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only."
   `(let1 ,var ,expr
      (ecase ,var
+       ,@cases)))
+
+(defmacro typecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
+     (typecase ,var
+       ,@cases)))
+
+(defmacro ctypecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable."
+  `(let ((,var ,expr))
+     (ctypecase ,var
+       ,@cases)))
+
+(defmacro etypecase-let ((var expr) &body cases)
+  "Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only."
+  `(let1 ,var ,expr
+     (etypecase ,var
        ,@cases)))
 
 (defmacro comment (&body body)
@@ -542,7 +603,7 @@ Cf. `ensure2'."
   (multiple-value-bind (vars vals stores setter getter)
       (get-setf-expansion place env)
     `(let* ,(mapcar #'list vars vals)
-       (or (ignoring (or unbound-slot unbound-variable)
+       (or (ignore-some-conditions (unbound-slot unbound-variable)
              ,getter)
            (multiple-value-bind ,stores
                (progn ,@newval)
@@ -556,7 +617,7 @@ Cf. `ensure2'."
             vals
             stores
             setter
-            `(or (ignoring (or unbound-slot unbound-variable)
+            `(or (ignore-some-conditions (unbound-slot unbound-variable)
                    ,getter)
                  (progn ,@newval)))))
 
@@ -653,6 +714,7 @@ first."
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
+  (declare (notinline append1))         ;phasing
   (thread-aux '~>> needle holes
               (lambda (needle hole)
                 (append1 hole needle))))
@@ -728,6 +790,9 @@ From Zetalisp."
   "Like `select', but compare using FN.
 
 Note that (unlike `case-using'), FN is not evaluated.
+
+Prefer `selector' to `case-using' when FN is a macro, or has a
+compiler macro.
 
 From Zetalisp."
   `(cond
@@ -891,16 +956,16 @@ But with less consing, and potentially faster."
 (defmacro define-variadic-equality (variadic binary)
   `(progn
      (defun ,variadic (&rest xs)
-       ,(format nil "Variadic version of `~a'.
+       ,(format nil "Variadic version of `~(~a~)'.
 
 With no arguments, return T.
 
 With one argument, return T.
 
-With two arguments, same as `~:*~a'.
+With two arguments, same as `~:*~(~a~)'.
 
 With three or more arguments, return T only if all of XS are
-equivalent under `~:*~a'.
+equivalent under `~:*~(~a~)'.
 
 Has a compiler macro, so there is no loss of efficiency relative to
 writing out the tests by hand."

@@ -2,7 +2,12 @@
 
 (uiop:define-package :serapeum.exporting
   (:use)
-  (:export :defclass :define-values))
+  (:export
+   :defclass :define-values
+   ;; Prevent implicit exports from being unexported on redefinition.
+   . #.(and (find-package :serapeum.exporting)
+            (mapcar #'make-keyword
+                    (serapeum:package-exports :serapeum.exporting)))))
 
 (defmacro serapeum.exporting:defclass (name supers &body (slots . options))
   "Like `defclass', but implicitly export the name of the class and
@@ -42,11 +47,13 @@ its accessors from being exported."
           (exporter-name (intern (string macro-name)
                                  (find-package :serapeum.exporting))))
       `(progn
-         (export-always '(,exporter-name)
+         (export-always
+             (list (intern ,(string macro-name)
+                           (find-package :serapeum.exporting)))
              (find-package :serapeum.exporting))
          (defmacro ,exporter-name (&whole ,whole ,@lambda-list)
            ,(fmt "Like `~(~a~)', with implicit export of ~:@(~a~)."
-                macro-name name-sym)
+                 macro-name name-sym)
            (declare (ignore ,@(set-difference (flatten (rest lambda-list))
                                               lambda-list-keywords)))
            (list 'progn

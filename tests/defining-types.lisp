@@ -134,7 +134,8 @@
 (test union/maybe
   (is (subtypep (find-class 'just) (find-class '<maybe>)))
   (is (subtypep (find-class 'nothing) (find-class '<maybe>)))
-  (is (type= '(or just nothing) 'maybe))
+  (is (subtypep 'maybe '<maybe>))
+  (is (subtypep '(or just nothing) 'maybe))
   (is (= 5 (just-value (just 5))))
   (is (eq nothing nothing))
   (is (eq nothing (eval 'nothing))))
@@ -173,6 +174,43 @@
          (match-of point (rectangular 1.0 2.0)
            ((rectangular x y) (+ x y))
            (_ nil)))))
+
+(deftype unions ()
+  '(or tree liszt maybe))
+
+(test union/exhaustiveness?
+  (finishes
+    (compile nil '(lambda (e)
+                   (etypecase-of unions e
+                     (liszt) (tree) (just) (nothing)))))
+  (signals warning
+    (compile nil '(lambda (e)
+                   (etypecase-of unions e
+                     ((or liszt tree)) (just)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (etypecase-of (or unions list) e
+                     (liszt) (tree) ((or maybe cons)) (null)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (etypecase-of (or maybe kons knil) e
+                     (just) (nothing) (liszt)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (match-of (or maybe (member 42)) e
+                     ((nothing) nil) ((just v) v) (42 'life)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (match-of (or maybe (member :x)) e
+                     ((nothing) nil) ((just v) v) (:x 'life)))))
+  (finishes
+    (compile nil '(lambda (e)
+                   (match-of (or maybe (eql x)) e
+                     ((nothing) nil) ((just v) v) ('x 'life)))))
+  (signals warning
+    (compile nil '(lambda (e)
+                   (match-of (or point liszt) e
+                     ((or (polar) (rectangular))) ((kons)))))))
 
 (defconstructor dummy-constructor
   (symbol symbol)

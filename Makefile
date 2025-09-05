@@ -1,8 +1,17 @@
-asdf='(uiop:quit (if (asdf:test-system :serapeum) 0 1))'
+asdf:='(uiop:quit (if (asdf:test-system :serapeum) 0 1))'
 
-source_files = $(wildcard *.lisp)
+source_files := $(wildcard *.lisp)
 
-CCL = ccl
+CCL := ccl
+
+DOC_PACKAGES := \
+:serapeum/portability \
+:serapeum/macro-tools \
+:serapeum/types \
+:serapeum/iter \
+:serapeum \
+:serapeum.exporting \
+:serapeum.docs
 
 all: REFERENCE.md
 
@@ -12,7 +21,7 @@ all: REFERENCE.md
 REFERENCE.md: $(source_files) $(wildcard $(source_files:.lisp=.md))
 	CL_SOURCE_REGISTRY=`pwd`/ $(CCL) \
            --eval '(ql:quickload :serapeum/docs)' \
-           --eval '(serapeum.docs:update-function-reference "REFERENCE.md" :serapeum (list :serapeum :serapeum.exporting :serapeum.docs :serapeum/contrib/hooks))' \
+           --eval "(serapeum.docs:update-function-reference \"REFERENCE.md\" :serapeum (list $(DOC_PACKAGES)))" \
            --eval '(uiop:quit)'
 
 .PHONY: test-sbcl test-ccl test-ecl test

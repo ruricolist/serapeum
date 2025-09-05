@@ -70,3 +70,23 @@
       (is (eql 'done
                (%do-hash/opt ((key) hash 'done)
                  (declare (ignore key))))))))
+
+(defvar *place*)
+
+(defplace place-value/old-syntax ()
+  (car *place*)
+  "Old syntax.")
+
+(defplace place-value/new-syntax ()
+  "New syntax."
+  (assert (consp *place*))
+  (cdr *place*))
+
+(test defplace
+  (let ((*place* (cons nil nil)))
+    (is (null (place-value/old-syntax)))
+    (is (null (place-value/new-syntax)))
+    (setf (place-value/old-syntax) 1)
+    (setf (place-value/new-syntax) 2)
+    (is (eql 1 (place-value/old-syntax)))
+    (is (eql 2 (place-value/new-syntax)))))

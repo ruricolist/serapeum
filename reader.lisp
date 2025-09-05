@@ -26,5 +26,5 @@ control the reader, not the printer.
 This may be preferable to using `with-standard-io-syntax' when loading
 data, as it will not effect how errors are printed, thus preserving
 debugging information."
-  (with-thunk (body)
+  (with-thunk ((body :name with-standard-input-syntax))
     `(call/standard-input-syntax ,body)))

@@ -6,7 +6,9 @@
    #:serapeum/macro-tools
    #:serapeum/portability
    #:serapeum/unlocked
-   #:serapeum/types)
+   #:serapeum/types
+   #:serapeum/binding
+   #:serapeum/control-flow)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -133,6 +135,9 @@
   (:import-from
    #:serapeum/iter
    #:collecting*)
+  (:import-from
+   #:serapeum/control-flow
+   #:check-exhaustiveness)
   (:documentation "Utilities beyond Alexandria.")
   (:export
    ;; Definitions.
@@ -159,14 +164,7 @@
    #:local*
    #:block-compile
    ;; Binding.
-   #:receive
-   #:letrec
-   #:letrec*
-   #:mvlet
-   #:mvlet*
-   #:lret
-   #:lret*
-   #:and-let*
+   ;; Statics.
    #:recklessly-continue
    #:static-binding-flush-error
    #:static-binding-flush-error-group
@@ -176,61 +174,12 @@
    #:flush-all-static-binding-groups
    #:static-let
    #:static-let*
-   #:if-not
-   #:if-not-let
-   ;; Control flow.
-   #:null-if
-   #:eval-always
-   #:eval-and-compile
-   #:no
-   #:nor
-   #:nand
-   #:typecase-of
-   #:case-of
-   #:etypecase-of
-   #:ecase-of
-   #:ctypecase-of
-   #:ccase-of
-   #:dispatch-case
-   #:dispatch-caseql
-   #:dispatch-case-let
-   #:dispatch-caseql-let
-   #:dispatch-case-error
-   #:destructuring-case-of
-   #:destructuring-ccase-of
-   #:destructuring-ecase-of
-   #:string-case
-   #:string-ecase
-   #:case-using
-   #:ecase-using
-   #:select
-   #:selector
-   #:eif
-   #:eif-let
-   #:econd
-   #:econd-failure
-   #:econd-let
-   #:ecase-let
-   #:cond-let
-   #:case-let
-   #:ccase-let
-   #:typecase-let
-   #:ctypecase-let
-   #:etypecase-let
-   #:bcond
-   #:comment
-   #:example
-   #:nix
-   #:ensure
-   #:ensure2
-   #:~>
-   #:~>>
-   #:cond-every
-   #:nest
-   #:sort-values
-   #:eq* #:eql* #:equal* #:equalp*
-   #:recursion-forbidden
-   #:without-recursion
+   ;; Dispatch case.
+   :dispatch-case
+   :dispatch-case-error
+   :dispatch-case-let
+   :dispatch-caseql
+   :dispatch-caseql-let
    ;; Threads.
    #:count-cpus
    #:synchronized

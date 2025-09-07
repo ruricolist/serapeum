@@ -1,4 +1,74 @@
-(in-package :serapeum)
+(defpackage :serapeum/control-flow
+  (:documentation "Control flow utilities.")
+  #+sb-package-locks (:lock t)
+  #+sb-package-locks (:implement :serapeum/control-flow :serapeum/types)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/binding
+   :serapeum/macro-tools
+   :serapeum/portability
+   :serapeum/types
+   :trivia)
+  (:import-from
+   :introspect-environment
+   :typexpand)
+  (:import-from
+   :serapeum/binding
+   :let1)
+  (:import-from
+   :serapeum/macro-tools
+   :extract-function-name
+   :rebinding-functions)
+  (:export
+   :bcond
+   :case-let
+   :case-of
+   :case-using
+   :ccase-let
+   :ccase-of
+   :comment
+   :cond-every
+   :cond-let
+   :ctypecase-let
+   :ctypecase-of
+   :destructuring-case-of
+   :destructuring-ccase-of
+   :destructuring-ecase-of
+   :ecase-let
+   :ecase-of
+   :ecase-using
+   :econd
+   :econd-failure
+   :econd-let
+   :eif
+   :eif-let
+   :ensure
+   :ensure2
+   :eq* #:eql* #:equal* #:equalp*
+   :etypecase-let
+   :etypecase-of
+   :eval-always
+   :eval-and-compile
+   :example
+   :nand
+   :nest
+   :nix
+   :no
+   :nor
+   :null-if
+   :recursion-forbidden
+   :select
+   :selector
+   :sort-values
+   :string-case
+   :string-ecase
+   :typecase-let
+   :typecase-of
+   :without-recursion
+   :~>
+   :~>>))
+(in-package :serapeum/control-flow)
 
 (defmacro eval-always (&body body)
   "Shorthand for
@@ -21,7 +91,8 @@ From Arc."
 (define-compiler-macro no (x)
   `(not ,x))
 
-(defsubst null-if (arg1 arg2 &key (test #'eql))
+(declaim (inline null-if))
+(defun null-if (arg1 arg2 &key (test #'eql))
   "Return nil if arguments are equal under TEST, ARG1 otherwise.
 Return a second value of nil if the arguments were equal, T
 otherwise.
@@ -714,10 +785,9 @@ first."
 (defmacro ~>> (needle &rest holes)
   "Like `~>' but, by default, thread NEEDLE as the last argument
 instead of the first."
-  (declare (notinline append1))         ;phasing
   (thread-aux '~>> needle holes
               (lambda (needle hole)
-                (append1 hole needle))))
+                (append hole (list needle)))))
 
 (defpattern ~>> (needle &rest holes)
   (check-no-underscores holes)
@@ -801,7 +871,7 @@ From Zetalisp."
                        ,@body))
      (t ,@default)))
 
-(def sorting-networks
+(defparameter *sorting-networks*
   '((2
      (0 1))
     (3
@@ -878,7 +948,7 @@ From Zetalisp."
 
 (defun sorting-network (size)
   (check-type size (integer 2 *))
-  (or (cdr (assoc size sorting-networks))
+  (or (cdr (assoc size *sorting-networks*))
       (error "No sorting network of size ~d" size)))
 
 (defmacro sort-values/network (pred &rest values)

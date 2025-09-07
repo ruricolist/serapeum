@@ -65,21 +65,21 @@
 (test explode-type
   (is (type= nil '(member)))
   ;; A member type with no arguments is impossible.
-  (is (equal '(nil) (serapeum::explode-type '(member) nil)))
+  (is (equal '(nil) (serapeum/control-flow::explode-type '(member) nil)))
   (is (set-equal
-       (serapeum::explode-type '(member :x :y :z) nil)
+       (serapeum/control-flow::explode-type '(member :x :y :z) nil)
        '((eql :x) (eql :y) (eql :z))
        :test #'equal))
   (is (set-equal
-       (serapeum::explode-type 'explodable-member-type nil)
+       (serapeum/control-flow::explode-type 'explodable-member-type nil)
        '((eql :x) (eql :y) (eql :z))
        :test #'equal))
   (is (set-equal
-       (serapeum::explode-type '(or x (or y z) (member :x :y)) nil)
+       (serapeum/control-flow::explode-type '(or x (or y z) (member :x :y)) nil)
        '(x y z (eql :x) (eql :y))
        :test #'equal))
   (is (set-equal
-       (serapeum::explode-type 'explodable-type nil)
+       (serapeum/control-flow::explode-type 'explodable-type nil)
        '(x y z (eql :x) (eql :y))
        :test #'equal)))
 

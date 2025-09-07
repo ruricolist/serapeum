@@ -1,4 +1,23 @@
-(in-package :serapeum)
+(defpackage :serapeum/binding
+  (:documentation "Binding utilities")
+  #+sb-package-locks (:lock t)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/macro-tools
+   :trivia)
+  (:export
+   #:and-let*
+   #:if-not
+   #:if-not-let
+   #:letrec
+   #:letrec*
+   #:lret
+   #:lret*
+   #:mvlet
+   #:mvlet*
+   #:receive))
+(in-package :serapeum/binding)
 
 ;;; Helpers.
 

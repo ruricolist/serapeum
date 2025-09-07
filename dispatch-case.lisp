@@ -1,7 +1,8 @@
 (defpackage :serapeum/dispatch-case
   (:use :cl :alexandria :serapeum)
   (:import-from :trivia :match :ematch)
-  #+sb-package-locks (:implement :serapeum :serapeum/dispatch-case))
+  #+sb-package-locks
+  (:implement :serapeum :serapeum/dispatch-case))
 
 (in-package :serapeum/dispatch-case)
 

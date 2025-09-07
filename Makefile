@@ -9,6 +9,8 @@ DOC_PACKAGES := \
 :serapeum/macro-tools \
 :serapeum/types \
 :serapeum/iter \
+:serapeum/binding \
+:serapeum/control-flow \
 :serapeum \
 :serapeum.exporting \
 :serapeum.docs

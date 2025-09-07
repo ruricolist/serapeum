@@ -6,10 +6,10 @@
 - [Control Flow](#control-flow)
 - [Octets](#octets)
 - [Iter](#iter)
-- [Definitions](#definitions)
-- [Defining Types](#defining-types)
 - [Binding](#binding)
 - [Control Flow](#control-flow)
+- [Definitions](#definitions)
+- [Defining Types](#defining-types)
 - [Threads](#threads)
 - [Conditions](#conditions)
 - [Op](#op)
@@ -655,7 +655,7 @@ Equivalent to (not (or ...)).
 
 From Arc.
 
-[View source](control-flow.lisp#L34)
+[View source](control-flow.lisp#L105)
 
 ## Octets
 
@@ -739,6 +739,679 @@ To see the running sum, call `sum` with no arguments.
 Return the total.
 
 [View source](iter.lisp#L174)
+
+## Binding
+
+### `(lret (&rest bindings) &body body)`
+
+Return the initial value of the last binding in BINDINGS. The idea
+is to create something, initialize it, and then return it.
+
+    (lret ((x 1)
+           (y (make-array 1)))
+      (setf (aref y 0) x))
+    => #(1)
+
+Note that the value returned is the value initially bound. Subsequent
+assignments are ignored.
+
+    (lret ((x 1))
+      (setf x 2))
+    => 1
+
+Furthermore, on Lisps that support it, the variable may be made
+read-only, making assignment a compiler-time error.
+
+`lret` may seem trivial, but it fufills the highest purpose a macro
+can: it eliminates a whole class of bugs (initializing an object, but
+forgetting to return it).
+
+Cf. `aprog1` in Anaphora.
+
+[View source](binding.lisp#L63)
+
+### `(lret* (&rest bindings) &body body)`
+
+Cf. `lret`.
+
+[View source](binding.lisp#L90)
+
+### `(letrec (&rest bindings) &body body)`
+
+Recursive LET.
+The idea is that functions created in BINDINGS can close over one
+another, and themselves.
+
+Note that `letrec` only binds variables: it can define recursive
+functions, but can't bind them as functions. (But see `fbindrec`.)
+
+[View source](binding.lisp#L115)
+
+### `(letrec* (&rest bindings) &body body)`
+
+Like LETREC, but the bindings are evaluated in order.
+See Waddell et al., *Fixing Letrec* for motivation.
+
+Cf. `fbindrec*`.
+
+[View source](binding.lisp#L125)
+
+### `(receive formals expr &body body)`
+
+Stricter version of `multiple-value-bind`.
+
+Use `receive` when you want to enforce that EXPR should return a
+certain number of values, or a minimum number of values.
+
+If FORMALS is a proper list, then EXPR must return exactly as many
+values -- no more and no less -- as there are variables in FORMALS.
+
+If FORMALS is an improper list (VARS . REST), then EXPR must return at
+least as many values as there are VARS, and any further values are
+bound, as a list, to REST.
+
+Lastly, if FORMALS is a symbol, bind that symbol to all the values
+returned by EXPR, as if by `multiple-value-list`.
+
+From Scheme (SRFI-8).
+
+[View source](binding.lisp#L133)
+
+### `(mvlet* (&rest bindings) &body body)`
+
+Expand a series of nested `multiple-value-bind` forms.
+
+`mvlet*` is similar in intent to Scheme’s `let-values`, but with a
+different and less parenthesis-intensive syntax. Each binding is a
+list of
+
+    (var var*... expr)
+
+A simple example should suffice to show both the implementation and
+the motivation:
+
+    (defun uptime (seconds)
+      (mvlet* ((minutes seconds (truncate seconds 60))
+               (hours minutes (truncate minutes 60))
+               (days hours (truncate hours 24)))
+        (declare ((integer 0 *) days hours minutes seconds))
+        (fmt "~d day~:p, ~d hour~:p, ~d minute~:p, ~d second~:p"
+             days hours minutes seconds)))
+
+Note that declarations work just like `let*`.
+
+[View source](binding.lisp#L190)
+
+### `(mvlet (&rest bindings) &body body)`
+
+Parallel (`let`-like) version of `mvlet*`.
+
+[View source](binding.lisp#L249)
+
+### `(and-let* (&rest clauses) &body body)`
+
+Scheme's guarded LET* (SRFI-2).
+
+Each clause should have one of the following forms:
+
+- `identifier`, in which case IDENTIFIER's value is tested.
+
+- `(expression)`, in which case the value of EXPRESSION is tested.
+
+- `(identifier expression)' in which case EXPRESSION is evaluated,
+    and, if its value is not false, IDENTIFIER is bound to that value
+    for the remainder of the clauses and the optional body.
+
+Note that, of course, the semantics are slightly different in Common
+Lisp than in Scheme, because our AND short-circuits on null, not
+false.
+
+Also, this version makes the bindings immutable.
+
+[View source](binding.lisp#L285)
+
+### `(if-not test then &optional else)`
+
+If TEST evaluates to NIL, evaluate THEN and return its values,
+otherwise evaluate ELSE and return its values. ELSE defaults to NIL.
+
+[View source](binding.lisp#L347)
+
+### `(if-not-let bindings &body (then-form &optional else-form))`
+
+Creates new variable bindings, and conditionally executes either
+THEN-FORM or ELSE-FORM. ELSE-FORM defaults to NIL.
+BINDINGS must be either single binding of the form:
+ (variable initial-form)
+or a list of bindings of the form:
+ ((variable-1 initial-form-1)
+  (variable-2 initial-form-2)
+  ...
+  (variable-n initial-form-n))
+All initial-forms are executed sequentially in the specified order. Then all
+the variables are bound to the corresponding values.
+If one of the variables was bound to NIL, the THEN-FORM is executed with the
+bindings in effect, otherwise the ELSE-FORM is executed with the bindings in
+effect.
+Adapted from Alexandria if-let.
+
+[View source](binding.lisp#L354)
+
+## Control Flow
+
+### `(eval-always &body body)`
+
+Shorthand for
+        (eval-when (:compile-toplevel :load-toplevel :execute) ...)
+
+[View source](control-flow.lisp#L73)
+
+### `(eval-and-compile &body body)`
+
+Emacs's `eval-and-compile`.
+Alias for `eval-always`.
+
+[View source](control-flow.lisp#L79)
+
+### `(no x)`
+
+Another alias for `not` and `null`.
+
+From Arc.
+
+[View source](control-flow.lisp#L85)
+
+### `(null-if arg1 arg2 &key test)`
+
+Return nil if arguments are equal under TEST, ARG1 otherwise.
+Return a second value of nil if the arguments were equal, T
+otherwise.
+
+From SQL.
+
+[View source](control-flow.lisp#L95)
+
+### `(nand &rest forms)`
+
+Equivalent to (not (and ...)).
+
+[View source](control-flow.lisp#L116)
+
+### `(typecase-of type x &body clauses)`
+
+Like `etypecase-of`, but may, and must, have an `otherwise` clause
+in case X is not of TYPE.
+
+[View source](control-flow.lisp#L231)
+
+### `(etypecase-of type x &body body)`
+
+Like `etypecase` but, at compile time, warn unless each clause in
+BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
+partition of TYPE.
+
+[View source](control-flow.lisp#L244)
+
+### `(case-of type x &body clauses)`
+
+Like `case` but may, and must, have an `otherwise` clause.
+
+[View source](control-flow.lisp#L256)
+
+### `(ecase-of type x &body body)`
+
+Like `ecase` but, given a TYPE (which should be defined as `(member
+...)`), warn, at compile time, unless the keys in BODY are all of TYPE
+and, taken together, they form an exhaustive partition of TYPE.
+
+[View source](control-flow.lisp#L268)
+
+### `(ctypecase-of type keyplace &body body)`
+
+Like `etypecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
+
+[View source](control-flow.lisp#L280)
+
+### `(ccase-of type keyplace &body body)`
+
+Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
+
+[View source](control-flow.lisp#L285)
+
+### `(destructuring-ecase-of type expr &body body)`
+
+Like `destructuring-ecase`, from Alexandria, but with exhaustivness
+checking.
+
+TYPE is a designator for a type, which should be defined as `(member
+...)`. At compile time, the macro checks that, taken together, the
+symbol at the head of each of the destructuring lists in BODY form an
+exhaustive partition of TYPE, and warns if it is not so.
+
+[View source](control-flow.lisp#L303)
+
+### `(destructuring-case-of type expr &body body)`
+
+Like `destructuring-ecase-of`, but an `otherwise` clause must also be supplied.
+
+Note that the otherwise clauses must also be a list:
+
+    ((otherwise &rest args) ...)
+
+[View source](control-flow.lisp#L313)
+
+### `(destructuring-ccase-of type keyplace &body body)`
+
+Like `destructuring-case-of`, but providing a `store-value` restart
+to collect KEYPLACE and try again.
+
+[View source](control-flow.lisp#L321)
+
+### `(case-using pred keyform &body clauses)`
+
+ISLISP's case-using.
+
+     (case-using #'eql x ...)
+     ≡ (case x ...).
+
+Note that, no matter the predicate, the keys are not evaluated. (But
+see `selector`.)
+
+The PRED form is evaluated.
+
+When PRED is invoked, KEYFORM is its first argument. You can use
+`flip` if you want the arguments passed the other way around. For
+example, to dispatch on potential elements of a list:
+
+    (case-using list (flip #'member)
+      (:item1 ...))
+
+This version supports both single-item clauses (x ...) and
+multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
+...) for the default clause.
+
+[View source](control-flow.lisp#L326)
+
+### `(ecase-using pred keyform &body clauses)`
+
+Exhaustive variant of `case-using`.
+
+[View source](control-flow.lisp#L368)
+
+### `(string-case stringform &body clauses)`
+
+Efficient `case`-like macro with string keys.
+
+Note that string matching is always case-sensitive.
+
+This uses Paul Khuong's `string-case` macro internally.
+
+[View source](control-flow.lisp#L379)
+
+### `(string-ecase stringform &body clauses)`
+
+Efficient `ecase`-like macro with string keys.
+
+Note that string matching is always case-sensitive.
+
+Cf. `string-case`.
+
+[View source](control-flow.lisp#L410)
+
+### `(eif test then &optional (else nil else?))`
+
+Like `cl:if`, but expects two branches.
+
+If there is only one branch a warning is signaled.
+
+This macro is useful when writing explicit decision trees; it will
+warn you if you forget a branch.
+
+Short for “exhaustive if”.
+
+[View source](control-flow.lisp#L426)
+
+### `(eif-let binds &body (then &optional (else nil else?)))`
+
+Like `alexandria:if-let`, but expects two branches.
+Compare `eif`.
+
+[View source](control-flow.lisp#L440)
+
+### `(econd &rest clauses)`
+
+Like `cond`, but signal an error of type `econd-failure` if no
+clause succeeds.
+
+[View source](control-flow.lisp#L457)
+
+### `(cond-let var &body clauses)`
+
+Cross between COND and LET.
+
+     (cond-let x ((test ...)))
+     ≡ (let (x)
+         (cond ((setf x test) ...)))
+
+Cf. `acond` in Anaphora.
+
+[View source](control-flow.lisp#L466)
+
+### `(econd-let symbol &body clauses)`
+
+Like `cond-let` for `econd`.
+
+[View source](control-flow.lisp#L490)
+
+### `(cond-every &body clauses)`
+
+Like `cond`, but instead of stopping after the first clause that
+succeeds, run all the clauses that succeed.
+
+Return the value of the last successful clause.
+
+If a clause begins with `cl:otherwise`, it runs only if no preceding
+form has succeeded.
+
+Note that this does *not* do the same thing as a series of `when`
+forms: `cond-every` evaluates *all* the tests *before* it evaluates
+any of the forms.
+
+From Zetalisp.
+
+[View source](control-flow.lisp#L503)
+
+### `(bcond &body clauses)`
+
+Scheme's extended COND.
+
+This is exactly like COND, except for clauses having the form
+
+     (test :=> recipient)
+
+In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
+function, is called with that result, and the result of RECIPIENT is
+return as the value of the `cond`.
+
+As an extension, a clause like this:
+
+     (test :=> var ...)
+
+Can be used as a shorthand for
+
+     (test :=> (lambda (var) ...))
+
+The name `bcond` for a “binding cond” goes back at least to the days
+of the Lisp Machines. I do not know who was first to use it, but the
+oldest examples I have found are by Michael Parker and Scott L.
+Burson.
+
+[View source](control-flow.lisp#L538)
+
+### `(case-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
+
+[View source](control-flow.lisp#L591)
+
+### `(ccase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable.
+
+[View source](control-flow.lisp#L597)
+
+### `(ecase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
+
+[View source](control-flow.lisp#L603)
+
+### `(typecase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only.
+
+[View source](control-flow.lisp#L609)
+
+### `(ctypecase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable.
+
+[View source](control-flow.lisp#L615)
+
+### `(etypecase-let (var expr) &body cases)`
+
+Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only.
+
+[View source](control-flow.lisp#L621)
+
+### `(comment &body body)`
+
+A macro that ignores its body and does nothing. Useful for
+comments-by-example.
+
+Also, as noted in EXTENSIONS.LISP of 1992, "This may seem like a
+silly macro, but used inside of other macros or code generation
+facilities it is very useful - you can see comments in the (one-time)
+macro expansion!"
+
+[View source](control-flow.lisp#L627)
+
+### `(example &body body)`
+
+Like `comment`.
+
+[View source](control-flow.lisp#L637)
+
+### `(nix &rest places)`
+
+Set PLACES to nil and return the old value(s) of PLACES.
+
+If there is more than one PLACE, return their old values as multiple values.
+
+This may be more efficient than (shiftf place nil), because it only
+sets PLACE when it is not already null.
+
+[View source](control-flow.lisp#L651)
+
+### `(ensure place &body newval)`
+
+Essentially (or place (setf place newval)).
+
+PLACE is treated as unbound if it returns `nil`, signals
+`unbound-slot`, or signals `unbound-variable`.
+
+Note that ENSURE is `setf`-able, so you can do things like
+     (incf (ensure x 0))
+
+Cf. `ensure2`.
+
+[View source](control-flow.lisp#L663)
+
+### `(ensure2 place &body newval)`
+
+Like `ensure`, but specifically for accessors that return a second
+value like `gethash`.
+
+[View source](control-flow.lisp#L695)
+
+### `(~> needle &rest holes)`
+
+Threading macro from Clojure (by way of Racket).
+
+Thread NEEDLE through HOLES, where each hole is either a
+symbol (equivalent to `(hole needle)`) or a list (equivalent to `(hole
+needle args...)`).
+
+As an extension, an underscore in the argument list is replaced with
+the needle, so you can pass the needle as an argument other than the
+first.
+
+[View source](control-flow.lisp#L767)
+
+### `(~>> needle &rest holes)`
+
+Like `~>` but, by default, thread NEEDLE as the last argument
+instead of the first.
+
+[View source](control-flow.lisp#L785)
+
+### `(nest &rest things)`
+
+Like ~>>, but backward.
+
+This is useful when layering `with-x` macros where the order is not
+important, and extra indentation would be misleading.
+
+For example:
+
+    (nest
+     (with-open-file (in file1 :direction input))
+     (with-open-file (in file2 :direction output))
+     ...)
+
+Is equivalent to:
+
+    (with-open-file (in file1 :direction input)
+      (with-open-file (in file2 :direction output)
+        ...))
+
+(But see `with-open-files`).
+
+If the outer macro has no arguments, you may omit the parentheses.
+
+    (nest
+      with-standard-io-syntax
+      ...)
+    ≡ (with-standard-io-syntax
+        ...)
+
+From UIOP, based on a suggestion by Marco Baringer.
+
+[View source](control-flow.lisp#L804)
+
+### `(select keyform &body clauses)`
+
+Like `case`, but with evaluated keys.
+
+Note that, like `case`, `select` interprets a list as the first
+element of a clause as a list of keys. To use a form as a key, you
+must add an extra set of parentheses.
+
+     (select 2
+       ((+ 2 2) t))
+     => T
+
+     (select 4
+       (((+ 2 2)) t))
+     => T
+
+From Zetalisp.
+
+[View source](control-flow.lisp#L839)
+
+### `(selector keyform fn &body clauses)`
+
+Like `select`, but compare using FN.
+
+Note that (unlike `case-using`), FN is not evaluated.
+
+Prefer `selector` to `case-using` when FN is a macro, or has a
+compiler macro.
+
+From Zetalisp.
+
+[View source](control-flow.lisp#L858)
+
+### `(sort-values pred &rest values)`
+
+Sort VALUES with PRED and return as multiple values.
+
+Equivalent to
+
+    (values-list (sort (list VALUES...) pred))
+
+But with less consing, and potentially faster.
+
+[View source](control-flow.lisp#L980)
+
+### `(eq* &rest xs)`
+
+Variadic version of `eq`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `eq`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `eq`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L1051)
+
+### `(eql* &rest xs)`
+
+Variadic version of `eql`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `eql`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `eql`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L1053)
+
+### `(equal* &rest xs)`
+
+Variadic version of `equal`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `equal`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `equal`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L1055)
+
+### `(equalp* &rest xs)`
+
+Variadic version of `equalp`.
+
+With no arguments, return T.
+
+With one argument, return T.
+
+With two arguments, same as `equalp`.
+
+With three or more arguments, return T only if all of XS are
+equivalent under `equalp`.
+
+Has a compiler macro, so there is no loss of efficiency relative to
+writing out the tests by hand.
+
+[View source](control-flow.lisp#L1057)
+
+### `(without-recursion (&key) &body body)`
+
+If BODY calls itself, at any depth, signal a (continuable) error of
+type `recursion-forbidden`.
+
+[View source](control-flow.lisp#L1067)
 
 ## Definitions
 
@@ -1078,679 +1751,6 @@ If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
 [View source](defining-types.lisp#L566)
-
-## Binding
-
-### `(lret (&rest bindings) &body body)`
-
-Return the initial value of the last binding in BINDINGS. The idea
-is to create something, initialize it, and then return it.
-
-    (lret ((x 1)
-           (y (make-array 1)))
-      (setf (aref y 0) x))
-    => #(1)
-
-Note that the value returned is the value initially bound. Subsequent
-assignments are ignored.
-
-    (lret ((x 1))
-      (setf x 2))
-    => 1
-
-Furthermore, on Lisps that support it, the variable may be made
-read-only, making assignment a compiler-time error.
-
-`lret` may seem trivial, but it fufills the highest purpose a macro
-can: it eliminates a whole class of bugs (initializing an object, but
-forgetting to return it).
-
-Cf. `aprog1` in Anaphora.
-
-[View source](binding.lisp#L44)
-
-### `(lret* (&rest bindings) &body body)`
-
-Cf. `lret`.
-
-[View source](binding.lisp#L71)
-
-### `(letrec (&rest bindings) &body body)`
-
-Recursive LET.
-The idea is that functions created in BINDINGS can close over one
-another, and themselves.
-
-Note that `letrec` only binds variables: it can define recursive
-functions, but can't bind them as functions. (But see `fbindrec`.)
-
-[View source](binding.lisp#L96)
-
-### `(letrec* (&rest bindings) &body body)`
-
-Like LETREC, but the bindings are evaluated in order.
-See Waddell et al., *Fixing Letrec* for motivation.
-
-Cf. `fbindrec*`.
-
-[View source](binding.lisp#L106)
-
-### `(receive formals expr &body body)`
-
-Stricter version of `multiple-value-bind`.
-
-Use `receive` when you want to enforce that EXPR should return a
-certain number of values, or a minimum number of values.
-
-If FORMALS is a proper list, then EXPR must return exactly as many
-values -- no more and no less -- as there are variables in FORMALS.
-
-If FORMALS is an improper list (VARS . REST), then EXPR must return at
-least as many values as there are VARS, and any further values are
-bound, as a list, to REST.
-
-Lastly, if FORMALS is a symbol, bind that symbol to all the values
-returned by EXPR, as if by `multiple-value-list`.
-
-From Scheme (SRFI-8).
-
-[View source](binding.lisp#L114)
-
-### `(mvlet* (&rest bindings) &body body)`
-
-Expand a series of nested `multiple-value-bind` forms.
-
-`mvlet*` is similar in intent to Scheme’s `let-values`, but with a
-different and less parenthesis-intensive syntax. Each binding is a
-list of
-
-    (var var*... expr)
-
-A simple example should suffice to show both the implementation and
-the motivation:
-
-    (defun uptime (seconds)
-      (mvlet* ((minutes seconds (truncate seconds 60))
-               (hours minutes (truncate minutes 60))
-               (days hours (truncate hours 24)))
-        (declare ((integer 0 *) days hours minutes seconds))
-        (fmt "~d day~:p, ~d hour~:p, ~d minute~:p, ~d second~:p"
-             days hours minutes seconds)))
-
-Note that declarations work just like `let*`.
-
-[View source](binding.lisp#L171)
-
-### `(mvlet (&rest bindings) &body body)`
-
-Parallel (`let`-like) version of `mvlet*`.
-
-[View source](binding.lisp#L230)
-
-### `(and-let* (&rest clauses) &body body)`
-
-Scheme's guarded LET* (SRFI-2).
-
-Each clause should have one of the following forms:
-
-- `identifier`, in which case IDENTIFIER's value is tested.
-
-- `(expression)`, in which case the value of EXPRESSION is tested.
-
-- `(identifier expression)' in which case EXPRESSION is evaluated,
-    and, if its value is not false, IDENTIFIER is bound to that value
-    for the remainder of the clauses and the optional body.
-
-Note that, of course, the semantics are slightly different in Common
-Lisp than in Scheme, because our AND short-circuits on null, not
-false.
-
-Also, this version makes the bindings immutable.
-
-[View source](binding.lisp#L266)
-
-### `(if-not test then &optional else)`
-
-If TEST evaluates to NIL, evaluate THEN and return its values,
-otherwise evaluate ELSE and return its values. ELSE defaults to NIL.
-
-[View source](binding.lisp#L328)
-
-### `(if-not-let bindings &body (then-form &optional else-form))`
-
-Creates new variable bindings, and conditionally executes either
-THEN-FORM or ELSE-FORM. ELSE-FORM defaults to NIL.
-BINDINGS must be either single binding of the form:
- (variable initial-form)
-or a list of bindings of the form:
- ((variable-1 initial-form-1)
-  (variable-2 initial-form-2)
-  ...
-  (variable-n initial-form-n))
-All initial-forms are executed sequentially in the specified order. Then all
-the variables are bound to the corresponding values.
-If one of the variables was bound to NIL, the THEN-FORM is executed with the
-bindings in effect, otherwise the ELSE-FORM is executed with the bindings in
-effect.
-Adapted from Alexandria if-let.
-
-[View source](binding.lisp#L335)
-
-## Control Flow
-
-### `(eval-always &body body)`
-
-Shorthand for
-        (eval-when (:compile-toplevel :load-toplevel :execute) ...)
-
-[View source](control-flow.lisp#L3)
-
-### `(eval-and-compile &body body)`
-
-Emacs's `eval-and-compile`.
-Alias for `eval-always`.
-
-[View source](control-flow.lisp#L9)
-
-### `(no x)`
-
-Another alias for `not` and `null`.
-
-From Arc.
-
-[View source](control-flow.lisp#L15)
-
-### `(null-if arg1 arg2 &key test)`
-
-Return nil if arguments are equal under TEST, ARG1 otherwise.
-Return a second value of nil if the arguments were equal, T
-otherwise.
-
-From SQL.
-
-[View source](control-flow.lisp#L24)
-
-### `(nand &rest forms)`
-
-Equivalent to (not (and ...)).
-
-[View source](control-flow.lisp#L45)
-
-### `(typecase-of type x &body clauses)`
-
-Like `etypecase-of`, but may, and must, have an `otherwise` clause
-in case X is not of TYPE.
-
-[View source](control-flow.lisp#L160)
-
-### `(etypecase-of type x &body body)`
-
-Like `etypecase` but, at compile time, warn unless each clause in
-BODY is a subtype of TYPE, and the clauses in BODY form an exhaustive
-partition of TYPE.
-
-[View source](control-flow.lisp#L173)
-
-### `(case-of type x &body clauses)`
-
-Like `case` but may, and must, have an `otherwise` clause.
-
-[View source](control-flow.lisp#L185)
-
-### `(ecase-of type x &body body)`
-
-Like `ecase` but, given a TYPE (which should be defined as `(member
-...)`), warn, at compile time, unless the keys in BODY are all of TYPE
-and, taken together, they form an exhaustive partition of TYPE.
-
-[View source](control-flow.lisp#L197)
-
-### `(ctypecase-of type keyplace &body body)`
-
-Like `etypecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
-
-[View source](control-flow.lisp#L209)
-
-### `(ccase-of type keyplace &body body)`
-
-Like `ecase-of`, but providing a `store-value` restart to correct KEYPLACE and try again.
-
-[View source](control-flow.lisp#L214)
-
-### `(destructuring-ecase-of type expr &body body)`
-
-Like `destructuring-ecase`, from Alexandria, but with exhaustivness
-checking.
-
-TYPE is a designator for a type, which should be defined as `(member
-...)`. At compile time, the macro checks that, taken together, the
-symbol at the head of each of the destructuring lists in BODY form an
-exhaustive partition of TYPE, and warns if it is not so.
-
-[View source](control-flow.lisp#L232)
-
-### `(destructuring-case-of type expr &body body)`
-
-Like `destructuring-ecase-of`, but an `otherwise` clause must also be supplied.
-
-Note that the otherwise clauses must also be a list:
-
-    ((otherwise &rest args) ...)
-
-[View source](control-flow.lisp#L242)
-
-### `(destructuring-ccase-of type keyplace &body body)`
-
-Like `destructuring-case-of`, but providing a `store-value` restart
-to collect KEYPLACE and try again.
-
-[View source](control-flow.lisp#L250)
-
-### `(case-using pred keyform &body clauses)`
-
-ISLISP's case-using.
-
-     (case-using #'eql x ...)
-     ≡ (case x ...).
-
-Note that, no matter the predicate, the keys are not evaluated. (But
-see `selector`.)
-
-The PRED form is evaluated.
-
-When PRED is invoked, KEYFORM is its first argument. You can use
-`flip` if you want the arguments passed the other way around. For
-example, to dispatch on potential elements of a list:
-
-    (case-using list (flip #'member)
-      (:item1 ...))
-
-This version supports both single-item clauses (x ...) and
-multiple-item clauses ((x y) ...), as well as (t ...) or (otherwise
-...) for the default clause.
-
-[View source](control-flow.lisp#L255)
-
-### `(ecase-using pred keyform &body clauses)`
-
-Exhaustive variant of `case-using`.
-
-[View source](control-flow.lisp#L297)
-
-### `(string-case stringform &body clauses)`
-
-Efficient `case`-like macro with string keys.
-
-Note that string matching is always case-sensitive.
-
-This uses Paul Khuong's `string-case` macro internally.
-
-[View source](control-flow.lisp#L308)
-
-### `(string-ecase stringform &body clauses)`
-
-Efficient `ecase`-like macro with string keys.
-
-Note that string matching is always case-sensitive.
-
-Cf. `string-case`.
-
-[View source](control-flow.lisp#L339)
-
-### `(eif test then &optional (else nil else?))`
-
-Like `cl:if`, but expects two branches.
-
-If there is only one branch a warning is signaled.
-
-This macro is useful when writing explicit decision trees; it will
-warn you if you forget a branch.
-
-Short for “exhaustive if”.
-
-[View source](control-flow.lisp#L355)
-
-### `(eif-let binds &body (then &optional (else nil else?)))`
-
-Like `alexandria:if-let`, but expects two branches.
-Compare `eif`.
-
-[View source](control-flow.lisp#L369)
-
-### `(econd &rest clauses)`
-
-Like `cond`, but signal an error of type `econd-failure` if no
-clause succeeds.
-
-[View source](control-flow.lisp#L386)
-
-### `(cond-let var &body clauses)`
-
-Cross between COND and LET.
-
-     (cond-let x ((test ...)))
-     ≡ (let (x)
-         (cond ((setf x test) ...)))
-
-Cf. `acond` in Anaphora.
-
-[View source](control-flow.lisp#L395)
-
-### `(econd-let symbol &body clauses)`
-
-Like `cond-let` for `econd`.
-
-[View source](control-flow.lisp#L419)
-
-### `(cond-every &body clauses)`
-
-Like `cond`, but instead of stopping after the first clause that
-succeeds, run all the clauses that succeed.
-
-Return the value of the last successful clause.
-
-If a clause begins with `cl:otherwise`, it runs only if no preceding
-form has succeeded.
-
-Note that this does *not* do the same thing as a series of `when`
-forms: `cond-every` evaluates *all* the tests *before* it evaluates
-any of the forms.
-
-From Zetalisp.
-
-[View source](control-flow.lisp#L432)
-
-### `(bcond &body clauses)`
-
-Scheme's extended COND.
-
-This is exactly like COND, except for clauses having the form
-
-     (test :=> recipient)
-
-In that case, if TEST evaluates to a non-nil result, then RECIPIENT, a
-function, is called with that result, and the result of RECIPIENT is
-return as the value of the `cond`.
-
-As an extension, a clause like this:
-
-     (test :=> var ...)
-
-Can be used as a shorthand for
-
-     (test :=> (lambda (var) ...))
-
-The name `bcond` for a “binding cond” goes back at least to the days
-of the Lisp Machines. I do not know who was first to use it, but the
-oldest examples I have found are by Michael Parker and Scott L.
-Burson.
-
-[View source](control-flow.lisp#L467)
-
-### `(case-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (case VAR ...)), with VAR read-only.
-
-[View source](control-flow.lisp#L520)
-
-### `(ccase-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (ccase VAR ...)), with VAR correctable.
-
-[View source](control-flow.lisp#L526)
-
-### `(ecase-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (ecase VAR ...)), with VAR read-only.
-
-[View source](control-flow.lisp#L532)
-
-### `(typecase-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (typecase VAR ...)), with VAR read-only.
-
-[View source](control-flow.lisp#L538)
-
-### `(ctypecase-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (ctypecase VAR ...)), with VAR correctable.
-
-[View source](control-flow.lisp#L544)
-
-### `(etypecase-let (var expr) &body cases)`
-
-Like (let ((VAR EXPR)) (etypecase VAR ...)), with VAR read-only.
-
-[View source](control-flow.lisp#L550)
-
-### `(comment &body body)`
-
-A macro that ignores its body and does nothing. Useful for
-comments-by-example.
-
-Also, as noted in EXTENSIONS.LISP of 1992, "This may seem like a
-silly macro, but used inside of other macros or code generation
-facilities it is very useful - you can see comments in the (one-time)
-macro expansion!"
-
-[View source](control-flow.lisp#L556)
-
-### `(example &body body)`
-
-Like `comment`.
-
-[View source](control-flow.lisp#L566)
-
-### `(nix &rest places)`
-
-Set PLACES to nil and return the old value(s) of PLACES.
-
-If there is more than one PLACE, return their old values as multiple values.
-
-This may be more efficient than (shiftf place nil), because it only
-sets PLACE when it is not already null.
-
-[View source](control-flow.lisp#L580)
-
-### `(ensure place &body newval)`
-
-Essentially (or place (setf place newval)).
-
-PLACE is treated as unbound if it returns `nil`, signals
-`unbound-slot`, or signals `unbound-variable`.
-
-Note that ENSURE is `setf`-able, so you can do things like
-     (incf (ensure x 0))
-
-Cf. `ensure2`.
-
-[View source](control-flow.lisp#L592)
-
-### `(ensure2 place &body newval)`
-
-Like `ensure`, but specifically for accessors that return a second
-value like `gethash`.
-
-[View source](control-flow.lisp#L624)
-
-### `(~> needle &rest holes)`
-
-Threading macro from Clojure (by way of Racket).
-
-Thread NEEDLE through HOLES, where each hole is either a
-symbol (equivalent to `(hole needle)`) or a list (equivalent to `(hole
-needle args...)`).
-
-As an extension, an underscore in the argument list is replaced with
-the needle, so you can pass the needle as an argument other than the
-first.
-
-[View source](control-flow.lisp#L696)
-
-### `(~>> needle &rest holes)`
-
-Like `~>` but, by default, thread NEEDLE as the last argument
-instead of the first.
-
-[View source](control-flow.lisp#L714)
-
-### `(nest &rest things)`
-
-Like ~>>, but backward.
-
-This is useful when layering `with-x` macros where the order is not
-important, and extra indentation would be misleading.
-
-For example:
-
-    (nest
-     (with-open-file (in file1 :direction input))
-     (with-open-file (in file2 :direction output))
-     ...)
-
-Is equivalent to:
-
-    (with-open-file (in file1 :direction input)
-      (with-open-file (in file2 :direction output)
-        ...))
-
-(But see `with-open-files`).
-
-If the outer macro has no arguments, you may omit the parentheses.
-
-    (nest
-      with-standard-io-syntax
-      ...)
-    ≡ (with-standard-io-syntax
-        ...)
-
-From UIOP, based on a suggestion by Marco Baringer.
-
-[View source](control-flow.lisp#L734)
-
-### `(select keyform &body clauses)`
-
-Like `case`, but with evaluated keys.
-
-Note that, like `case`, `select` interprets a list as the first
-element of a clause as a list of keys. To use a form as a key, you
-must add an extra set of parentheses.
-
-     (select 2
-       ((+ 2 2) t))
-     => T
-
-     (select 4
-       (((+ 2 2)) t))
-     => T
-
-From Zetalisp.
-
-[View source](control-flow.lisp#L769)
-
-### `(selector keyform fn &body clauses)`
-
-Like `select`, but compare using FN.
-
-Note that (unlike `case-using`), FN is not evaluated.
-
-Prefer `selector` to `case-using` when FN is a macro, or has a
-compiler macro.
-
-From Zetalisp.
-
-[View source](control-flow.lisp#L788)
-
-### `(sort-values pred &rest values)`
-
-Sort VALUES with PRED and return as multiple values.
-
-Equivalent to
-
-    (values-list (sort (list VALUES...) pred))
-
-But with less consing, and potentially faster.
-
-[View source](control-flow.lisp#L910)
-
-### `(eq* &rest xs)`
-
-Variadic version of `eq`.
-
-With no arguments, return T.
-
-With one argument, return T.
-
-With two arguments, same as `eq`.
-
-With three or more arguments, return T only if all of XS are
-equivalent under `eq`.
-
-Has a compiler macro, so there is no loss of efficiency relative to
-writing out the tests by hand.
-
-[View source](control-flow.lisp#L981)
-
-### `(eql* &rest xs)`
-
-Variadic version of `eql`.
-
-With no arguments, return T.
-
-With one argument, return T.
-
-With two arguments, same as `eql`.
-
-With three or more arguments, return T only if all of XS are
-equivalent under `eql`.
-
-Has a compiler macro, so there is no loss of efficiency relative to
-writing out the tests by hand.
-
-[View source](control-flow.lisp#L983)
-
-### `(equal* &rest xs)`
-
-Variadic version of `equal`.
-
-With no arguments, return T.
-
-With one argument, return T.
-
-With two arguments, same as `equal`.
-
-With three or more arguments, return T only if all of XS are
-equivalent under `equal`.
-
-Has a compiler macro, so there is no loss of efficiency relative to
-writing out the tests by hand.
-
-[View source](control-flow.lisp#L985)
-
-### `(equalp* &rest xs)`
-
-Variadic version of `equalp`.
-
-With no arguments, return T.
-
-With one argument, return T.
-
-With two arguments, same as `equalp`.
-
-With three or more arguments, return T only if all of XS are
-equivalent under `equalp`.
-
-Has a compiler macro, so there is no loss of efficiency relative to
-writing out the tests by hand.
-
-[View source](control-flow.lisp#L987)
-
-### `(without-recursion (&key) &body body)`
-
-If BODY calls itself, at any depth, signal a (continuable) error of
-type `recursion-forbidden`.
-
-[View source](control-flow.lisp#L997)
 
 ## Threads
 
@@ -5566,7 +5566,7 @@ Expands into `tree-case`.
 
 NO DOCS!
 
-[View source](dispatch-case.lisp#L29)
+[View source](dispatch-case.lisp#L30)
 
 ### `(dispatch-case (&rest exprs-and-types) &body clauses)`
 
@@ -5678,7 +5678,7 @@ nested `etypecase-of` forms would require four clauses. This is a
 small gain; but with more subtypes to dispatch on, or more objects,
 such fallthrough clauses become more useful.
 
-[View source](dispatch-case.lisp#L127)
+[View source](dispatch-case.lisp#L128)
 
 ### `(dispatch-caseql (&rest exprs-and-types) &body clauses)`
 
@@ -5686,7 +5686,7 @@ Like `dispatch-case`, but types in clauses are implicitly wrapped in `eql`.
 The syntax of `dispatch-caseql` is tohus closer to `case` than to
 `typecase`.
 
-[View source](dispatch-case.lisp#L250)
+[View source](dispatch-case.lisp#L251)
 
 ### `(dispatch-case-let (&rest bindings) &body clauses)`
 
@@ -5711,13 +5711,13 @@ It may be helpful to think of this as a cross between
 list) and `let` (which has an obvious macro-expansion in terms of
 `lambda`).
 
-[View source](dispatch-case.lisp#L258)
+[View source](dispatch-case.lisp#L259)
 
 ### `(dispatch-caseql-let (&rest bindings) &body clauses)`
 
 Like `dispatch-case-let`, but using the clause syntax of `dispatch-caseql`.
 
-[View source](dispatch-case.lisp#L315)
+[View source](dispatch-case.lisp#L316)
 
 ## Range
 

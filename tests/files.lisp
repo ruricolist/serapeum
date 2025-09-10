@@ -107,3 +107,17 @@
   (is (equal (path-basename #p"/foo/bar/baz/") "baz"))
   (is (equal (path-basename #p"/foo/bar/baz.ext") "baz.ext"))
   (is (equal (path-basename #p"foo/bar/baz.ext") "baz.ext")))
+
+(defparameter *x* 42)
+
+(test total-predicates
+  "The predicate in `satisfies' should be total to work on non-pathnames."
+  (is (not (typep *x* 'absolute-directory-pathname)))
+  (is (not (typep *x* 'absolute-file-pathname)))
+  (is (not (typep *x* 'absolute-pathname)))
+  (is (not (typep *x* 'directory-pathname)))
+  (is (not (typep *x* 'file-pathname)))
+  (is (not (typep *x* 'non-wild-pathname)))
+  (is (not (typep *x* 'physical-pathname)))
+  (is (not (typep *x* 'relative-pathname)))
+  (is (not (typep *x* 'wild-pathname))))

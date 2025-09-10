@@ -3,37 +3,61 @@
 ;;; Pathname types. These correspond to the predicates defined by
 ;;; UIOP.
 
-(deftype wild-pathname ()
-  "A pathname with wild components."
-  '(and pathname (satisfies wild-pathname-p)))
+(declaim
+ (inline
+  absolute-pathname-p/total
+  directory-pathname-p/total
+  file-pathname-p/total
+  relative-pathname-p/total
+  wild-pathname-p/total))
 
-(deftype non-wild-pathname ()
-  "A pathname without wild components."
-  '(or directory-pathname
-    (and pathname (not (satisfies wild-pathname-p)))))
+(defun absolute-pathname-p/total (x)
+  (and (pathnamep x) (uiop:absolute-pathname-p x)))
 
-(deftype absolute-pathname ()
-  '(and pathname (satisfies uiop:absolute-pathname-p)))
+(defun directory-pathname-p/total (x)
+  (and (pathnamep x) (uiop:directory-pathname-p x)))
 
-(deftype relative-pathname ()
-  '(and pathname (satisfies uiop:relative-pathname-p)))
+(defun file-pathname-p/total (x)
+  (and (pathnamep x) (uiop:file-pathname-p x)))
 
-(deftype directory-pathname ()
-  '(and pathname (satisfies uiop:directory-pathname-p)))
+(defun relative-pathname-p/total (x)
+  (and (pathnamep x) (uiop:relative-pathname-p x)))
+
+(defun wild-pathname-p/total (x)
+  "Like `wild-pathname-p', but total."
+  (and (pathnamep x) (wild-pathname-p x)))
 
 (deftype absolute-directory-pathname ()
   '(and absolute-pathname directory-pathname))
 
-(deftype file-pathname ()
-  '(and pathname (satisfies uiop:file-pathname-p)))
-
 (deftype absolute-file-pathname ()
   '(and absolute-pathname file-pathname))
 
+(deftype absolute-pathname ()
+  '(and pathname (satisfies absolute-pathname-p/total)))
+
+(deftype directory-pathname ()
+  '(and pathname (satisfies directory-pathname-p/total)))
+
+(deftype file-pathname ()
+  '(and pathname (satisfies file-pathname-p/total)))
+
 ;;; logical-pathname is defined in CL.
 
+(deftype non-wild-pathname ()
+  "A pathname without wild components."
+  '(or directory-pathname
+    (and pathname (not (satisfies wild-pathname-p/total)))))
+
 (deftype physical-pathname ()
-  '(and pathname (not (satisfies logical-pathname-p))))
+  '(and pathname (not logical-pathname)))
+
+(deftype relative-pathname ()
+  '(and pathname (satisfies relative-pathname-p/total)))
+
+(deftype wild-pathname ()
+  "A pathname with wild components."
+  '(and pathname (satisfies wild-pathname-p/total)))
 
 (defmacro with-open-files ((&rest args) &body body)
   "A simple macro to open one or more files providing the streams for the BODY. The ARGS is a list of `(stream filespec options*)` as supplied to WITH-OPEN-FILE."

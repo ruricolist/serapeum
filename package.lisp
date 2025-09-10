@@ -269,6 +269,7 @@
    #:absolute-directory-pathname
    #:absolute-file-pathname
    #:file-pathname
+   #:physical-pathname
    #:path-join
    #:path-basename
    #:base-path-join

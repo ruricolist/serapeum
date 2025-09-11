@@ -97,7 +97,8 @@
                "serapeum/macro-tools"
                "serapeum/types"
                "serapeum/iter"
-               "serapeum/control-flow")
+               "serapeum/control-flow"
+               "serapeum/binding")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -108,7 +109,6 @@
                 ((:file "definitions"
                   :depends-on ("defining-types"))
                  (:file "defining-types")
-                 (:file "binding")
                  (:file "threads")
                  (:file "conditions")
                  (:file "op")
@@ -116,8 +116,7 @@
                  (:file "functions")
                  (:file "trees")
                  ;; Depends on types.
-                 (:file "hash-tables"
-                  :depends-on ("binding"))
+                 (:file "hash-tables")
                  ;; Depends on types.
                  (:file "files")
                  (:file "symbols")
@@ -134,12 +133,11 @@
                  (:file "octets")
                  (:file "time")
                  ;; Depends on types.
-                 (:file "clos"
-                  :depends-on ("binding"))
+                 (:file "clos")
                  (:file "hooks"
                   :depends-on ("threads"))
                  (:file "fbind"
-                  :depends-on ("binding" "op" "trees"))
+                  :depends-on ("op" "trees"))
                  (:file "static-let"
                   :depends-on ("fbind"))
                  (:file "reader"

@@ -1,5 +1,27 @@
-;;; Macros for defining types.
-(in-package :serapeum)
+(defpackage :serapeum/defining-types
+  (:documentation "Macros for defining types.")
+  (:use
+   :cl
+   :alexandria
+   :serapeum/definitions
+   :serapeum/macro-tools
+   :trivia)
+  (:import-from
+   :serapeum/control-flow
+   :check-exhaustiveness)
+  (:import-from
+   :serapeum/types
+   :declaim-freeze-type)
+  (:export
+   #:deconstruct
+   #:defcondition
+   #:defconstructor
+   #:defstruct-read-only
+   #:defunion
+   #:defunit
+   #:match-of
+   #:read-eval-prefix))
+(in-package :serapeum/defining-types)
 
 (defmacro defcondition (name supers &body (slots &rest options))
   "Alias for `define-condition'.
@@ -487,11 +509,10 @@ defines a read-only structure, as with `defconstructor').
 UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it."
-  (declare (notinline filter))          ;phasing
   (let* ((docstring (and (stringp (first variants))
                          (pop variants)))
-         (ctors (filter #'listp variants))
-         (units (filter #'atom variants))
+         (ctors (remove-if-not #'listp variants))
+         (units (remove-if-not #'atom variants))
          (types (append units (mapcar #'first ctors)))
          (super (symbolicate '< union '>)))
     ;; CCL (and maybe other lisps) evaluates `(:include)' options at

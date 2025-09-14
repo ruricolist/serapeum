@@ -8,7 +8,9 @@
    #:serapeum/unlocked
    #:serapeum/types
    #:serapeum/binding
-   #:serapeum/control-flow)
+   #:serapeum/control-flow
+   #:serapeum/definitions
+   #:serapeum/defining-types)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -141,27 +143,11 @@
   (:import-from
    #:serapeum/control-flow
    #:check-exhaustiveness)
+  (:import-from
+   #:serapeum/definitions
+   #:unbound)
   (:documentation "Utilities beyond Alexandria.")
   (:export
-   ;; Definitions.
-   #:defconst
-   #:defsubst
-   #:defalias
-   #:def
-   #:define-values
-   #:defplace
-   #:defvar-unbound
-   #:defparameter-unbound
-   #:defloop
-   ;; Defining types.
-   #:read-eval-prefix
-   #:defcondition
-   #:defstruct-read-only
-   #:defconstructor
-   #:deconstruct
-   #:defunit
-   #:defunion
-   #:match-of
    ;; Internal definitions.
    #:local
    #:local*

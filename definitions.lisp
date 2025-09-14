@@ -1,9 +1,30 @@
-(in-package :serapeum)
-
+(defpackage :serapeum/definitions
+  (:use
+   :cl
+   :alexandria
+   :serapeum/iter
+   :serapeum/macro-tools
+   :trivia)
+  (:import-from
+   :serapeum/macro-tools
+   :lambda-list-vars
+   :let-over-lambda)
+  (:export
+   #:def
+   #:defalias
+   #:defconst
+   #:define-values
+   #:defloop
+   #:defparameter-unbound
+   #:defplace
+   #:defsubst
+   #:defvar-unbound))
+(in-package :serapeum/definitions)
 ;;; For internal use.
-(defstruct-read-only (unbound (:constructor unbound (var)))
+
+(defstruct (unbound (:constructor unbound (var)))
   "Placeholder for an unbound variable."
-  (var :type symbol))
+  (var (error "No var") :read-only t :type symbol))
 
 (defmethod make-load-form ((self unbound) &optional env)
   (make-load-form-saving-slots self

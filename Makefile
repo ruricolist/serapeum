@@ -11,6 +11,8 @@ DOC_PACKAGES := \
 :serapeum/iter \
 :serapeum/binding \
 :serapeum/control-flow \
+:serapeum/definitions \
+:serapeum/defining-types \
 :serapeum \
 :serapeum.exporting \
 :serapeum.docs

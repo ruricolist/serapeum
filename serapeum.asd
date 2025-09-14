@@ -75,6 +75,35 @@
    "string-case"
    "trivia"))
 
+(defsystem "serapeum/definitions"
+  :description "Macros for definitions."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components ((:file "definitions"))
+  :depends-on
+  ("alexandria"
+   "global-vars"
+   "serapeum/iter"
+   "serapeum/macro-tools"
+   "trivia"))
+
+(defsystem "serapeum/defining-types"
+  :description "Macros for defining types."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components ((:file "defining-types"))
+  :depends-on
+  ("alexandria"
+   "bordeaux-threads"
+   "serapeum/control-flow"
+   "serapeum/definitions"
+   "serapeum/macro-tools"
+   "serapeum/types"
+   "serapeum/unlocked"
+   "trivia"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -101,7 +130,9 @@
                "serapeum/types"
                "serapeum/iter"
                "serapeum/control-flow"
-               "serapeum/binding")
+               "serapeum/binding"
+               "serapeum/definitions"
+               "serapeum/defining-types")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -109,10 +140,7 @@
                 :serial nil
                 :pathname ""
                 :components
-                ((:file "definitions"
-                  :depends-on ("defining-types"))
-                 (:file "defining-types")
-                 (:file "threads")
+                ((:file "threads")
                  (:file "conditions")
                  (:file "op")
                  ;; Depends on types.
@@ -126,9 +154,8 @@
                  (:file "arrays")
                  ;; Depends on types.
                  (:file "queue")
-                 ;; Depends on types.
-                 (:file "box"
-                  :depends-on ("definitions"))
+                 ;; Depends on types, definitions.
+                 (:file "box")
                  ;; Depends on types.
                  (:file "numbers"
                   :depends-on ("op"))
@@ -143,8 +170,8 @@
                   :depends-on ("op" "trees"))
                  (:file "static-let"
                   :depends-on ("fbind"))
-                 (:file "reader"
-                  :depends-on ("definitions"))
+                 ;; Depends on definitions.
+                 (:file "reader")
                  (:file "packages")
                  ;; Depends on types.
                  (:file "heap")))

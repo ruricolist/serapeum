@@ -7,7 +7,7 @@
   (let ((opts
           '((:copier nil)
             #+(or sbcl cmucl) (:pure t)
-            (:include serapeum::%read-only-struct))))
+            (:include serapeum/defining-types::%read-only-struct))))
     (is (equal `(defstruct (foo ,@opts)
                   (bar (required-argument 'bar) :read-only t))
                (second

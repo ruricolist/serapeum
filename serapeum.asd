@@ -30,24 +30,16 @@
   ("serapeum/portability"
    "serapeum/macro-tools"))
 
-(defsystem "serapeum/unlocked"
-  :description "Helper system to export symbols from an unlocked package"
-  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
-  :license "MIT"
-  :serial t
-  :components
-  ((:file "unlocked")))
-
 (defsystem "serapeum/iter"
   :description "Iteration constructs and utilities."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t
-  :components ((:file "iter"))
+  :components ((:file "unlocked")
+               (:file "iter"))
   :depends-on
   ("alexandria"
-   "parse-declarations-1.0"
-   "serapeum/unlocked"))
+   "parse-declarations-1.0"))
 
 (defsystem "serapeum/binding"
   :description "BInding utilities."
@@ -93,7 +85,8 @@
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t
-  :components ((:file "defining-types"))
+  :components ((:file "unlocked")
+               (:file "defining-types"))
   :depends-on
   ("alexandria"
    "bordeaux-threads"
@@ -101,7 +94,6 @@
    "serapeum/definitions"
    "serapeum/macro-tools"
    "serapeum/types"
-   "serapeum/unlocked"
    "trivia"))
 
 (defsystem "serapeum"

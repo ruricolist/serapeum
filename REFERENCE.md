@@ -377,14 +377,14 @@ Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a series of forms suitable for splicing into a progn (implicit or
   explicit.)
 
-[View source](macro-tools.lisp#L821)
+[View source](macro-tools.lisp#L822)
 
 ### `(expect-single-form exp)`
 
 Sanity-check EXP, a macro expansion, assuming it is supposed to be
   a single form suitable for inserting intact.
 
-[View source](macro-tools.lisp#L831)
+[View source](macro-tools.lisp#L832)
 
 ### `(unparse-ordinary-lambda-list &optional required optional rest keywords aok? aux key?)`
 
@@ -396,7 +396,7 @@ This is the inverse of `alexandria:parse-ordinary-lambda-list`.
     ≡ (multiple-value-call #'unparse-ordinary-lambda-list
         (parse-ordinary-lambda-list lambda-list)
 
-[View source](macro-tools.lisp#L843)
+[View source](macro-tools.lisp#L844)
 
 ### `(parse-defmethod-args args)`
 
@@ -404,7 +404,7 @@ Parse the args to defmethod (everything except the name).
 Returns three values: a list of qualifiers, the specialized
 lambda-list, and the forms that make up the body.
 
-[View source](macro-tools.lisp#L873)
+[View source](macro-tools.lisp#L874)
 
 ## Types
 
@@ -1439,7 +1439,7 @@ gain in efficiency.
 a separate variable and initialized as if by `(setf (values VAR...)
 VAL)`.
 
-[View source](definitions.lisp#L19)
+[View source](definitions.lisp#L40)
 
 ### `(define-values values &body (expr))`
 
@@ -1447,7 +1447,7 @@ Like `def`, but for multiple values.
 Each variable in VALUES is given a global, lexical binding, as with
 `def`, then set all at once, as with `multiple-value-setq`.
 
-[View source](definitions.lisp#L76)
+[View source](definitions.lisp#L97)
 
 ### `(defconst symbol init &optional docstring)`
 
@@ -1466,7 +1466,7 @@ for `defconstant`.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L100)
+[View source](definitions.lisp#L121)
 
 ### `(defsubst name params &body body)`
 
@@ -1482,7 +1482,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L129)
+[View source](definitions.lisp#L150)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -1499,7 +1499,7 @@ we must make it assignable (which is what `notinline` means).
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L151)
+[View source](definitions.lisp#L172)
 
 ### `(defplace name args &body body)`
 
@@ -1508,7 +1508,7 @@ Define NAME and (SETF NAME) in one go.
 BODY is a list of forms, starting with an optional docstring. The last
 form in BODY, however, must be a single, setf-able expression.
 
-[View source](definitions.lisp#L196)
+[View source](definitions.lisp#L217)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -1517,20 +1517,20 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L215)
+[View source](definitions.lisp#L236)
 
 ### `(defparameter-unbound var &body (docstring))`
 
 Like `defvar-unbound`, but ensures VAR is unbound when evaluated.
 
-[View source](definitions.lisp#L225)
+[View source](definitions.lisp#L246)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L233)
+[View source](definitions.lisp#L254)
 
 ## Defining Types
 
@@ -1542,7 +1542,7 @@ Like (define-condition ...), but blissfully conforming to the same
 nomenclatural convention as every other definition form in Common
 Lisp.
 
-[View source](defining-types.lisp#L4)
+[View source](defining-types.lisp#L26)
 
 ### `(defstruct-read-only name-and-opts &body slots)`
 
@@ -1587,7 +1587,7 @@ immutable, whether in your own code or in code you are refactoring. In
 new code, however, you may sometimes prefer `defconstructor`, which is
 designed to facilitate working with immutable data.
 
-[View source](defining-types.lisp#L84)
+[View source](defining-types.lisp#L106)
 
 ### `(read-eval-prefix object stream)`
 
@@ -1606,14 +1606,14 @@ the string "#.".
 If `*print-readably*` is true, but `*read-eval*` is not true, signal
 an error.
 
-[View source](defining-types.lisp#L170)
+[View source](defining-types.lisp#L192)
 
 ### `(deconstruct x)`
 
 If X is a type defined with `defconstructor`, return its slots as
 multiple values.
 
-[View source](defining-types.lisp#L214)
+[View source](defining-types.lisp#L236)
 
 ### `(defconstructor type-name &body slots)`
 
@@ -1702,7 +1702,7 @@ The design of `defconstructor` is mostly inspired by Scala's [case
 classes](https://docs.scala-lang.org/tour/case-classes.html), with
 some implementation tricks from `cl-algebraic-data-type`.
 
-[View source](defining-types.lisp#L224)
+[View source](defining-types.lisp#L246)
 
 ### `(defunit name &optional docstring)`
 
@@ -1716,7 +1716,7 @@ Unit types are useful for many of the same purposes as quoted symbols
 (or keywords) but, unlike a symbol, a unit type is tagged with its
 own individual type.
 
-[View source](defining-types.lisp#L440)
+[View source](defining-types.lisp#L462)
 
 ### `(defunion union &body variants)`
 
@@ -1730,7 +1730,7 @@ UNION is defined as a type equivalent to the disjunction of all the
 member types. A class is also defined, with the same name, but with
 angle brackets around it.
 
-[View source](defining-types.lisp#L480)
+[View source](defining-types.lisp#L502)
 
 ### `(match-of union expr &body clauses)`
 
@@ -1750,7 +1750,7 @@ fallthrough clause.
 If the pattern is a list that starts with `or`, it is a disjunction of
 other patterns.
 
-[View source](defining-types.lisp#L566)
+[View source](defining-types.lisp#L587)
 
 ## Threads
 
@@ -3396,13 +3396,13 @@ That is,
 except that a bare symbol in BINDINGS is rewritten as (symbol
 symbol).
 
-[View source](fbind.lisp#L301)
+[View source](fbind.lisp#L155)
 
 ### `(fbind* bindings &body body)`
 
 Like `fbind`, but creates bindings sequentially.
 
-[View source](fbind.lisp#L357)
+[View source](fbind.lisp#L211)
 
 ### `(fbindrec bindings &body body)`
 
@@ -3411,14 +3411,14 @@ Like `fbind`, but creates recursive bindings.
 The consequences of referring to one binding in the expression that
 generates another are undefined.
 
-[View source](fbind.lisp#L446)
+[View source](fbind.lisp#L300)
 
 ### `(fbindrec* bindings &body body)`
 
 Like `fbindrec`, but the function defined in each binding can be
 used in successive bindings.
 
-[View source](fbind.lisp#L489)
+[View source](fbind.lisp#L343)
 
 ## Static Let
 

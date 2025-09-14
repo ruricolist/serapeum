@@ -18,6 +18,7 @@
   :depends-on
   ("parse-declarations-1.0"
    "introspect-environment"
+   "trivia"
    "trivial-cltl2"))
 
 (defsystem "serapeum/types"
@@ -45,6 +46,7 @@
   :components ((:file "iter"))
   :depends-on
   ("alexandria"
+   "parse-declarations-1.0"
    "serapeum/unlocked"))
 
 (defsystem "serapeum/binding"
@@ -70,6 +72,7 @@
    "serapeum/binding"
    "serapeum/macro-tools"
    "serapeum/types"
+   "string-case"
    "trivia"))
 
 (defsystem "serapeum"

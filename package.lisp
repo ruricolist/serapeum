@@ -116,9 +116,12 @@
    #:declaim-maybe-inline
    #:ensuring-functions
    #:extract-function-name
+   #:gensym?
    #:lambda-list-vars
+   #:let-over-lambda
    #:policy-quality
    #:rebinding-functions
+   #:simple-lambda-list?
    #:speed-matters?
    #:variable-type)
   (:import-from

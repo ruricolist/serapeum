@@ -1,4 +1,5 @@
 (defpackage :serapeum/definitions
+  (:documentation "Global definition macros")
   #+sb-package-locks (:lock t)
   (:use
    :cl

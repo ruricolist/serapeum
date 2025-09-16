@@ -68,7 +68,7 @@
    "trivia"))
 
 (defsystem "serapeum/definitions"
-  :description "Macros for definitions."
+  :description "Global defintion macros."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t

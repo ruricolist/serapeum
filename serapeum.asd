@@ -85,8 +85,9 @@
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t
-  :components ((:file "unlocked")
-               (:file "defining-types"))
+  :components
+  ((:file "unlocked")
+   (:file "defining-types"))
   :depends-on
   ("alexandria"
    "bordeaux-threads"

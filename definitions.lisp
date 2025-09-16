@@ -1,4 +1,5 @@
 (defpackage :serapeum/definitions
+  #+sb-package-locks (:lock t)
   (:use
    :cl
    :alexandria

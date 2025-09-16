@@ -1,5 +1,6 @@
 (defpackage :serapeum/defining-types
   (:documentation "Macros for defining types.")
+  #+sb-package-locks (:lock t)
   (:use
    :cl
    :alexandria

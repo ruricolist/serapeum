@@ -211,7 +211,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned."
   "A concise way of doing lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => 1
-    (@ (dict :x (dict :y 2)) :x :y)  => 2 "
+    (@ (dict :x (dict :y 2)) :x :y)  => 2"
   (apply #'href table keys))
 
 (defun (setf @) (value table key &rest keys)

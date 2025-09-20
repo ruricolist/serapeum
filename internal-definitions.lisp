@@ -17,7 +17,7 @@
        (defun entry-point ...))
      =>
      (labels ((aux-fn ...))
-       (defun entry-point ...)) "
+       (defun entry-point ...))"
   `(local
      ,@(butlast body)
      (without-internal-definitions ,@(last body))))

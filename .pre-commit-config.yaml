@@ -13,3 +13,9 @@ repos:
     rev: v0.7.1
     hooks:
       - id: keep-sorted
+-   repo: https://github.com/thlorenz/doctoc
+    rev: v2.2.0
+    hooks:
+    -   id: doctoc
+        files: ^README.md$
+        args: [--github]

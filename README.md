@@ -1,8 +1,10 @@
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-**Table of Contents**
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Overview](#overview)
 - [Installation](#installation)
+- [Serapeum modules](#serapeum-modules)
 - [Commentary](#commentary)
   - [A note about strings](#a-note-about-strings)
   - [Dividing sequences](#dividing-sequences)
@@ -18,7 +20,7 @@
     - [Metaclass: topmost-object-class](#metaclass-topmost-object-class)
 - [Function reference](#function-reference)
 
-<!-- markdown-toc end -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Overview
 
@@ -88,6 +90,7 @@ You can load Serapeum modules like any other systems:
 
 The following modules are currently available:
 
+<!-- keep-sorted start -->
 - [serapeum/binding](REFERENCE.md#binding) - Binding macros.
 - [serapeum/conditions](REFERENCE.md#conditions) - Condition handling utilities.
 - [serapeum/control-flow](REFERENCE.md#control-flow) - Control flow macros.
@@ -98,6 +101,7 @@ The following modules are currently available:
 - [serapeum/op](REFERENCE.md#op) - The `op’ macro for succint lambdas.
 - [serapeum/portability](REFERENCE.md#portability) – “Subtrivial” portability.
 - [serapeum/types](REFERENCE.md#types) - Utility types and type utilities.
+<!-- keep-sorted end -->
 
 # Commentary
 

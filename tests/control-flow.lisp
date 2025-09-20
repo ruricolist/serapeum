@@ -416,4 +416,3 @@
            (g (y) (if (< y 0) 0 (1+ (f (1- y))))))
     (signals recursion-forbidden
       (f 10))))
-

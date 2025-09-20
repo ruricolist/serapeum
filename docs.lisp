@@ -185,4 +185,3 @@ Example usage:
    (string-downcase
     (symbol-name system))
    :stream (asdf:system-relative-pathname system filename)))
-

@@ -37,13 +37,13 @@ exec ros -Q -- $0 "$@"
 
 If there was an error, raises subprocess-error-with-output, but this
 behaviour could be overriden by keyword argument ``:raise t``."
-  
+
   (multiple-value-bind (stdout stderr code)
       (uiop:run-program command
                         :output '(:string :stripped t)
                         :error-output '(:string :stripped t)
                         :ignore-error-status t)
-    
+
     (when (and raise
                (not (eql code 0)))
       (error 'subprocess-error-with-output
@@ -56,18 +56,18 @@ behaviour could be overriden by keyword argument ``:raise t``."
 
 (defun build-docs ()
   (log:info "Building documentation in ./docs/")
-  
+
   (uiop:run-program "make docs"))
 
 
 
 (defun git (&rest commands)
   "Calls git command in gh-pages repository."
-  
+
   (let ((command (apply #'concatenate 'string
                         "git "
                         commands)))
-        
+
     (log:info "Running" command)
     (run command)))
 
@@ -115,7 +115,7 @@ behaviour could be overriden by keyword argument ``:raise t``."
 
          (format nil "https://~A@github.com/~A"
                  repo-token
-                 repo-slug))))))  
+                 repo-slug))))))
 
 
 (defun push-to-gh ()
@@ -127,7 +127,7 @@ behaviour could be overriden by keyword argument ``:raise t``."
        (get-origin-to-push))
 
   (git "add -u")
-  
+
   (cond
     ((git-repository-was-changed-p)
      (when (uiop:getenv "GITHUB_ACTIONS")
@@ -144,7 +144,7 @@ behaviour could be overriden by keyword argument ``:raise t``."
   (declare (ignorable argv))
   (log:config :debug)
   (log:info "Building documentation")
-  
+
   (handler-bind ((error (lambda (condition)
                           (uiop:print-condition-backtrace condition :stream *error-output*)
                           (uiop:quit 1))))

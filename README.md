@@ -19,7 +19,7 @@
 - [Function reference](#function-reference)
 
 <!-- markdown-toc end -->
-    
+
 # Overview
 
 [![CI](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ruricolist/serapeum/actions/workflows/ci.yml)
@@ -72,7 +72,7 @@ implementation-specific optimizations.
 The preferred way to install Serapeum by using [Quicklisp][]:
 
     (ql:quickload "serapeum")
-    
+
 If you want the very latest version of Serapeum, you can check out the
 repository into your `~/quicklisp/local-projects` directory.
 
@@ -218,7 +218,7 @@ For binding values in the function namespace at the top level,
 Serapeum provides `defalias`:
 
     (defalias xcons (flip #'cons))
-    
+
 This is equivalent to `(setf (fdefinition ...))`, but also gives the
 function a compile-time definition so compilers don’t complain about
 its being undefined.
@@ -244,7 +244,7 @@ This has three advantages:
 
 3. You can (using `local*` or `block-compile`) easily switch to block
    compilation of top-level functions.
-   
+
 Serapeum’s implementation of internal definitions is as complete as it
 can be while remaining portable. That means full support for
 variables, functions, and symbol macros, but restricted support for
@@ -268,7 +268,7 @@ and `labels`.
                          (apply (lambda ,params
                                   ,@body)
                                   ,args))))))))
-                                  
+
 At the top level, this expands into an example of “let over defun” (gensyms elided for readability):
 
     ;; This source form
@@ -277,7 +277,7 @@ At the top level, this expands into an example of “let over defun” (gensyms 
             1
             (+ (fibonacci (- n 1))
                (fibonacci (- n 2)))))
-               
+
     ;; Expands into...
     (let ((memo-table (make-hash-table :test 'equal)))
       (defun fibonacci (&rest args)
@@ -301,9 +301,9 @@ identical source form:
             1
             (+ (fibonacci (- n 1))
                (fibonacci (- n 2)))))
-    
+
       (fibonacci 100))
-      
+
 Expands into this very different code (simplified for readability):
 
     (let (fn)
@@ -322,7 +322,7 @@ Expands into this very different code (simplified for readability):
                                      (+ (fibonacci (- n 1))
                                         (fibonacci (- n 2)))))
                                args))))))
-          
+
           (fibonacci 100))))
 
 ### Example: block compiling
@@ -345,13 +345,13 @@ Then, when you decide you want block compilation, simply switch the
        (defun aux-fn-1 ...)
        (defun aux-fn-2 ...)
        (defun entry-point ...))
-       
+
 Which expands into something like:
 
     (labels ((aux-fn-2 ...)
              (aux-fn-1 ...))
       (defun entry-point ...))
-      
+
 This has the slight disadvantage that calls to the entry points,
 including self calls, will still be compiled as global calls. If you
 want calls to the entry points to be compiled as local calls, you can
@@ -363,7 +363,7 @@ Using `block-compile`, you can write:
       (defun aux-fn-1 ...)
       (defun aux-fn-2 ...)
       (defun entry-point ...))
-      
+
 And have it expand into something like:
 
     (labels ((aux-fn-2 ...)

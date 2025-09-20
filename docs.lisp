@@ -179,7 +179,7 @@ Example usage:
   (unless packages
     (setf packages
           (list system)))
-  
+
   (render-function-reference-as-markdown
    packages
    (string-downcase

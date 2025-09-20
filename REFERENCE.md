@@ -1,4 +1,4 @@
-# Function Listing For serapeum (44 files, 470 functions)
+# Function Listing For serapeum (44 files, 469 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -10,9 +10,9 @@
 - [Control Flow](#control-flow)
 - [Definitions](#definitions)
 - [Defining Types](#defining-types)
-- [Threads](#threads)
 - [Conditions](#conditions)
 - [Op](#op)
+- [Threads](#threads)
 - [Functions](#functions)
 - [Trees](#trees)
 - [Hash Tables](#hash-tables)
@@ -1752,50 +1752,13 @@ other patterns.
 
 [View source](defining-types.lisp#L588)
 
-## Threads
-
-### `(count-cpus &key default online memoize)`
-
-Try very hard to return a meaningful count of CPUs.
-If ONLINE is non-nil, try to return only the active CPUs.
-
-The second value is T if the number of processors could be queried,
-`nil` otherwise.
-
-If MEMOIZE is non-nil (default), then memoize the result. Calling with
-MEMOIZE nil clears any memoized results.
-
-[View source](threads.lisp#L81)
-
-### `(synchronized (&optional (object nil objectp)) &body body)`
-
-Run BODY holding a unique lock associated with OBJECT.
-If no OBJECT is provided, run BODY as an anonymous critical section.
-
-If BODY begins with a literal string, attach the string to the lock
-object created (as the argument to `bt:make-recursive-lock`).
-
-[View source](threads.lisp#L139)
-
-### `(monitor object)`
-
-Return a unique lock associated with OBJECT.
-
-[View source](threads.lisp#L156)
-
 ## Conditions
-
-### `(ignoring type &body body)`
-
-DEPRECATED: use `alexandria:ignore-some-conditions` instead.
-
-[View source](conditions.lisp#L3)
 
 ### `(maybe-invoke-restart restart &rest values)`
 
 When RESTART is active, invoke it with VALUES.
 
-[View source](conditions.lisp#L10)
+[View source](conditions.lisp#L18)
 
 ## Op
 
@@ -1863,14 +1826,45 @@ parameters names.
 quasiquotes. If using placeholders inside quasiquotes does not work on
 your Lisp implementation, that's a bug, not a limitation.)
 
-[View source](op.lisp#L175)
+[View source](op.lisp#L180)
 
 ### `(opf place expr)`
 
 Like `(callf PLACE (op EXPR))'.
 From GOO.
 
-[View source](op.lisp#L227)
+[View source](op.lisp#L232)
+
+## Threads
+
+### `(count-cpus &key default online memoize)`
+
+Try very hard to return a meaningful count of CPUs.
+If ONLINE is non-nil, try to return only the active CPUs.
+
+The second value is T if the number of processors could be queried,
+`nil` otherwise.
+
+If MEMOIZE is non-nil (default), then memoize the result. Calling with
+MEMOIZE nil clears any memoized results.
+
+[View source](threads.lisp#L81)
+
+### `(synchronized (&optional (object nil objectp)) &body body)`
+
+Run BODY holding a unique lock associated with OBJECT.
+If no OBJECT is provided, run BODY as an anonymous critical section.
+
+If BODY begins with a literal string, attach the string to the lock
+object created (as the argument to `bt:make-recursive-lock`).
+
+[View source](threads.lisp#L139)
+
+### `(monitor object)`
+
+Return a unique lock associated with OBJECT.
+
+[View source](threads.lisp#L156)
 
 ## Functions
 

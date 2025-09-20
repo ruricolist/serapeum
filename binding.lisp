@@ -1,5 +1,5 @@
 (defpackage :serapeum/binding
-  (:documentation "Binding utilities")
+  (:documentation "Binding macros.")
   #+sb-package-locks (:lock t)
   (:use
    :cl

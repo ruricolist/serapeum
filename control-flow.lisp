@@ -1,5 +1,5 @@
 (defpackage :serapeum/control-flow
-  (:documentation "Control flow utilities.")
+  (:documentation "Control flow macros.")
   #+sb-package-locks (:lock t)
   #+sb-package-locks (:implement :serapeum/control-flow :serapeum/types)
   (:use

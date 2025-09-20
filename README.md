@@ -76,6 +76,29 @@ The preferred way to install Serapeum by using [Quicklisp][]:
 If you want the very latest version of Serapeum, you can check out the
 repository into your `~/quicklisp/local-projects` directory.
 
+# Serapeum modules
+
+Serapeum is being carefully refactored into modular subsystems. Using
+Serapeum as a whole is still recommended. Modularization will make
+Serapeum easier to maintain, easier to incrementally adopt, and more discoverable.
+
+You can load Serapeum modules like any other systems:
+
+    (ql:quickload "serapeum/types")
+
+The following modules are currently available:
+
+- [serapeum/binding](REFERENCE.md#binding) - Binding macros.
+- [serapeum/conditions](REFERENCE.md#conditions) - Condition handling utilities.
+- [serapeum/control-flow](REFERENCE.md#control-flow) - Control flow macros.
+- [serapeum/defining-types](REFERENCE.md#defining-types) - Macros for defining types.
+- [serapeum/definitions](REFERENCE.md#definitions) - Global definition macros.
+- [serapeum/iter](REFERENCE.md#iter) - Iteration constructs and utilities.
+- [serapeum/macro-tools](REFERENCE.md#macro-tools) - Tools for writing macros.
+- [serapeum/op](REFERENCE.md#op) - The `op’ macro for succint lambdas.
+- [serapeum/portability](REFERENCE.md#portability) – “Subtrivial” portability.
+- [serapeum/types](REFERENCE.md#types) - Utility types and type utilities.
+
 # Commentary
 
 One goal of Serapeum is to have excellent documentation. A utility
@@ -102,7 +125,7 @@ utilities?” Since strings in Lisp are a kind of vector, which is in
 turn a kind of sequence, the right place to look is under the
 documentation for sequences (and vectors).
 
-This is also true for Serapeum: there are many [sequence utilities](REFERENCE.md#sequences), 
+This is also true for Serapeum: there are many [sequence utilities](REFERENCE.md#sequences),
 and a few [vector utilities](REFERENCE.md#vectors), that work equally well on strings.
 But there are also many [string-specific utilities](REFERENCE.md#strings).
 

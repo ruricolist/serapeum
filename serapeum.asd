@@ -42,7 +42,7 @@
    "parse-declarations-1.0"))
 
 (defsystem "serapeum/binding"
-  :description "BInding utilities."
+  :description "Binding macros."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t
@@ -53,7 +53,7 @@
    "trivia"))
 
 (defsystem "serapeum/control-flow"
-  :description "Control flow utilities."
+  :description "Control flow macros."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
   :license "MIT"
   :serial t

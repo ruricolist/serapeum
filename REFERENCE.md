@@ -2399,7 +2399,7 @@ As soon as one of KEYS fails to match, DEFAULT is returned.
 A concise way of doing lookups in (potentially nested) hash tables.
 
     (@ (dict :x 1) :x) => 1
-    (@ (dict :x (dict :y 2)) :x :y)  => 2 
+    (@ (dict :x (dict :y 2)) :x :y)  => 2
 
 [View source](hash-tables.lisp#L210)
 
@@ -5382,7 +5382,7 @@ Like `local`, but leave the last form in BODY intact.
        (defun entry-point ...))
      =>
      (labels ((aux-fn ...))
-       (defun entry-point ...)) 
+       (defun entry-point ...))
 
 [View source](internal-definitions.lisp#L12)
 
@@ -5979,3 +5979,4 @@ Example usage:
 
 
 [View source](docs.lisp#L158)
+

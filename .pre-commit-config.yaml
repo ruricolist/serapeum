@@ -7,6 +7,7 @@ repos:
     -   id: trailing-whitespace
         args: [--chars, " "]
     -   id: end-of-file-fixer
+        exclude: ^REFERENCE.md$
     -   id: check-yaml
     -   id: check-added-large-files
 -   repo: https://github.com/google/keep-sorted

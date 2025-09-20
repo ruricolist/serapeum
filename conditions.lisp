@@ -1,4 +1,12 @@
-(in-package #:serapeum)
+(defpackage :serapeum/conditions
+  (:documentation "Condition handling utilities.")
+  (:use :cl :alexandria)
+  #+sb-package-locks (:lock t)
+  (:export
+   ;; NB Not exporting ignoring as it's deprecated.
+   :maybe-invoke-restart))
+
+(in-package #:serapeum/conditions)
 
 (defmacro ignoring (type &body body)
   "DEPRECATED: use `alexandria:ignore-some-conditions' instead."

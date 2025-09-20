@@ -13,6 +13,7 @@ DOC_PACKAGES := \
 :serapeum/control-flow \
 :serapeum/definitions \
 :serapeum/defining-types \
+:serapeum/conditions \
 :serapeum \
 :serapeum.exporting \
 :serapeum.docs

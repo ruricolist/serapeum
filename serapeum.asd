@@ -97,6 +97,15 @@
    "serapeum/types"
    "trivia"))
 
+(defsystem "serapeum/conditions"
+  :description "Condition handling utilities."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components
+  ((:file "conditions"))
+  :depends-on ("alexandria"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -125,7 +134,8 @@
                "serapeum/control-flow"
                "serapeum/binding"
                "serapeum/definitions"
-               "serapeum/defining-types")
+               "serapeum/defining-types"
+               "serapeum/conditions")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -134,7 +144,6 @@
                 :pathname ""
                 :components
                 ((:file "threads")
-                 (:file "conditions")
                  (:file "op")
                  ;; Depends on types.
                  (:file "functions")

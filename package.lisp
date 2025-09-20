@@ -10,7 +10,8 @@
    #:serapeum/binding
    #:serapeum/control-flow
    #:serapeum/definitions
-   #:serapeum/defining-types)
+   #:serapeum/defining-types
+   #:serapeum/conditions)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -146,6 +147,9 @@
   (:import-from
    #:serapeum/definitions
    #:unbound)
+  (:import-from
+   #:serapeum/conditions
+   #:ignoring)
   (:documentation "Utilities beyond Alexandria.")
   (:export
    ;; Internal definitions.
@@ -181,7 +185,6 @@
    #:summing
    ;; Conditions.
    #:ignoring
-   #:maybe-invoke-restart
    ;; Op.
    #:op
    #:opf

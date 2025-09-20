@@ -133,7 +133,8 @@ file with that name, superseding it if it is already exists."
                              (cons (getf def :name) (getf def :args))
                              docs
                              (file-name-nonsystem (getf def :file) system-name)
-                             (getf def :line-number))))))))
+                             (getf def :line-number)))))
+               (format stream "~&"))))
     (etypecase stream
       (stream
        (render stream))

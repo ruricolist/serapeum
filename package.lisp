@@ -11,7 +11,8 @@
    #:serapeum/control-flow
    #:serapeum/definitions
    #:serapeum/defining-types
-   #:serapeum/conditions)
+   #:serapeum/conditions
+   #:serapeum/op)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -185,9 +186,6 @@
    #:summing
    ;; Conditions.
    #:ignoring
-   ;; Op.
-   #:op
-   #:opf
    ;; Functions.
    #:eqs
    #:eqls

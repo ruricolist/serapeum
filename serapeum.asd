@@ -106,6 +106,15 @@
   ((:file "conditions"))
   :depends-on ("alexandria"))
 
+(defsystem "serapeum/op"
+  :description "The op macro for succinct lambdas."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components
+  ((:file "op"))
+  :depends-on ("alexandria"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -135,7 +144,8 @@
                "serapeum/binding"
                "serapeum/definitions"
                "serapeum/defining-types"
-               "serapeum/conditions")
+               "serapeum/conditions"
+               "serapeum/op")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -144,7 +154,6 @@
                 :pathname ""
                 :components
                 ((:file "threads")
-                 (:file "op")
                  ;; Depends on types.
                  (:file "functions")
                  (:file "trees")
@@ -158,9 +167,8 @@
                  (:file "queue")
                  ;; Depends on types, definitions.
                  (:file "box")
-                 ;; Depends on types.
-                 (:file "numbers"
-                  :depends-on ("op"))
+                 ;; Depends on types, op.
+                 (:file "numbers")
                  ;; Depends on types.
                  (:file "octets")
                  (:file "time")
@@ -168,8 +176,9 @@
                  (:file "clos")
                  (:file "hooks"
                   :depends-on ("threads"))
+                 ;; Depends on op.
                  (:file "fbind"
-                  :depends-on ("op" "trees"))
+                  :depends-on ("trees"))
                  (:file "static-let"
                   :depends-on ("fbind"))
                  ;; Depends on definitions.

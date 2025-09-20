@@ -14,6 +14,7 @@ DOC_PACKAGES := \
 :serapeum/definitions \
 :serapeum/defining-types \
 :serapeum/conditions \
+:serapeum/op \
 :serapeum \
 :serapeum.exporting \
 :serapeum.docs

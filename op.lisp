@@ -1,7 +1,12 @@
 (defpackage :serapeum/op
-  (:use :cl :alexandria :serapeum)
+  (:documentation "The op macro for succinct lambdas.")
+  #+sb-package-locks (:lock t)
+  (:use :cl :alexandria)
+  (:import-from
+   :serapeum/macro-tools
+   :expand-macro-recursively)
   (:import-from :trivia :match)
-  #+sb-package-locks (:implement :serapeum :serapeum/op))
+  (:export :op :opf))
 (in-package :serapeum/op)
 
 ;;; NB We are forced to use SBCL's code walker because it is the only
@@ -232,6 +237,8 @@ From GOO."
 ;;; `op/no-walker' is not actually meant to be used. It is a reference
 ;;; for how `op' would work in an ideal world ("ideal world" = "world
 ;;; with a portable code walker").
+
+#+()
 (defmacro op/no-walker (&body body)
   (with-unique-names (counter args vec next-arg len arg-ref)
     `(let ((,counter -1)

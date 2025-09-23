@@ -5306,14 +5306,14 @@ The fill pointer is placed after the last element in INITIAL-CONTENTS.
 As a constructor this also has a matching definition as a Trivia
 pattern for destructing.
 
-[View source](vectors.lisp#L10)
+[View source](vectors.lisp#L23)
 
 ### `(values-vector vec)`
 
 Return the elements of VEC, a vector, as multiple values.
 This is to vectors what `values-list` is to lists.
 
-[View source](vectors.lisp#L41)
+[View source](vectors.lisp#L54)
 
 ### `(pad-start vec length &optional pad)`
 
@@ -5342,7 +5342,7 @@ VEC, so PAD must satisfy that element type.
 
 Loosely inspired by ECMA.
 
-[View source](vectors.lisp#L97)
+[View source](vectors.lisp#L110)
 
 ### `(pad-end vec length &optional pad)`
 
@@ -5350,7 +5350,7 @@ Pad VEC, a vector, to LENGTH, using PAD.
 Like `pad-start`, but padding is addded to the end, rather than the
 beginning.
 
-[View source](vectors.lisp#L152)
+[View source](vectors.lisp#L165)
 
 ### `(vector-conc-extend vector new-elements &optional extension)`
 
@@ -5360,7 +5360,7 @@ each element on NEW-ELEMENTS, but should be faster.
 
 Returns VECTOR.
 
-[View source](vectors.lisp#L177)
+[View source](vectors.lisp#L190)
 
 ## Vector=
 

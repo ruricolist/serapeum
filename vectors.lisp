@@ -6,6 +6,19 @@ Otherwise, return a vector with X as its sole element."
   (if (vectorp x) x
       (vector x)))
 
+(defun vectp (x)
+  "Is X a vect?"
+  (and (arrayp x)
+       (adjustable-array-p x)
+       (handler-case
+           (fill-pointer x)
+         (type-error ()
+           nil))))
+
+(deftype vect ()
+  "The type of a vector constructed by `vect'."
+  '(and (vector t) (satisfies vectp)))
+
 (-> vect (&rest t) (vector t *))
 (defun vect (&rest initial-contents)
   "Succinct constructor for adjustable vectors with fill pointers.

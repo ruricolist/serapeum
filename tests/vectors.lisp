@@ -14,6 +14,23 @@
   (is (fill-pointer (vect)))
   (is (equalp (vect 1 2 3) #(1 2 3))))
 
+(test vect-type
+  (is (typep (vect) 'vect))
+  (is (not (typep #() 'vect)))
+  (is (not (typep (make-array 0 :adjustable t) 'vect)))
+  (is (not (typep (make-array
+                   10
+                   :adjustable t
+                   :fill-pointer 0
+                   :element-type 'fixnum)
+                  'vect)))
+  (is (typep (make-array
+              10
+              :adjustable t
+              :fill-pointer 0
+              :element-type t)
+             'vect)))
+
 ;;; Regression for #14.
 
 (test dx-vect

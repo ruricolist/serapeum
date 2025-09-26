@@ -23,12 +23,14 @@
 
 (defun simple-binding-p (binding)
   (or (atom binding)
-      (= (length binding) 2)))
+      (<= (length binding) 2)))
 
 (defun canonicalize-bindings (bindings)
   (loop for binding in bindings
         if (atom binding)
           collect (list binding nil)
+        else if (null (cdr binding))
+               collect (list (car binding) nil)
         else collect binding))
 
 ;;; `let1'

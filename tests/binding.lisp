@@ -113,6 +113,14 @@
   (is (equal '(nil nil)
              (mvlet* (x y) (list x y)))))
 
+(test mvlet-no-init
+  (is (null (mvlet ((x)) x)))
+  (is (null (mvlet* ((x)) x)))
+  (is (equal '(nil nil)
+             (mvlet ((x) (y)) (list x y))))
+  (is (equal '(nil nil)
+             (mvlet* ((x) (y)) (list x y)))))
+
 ;; Since it exists, we incorporate the unit test harness from
 ;; <http://pobox.com/~oleg/ftp/Scheme/vland.scm>.
 (test and-let*

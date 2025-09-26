@@ -768,13 +768,13 @@ forgetting to return it).
 
 Cf. `aprog1` in Anaphora.
 
-[View source](binding.lisp#L63)
+[View source](binding.lisp#L65)
 
 ### `(lret* (&rest bindings) &body body)`
 
 Cf. `lret`.
 
-[View source](binding.lisp#L90)
+[View source](binding.lisp#L92)
 
 ### `(letrec (&rest bindings) &body body)`
 
@@ -785,7 +785,7 @@ another, and themselves.
 Note that `letrec` only binds variables: it can define recursive
 functions, but can't bind them as functions. (But see `fbindrec`.)
 
-[View source](binding.lisp#L115)
+[View source](binding.lisp#L117)
 
 ### `(letrec* (&rest bindings) &body body)`
 
@@ -794,7 +794,7 @@ See Waddell et al., *Fixing Letrec* for motivation.
 
 Cf. `fbindrec*`.
 
-[View source](binding.lisp#L125)
+[View source](binding.lisp#L127)
 
 ### `(receive formals expr &body body)`
 
@@ -815,7 +815,7 @@ returned by EXPR, as if by `multiple-value-list`.
 
 From Scheme (SRFI-8).
 
-[View source](binding.lisp#L133)
+[View source](binding.lisp#L135)
 
 ### `(mvlet* (&rest bindings) &body body)`
 
@@ -840,13 +840,13 @@ the motivation:
 
 Note that declarations work just like `let*`.
 
-[View source](binding.lisp#L190)
+[View source](binding.lisp#L192)
 
 ### `(mvlet (&rest bindings) &body body)`
 
 Parallel (`let`-like) version of `mvlet*`.
 
-[View source](binding.lisp#L249)
+[View source](binding.lisp#L251)
 
 ### `(and-let* (&rest clauses) &body body)`
 
@@ -868,14 +868,14 @@ false.
 
 Also, this version makes the bindings immutable.
 
-[View source](binding.lisp#L285)
+[View source](binding.lisp#L287)
 
 ### `(if-not test then &optional else)`
 
 If TEST evaluates to NIL, evaluate THEN and return its values,
 otherwise evaluate ELSE and return its values. ELSE defaults to NIL.
 
-[View source](binding.lisp#L347)
+[View source](binding.lisp#L349)
 
 ### `(if-not-let bindings &body (then-form &optional else-form))`
 
@@ -895,7 +895,7 @@ bindings in effect, otherwise the ELSE-FORM is executed with the bindings in
 effect.
 Adapted from Alexandria if-let.
 
-[View source](binding.lisp#L354)
+[View source](binding.lisp#L356)
 
 ## Control Flow
 

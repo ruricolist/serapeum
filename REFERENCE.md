@@ -12,6 +12,7 @@
 - [Defining Types](#defining-types)
 - [Conditions](#conditions)
 - [Op](#op)
+- [Box](#box)
 - [Threads](#threads)
 - [Functions](#functions)
 - [Trees](#trees)
@@ -20,7 +21,6 @@
 - [Symbols](#symbols)
 - [Arrays](#arrays)
 - [Queue](#queue)
-- [Box](#box)
 - [Numbers](#numbers)
 - [Octets](#octets)
 - [Time](#time)
@@ -1835,6 +1835,26 @@ From GOO.
 
 [View source](op.lisp#L232)
 
+## Box
+
+### `(unbox box)`
+
+The value in the box X.
+
+[View source](box.lisp#L26)
+
+### `(box unbox)`
+
+Box a value.
+
+[View source](box.lisp#L26)
+
+### `(ensure-box x)`
+
+Return X if boxed, otherwise a box containing X.
+
+[View source](box.lisp#L76)
+
 ## Threads
 
 ### `(count-cpus &key default online memoize)`
@@ -2937,26 +2957,6 @@ Destructively splice LIST at the beginning of QUEUE.
 Copy QUEUE as another queue.
 
 [View source](queue.lisp#L223)
-
-## Box
-
-### `(box unbox)`
-
-Box a value.
-
-[View source](box.lisp#L11)
-
-### `(unbox box)`
-
-The value in the box X.
-
-[View source](box.lisp#L11)
-
-### `(ensure-box x)`
-
-Return X if boxed, otherwise a box containing X.
-
-[View source](box.lisp#L61)
 
 ## Numbers
 

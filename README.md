@@ -98,6 +98,7 @@ The following modules are currently available:
 - [serapeum/op](REFERENCE.md#op) - The `op’ macro for succint lambdas.
 - [serapeum/portability](REFERENCE.md#portability) – “Subtrivial” portability.
 - [serapeum/types](REFERENCE.md#types) - Utility types and type utilities.
+- [serapeum/box](REFERENCE.md#box) - Box data structure.
 
 # Commentary
 

@@ -1,4 +1,19 @@
-(in-package #:serapeum)
+(defpackage :serapeum/box
+  (:documentation "Box data structure")
+  #+sb-package-locks (:lock t)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/types
+   :trivia)
+  (:import-from
+   :serapeum/types
+   :declaim-freeze-type)
+  (:export
+   :box
+   :unbox
+   :ensure-box))
+(in-package :serapeum/box)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +atomic-accessors+

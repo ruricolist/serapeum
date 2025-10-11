@@ -115,6 +115,15 @@
   ((:file "op"))
   :depends-on ("alexandria"))
 
+(defsystem "serapeum/box"
+  :description "Box data structure."
+  :author "Paul M. Rodriguez <pmr@ruricolist.com>"
+  :license "MIT"
+  :serial t
+  :components
+  ((:file "box"))
+  :depends-on ("alexandria" "serapeum/types" "trivia"))
+
 (defsystem "serapeum"
   :description "Utilities beyond Alexandria."
   :author "Paul M. Rodriguez <pmr@ruricolist.com>"
@@ -145,7 +154,8 @@
                "serapeum/definitions"
                "serapeum/defining-types"
                "serapeum/conditions"
-               "serapeum/op")
+               "serapeum/op"
+               "serapeum/box")
   :serial t
   :components (;; The basics: these files can use CL and Alexandria.
                (:file "package")
@@ -165,8 +175,6 @@
                  (:file "arrays")
                  ;; Depends on types.
                  (:file "queue")
-                 ;; Depends on types, definitions.
-                 (:file "box")
                  ;; Depends on types, op.
                  (:file "numbers")
                  ;; Depends on types.

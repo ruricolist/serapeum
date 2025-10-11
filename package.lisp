@@ -12,7 +12,8 @@
    #:serapeum/definitions
    #:serapeum/defining-types
    #:serapeum/conditions
-   #:serapeum/op)
+   #:serapeum/op
+   #:serapeum/box)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -294,10 +295,6 @@
    #:queue-empty-p
    #:clear-queue
    #:copy-queue
-   ;; Boxes.
-   #:box
-   #:unbox
-   #:ensure-box
    ;; Heaps.
    #:make-heap
    #:heap-insert

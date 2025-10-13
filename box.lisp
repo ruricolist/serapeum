@@ -40,7 +40,7 @@ accessor `unbox'.
     (unbox a-box) => nil
 
 Serapeum attempts to provide the guarantee that, on Lisps that support
-atomic operations (compare-and-swap), `unbox` on boxes should be
+atomic operations (compare-and-swap), `unbox' on boxes should be
 updateable atomically. (See
 [atomics](https://github.com/Shinmera/atomics))."
   unbox)

@@ -11,6 +11,7 @@
    :declaim-freeze-type)
   (:export
    :box
+   :boxp
    :unbox
    :ensure-box))
 (in-package :serapeum/box)

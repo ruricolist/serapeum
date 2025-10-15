@@ -237,6 +237,15 @@
       (%f #'%a '(a b c d e) :start 1 :end 4)
       (is (equal acc '(b c d))))))
 
+(test stable-intersection
+  (is (null (stable-intersection nil nil)))
+  (is (null (stable-intersection '(1) nil)))
+  (is (null (stable-intersection nil '(1))))
+  (is (equal '(1) (stable-intersection '(1) '(1 2 3))))
+  (is (equal '(1 2) (stable-intersection '(1 2) '(1 2 3))))
+  (is (equal '(1) (stable-intersection '(1) '(3 2 1))))
+  (is (equal '(1 2) (stable-intersection '(1 2) '(3 2 1)))))
+
 (test stable-set-difference
   (is (null (stable-set-difference nil nil)))
   (is (equal '(1 2 3 4)

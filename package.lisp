@@ -401,6 +401,7 @@
    #:nthrest
    #:plist-keys
    #:plist-values
+   #:stable-intersection
    #:stable-set-difference
    #:intersectionp
    #:append-longest

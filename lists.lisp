@@ -407,6 +407,17 @@ Two empty lists are not considered to intersect."
         (when (mem (key elt) list2)
           (return t))))))
 
+(defun stable-intersection (list1 list2 &key key test test-not)
+  "Like `intersection', but preserve the order of LIST1's elements."
+  (declare (list list1 list2))
+  (with-member-test (mem :key key :test test :test-not test-not)
+    (when (and list1 list2)
+      (collecting
+        (dolist (elt list1)
+          (when (mem (key elt) list2)
+            (collect elt))))
+      nil)))
+
 (defun stable-set-difference (list1 list2 &key key test test-not)
   "Like `set-difference', but preserve the order of LIST1's elements."
   (declare (list list1 list2))

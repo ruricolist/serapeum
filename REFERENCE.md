@@ -1851,7 +1851,7 @@ Box a value.
 
 ### `(boxp g)`
 
-NO DOCS!
+Predicate for a boxed value.
 
 [View source](box.lisp#L27)
 
@@ -1859,7 +1859,7 @@ NO DOCS!
 
 Return X if boxed, otherwise a box containing X.
 
-[View source](box.lisp#L77)
+[View source](box.lisp#L80)
 
 ## Threads
 

@@ -50,6 +50,9 @@ updateable atomically. (See
 (setf (documentation 'box 'function)
       "Box a value.")
 
+(setf (documentation 'boxp 'function)
+      "Predicate for a boxed value.")
+
 (setf (documentation 'unbox 'function)
       "The value in the box X."
 

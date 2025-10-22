@@ -1000,7 +1000,8 @@ Takes care that the longest suffix is always removed first."
           until (zerop (setf n q)))
     len))
 
-(declaim (ftype (function (&rest t) string) string+))
+(declaim (ftype (function (&rest t) (values simple-string &optional))
+                string+))
 (defun string+ (&rest args)
   "Optimized function for building small strings.
 

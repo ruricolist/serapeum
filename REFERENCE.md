@@ -5286,7 +5286,7 @@ empty string:
 
 This utility is inspired by the utility of the same name in Allegro.
 
-[View source](strings.lisp#L1004)
+[View source](strings.lisp#L1005)
 
 ## Vectors
 

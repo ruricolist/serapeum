@@ -13,6 +13,7 @@
 - [Conditions](#conditions)
 - [Op](#op)
 - [Box](#box)
+- [Queue](#queue)
 - [Threads](#threads)
 - [Functions](#functions)
 - [Trees](#trees)
@@ -20,7 +21,6 @@
 - [Files](#files)
 - [Symbols](#symbols)
 - [Arrays](#arrays)
-- [Queue](#queue)
 - [Numbers](#numbers)
 - [Octets](#octets)
 - [Time](#time)
@@ -1861,6 +1861,117 @@ Return X if boxed, otherwise a box containing X.
 
 [View source](box.lisp#L80)
 
+## Queue
+
+Norvig-style queues, but wrapped in objects so they don't overflow the
+printer, and with a more concise, Arc-inspired API.
+
+
+### `(queuep g)`
+
+Test for a queue.
+
+[View source](queue.lisp#L37)
+
+### `(queue &rest initial-contents)`
+
+Build a new queue with INITIAL-CONTENTS.
+
+[View source](queue.lisp#L113)
+
+### `(clear-queue queue)`
+
+Return QUEUE's contents and reset it.
+
+[View source](queue.lisp#L132)
+
+### `(qlen queue)`
+
+The number of items in QUEUE.
+
+[View source](queue.lisp#L140)
+
+### `(qlist queue)`
+
+A list of the items in QUEUE.
+Does not cons.
+
+[View source](queue.lisp#L145)
+
+### `(enq item queue)`
+
+Insert ITEM at the end of QUEUE.
+
+[View source](queue.lisp#L151)
+
+### `(deq queue)`
+
+Remove item from the front of the QUEUE.
+
+[View source](queue.lisp#L160)
+
+### `(undeq item queue)`
+
+Add an item to the front of QUEUE.
+For an empty queue, this does the same thing as ENQ.
+
+For a queue with elements, this adds a new element onto the front of
+queue (like pushing to an ordinary list).
+
+This is called `undeq` because it can be used to undo a `deq`.
+
+[View source](queue.lisp#L172)
+
+### `(queue-empty-p queue)`
+
+Is QUEUE empty?
+
+[View source](queue.lisp#L187)
+
+### `(front queue)`
+
+The first element in QUEUE.
+
+[View source](queue.lisp#L192)
+
+### `(qback queue)`
+
+Get the last element of a queue.
+
+[View source](queue.lisp#L204)
+
+### `(qconc queue list)`
+
+Destructively concatenate LIST onto the end of QUEUE.
+Return the queue.
+
+[View source](queue.lisp#L217)
+
+### `(qappend queue list)`
+
+Append the elements of LIST onto the end of QUEUE.
+Return the queue.
+
+[View source](queue.lisp#L228)
+
+### `(qprepend list queue)`
+
+Insert ITEMS at the beginning of QUEUE.
+
+[View source](queue.lisp#L237)
+
+### `(qpreconc list queue)`
+
+Destructively splice LIST at the beginning of QUEUE.
+
+[View source](queue.lisp#L241)
+
+### `(copy-queue queue)`
+
+Copy QUEUE as another queue.
+
+[View source](queue.lisp#L251)
+
 ## Threads
 
 ### `(count-cpus &key default online memoize)`
@@ -2852,117 +2963,6 @@ Given an array and a row-major index, return a list of subscripts.
      ≡ (array-row-major-aref i)
 
 [View source](arrays.lisp#L4)
-
-## Queue
-
-Norvig-style queues, but wrapped in objects so they don't overflow the
-printer, and with a more concise, Arc-inspired API.
-
-
-### `(queuep g)`
-
-Test for a queue.
-
-[View source](queue.lisp#L9)
-
-### `(queue &rest initial-contents)`
-
-Build a new queue with INITIAL-CONTENTS.
-
-[View source](queue.lisp#L85)
-
-### `(clear-queue queue)`
-
-Return QUEUE's contents and reset it.
-
-[View source](queue.lisp#L104)
-
-### `(qlen queue)`
-
-The number of items in QUEUE.
-
-[View source](queue.lisp#L112)
-
-### `(qlist queue)`
-
-A list of the items in QUEUE.
-Does not cons.
-
-[View source](queue.lisp#L117)
-
-### `(enq item queue)`
-
-Insert ITEM at the end of QUEUE.
-
-[View source](queue.lisp#L123)
-
-### `(deq queue)`
-
-Remove item from the front of the QUEUE.
-
-[View source](queue.lisp#L132)
-
-### `(undeq item queue)`
-
-Add an item to the front of QUEUE.
-For an empty queue, this does the same thing as ENQ.
-
-For a queue with elements, this adds a new element onto the front of
-queue (like pushing to an ordinary list).
-
-This is called `undeq` because it can be used to undo a `deq`.
-
-[View source](queue.lisp#L144)
-
-### `(queue-empty-p queue)`
-
-Is QUEUE empty?
-
-[View source](queue.lisp#L159)
-
-### `(front queue)`
-
-The first element in QUEUE.
-
-[View source](queue.lisp#L164)
-
-### `(qback queue)`
-
-Get the last element of a queue.
-
-[View source](queue.lisp#L176)
-
-### `(qconc queue list)`
-
-Destructively concatenate LIST onto the end of QUEUE.
-Return the queue.
-
-[View source](queue.lisp#L189)
-
-### `(qappend queue list)`
-
-Append the elements of LIST onto the end of QUEUE.
-Return the queue.
-
-[View source](queue.lisp#L200)
-
-### `(qprepend list queue)`
-
-Insert ITEMS at the beginning of QUEUE.
-
-[View source](queue.lisp#L209)
-
-### `(qpreconc list queue)`
-
-Destructively splice LIST at the beginning of QUEUE.
-
-[View source](queue.lisp#L213)
-
-### `(copy-queue queue)`
-
-Copy QUEUE as another queue.
-
-[View source](queue.lisp#L223)
 
 ## Numbers
 

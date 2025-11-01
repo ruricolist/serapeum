@@ -16,6 +16,7 @@ DOC_PACKAGES := \
 :serapeum/conditions \
 :serapeum/op \
 :serapeum/box \
+:serapeum/queue \
 :serapeum \
 :serapeum.exporting \
 :serapeum.docs

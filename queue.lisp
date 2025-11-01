@@ -1,4 +1,32 @@
-(in-package #:serapeum)
+(defpackage :serapeum/queue
+  (:documentation "Queue data structure")
+  #+sb-package-locks (:lock t)
+  (:use
+   :cl
+   :alexandria
+   :serapeum/types
+   :trivia)
+  (:import-from
+   :serapeum/types
+   :declaim-freeze-type)
+  (:export
+   :queue
+   :queuep
+   :enq
+   :deq
+   :undeq
+   :front
+   :qback
+   :qlen
+   :qlist
+   :qconc
+   :qpreconc
+   :qappend
+   :qprepend
+   :queue-empty-p
+   :clear-queue
+   :copy-queue))
+(in-package :serapeum/queue)
 
 (defun make-queue-cons ()
   (let ((q (cons nil nil)))

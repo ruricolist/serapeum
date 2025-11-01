@@ -13,7 +13,8 @@
    #:serapeum/defining-types
    #:serapeum/conditions
    #:serapeum/op
-   #:serapeum/box)
+   #:serapeum/box
+   #:serapeum/queue)
   (:use :cl)
   (:import-from #:alexandria
                 ;; Binding constructs
@@ -278,23 +279,6 @@
    #:bound-value
    ;; Arrays.
    #:array-index-row-major
-   ;; Queues.
-   #:queue
-   #:queuep
-   #:enq
-   #:deq
-   #:undeq
-   #:front
-   #:qback
-   #:qlen
-   #:qlist
-   #:qconc
-   #:qpreconc
-   #:qappend
-   #:qprepend
-   #:queue-empty-p
-   #:clear-queue
-   #:copy-queue
    ;; Heaps.
    #:make-heap
    #:heap-insert

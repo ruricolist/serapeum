@@ -99,6 +99,7 @@ The following modules are currently available:
 - [serapeum/portability](REFERENCE.md#portability) – “Subtrivial” portability.
 - [serapeum/types](REFERENCE.md#types) - Utility types and type utilities.
 - [serapeum/box](REFERENCE.md#box) - Box data structure.
+- [serapeum/queue](REFERENCE.md#box) - Queue data structure.
 
 # Commentary
 

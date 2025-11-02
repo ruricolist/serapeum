@@ -5752,7 +5752,7 @@ With two arguments, return all the steps in the interval [start,end).
 
 With one argument, return all the steps in the interval [0,end).
 
-[View source](range.lisp#L215)
+[View source](range.lisp#L216)
 
 ## Generalized Arrays
 

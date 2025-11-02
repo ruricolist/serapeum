@@ -15,6 +15,7 @@
        (is (range= ,expected ,actual)))))
 
 (test empty-range
+  (test-range (range 0 0 1) #())
   (test-range (range 0 0) #())
   (test-range (range 0) #()))
 

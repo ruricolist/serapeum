@@ -50,17 +50,18 @@
   #.no-bounds-checks
   (declare (type array-index start end))
   (check-range/inline start end 1)
-  (lret* ((type `(integer ,start (,end)))
-          (len (- end start))
-          (vector (make-array len :element-type type)))
-    (nlet lp ((i 0)
-              (n start))
-      (declare (type array-index i n))
-      (if (= i len) vector
-          (progn
-            (setf (aref vector i) n)
-            (lp (1+ i)
-                (1+ n)))))))
+  (if (= start end) #()
+      (lret* ((type `(integer ,start (,end)))
+              (len (- end start))
+              (vector (make-array len :element-type type)))
+        (nlet lp ((i 0)
+                  (n start))
+          (declare (type array-index i n))
+          (if (= i len) vector
+              (progn
+                (setf (aref vector i) n)
+                (lp (1+ i)
+                    (1+ n))))))))
 
 (defsubst count-range/3 (start end step)
   #.no-bounds-checks

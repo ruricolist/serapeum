@@ -249,7 +249,7 @@ From Zetalisp."
   (multiple-value-prog1 (gethash key hash-table)
     (setf (gethash key hash-table) value)))
 
-(-> addhash (t t hash-table) (values t boolean &optional))
+(-> addhash (t t hash-table) (values t &optional))
 (defun addhash (key value hash-table)
   "Lookup KEY in HASH-TABLE, add VALUE inside a list if KEY does not exist, cons it otherwise"
   (multiple-value-bind (old-value old-value-exists)

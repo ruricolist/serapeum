@@ -230,6 +230,7 @@
    #:do-hash-table
    #:pophash
    #:swaphash
+   #:addhash
    #:dict
    #:dict*
    #:dictq

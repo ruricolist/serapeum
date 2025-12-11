@@ -96,12 +96,13 @@ invoked. In this case the second value will still be `nil', however."
   (if (not (slot-exists-p instance slot-name))
       (values default nil nil)
       (let ((boundp (and (slot-boundp instance slot-name) t)))
-        (handler-case
-            (values (slot-value instance slot-name)
-                    boundp
-                    t)
-          (unbound-slot ()
-            (values default nil t))))))
+        (if boundp
+            (values (slot-value instance slot-name) t t)
+            (handler-case
+                ;; Call a slot-unbound method.
+                (values (slot-value instance slot-name) nil t)
+              (unbound-slot ()
+                (values default nil t)))))))
 
 (defsetf slot-value-safe (instance slot-name &optional default) (value)
   (declare (ignore default))

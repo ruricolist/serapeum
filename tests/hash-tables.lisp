@@ -86,6 +86,16 @@
   (signals error
     (pairhash '(1 2) '(3))))
 
+(test addhash
+  (let ((ht (make-hash-table)))
+    (is (equal (addhash :x 1 ht) '(1)))
+    (addhash :x 2 ht)
+    (is (equal (gethash :x ht) '(2 1)))
+
+    (setf (gethash :y ht) 1)
+    (addhash :y 2 ht)
+    (is (equal (gethash :y ht) '(2 1)))))
+
 (test maphash-new
   (let* ((old (dict "x" 1 "y" 2))
          (new (maphash-new #'values old)))

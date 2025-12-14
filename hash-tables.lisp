@@ -249,6 +249,18 @@ From Zetalisp."
   (multiple-value-prog1 (gethash key hash-table)
     (setf (gethash key hash-table) value)))
 
+(-> addhash (t t hash-table) (values t &optional))
+(defun addhash (key value hash-table)
+  "Lookup KEY in HASH-TABLE, add VALUE inside a list if KEY does not exist, cons it otherwise"
+  (multiple-value-bind (old-value old-value-exists)
+      (gethash key hash-table)
+    (setf (gethash key hash-table)
+          (if old-value-exists 
+              (if (listp old-value)
+                  (cons value old-value)
+                  (cons value (list old-value)))
+              (list value)))))
+
 (declaim (inline hash-fold))
 (defun hash-fold (fn init hash-table)
   "Reduce TABLE by calling FN with three values: a key from the hash

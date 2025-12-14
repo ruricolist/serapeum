@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        lisp: [sbcl-bin, ccl-bin/1.12.1, ecl/21.2.1]
+        lisp: [sbcl-bin/2.5.10, ccl-bin/1.12.1, ecl/21.2.1]
         os: [ubuntu-latest, macOS-13] # macos-latest when Clozure supports arm64?
 
     steps:

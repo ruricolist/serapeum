@@ -1366,13 +1366,13 @@ If SEQ already ends with SUFFIX, return SEQ."
 
 If a value equivalent to ITEM already exists in VEC, then the index
 returned is to the left of that existing item."
-  (declare (array-length start end))
+  (declare (array-length start end) (optimize (safety 0)))
   (fbind (pred)
     (with-item-key-function (key)
-      (with-vector-dispatch () vec
-        (let ((kitem (key item)))
+      (let ((kitem (key item)))
+        (with-vector-dispatch () vec
           (loop while (< start end) do
-            (let ((mid (floor (+ start end) 2)))
+            (let ((mid (truncate (+ start end) 2)))
               (if (pred (key (vref vec mid)) kitem)
                   (setf start (1+ mid))
                   (setf end mid)))
@@ -1383,13 +1383,13 @@ returned is to the left of that existing item."
 
 If a value equivalent to ITEM already exists in VEC, then the index
 returned is to the right of that existing item."
-  (declare (array-length start end))
+  (declare (array-length start end) (optimize (safety 0)))
   (fbind (pred)
     (with-item-key-function (key)
-      (with-vector-dispatch () vec
-        (let ((kitem (key item)))
+      (let ((kitem (key item)))
+        (with-vector-dispatch () vec
           (loop while (< start end) do
-            (let ((mid (floor (+ start end) 2)))
+            (let ((mid (truncate (+ start end) 2)))
               (if (pred kitem (key (vref vec mid)))
                   (setf end mid)
                   (setf start (1+ mid))))

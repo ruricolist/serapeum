@@ -1,4 +1,4 @@
-# Function Listing For serapeum (44 files, 470 functions)
+# Function Listing For serapeum (44 files, 471 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -2560,6 +2560,12 @@ From Zetalisp.
 
 [View source](hash-tables.lisp#L243)
 
+### `(addhash key value hash-table)`
+
+Lookup KEY in HASH-TABLE, add VALUE inside a list if KEY does not exist, cons it otherwise
+
+[View source](hash-tables.lisp#L253)
+
 ### `(hash-fold fn init hash-table)`
 
 Reduce TABLE by calling FN with three values: a key from the hash
@@ -2568,14 +2574,14 @@ first call, INIT is supplied in place of the previous value.
 
 From Guile.
 
-[View source](hash-tables.lisp#L253)
+[View source](hash-tables.lisp#L265)
 
 ### `(maphash-return fn hash-table)`
 
 Like MAPHASH, but collect and return the values from FN.
 From Zetalisp.
 
-[View source](hash-tables.lisp#L268)
+[View source](hash-tables.lisp#L280)
 
 ### `(maphash-new fn hash-table &rest hash-table-args &key &allow-other-keys)`
 
@@ -2597,7 +2603,7 @@ By default, the new hash table has the same hash table
 properties (test, size) as HASH-TABLE, but these can be overridden
 with HASH-TABLE-ARGS.
 
-[View source](hash-tables.lisp#L281)
+[View source](hash-tables.lisp#L293)
 
 ### `(maphash-into hash-table fn &rest seqs)`
 
@@ -2605,7 +2611,7 @@ Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
 
 FN is required to return two values, and key and a value.
 
-[View source](hash-tables.lisp#L310)
+[View source](hash-tables.lisp#L322)
 
 ### `(merge-tables* table &rest tables)`
 
@@ -2613,7 +2619,7 @@ Modifies the first TABLE by merging all keys from other TABLES into it.
 
 Returns the first TABLE.
 
-[View source](hash-tables.lisp#L325)
+[View source](hash-tables.lisp#L337)
 
 ### `(merge-tables &rest tables)`
 
@@ -2633,7 +2639,7 @@ All of the tables being merged must have the same value for
 Clojure's `merge`.
 
 
-[View source](hash-tables.lisp#L337)
+[View source](hash-tables.lisp#L349)
 
 ### `(flip-hash-table table &rest hash-table-args &key filter key test size rehash-size rehash-threshold)`
 
@@ -2659,7 +2665,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L366)
+[View source](hash-tables.lisp#L378)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2673,7 +2679,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L401)
+[View source](hash-tables.lisp#L413)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2682,7 +2688,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L433)
+[View source](hash-tables.lisp#L445)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2690,7 +2696,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L444)
+[View source](hash-tables.lisp#L456)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types default)`
 
@@ -2724,7 +2730,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings satisfy KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is
 also specified.
 
-[View source](hash-tables.lisp#L454)
+[View source](hash-tables.lisp#L466)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2732,14 +2738,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L560)
+[View source](hash-tables.lisp#L572)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L568)
+[View source](hash-tables.lisp#L580)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2752,7 +2758,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L577)
+[View source](hash-tables.lisp#L589)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2776,7 +2782,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L599)
+[View source](hash-tables.lisp#L611)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2785,7 +2791,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L649)
+[View source](hash-tables.lisp#L661)
 
 ## Files
 
@@ -3334,7 +3340,7 @@ machines written using `labels` into an object-oriented style.
 
 This construct is very loosely inspired by impl blocks in Rust.
 
-[View source](clos.lisp#L112)
+[View source](clos.lisp#L113)
 
 ## Hooks
 

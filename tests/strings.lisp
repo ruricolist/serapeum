@@ -130,6 +130,15 @@
                                            #.(code-char #x2029)))
                           :honor-crlf t)))))))
 
+(test lines-shared ()
+  (let* ((string (fmt "x~%y~%z"))
+         (lines (lines string :sharedp t)))
+    (is (length= 3 lines))
+    (is (every #'stringp lines))
+    (is (equal '("x" "y" "z") lines))
+    (is (every (op (eq (undisplace-array _) string))
+               lines))))
+
 (test compile-fmt-extra-args
   ;; Test that fmt raises an error/warning for a wrong number of
   ;; arguments, but only if this Lisp actually checks that in general.

@@ -400,14 +400,18 @@ removed."
                            function))
            (:honor-crlf t)
            (:keep-eols t)
-           (:count (or null (integer 0 *))))
+           (:count (or null (integer 0 *)))
+           (:sharedp t))
     (values (or null list) &optional))
-(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols count)
+(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols count sharedp)
   "Return a list of the lines in STRING, stripped of any EOL characters
 and including the last nonempty line even if it has no EOL characters,
 or NIL if STRING is empty or NIL.
 
 If COUNT is provided, only the first COUNT lines are returned.
+
+If SHAREDP is provided, the lines are returned as displaced arrays
+with STRING as their target.
 
 EOL-STYLE can be one of the following:
 
@@ -581,11 +585,13 @@ To additionally omit lines consisting only of whitespace:
                              ;; not already include it.
                              (setf ignore-cr (not (funcall eol-style #\Return))))
                         (disjoin eol-style cr-p)
-                        eol-style)))))
+                        eol-style))))
+           (subseq-fn (ensure-function (if sharedp #'nsubseq #'subseq))))
       (flet ((next-eol (start) (position-if eolp string :start start)))
         (do* ((length (length string))
-              (line nil (subseq string start
-                                (if keep-eols (1+ end) (- end crlf-offset))))
+              (line nil (funcall subseq-fn
+                                 string start
+                                 (if keep-eols (1+ end) (- end crlf-offset))))
               (lines nil (push line lines))
               (line-count 0 (1+ (the array-index line-count)))
               (start 0 (1+ end))
@@ -595,7 +601,7 @@ To additionally omit lines consisting only of whitespace:
                   (eql line-count count))
               (if (eql line-count count)
                   (nreverse lines)
-                  (nreverse (if (emptyp (setf line (subseq string start)))
+                  (nreverse (if (emptyp (setf line (funcall subseq-fn string start)))
                                 lines
                                 (cons line lines)))))
          again
@@ -609,10 +615,10 @@ To additionally omit lines consisting only of whitespace:
                       (when ignore-cr
                         (if (setf end (next-eol end+1))
                             (go again)
-                            (return (nreverse (push (subseq string start)
+                            (return (nreverse (push (funcall subseq-fn string start)
                                                     lines))))))
                   (when ignore-cr
-                    (return (nreverse (push (subseq string start)
+                    (return (nreverse (push (funcall subseq-fn string start)
                                             lines))))))))))))
 
 (-> fmt ((or string function) &rest t) string)

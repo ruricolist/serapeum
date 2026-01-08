@@ -4966,13 +4966,16 @@ removed.
 
 [View source](strings.lisp#L370)
 
-### `(lines string &key eol-style honor-crlf keep-eols count)`
+### `(lines string &key eol-style honor-crlf keep-eols count sharedp)`
 
 Return a list of the lines in STRING, stripped of any EOL characters
 and including the last nonempty line even if it has no EOL characters,
 or NIL if STRING is empty or NIL.
 
 If COUNT is provided, only the first COUNT lines are returned.
+
+If SHAREDP is provided, the lines are returned as displaced arrays
+with STRING as their target.
 
 EOL-STYLE can be one of the following:
 
@@ -5111,7 +5114,7 @@ To additionally omit lines consisting only of whitespace:
                          (serapeum:lines string :eol-style :unicode))))
     => ("abc" "z")
 
-[View source](strings.lisp#L405)
+[View source](strings.lisp#L406)
 
 ### `(fmt control-string &rest args)`
 
@@ -5122,7 +5125,7 @@ some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
 
-[View source](strings.lisp#L617)
+[View source](strings.lisp#L625)
 
 ### `(escape string table &key start end stream)`
 
@@ -5142,7 +5145,7 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
-[View source](strings.lisp#L707)
+[View source](strings.lisp#L715)
 
 ### `(ellipsize string n &key ellipsis)`
 
@@ -5157,31 +5160,31 @@ started.
 
 From Arc.
 
-[View source](strings.lisp#L736)
+[View source](strings.lisp#L744)
 
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
 Is PREFIX a prefix of STRING?
 
-[View source](strings.lisp#L780)
+[View source](strings.lisp#L788)
 
 ### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
-[View source](strings.lisp#L780)
+[View source](strings.lisp#L788)
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
 Is SUFFIX a suffix of STRING?
 
-[View source](strings.lisp#L800)
+[View source](strings.lisp#L808)
 
 ### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L800)
+[View source](strings.lisp#L808)
 
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
@@ -5194,13 +5197,13 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L820)
+[View source](strings.lisp#L828)
 
 ### `(string-contains-p substring string &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L820)
+[View source](strings.lisp#L828)
 
 ### `(string~= token string &key start1 end1 start2 end2)`
 
@@ -5210,13 +5213,13 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L842)
+[View source](strings.lisp#L850)
 
 ### `(string-token-p token string &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L842)
+[View source](strings.lisp#L850)
 
 ### `(string-replace-all old string new &key start end stream count)`
 
@@ -5243,13 +5246,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L876)
+[View source](strings.lisp#L884)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L930)
+[View source](strings.lisp#L938)
 
 ### `(chomp string &optional suffixes)`
 
@@ -5261,13 +5264,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L939)
+[View source](strings.lisp#L947)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L968)
+[View source](strings.lisp#L976)
 
 ### `(string+ &rest args)`
 
@@ -5292,7 +5295,7 @@ empty string:
 
 This utility is inspired by the utility of the same name in Allegro.
 
-[View source](strings.lisp#L1005)
+[View source](strings.lisp#L1013)
 
 ## Vectors
 

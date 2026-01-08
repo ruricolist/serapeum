@@ -545,73 +545,75 @@ To additionally omit lines consisting only of whitespace:
                  (mapcar #'serapeum:trim-whitespace
                          (serapeum:lines string :eol-style :unicode))))
     => (\"abc\" \"z\")"
-  (let* ((honor-crlf (cond ((not eol-style) nil)
-                           ((eql eol-style :crlf))
-                           (honor-crlf-p honor-crlf)
-                           ;; If HONOR-CRLF was supplied, it takes
-                           ;; precedence over these.
-                           ((in eol-style :ascii :unicode))))
-         ;; To honor CRLF, we must search for #\Return, but that does
-         ;; not necessarily mean that we should split on it.
-         (ignore-cr (in eol-style :lf :crlf))
-         (cr-p (lambda (c) (eql c #\Return)))
-         (cr-or-lf-p (lambda (c) (in c #\Return #\Linefeed)))
-         (eolp (etypecase eol-style
-                 ((or null keyword)
-                  (ecase eol-style
-                    ((nil) (lambda (c) (eql c #\Newline)))
-                    ((:cr :crlf) cr-p)
-                    (:lf (if honor-crlf
-                             cr-or-lf-p
-                             (lambda (c) (eql c #\Linefeed))))
-                    (:ascii cr-or-lf-p)
-                    (:unicode
-                     (lambda (c)
-                       (in c #\Return #\Linefeed
-                           #.(code-char #x0085) ; Next line
-                           #.(code-char #x000B) ; #\Vt (vertical tab)
-                           #\Page               ; Form feed
-                           #.(code-char #x2028) ; #\Line_Separator
-                           #.(code-char #x2029)))))) ; #\Paragraph_Separator
-                 (function
-                  (if (and honor-crlf
-                           ;; Do not split on #\Return if EOL-STYLE does
-                           ;; not already include it.
-                           (setf ignore-cr (not (funcall eol-style #\Return))))
-                      (disjoin eol-style cr-p)
-                      eol-style)))))
-    (flet ((next-eol (start) (position-if eolp string :start start)))
-      (do* ((length (length string))
-            (line nil (subseq string start
-                              (if keep-eols (1+ end) (- end crlf-offset))))
-            (lines nil (push line lines))
-            (line-count 0 (1+ line-count))
-            (start 0 (1+ end))
-            (end (next-eol start) (next-eol start))
-            (crlf-offset 0 0))
-           ((or (not end)
-                (eql line-count count))
-            (if (eql line-count count)
-                (nreverse lines)
-                (nreverse (if (emptyp (setf line (subseq string start)))
-                              lines
-                              (cons line lines)))))
-       again
-        (when (and (eql (char string end) #\Return)
-                   honor-crlf)
-          (let ((end+1 (1+ end)))
-            (if (< end+1 length)
-                (if (eql (char string end+1) #\Linefeed)
-                    (setf end end+1
-                          crlf-offset 1)
-                    (when ignore-cr
-                      (if (setf end (next-eol end+1))
-                          (go again)
-                          (return (nreverse (push (subseq string start)
-                                                  lines))))))
-                (when ignore-cr
-                  (return (nreverse (push (subseq string start)
-                                          lines)))))))))))
+  (when (null string) (return-from lines nil))
+  (with-string-dispatch () string
+    (let* ((honor-crlf (cond ((not eol-style) nil)
+                             ((eql eol-style :crlf))
+                             (honor-crlf-p honor-crlf)
+                             ;; If HONOR-CRLF was supplied, it takes
+                             ;; precedence over these.
+                             ((in eol-style :ascii :unicode))))
+           ;; To honor CRLF, we must search for #\Return, but that does
+           ;; not necessarily mean that we should split on it.
+           (ignore-cr (in eol-style :lf :crlf))
+           (cr-p (lambda (c) (eql c #\Return)))
+           (cr-or-lf-p (lambda (c) (in c #\Return #\Linefeed)))
+           (eolp (etypecase eol-style
+                   ((or null keyword)
+                    (ecase eol-style
+                      ((nil) (lambda (c) (eql c #\Newline)))
+                      ((:cr :crlf) cr-p)
+                      (:lf (if honor-crlf
+                               cr-or-lf-p
+                               (lambda (c) (eql c #\Linefeed))))
+                      (:ascii cr-or-lf-p)
+                      (:unicode
+                       (lambda (c)
+                         (in c #\Return #\Linefeed
+                             #.(code-char #x0085) ; Next line
+                             #.(code-char #x000B) ; #\Vt (vertical tab)
+                             #\Page               ; Form feed
+                             #.(code-char #x2028) ; #\Line_Separator
+                             #.(code-char #x2029)))))) ; #\Paragraph_Separator
+                   (function
+                    (if (and honor-crlf
+                             ;; Do not split on #\Return if EOL-STYLE does
+                             ;; not already include it.
+                             (setf ignore-cr (not (funcall eol-style #\Return))))
+                        (disjoin eol-style cr-p)
+                        eol-style)))))
+      (flet ((next-eol (start) (position-if eolp string :start start)))
+        (do* ((length (length string))
+              (line nil (subseq string start
+                                (if keep-eols (1+ end) (- end crlf-offset))))
+              (lines nil (push line lines))
+              (line-count 0 (1+ (the array-index line-count)))
+              (start 0 (1+ end))
+              (end (next-eol start) (next-eol start))
+              (crlf-offset 0 0))
+             ((or (not end)
+                  (eql line-count count))
+              (if (eql line-count count)
+                  (nreverse lines)
+                  (nreverse (if (emptyp (setf line (subseq string start)))
+                                lines
+                                (cons line lines)))))
+         again
+          (when (and (eql (char string end) #\Return)
+                     honor-crlf)
+            (let ((end+1 (1+ end)))
+              (if (< end+1 length)
+                  (if (eql (char string end+1) #\Linefeed)
+                      (setf end end+1
+                            crlf-offset 1)
+                      (when ignore-cr
+                        (if (setf end (next-eol end+1))
+                            (go again)
+                            (return (nreverse (push (subseq string start)
+                                                    lines))))))
+                  (when ignore-cr
+                    (return (nreverse (push (subseq string start)
+                                            lines))))))))))))
 
 (-> fmt ((or string function) &rest t) string)
 (defun fmt (control-string &rest args)

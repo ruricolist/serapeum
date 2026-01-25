@@ -394,6 +394,75 @@ removed."
                    (reset)
                    (output-word token t)))))))))
 
+(defun walk-lines (fun string &key eol-style (honor-crlf nil honor-crlf-p) count keep-eols)
+  "Like `lines', but instead of collecting the lines as strings, call FUN
+with the string and the start and end of each line."
+  (when (null string) (return-from walk-lines nil))
+  (with-string-dispatch () string
+    (let* ((honor-crlf (cond ((not eol-style) nil)
+                             ((eql eol-style :crlf))
+                             (honor-crlf-p honor-crlf)
+                             ;; If HONOR-CRLF was supplied, it takes
+                             ;; precedence over these.
+                             ((in eol-style :ascii :unicode))))
+           ;; To honor CRLF, we must search for #\Return, but that does
+           ;; not necessarily mean that we should split on it.
+           (ignore-cr (in eol-style :lf :crlf))
+           (cr-p (lambda (c) (eql c #\Return)))
+           (cr-or-lf-p (lambda (c) (in c #\Return #\Linefeed)))
+           (eolp (etypecase eol-style
+                   ((or null keyword)
+                    (ecase eol-style
+                      ((nil) (lambda (c) (eql c #\Newline)))
+                      ((:cr :crlf) cr-p)
+                      (:lf (if honor-crlf
+                               cr-or-lf-p
+                               (lambda (c) (eql c #\Linefeed))))
+                      (:ascii cr-or-lf-p)
+                      (:unicode
+                       (lambda (c)
+                         (in c #\Return #\Linefeed
+                             #.(code-char #x0085) ; Next line
+                             #.(code-char #x000B) ; #\Vt (vertical tab)
+                             #\Page               ; Form feed
+                             #.(code-char #x2028) ; #\Line_Separator
+                             #.(code-char #x2029)))))) ; #\Paragraph_Separator
+                   (function
+                    (if (and honor-crlf
+                             ;; Do not split on #\Return if EOL-STYLE does
+                             ;; not already include it.
+                             (setf ignore-cr (not (funcall eol-style #\Return))))
+                        (disjoin eol-style cr-p)
+                        eol-style)))))
+      (flet ((next-eol (start) (position-if eolp string :start start)))
+        (do* ((length (length string))
+              (line nil (funcall fun
+                                 string start
+                                 (if keep-eols (1+ end) (- end crlf-offset))))
+              (line-count 0 (1+ (the array-index line-count)))
+              (start 0 (1+ end))
+              (end (next-eol start) (next-eol start))
+              (crlf-offset 0 0))
+             ((or (not end)
+                  (eql line-count count))
+              (unless (eql line-count count)
+                (unless (= start length)
+                  (funcall fun string start length))))
+         again
+          (when (and (eql (char string end) #\Return)
+                     honor-crlf)
+            (let ((end+1 (1+ end)))
+              (if (< end+1 length)
+                  (if (eql (char string end+1) #\Linefeed)
+                      (setf end end+1
+                            crlf-offset 1)
+                      (when ignore-cr
+                        (if (setf end (next-eol end+1))
+                            (go again)
+                            (return (funcall fun string start length)))))
+                  (when ignore-cr
+                    (return (funcall fun string start length)))))))))))
+
 (-> lines ((or null string)
            &key
            (:eol-style (or (member nil :cr :lf :crlf :ascii :unicode)
@@ -403,7 +472,9 @@ removed."
            (:count (or null (integer 0 *)))
            (:sharedp t))
     (values (or null list) &optional))
-(defun lines (string &key eol-style (honor-crlf nil honor-crlf-p) keep-eols count sharedp)
+(defun lines (string
+              &rest args
+              &key eol-style honor-crlf keep-eols count sharedp)
   "Return a list of the lines in STRING, stripped of any EOL characters
 and including the last nonempty line even if it has no EOL characters,
 or NIL if STRING is empty or NIL.
@@ -549,77 +620,14 @@ To additionally omit lines consisting only of whitespace:
                  (mapcar #'serapeum:trim-whitespace
                          (serapeum:lines string :eol-style :unicode))))
     => (\"abc\" \"z\")"
-  (when (null string) (return-from lines nil))
-  (with-string-dispatch () string
-    (let* ((honor-crlf (cond ((not eol-style) nil)
-                             ((eql eol-style :crlf))
-                             (honor-crlf-p honor-crlf)
-                             ;; If HONOR-CRLF was supplied, it takes
-                             ;; precedence over these.
-                             ((in eol-style :ascii :unicode))))
-           ;; To honor CRLF, we must search for #\Return, but that does
-           ;; not necessarily mean that we should split on it.
-           (ignore-cr (in eol-style :lf :crlf))
-           (cr-p (lambda (c) (eql c #\Return)))
-           (cr-or-lf-p (lambda (c) (in c #\Return #\Linefeed)))
-           (eolp (etypecase eol-style
-                   ((or null keyword)
-                    (ecase eol-style
-                      ((nil) (lambda (c) (eql c #\Newline)))
-                      ((:cr :crlf) cr-p)
-                      (:lf (if honor-crlf
-                               cr-or-lf-p
-                               (lambda (c) (eql c #\Linefeed))))
-                      (:ascii cr-or-lf-p)
-                      (:unicode
-                       (lambda (c)
-                         (in c #\Return #\Linefeed
-                             #.(code-char #x0085) ; Next line
-                             #.(code-char #x000B) ; #\Vt (vertical tab)
-                             #\Page               ; Form feed
-                             #.(code-char #x2028) ; #\Line_Separator
-                             #.(code-char #x2029)))))) ; #\Paragraph_Separator
-                   (function
-                    (if (and honor-crlf
-                             ;; Do not split on #\Return if EOL-STYLE does
-                             ;; not already include it.
-                             (setf ignore-cr (not (funcall eol-style #\Return))))
-                        (disjoin eol-style cr-p)
-                        eol-style))))
-           (subseq-fn (ensure-function (if sharedp #'nsubseq #'subseq))))
-      (flet ((next-eol (start) (position-if eolp string :start start)))
-        (do* ((length (length string))
-              (line nil (funcall subseq-fn
-                                 string start
-                                 (if keep-eols (1+ end) (- end crlf-offset))))
-              (lines nil (push line lines))
-              (line-count 0 (1+ (the array-index line-count)))
-              (start 0 (1+ end))
-              (end (next-eol start) (next-eol start))
-              (crlf-offset 0 0))
-             ((or (not end)
-                  (eql line-count count))
-              (if (eql line-count count)
-                  (nreverse lines)
-                  (nreverse (if (emptyp (setf line (funcall subseq-fn string start)))
-                                lines
-                                (cons line lines)))))
-         again
-          (when (and (eql (char string end) #\Return)
-                     honor-crlf)
-            (let ((end+1 (1+ end)))
-              (if (< end+1 length)
-                  (if (eql (char string end+1) #\Linefeed)
-                      (setf end end+1
-                            crlf-offset 1)
-                      (when ignore-cr
-                        (if (setf end (next-eol end+1))
-                            (go again)
-                            (return (nreverse (push (funcall subseq-fn string start)
-                                                    lines))))))
-                  (when ignore-cr
-                    (return (nreverse (push (funcall subseq-fn string start)
-                                            lines))))))))))))
+  (declare (ignore eol-style honor-crlf keep-eols count))
+  (with-collectors (collect)
+    (apply #'walk-lines
+           (let ((subseq-fn (if sharedp #'nsubseq #'subseq)))
+             (lambda (string start end)
+               (collect (funcall subseq-fn string start end))))
+           string
+           (remove-from-plist args :sharedp))))
 
 (-> fmt ((or string function) &rest t) string)
 (defun fmt (control-string &rest args)

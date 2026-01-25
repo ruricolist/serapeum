@@ -408,6 +408,7 @@
    #:words
    #:tokens
    #:word-wrap
+   #:walk-lines
    #:lines
    #:fmt
    #:with-string

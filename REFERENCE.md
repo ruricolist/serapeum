@@ -1,4 +1,4 @@
-# Function Listing For serapeum (44 files, 471 functions)
+# Function Listing For serapeum (44 files, 472 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -4966,7 +4966,14 @@ removed.
 
 [View source](strings.lisp#L370)
 
-### `(lines string &key eol-style honor-crlf keep-eols count sharedp)`
+### `(walk-lines fun string &key eol-style honor-crlf count keep-eols)`
+
+Like `lines`, but instead of collecting the lines as strings, call FUN
+with the string and the start and end of each line.
+
+[View source](strings.lisp#L397)
+
+### `(lines string &rest args &key eol-style honor-crlf keep-eols count sharedp)`
 
 Return a list of the lines in STRING, stripped of any EOL characters
 and including the last nonempty line even if it has no EOL characters,
@@ -5114,7 +5121,7 @@ To additionally omit lines consisting only of whitespace:
                          (serapeum:lines string :eol-style :unicode))))
     => ("abc" "z")
 
-[View source](strings.lisp#L406)
+[View source](strings.lisp#L475)
 
 ### `(fmt control-string &rest args)`
 
@@ -5125,7 +5132,7 @@ some Lisps means a significant increase in speed.
 
 Has a compiler macro with `formatter`.
 
-[View source](strings.lisp#L625)
+[View source](strings.lisp#L633)
 
 ### `(escape string table &key start end stream)`
 
@@ -5145,7 +5152,7 @@ STREAM can be used to specify a stream to write to, like the first
 argument to `format`. The default behavior, with no stream specified,
 is to return a string.
 
-[View source](strings.lisp#L715)
+[View source](strings.lisp#L723)
 
 ### `(ellipsize string n &key ellipsis)`
 
@@ -5160,31 +5167,31 @@ started.
 
 From Arc.
 
-[View source](strings.lisp#L744)
+[View source](strings.lisp#L752)
 
 ### `(string^= prefix string &key start1 end1 start2 end2)`
 
 Is PREFIX a prefix of STRING?
 
-[View source](strings.lisp#L788)
+[View source](strings.lisp#L796)
 
 ### `(string-prefix-p prefix string &key start1 end1 start2 end2)`
 
 Like `string^=`, but case-insensitive.
 
-[View source](strings.lisp#L788)
+[View source](strings.lisp#L796)
 
 ### `(string$= suffix string &key start1 end1 start2 end2)`
 
 Is SUFFIX a suffix of STRING?
 
-[View source](strings.lisp#L808)
+[View source](strings.lisp#L816)
 
 ### `(string-suffix-p suffix string &key start1 end1 start2 end2)`
 
 Like `string$=`, but case-insensitive.
 
-[View source](strings.lisp#L808)
+[View source](strings.lisp#L816)
 
 ### `(string*= substring string &key start1 end1 start2 end2)`
 
@@ -5197,13 +5204,13 @@ This is similar, but not identical, to SEARCH.
      (string*= nil "foo") => NIL
      (string*= nil "nil") => T
 
-[View source](strings.lisp#L828)
+[View source](strings.lisp#L836)
 
 ### `(string-contains-p substring string &key start1 end1 start2 end2)`
 
 Like `string*=`, but case-insensitive.
 
-[View source](strings.lisp#L828)
+[View source](strings.lisp#L836)
 
 ### `(string~= token string &key start1 end1 start2 end2)`
 
@@ -5213,13 +5220,13 @@ Equivalent to
      (find TOKEN (tokens STRING) :test #'string=),
 but without consing.
 
-[View source](strings.lisp#L850)
+[View source](strings.lisp#L858)
 
 ### `(string-token-p token string &key start1 end1 start2 end2)`
 
 Like `string~=`, but case-insensitive.
 
-[View source](strings.lisp#L850)
+[View source](strings.lisp#L858)
 
 ### `(string-replace-all old string new &key start end stream count)`
 
@@ -5246,13 +5253,13 @@ START and END is replaced with NEW.
 STREAM can be used to specify a stream to write to. It is resolved
 like the first argument to `format`.
 
-[View source](strings.lisp#L884)
+[View source](strings.lisp#L892)
 
 ### `(string-replace old string new &key start end stream)`
 
 Like `string-replace-all`, but only replace the first match.
 
-[View source](strings.lisp#L938)
+[View source](strings.lisp#L946)
 
 ### `(chomp string &optional suffixes)`
 
@@ -5264,13 +5271,13 @@ line feed.
 
 Takes care that the longest suffix is always removed first.
 
-[View source](strings.lisp#L947)
+[View source](strings.lisp#L955)
 
 ### `(string-count substring string &key start end)`
 
 Count how many times SUBSTRING appears in STRING.
 
-[View source](strings.lisp#L976)
+[View source](strings.lisp#L984)
 
 ### `(string+ &rest args)`
 
@@ -5295,7 +5302,7 @@ empty string:
 
 This utility is inspired by the utility of the same name in Allegro.
 
-[View source](strings.lisp#L1013)
+[View source](strings.lisp#L1021)
 
 ## Vectors
 

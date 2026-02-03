@@ -176,6 +176,19 @@
                       (y 2))
              x))))
 
+(test if-and-let* ()
+  (is (equal
+       (if-and-let* ((x 1)
+                     (y 2))
+         (list :then x y))
+       '(:then 1 2)))
+  (is (equal
+       (if-and-let* ((x 1)
+                     (y nil))
+         (list x y)
+         :else)
+       :else)))
+
 (test if-not
   (is (= 2 (if-not t 1 2)))
   (is (= 2 (if-not "test" 1 2)))

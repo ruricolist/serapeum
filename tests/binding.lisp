@@ -176,6 +176,33 @@
                       (y 2))
              x))))
 
+(test if-and-let* ()
+  ;; No claws, use the consequence.
+  (is (eql
+       (if-and-let* () :then :else)
+       :then))
+  ;; Claws all true, use the consequence.
+  (is (equal
+       (if-and-let* ((x 1)
+                     (y 2))
+         (list :then x y))
+       '(:then 1 2)))
+  ;; Clause false, use the alternative.
+  (is (equal
+       (if-and-let* ((x 1)
+                     (y nil))
+         (list x y)
+         :else)
+       :else))
+  ;; Bindings from the claws are not visible in the alternative.
+  (is (eql
+       (let ((x 1))
+         (if-and-let* ((x 2)
+                       (y nil))
+           :then
+           x))
+       1)))
+
 (test if-not
   (is (= 2 (if-not t 1 2)))
   (is (= 2 (if-not "test" 1 2)))

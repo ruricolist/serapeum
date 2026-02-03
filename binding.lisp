@@ -8,6 +8,7 @@
    :trivia)
   (:export
    #:and-let*
+   #:if-and-let*
    #:if-not
    #:if-not-let
    #:letrec
@@ -326,6 +327,16 @@ Also, this version makes the bindings immutable."
                   ((list* (list expr) clauses)
                    `(and ,expr ,@(expand clauses body)))))))
       (car (expand clauses body)))))
+
+(defmacro if-and-let* (bindings &body (then-form &optional else-form))
+  "Like `and-let*', but with an `else' clause.
+Note that unlike `if-let*', the variables in BINDINGS are only bound
+for THEN-FORM."
+  (with-unique-names (block-name)
+    `(block ,block-name
+       (and-let* ,bindings
+         (return-from ,block-name ,then-form))
+       ,else-form)))
 
 ;;; Etc
 

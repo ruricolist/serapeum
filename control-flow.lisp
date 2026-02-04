@@ -21,6 +21,7 @@
    :extract-function-name
    :rebinding-functions)
   (:export
+   :as~>
    :bcond
    :case-let
    :case-of
@@ -763,6 +764,13 @@ value like `gethash'."
   (loop for hole in holes
         when (find '_ (ensure-list hole))
           do (error "Arrow macros with underscores cannot be used as patterns: ~a" hole)))
+
+(defmacro as~> (expr name &rest exprs)
+  "Like `~>' or `~>', but instead of threading by position, threading is
+done based on NAME."
+  `(let* ,(loop for expr in (cons expr exprs)
+                collect (list name expr))
+     ,name))
 
 (defmacro ~> (needle &rest holes)
   "Threading macro from Clojure (by way of Racket).

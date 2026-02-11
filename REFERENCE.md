@@ -2822,7 +2822,7 @@ Return the basename, that is:
 - if it's a directory, the name of the directory,
 - if it's a file, the name of the file including its type (extension).
 
-[View source](files.lisp#L73)
+[View source](files.lisp#L74)
 
 ### `(path-join &rest pathnames)`
 
@@ -2844,7 +2844,7 @@ directories; you have to do that yourself.
 Cf. `base-path-join` for a similar function with more intuitive
 behavior.
 
-[View source](files.lisp#L81)
+[View source](files.lisp#L85)
 
 ### `(base-path-join base &rest suffixes)`
 
@@ -2868,7 +2868,7 @@ to the accumulated file name. This includes the extension.
 
 See `path-join` for a similar function with more consistent behavior.
 
-[View source](files.lisp#L107)
+[View source](files.lisp#L111)
 
 ### `(write-stream-into-file stream pathname &key if-exists if-does-not-exist)`
 
@@ -2877,20 +2877,20 @@ Read STREAM and write the contents into PATHNAME.
 STREAM will be closed afterwards, so wrap it with
 `make-concatenated-stream` if you want it left open.
 
-[View source](files.lisp#L147)
+[View source](files.lisp#L151)
 
 ### `(write-file-into-stream pathname output &key if-does-not-exist external-format)`
 
 Write the contents of FILE into STREAM.
 
-[View source](files.lisp#L161)
+[View source](files.lisp#L165)
 
 ### `(file= file1 file2 &key buffer-size)`
 
 Compare FILE1 and FILE2 octet by octet, (possibly) using buffers
 of BUFFER-SIZE.
 
-[View source](files.lisp#L171)
+[View source](files.lisp#L175)
 
 ### `(file-size file &key element-type)`
 
@@ -2902,14 +2902,14 @@ resulting stream.
 If all you want is to read the file's size in octets from its
 metadata, consider `trivial-file-size:file-size-in-octets` instead.
 
-[View source](files.lisp#L232)
+[View source](files.lisp#L236)
 
 ### `(exe p)`
 
 If P, a pathname designator, has no extension, then, on Windows
 only, add an extension of `.exe`.
 
-[View source](files.lisp#L248)
+[View source](files.lisp#L252)
 
 ### `(resolve-executable p)`
 
@@ -2923,7 +2923,7 @@ Note that this function does not check the current directory (even on
 Windows) and it does not care if P is already an absolute pathname: it
 only cares about its name and type.
 
-[View source](files.lisp#L268)
+[View source](files.lisp#L272)
 
 ### `(format-file-size-human-readable stream file-size &key flavor space suffix)`
 
@@ -2944,7 +2944,7 @@ prefix. (Defaults to T if FLAVOR is `:si`.)
 SUFFIX is the suffix to use; defaults to B if FLAVOR is `:iec`,
 otherwise empty.
 
-[View source](files.lisp#L288)
+[View source](files.lisp#L292)
 
 ### `(file-size-human-readable file &key flavor space suffix stream)`
 
@@ -2953,7 +2953,7 @@ The size of file is found by `trivial-file-size:file-size-in-octets`.
 
 Inspired by the function of the same name in Emacs.
 
-[View source](files.lisp#L316)
+[View source](files.lisp#L320)
 
 ## Symbols
 

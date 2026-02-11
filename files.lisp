@@ -70,11 +70,15 @@
           (with-open-files
               ,(rest args) ,@body)))))
 
+(-> path-basename ((or string stream pathname)) (or string null))
 (defun path-basename (pathname)
   "Return the basename, that is:
 - if it's a directory, the name of the directory,
 - if it's a file, the name of the file including its type (extension)."
-  (first (last (pathname-directory (uiop:ensure-directory-pathname pathname)))))
+  (let ((basename
+          (first (last (pathname-directory (uiop:ensure-directory-pathname pathname))))))
+    (unless (keywordp basename)
+      basename)))
 
 (-> path-join (&rest (or string stream pathname))
   (values pathname &optional))

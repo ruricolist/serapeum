@@ -100,6 +100,7 @@
                            #p"foo.txtbar.ext")))
 
 (test basename
+  (is (null (path-basename "/")))
   (is (null (path-basename "")))
   (is (equal (path-basename "foo/bar") "bar"))
   (is (null (path-basename #p"")))

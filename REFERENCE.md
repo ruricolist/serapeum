@@ -1841,14 +1841,14 @@ parameters names.
 quasiquotes. If using placeholders inside quasiquotes does not work on
 your Lisp implementation, that's a bug, not a limitation.)
 
-[View source](op.lisp#L180)
+[View source](op.lisp#L204)
 
 ### `(opf place expr)`
 
 Like `(callf PLACE (op EXPR))'.
 From GOO.
 
-[View source](op.lisp#L232)
+[View source](op.lisp#L256)
 
 ## Box
 

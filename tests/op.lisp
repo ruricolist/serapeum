@@ -66,3 +66,9 @@ environment."
 ;;                  (let ((_ 1))
 ;;                    _)))
 ;;           2 2))))
+
+(test test-op-over-destructuring-bind ()
+  (funcall
+   (op (destructuring-bind (x . ys) _
+         (cons x ys)))
+   '((1 2 3))))

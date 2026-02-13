@@ -16,6 +16,27 @@
 (define-symbol-macro underscore '_)
 (define-symbol-macro rest-arg '_*)
 
+(defun map-improper-list (fn list)
+  "Like `mapcar', but works on improper lists."
+  (let ((fn (ensure-function fn))
+        improper-tail)
+    (append
+     (loop for tail on list
+           collect (funcall fn (car tail))
+           if (not (listp (cdr tail))) do
+             (setf improper-tail (funcall fn (cdr tail))))
+     improper-tail)))
+
+(defun some* (fn list)
+  "Like `some', but works on improper lists."
+  (let ((fn (ensure-function fn)))
+    (map-improper-list
+     (lambda (elt)
+       (when-let (result (funcall fn elt))
+         (return-from some* result)))
+     list)
+    nil))
+
 (defun sym-underscore? (x)
   (string= x underscore))
 
@@ -93,9 +114,9 @@
   #-sbcl
   (cond ((rest-placeholder? x env) x)
         ((listp x)
-         (some (lambda (x)
-                 (rest-op? x env))
-               x))
+         (some* (lambda (x)
+                  (rest-op? x env))
+                x))
         (t nil)))
 
 (defun extract-op-env (body env)
@@ -118,11 +139,12 @@
                    (loop repeat (- n counter) do (make-var))))
                x)
              (splice (y env)
-               (mapcar (lambda (x)
-                         (if (rest-placeholder? x env)
-                             `(values-list ,x)
-                             `(values ,x)))
-                       y))
+               (map-improper-list
+                (lambda (x)
+                  (if (rest-placeholder? x env)
+                      `(values-list ,x)
+                      `(values ,x)))
+                y))
              (make-spliced-call (f env)
                (match f
                  ((list* 'progn body)
@@ -147,7 +169,7 @@
                         ((numbered-placeholder? f e)
                          (values (make-var/numbered f) t))
                         ((and (listp f)
-                              (some (lambda (x) (rest-placeholder? x e)) f))
+                              (some* (lambda (x) (rest-placeholder? x e)) f))
                          (let ((f (cons (car f)
                                         (mapcar (lambda (x) (walk-op x e))
                                                 (cdr f)))))
@@ -164,14 +186,16 @@
                      ((numbered-placeholder? x env)
                       (make-var/numbered x))
                      ((and (listp x)
-                           (some (rcurry #'rest-placeholder? env) x))
-                      (let ((y (mapcar (rcurry #'walk-op env) x)))
+                           (some* (rcurry #'rest-placeholder? env) x))
+                      (let ((y (map-improper-list (rcurry #'walk-op env) x)))
                         (make-spliced-call y env)))
                      ((and (listp x)
                            (placeholder? (car x) env))
                       (walk-op `(funcall ,(car x) ,@(cdr x)) env))
                      ((listp x)
-                      (loop for y in x collect (walk-op y env)))
+                      (map-improper-list
+                       (lambda (y) (walk-op y env))
+                       x))
                      (t x))))
       (let ((body (walk-op `(progn ,@body) env)))
         (values body vars)))))

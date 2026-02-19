@@ -872,6 +872,90 @@ From APL."
                      seq
                      args))))))
 
+(defun keep-duplicates (seq &key (test #'eql)
+                              test-not (start 0) end
+                              from-end key)
+  "Return the elements of SEQ `remove-duplicates' would remove.
+
+The elements will only be the same if both `keep-duplicates' and
+`remove-duplicates' are called with the same arguments.
+
+By default, the leading duplicates in SEQ are kept (only the last is
+removed). If FROM-END is true, only the first duplicate in SEQ is
+discarded. This matches the behavior of `remove-duplicates':
+
+    (remove-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt)
+    => (\"a3\")
+
+    (keep-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt)
+    => '(\"a1\" \"a2\")
+
+    (remove-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt :from-end t)
+    => (\"a1\")
+
+    (keep-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt :from-end t)
+    => '(\"a2\" \"a3\")"
+  (flet ((vector-keep-duplicates (vector &aux (length (length vector)))
+           ;; This is adapted from vector-remove-duplicates* in the
+           ;; SBCL source.
+           (declare (vector vector)
+                    (fixnum start length))
+           (with-boolean (from-end test-not)
+             (with-item-key-function (key)
+               (let ((end (or end (length vector)))
+                     (result (make-sequence-like vector length))
+                     (i 0)
+                     (j start))
+                 (declare (array-index i j)
+                          (array-length end))
+                 ;; Copy over the unfiltered leading elements.
+                 (loop until (= i start) do
+                   (setf (aref result i) (aref vector i))
+                   (incf i))
+                 (flet ((duplicated? (elt)
+                          "Is ELT a duplicate under the arguments?"
+                          (boolean-if
+                           from-end
+                           (boolean-if
+                            test-not
+                            ;; It occured previously in the vector. NB
+                            ;; on the first iteration (= start i) and
+                            ;; this is checking an empty range.
+                            (position (key elt) vector
+                                      :start start :end i
+                                      :test-not test-not :key key)
+                            (position (key elt) vector
+                                      :start start :end i
+                                      :test test :key key))
+                           ;; It occurs again later in the vector.
+                           (boolean-if
+                            test-not
+                            (position (key elt) vector
+                                      :start (1+ i) :end end
+                                      :test-not test-not :key key)
+                            (position (key elt) vector
+                                      :start (1+ i) :end end
+                                      :test test :key key)))))
+                   (declare (inline duplicated?))
+                   (loop until (= i end)
+                         for elt = (aref vector i)
+                         do (when (duplicated? elt)
+                              (setf (aref result j) elt)
+                              (incf j))
+                            (incf i)))
+                 ;; Copy over the unfiltered trailing elements.
+                 (loop until (= i length) do
+                   (setf (aref result j) (aref vector i))
+                   (incf i)
+                   (incf j))
+                 ;; "Shrink" the vector.
+                 (take j result))))))
+    (declare (dynamic-extent #'vector-keep-duplicates))
+    (let* ((vec (coerce seq 'vector))
+           (dups (vector-keep-duplicates vec)))
+      (replace (make-sequence-like seq (length dups))
+               dups))))
+
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.
 That means, for each duplicate, the first occurrence will be the kept, and subsequent occurrences will be discarded.

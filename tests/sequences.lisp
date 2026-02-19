@@ -537,6 +537,67 @@
             (collapse-duplicates #(1 1 2 2 1 1))
             (collapse-duplicates '(1 1 2 2 1 1)))))
 
+(test keep-duplicates-ordered ()
+  (is (null (keep-duplicates '())))
+  (is (emptyp (keep-duplicates #())))
+  (is (equal (keep-duplicates '("a1" "a2" "a3") :key #'first-elt)
+             '("a1" "a2")))
+  (is (equal (keep-duplicates '("a1" "a2" "a3") :key #'first-elt :from-end t)
+             '("a2" "a3"))))
+
+(test keep-duplicates-same-elements
+  (flet ((same-elements-p (xs ys)
+           (and (length= xs ys)
+                (every #'eq xs ys))))
+    ;; Check which is kept.
+    (let* ((a1 "a")
+           (a2 (copy-seq a1))
+           (list (list a1 a2)))
+      (is (same-elements-p
+           (list a1)
+           (keep-duplicates list :test #'equal)))
+      (is (same-elements-p
+           (list a2)
+           (keep-duplicates list :test #'equal :from-end t)))
+      ;; Test with multiple duplicates.
+      (let ((list (list a1 a2 a2 a2)))
+        (is (same-elements-p
+             (list a1 a2 a2)
+             (keep-duplicates list :test #'equal)))
+        (is (same-elements-p
+             (list a2 a2 a2)
+             (keep-duplicates list :test #'equal :from-end t)))))
+    (let ((list (mapcar #'copy-seq '("a" "a" "b" "b" "c" "c"))))
+      (is (length= list (remove-duplicates list :test #'eq)))
+      (destructuring-bind (a1 a2 b1 b2 c1 c2) list
+        ;; Check remove-duplicates behaves as expected.
+        (is (same-elements-p
+             (remove-duplicates list :test #'equal)
+             (list a2 b2 c2)))
+        (is (same-elements-p
+             (remove-duplicates list :test #'equal :from-end t)
+             (list a1 b1 c1)))
+        ;; Test keep-duplicates.
+        (is (same-elements-p
+             (keep-duplicates list :test #'equal)
+             (list a1 b1 c1)))
+        (is (same-elements-p
+             (keep-duplicates list :test #'equal :from-end t)
+             (list a2 b2 c2)))
+        ;; ;; Compare keep-duplicates and remove-duplicates.
+        (is (same-elements-p
+             (keep-duplicates list :test #'equal)
+             (remove-duplicates list :test #'equal :from-end t)))
+        (is (not (same-elements-p
+                  (keep-duplicates list :test #'equal)
+                  (remove-duplicates list :test #'equal))))
+        (is (same-elements-p
+             (keep-duplicates list :test #'equal :from-end t)
+             (remove-duplicates list :test #'equal)))
+        (is (not (same-elements-p
+                  (keep-duplicates list :test #'equal :from-end t)
+                  (remove-duplicates list :test #'equal :from-end t))))))))
+
 (test toposort
   (local
     (def dem-bones '((toe foot)

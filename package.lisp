@@ -499,6 +499,7 @@
    #:char-ecase
    #:do-splits
    #:collapse-duplicates
+   #:keep-duplicates
    #:same
    #:copy-firstn
    #:splice-seq

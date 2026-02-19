@@ -872,6 +872,66 @@ From APL."
                      seq
                      args))))))
 
+(defun vector-duplicates (vector test test-not start end key from-end
+                          &optional (length (length vector)))
+  (declare (vector vector)
+           (fixnum start length))
+  (with-boolean (from-end test-not)
+    (with-item-key-function (key)
+      (let ((end (or end (length vector)))
+            (result (make-sequence-like vector length))
+            (i 0)
+            (j start))
+        (declare (fixnum end i j))
+        (loop until (= i start)
+              do (setf (aref result i) (aref vector i))
+                 (setq i (1+ i)))
+        (loop
+          with elt = nil
+          until (= i end) do
+            (setq elt (aref vector i))
+            (when (boolean-if
+                   from-end
+                   (boolean-if
+                    test-not
+                    (position (key elt) result
+                              :start start :end j
+                              :test-not test-not :key key)
+                    (position (key elt) result
+                              :start start :end j))
+                   (boolean-if
+                    test-not
+                    (position (key elt) vector
+                              :start (1+ i) :end end
+                              :test-not test-not :key key)
+                    (position (key elt) vector
+                              :start (1+ i) :end end
+                              :test test :key key)))
+              (setf (aref result j) elt)
+              (setq j (1+ j)))
+            (setq i (1+ i)))
+        (loop until (= i length) do
+          (setf (aref result j) (aref vector i))
+          (setq i (1+ i))
+          (setq j (1+ j)))
+        (take j result)))))
+
+(defun duplicates (seq &key (test #'eql)
+                         test-not (start 0) end
+                         from-end key)
+  "Return duplicates in SEQ, that is, elements that `remove-duplicates'
+would remove, given the same arguments."
+  (let ((dups (vector-duplicates
+               (coerce seq 'vector)
+               test
+               test-not
+               start
+               end
+               key
+               from-end)))
+    (replace (make-sequence-like seq (length dups))
+             dups)))
+
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.
 That means, for each duplicate, the first occurrence will be the kept, and subsequent occurrences will be discarded.

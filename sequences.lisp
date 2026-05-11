@@ -824,12 +824,12 @@ From Clojure."
     (values table total)))
 
 (defun scan (fn seq
-              &rest args
-              &key from-end
-              (start 0)
-              (end (length seq))
-              (initial-value nil initial-value-supplied?)
-              &allow-other-keys)
+             &rest args
+             &key from-end
+               (start 0)
+               (end (length seq))
+               (initial-value nil initial-value-supplied?)
+             &allow-other-keys)
   "Return the partial reductions of SEQ.
 
 Each element of the result sequence is the result of calling `reduce'
@@ -872,7 +872,28 @@ From APL."
                      seq
                      args))))))
 
-(defun keep-duplicates (seq &key (test #'eql)
+(defsubst keep-duplicates/hash (seq &key (test #'eql)
+                                      test-not
+                                      (start 0)
+                                      end
+                                      from-end
+                                      key)
+  "Fast path for finding duplicates with a hash table."
+  ;; NB We reverse *unless* from-end is passed. We can't (portably)
+  ;; rely on passing :from-end to `remove-if' since implementations
+  ;; are allowed to operate from the beginning without `:count'.
+  (let ((result
+          (remove-if
+           (if test-not
+               (complement (distinct :test test-not))
+               (distinct :test test))
+           (if from-end seq (reverse seq)) ;sic
+           :key key
+           :start start
+           :end end)))
+    (if from-end result (reverse result))))
+
+(defun keep-duplicates (seq &key (test #'eql test-supplied-p)
                               test-not (start 0) end
                               from-end key)
   "Return the elements of SEQ `remove-duplicates' would remove.
@@ -895,6 +916,8 @@ discarded. This matches the behavior of `remove-duplicates':
 
     (keep-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt :from-end t)
     => '(\"a2\" \"a3\")"
+  (when (and test-supplied-p test-not)
+    (error "Cannot specify both TEST and TEST-NOT"))
   (flet ((vector-keep-duplicates (vector &aux (length (length vector)))
            ;; This is adapted from vector-remove-duplicates* in the
            ;; SBCL source.
@@ -951,11 +974,18 @@ discarded. This matches the behavior of `remove-duplicates':
                      (incf j))
                    (values result j)))))))
     (declare (dynamic-extent #'vector-keep-duplicates))
-    (mvlet* ((vec (coerce seq 'vector))
-             (dups len (vector-keep-duplicates vec)))
-      (replace (make-sequence-like seq len)
-               dups
-               :end2 len))))
+    (if (and (or (and test-not (hash-table-test-p test-not))
+                 (and test (hash-table-test-p test)))
+             (length> seq 20))
+        (keep-duplicates/hash seq :test test
+                                  :test-not test-not
+                                  :start start
+                                  :end end
+                                  :from-end from-end
+                                  :key key)
+        (mvlet* ((vec (coerce seq 'vector))
+                 (dups len (vector-keep-duplicates vec)))
+          (replace (make-sequence-like seq len) dups)))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.

@@ -902,59 +902,60 @@ discarded. This matches the behavior of `remove-duplicates':
                     (fixnum start length))
            (with-boolean (from-end test-not)
              (with-item-key-function (key)
-               (let ((end (or end (length vector)))
-                     (result (make-sequence-like vector length))
-                     (i 0)
-                     (j start))
-                 (declare (array-index i j)
-                          (array-length end))
-                 ;; Copy over the unfiltered leading elements.
-                 (loop until (= i start) do
-                   (setf (aref result i) (aref vector i))
-                   (incf i))
-                 (flet ((duplicated? (elt)
-                          "Is ELT a duplicate under the arguments?"
-                          (boolean-if
-                           from-end
-                           (boolean-if
-                            test-not
-                            ;; It occured previously in the vector. NB
-                            ;; on the first iteration (= start i) and
-                            ;; this is checking an empty range.
-                            (position (key elt) vector
-                                      :start start :end i
-                                      :test-not test-not :key key)
-                            (position (key elt) vector
-                                      :start start :end i
-                                      :test test :key key))
-                           ;; It occurs again later in the vector.
-                           (boolean-if
-                            test-not
-                            (position (key elt) vector
-                                      :start (1+ i) :end end
-                                      :test-not test-not :key key)
-                            (position (key elt) vector
-                                      :start (1+ i) :end end
-                                      :test test :key key)))))
-                   (declare (inline duplicated?))
-                   (loop until (= i end)
-                         for elt = (aref vector i)
-                         do (when (duplicated? elt)
-                              (setf (aref result j) elt)
-                              (incf j))
-                            (incf i)))
-                 ;; Copy over the unfiltered trailing elements.
-                 (loop until (= i length) do
-                   (setf (aref result j) (aref vector i))
-                   (incf i)
-                   (incf j))
-                 ;; "Shrink" the vector.
-                 (take j result))))))
+               (with-vector-dispatch () vector
+                 (let ((end (or end (length vector)))
+                       (result (make-array length))
+                       (i 0)
+                       (j start))
+                   (declare (array-index i j)
+                            (array-length end))
+                   ;; Copy over the unfiltered leading elements.
+                   (loop until (= i start) do
+                     (setf (aref result i) (aref vector i))
+                     (incf i))
+                   (flet ((duplicated? (elt)
+                            "Is ELT a duplicate under the arguments?"
+                            (boolean-if
+                             from-end
+                             (boolean-if
+                              test-not
+                              ;; It occured previously in the vector. NB
+                              ;; on the first iteration (= start i) and
+                              ;; this is checking an empty range.
+                              (position (key elt) vector
+                                        :start start :end i
+                                        :test-not test-not :key key)
+                              (position (key elt) vector
+                                        :start start :end i
+                                        :test test :key key))
+                             ;; It occurs again later in the vector.
+                             (boolean-if
+                              test-not
+                              (position (key elt) vector
+                                        :start (1+ i) :end end
+                                        :test-not test-not :key key)
+                              (position (key elt) vector
+                                        :start (1+ i) :end end
+                                        :test test :key key)))))
+                     (declare (inline duplicated?))
+                     (loop until (= i end)
+                           for elt = (aref vector i)
+                           do (when (duplicated? elt)
+                                (setf (aref result j) elt)
+                                (incf j))
+                              (incf i)))
+                   ;; Copy over the unfiltered trailing elements.
+                   (loop until (= i length) do
+                     (setf (aref result j) (aref vector i))
+                     (incf i)
+                     (incf j))
+                   (values result j)))))))
     (declare (dynamic-extent #'vector-keep-duplicates))
-    (let* ((vec (coerce seq 'vector))
-           (dups (vector-keep-duplicates vec)))
-      (replace (make-sequence-like seq (length dups))
-               dups))))
+    (mvlet* ((vec (coerce seq 'vector))
+             (dups len (vector-keep-duplicates vec)))
+      (replace (make-sequence-like seq len)
+               dups
+               :end2 len))))
 
 (defsubst nub (seq &rest args &key start end key (test #'equal))
   "Remove duplicates from SEQ, starting from the end.

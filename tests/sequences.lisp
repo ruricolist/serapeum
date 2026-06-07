@@ -537,25 +537,20 @@
             (collapse-duplicates #(1 1 2 2 1 1))
             (collapse-duplicates '(1 1 2 2 1 1)))))
 
-(defmacro with-keep-duplicates-paths ((fn &key) &body body)
-  "Duplicate BODY with FN bound to `keep-duplicates' variants."
-  `(progn
-     (flet ((,fn (&rest args) (apply #'keep-duplicates args)))
-       ,@body)
-     (flet ((,fn (&rest args) (apply #'serapeum::keep-duplicates/hash args)))
-       ,@body)))
-
 (test keep-duplicates-ordered
-  (with-keep-duplicates-paths (keep-dups)
-    (is (null (keep-dups '())))
-    (is (emptyp (keep-dups #())))
-    (is (equal (keep-dups '("a1" "a2" "a3") :key #'first-elt)
+  (dolist (hash '(t nil))
+    (is (null (keep-duplicates '() :force-hash hash)))
+    (is (emptyp (keep-duplicates #() :force-hash hash)))
+    (is (equal (keep-duplicates '("a1" "a2" "a3") :key #'first-elt :force-hash hash)
                '("a1" "a2")))
-    (is (equal (keep-dups '("a1" "a2" "a3") :key #'first-elt :from-end t)
+    (is (equal (keep-duplicates '("a1" "a2" "a3")
+                                :key #'first-elt
+                                :from-end t
+                                :force-hash hash)
                '("a2" "a3")))))
 
 (test keep-duplicates-same-elements
-  (with-keep-duplicates-paths (keep-dups)
+  (dolist (hash '(t nil))
     (flet ((same-elements-p (xs ys)
              (and (length= xs ys)
                   (every #'eq xs ys))))
@@ -565,18 +560,18 @@
              (list (list a1 a2)))
         (is (same-elements-p
              (list a1)
-             (keep-dups list :test #'equal)))
+             (keep-duplicates list :test #'equal :force-hash hash)))
         (is (same-elements-p
              (list a2)
-             (keep-dups list :test #'equal :from-end t)))
+             (keep-duplicates list :test #'equal :from-end t :force-hash hash)))
         ;; Test with multiple duplicates.
         (let ((list (list a1 a2 a2 a2)))
           (is (same-elements-p
                (list a1 a2 a2)
-               (keep-dups list :test #'equal)))
+               (keep-duplicates list :test #'equal :force-hash hash)))
           (is (same-elements-p
                (list a2 a2 a2)
-               (keep-dups list :test #'equal :from-end t)))))
+               (keep-duplicates list :test #'equal :from-end t :force-hash hash)))))
       (let ((list (mapcar #'copy-seq '("a" "a" "b" "b" "c" "c"))))
         (is (length= list (remove-duplicates list :test #'eq)))
         (destructuring-bind (a1 a2 b1 b2 c1 c2) list
@@ -589,23 +584,23 @@
                (list a1 b1 c1)))
           ;; Test keep-duplicates.
           (is (same-elements-p
-               (keep-dups list :test #'equal)
+               (keep-duplicates list :test #'equal :force-hash hash)
                (list a1 b1 c1)))
           (is (same-elements-p
-               (keep-dups list :test #'equal :from-end t)
+               (keep-duplicates list :test #'equal :from-end t :force-hash hash)
                (list a2 b2 c2)))
           ;; ;; Compare keep-duplicates and remove-duplicates.
           (is (same-elements-p
-               (keep-dups list :test #'equal)
+               (keep-duplicates list :test #'equal :force-hash hash)
                (remove-duplicates list :test #'equal :from-end t)))
           (is (not (same-elements-p
-                    (keep-dups list :test #'equal)
+                    (keep-duplicates list :test #'equal :force-hash hash)
                     (remove-duplicates list :test #'equal))))
           (is (same-elements-p
-               (keep-dups list :test #'equal :from-end t)
+               (keep-duplicates list :test #'equal :from-end t :force-hash hash)
                (remove-duplicates list :test #'equal)))
           (is (not (same-elements-p
-                    (keep-dups list :test #'equal :from-end t)
+                    (keep-duplicates list :test #'equal :from-end t :force-hash hash)
                     (remove-duplicates list :test #'equal :from-end t)))))))))
 
 (test toposort

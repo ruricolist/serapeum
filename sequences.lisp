@@ -872,12 +872,12 @@ From APL."
                      seq
                      args))))))
 
-(defsubst keep-duplicates/hash (seq &key (test #'eql)
-                                      test-not
-                                      (start 0)
-                                      end
-                                      from-end
-                                      key)
+(defun keep-duplicates/hash (seq &key (test #'eql)
+                                   test-not
+                                   (start 0)
+                                   end
+                                   from-end
+                                   key)
   "Fast path for finding duplicates with a hash table."
   ;; NB We reverse *unless* from-end is passed. We can't (portably)
   ;; rely on passing :from-end to `remove-if' since implementations
@@ -895,7 +895,8 @@ From APL."
 
 (defun keep-duplicates (seq &key (test #'eql test-supplied-p)
                               test-not (start 0) end
-                              from-end key)
+                              from-end key
+                              force-hash)
   "Return the elements of SEQ `remove-duplicates' would remove.
 
 The elements will only be the same if both `keep-duplicates' and
@@ -915,7 +916,10 @@ discarded. This matches the behavior of `remove-duplicates':
     => (\"a1\")
 
     (keep-duplicates '(\"a1\" \"a2\" \"a3\") :key #'first-elt :from-end t)
-    => '(\"a2\" \"a3\")"
+    => '(\"a2\" \"a3\")
+
+FORCE-HASH forces using a hash table. If SEQ is long enough, and TEST
+or TEST-NOT is a hash test, a hash table may be used anyway."
   (when (and test-supplied-p test-not)
     (error "Cannot specify both TEST and TEST-NOT"))
   (flet ((vector-keep-duplicates (vector &aux (length (length vector)))
@@ -974,9 +978,10 @@ discarded. This matches the behavior of `remove-duplicates':
                      (incf j))
                    (values result j)))))))
     (declare (dynamic-extent #'vector-keep-duplicates))
-    (if (and (or (and test-not (hash-table-test-p test-not))
-                 (and test (hash-table-test-p test)))
-             (length> seq 20))
+    (if (or force-hash
+            (and (or (and test-not (hash-table-test-p test-not))
+                     (and test (hash-table-test-p test)))
+                 (length> seq 20)))
         (keep-duplicates/hash seq :test test
                                   :test-not test-not
                                   :start start

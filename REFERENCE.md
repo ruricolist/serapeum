@@ -2620,9 +2620,10 @@ with HASH-TABLE-ARGS.
 
 [View source](hash-tables.lisp#L293)
 
-### `(maphash-into hash-table fn &rest seqs)`
+### `(maphash-into hash-table fn seq &rest more-seqs)`
 
-Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
+Map FN over SEQ and MORE-SEQs, updating HASH-TABLE with the results.
+Return HASH-TABLE.
 
 FN is required to return two values, and key and a value.
 
@@ -2634,7 +2635,7 @@ Modifies the first TABLE by merging all keys from other TABLES into it.
 
 Returns the first TABLE.
 
-[View source](hash-tables.lisp#L337)
+[View source](hash-tables.lisp#L339)
 
 ### `(merge-tables &rest tables)`
 
@@ -2654,7 +2655,7 @@ All of the tables being merged must have the same value for
 Clojure's `merge`.
 
 
-[View source](hash-tables.lisp#L349)
+[View source](hash-tables.lisp#L351)
 
 ### `(flip-hash-table table &rest hash-table-args &key filter key test size rehash-size rehash-threshold)`
 
@@ -2680,7 +2681,7 @@ KEY allows you to transform the keys in the old hash table.
 
 KEY defaults to `identity`.
 
-[View source](hash-tables.lisp#L378)
+[View source](hash-tables.lisp#L380)
 
 ### `(set-hash-table set &rest hash-table-args &key test key strict &allow-other-keys)`
 
@@ -2694,7 +2695,7 @@ The resulting hash table has the elements of SET for both its keys and
 values. That is, each element of SET is stored as if by
      (setf (gethash (key element) table) element)
 
-[View source](hash-tables.lisp#L413)
+[View source](hash-tables.lisp#L415)
 
 ### `(hash-table-set table &key strict test key)`
 
@@ -2703,7 +2704,7 @@ Given STRICT, check that the table actually denotes a set.
 
 Without STRICT, equivalent to `hash-table-values`.
 
-[View source](hash-tables.lisp#L445)
+[View source](hash-tables.lisp#L447)
 
 ### `(hash-table-predicate hash-table)`
 
@@ -2711,7 +2712,7 @@ Return a predicate for membership in HASH-TABLE.
 The predicate returns the same two values as `gethash`, but in the
 opposite order.
 
-[View source](hash-tables.lisp#L456)
+[View source](hash-tables.lisp#L458)
 
 ### `(hash-table-function hash-table &key read-only strict key-type value-type strict-types default)`
 
@@ -2745,7 +2746,7 @@ hash table provided is *not* checked to ensure that the existing
 pairings satisfy KEY-TYPE and VALUE-TYPE -- not unless STRICT-TYPES is
 also specified.
 
-[View source](hash-tables.lisp#L466)
+[View source](hash-tables.lisp#L468)
 
 ### `(make-hash-table-function &rest args &key &allow-other-keys)`
 
@@ -2753,14 +2754,14 @@ Call `hash-table-function` on a fresh hash table.
 ARGS can be args to `hash-table-function` or args to
 `make-hash-table`, as they are disjoint.
 
-[View source](hash-tables.lisp#L572)
+[View source](hash-tables.lisp#L574)
 
 ### `(delete-from-hash-table table &rest keys)`
 
 Return TABLE with KEYS removed (as with `remhash`).
 Cf. `delete-from-plist` in Alexandria.
 
-[View source](hash-tables.lisp#L580)
+[View source](hash-tables.lisp#L582)
 
 ### `(pairhash keys data &optional hash-table)`
 
@@ -2773,7 +2774,7 @@ By default, the hash table returned uses `eql` as its tests. If you
 want a different test, make the table yourself and pass it as the
 HASH-TABLE argument.
 
-[View source](hash-tables.lisp#L589)
+[View source](hash-tables.lisp#L591)
 
 ### `(pretty-print-hash-table ht &optional stream)`
 
@@ -2797,7 +2798,7 @@ If you want to always pretty print hash tables, you can set this in your init fi
 
   Ported from RUTILS.
 
-[View source](hash-tables.lisp#L611)
+[View source](hash-tables.lisp#L613)
 
 ### `(toggle-pretty-print-hash-table &optional on)`
 
@@ -2806,7 +2807,7 @@ Toggles printing hash-tables with PRETTY-PRINT-HASH-TABLE or with the default me
 
     Ported from RUTILS.
 
-[View source](hash-tables.lisp#L661)
+[View source](hash-tables.lisp#L663)
 
 ## Files
 
@@ -4464,7 +4465,7 @@ Return the index in VEC to insert ITEM and keep VEC sorted.
 If a value equivalent to ITEM already exists in VEC, then the index
 returned is to the right of that existing item.
 
-[View source](sequences.lisp#L1496)
+[View source](sequences.lisp#L1499)
 
 ### `(bestn n seq pred &key key memo)`
 
@@ -4477,7 +4478,7 @@ only ever called once per element.
 
 The name is from Arc.
 
-[View source](sequences.lisp#L1513)
+[View source](sequences.lisp#L1519)
 
 ### `(nth-best n seq pred &key key)`
 
@@ -4493,14 +4494,14 @@ Or even
 
 But uses a selection algorithm for better performance than either.
 
-[View source](sequences.lisp#L1561)
+[View source](sequences.lisp#L1567)
 
 ### `(nth-best! n seq pred &key key)`
 
 Destructive version of `nth-best`.
 Note that this function requires that SEQ be a vector.
 
-[View source](sequences.lisp#L1578)
+[View source](sequences.lisp#L1584)
 
 ### `(reshuffle seq &key element-type)`
 
@@ -4516,7 +4517,7 @@ returned is T, if SEQ is not a vector. If SEQ is a vector, then the
 element type of the vector returned is the same as the as the element
 type of SEQ.
 
-[View source](sequences.lisp#L1617)
+[View source](sequences.lisp#L1623)
 
 ### `(sort-new seq pred &key key element-type)`
 
@@ -4529,13 +4530,13 @@ a form that can be sorted efficiently.)
 
 ELEMENT-TYPE is interpreted as for `reshuffle`.
 
-[View source](sequences.lisp#L1639)
+[View source](sequences.lisp#L1645)
 
 ### `(stable-sort-new seq pred &key key element-type)`
 
 Like `sort-new`, but sort as if by `stable-sort` instead of `sort`.
 
-[View source](sequences.lisp#L1659)
+[View source](sequences.lisp#L1665)
 
 ### `(extrema seq pred &key key start end)`
 
@@ -4545,7 +4546,7 @@ values).
      (extremum (iota 10) #'>) => 9
      (extrema (iota 10) #'>) => 9, 0
 
-[View source](sequences.lisp#L1666)
+[View source](sequences.lisp#L1672)
 
 ### `(halves seq &optional split)`
 
@@ -4562,20 +4563,20 @@ elements from the right (or, equivalently, length+split elements from
 the left). Note that providing a negative argument to a list works
 similarly to `butlast` (a single traversal).
 
-[View source](sequences.lisp#L1727)
+[View source](sequences.lisp#L1733)
 
 ### `(dsu-sort seq fn &key key stable)`
 
 Decorate-sort-undecorate using KEY.
 Useful when KEY is an expensive function (e.g. database access).
 
-[View source](sequences.lisp#L1760)
+[View source](sequences.lisp#L1766)
 
 ### `(dsu-sort-new seq fn &key key stable)`
 
 Like `dsu-sort`, but returning a new vector.
 
-[View source](sequences.lisp#L1767)
+[View source](sequences.lisp#L1773)
 
 ### `(deltas seq &optional fn)`
 
@@ -4595,14 +4596,14 @@ function as a second argument:
 
 From Q.
 
-[View source](sequences.lisp#L1782)
+[View source](sequences.lisp#L1788)
 
 ### `(inconsistent-graph-constraints inconsistent-graph)`
 
 The constraints of an `inconsistent-graph` error.
 Cf. `toposort`.
 
-[View source](sequences.lisp#L1806)
+[View source](sequences.lisp#L1812)
 
 ### `(toposort constraints &key test tie-breaker from-end unordered-to-end)`
 
@@ -4633,14 +4634,14 @@ If the graph is inconsistent, signals an error of type
 TEST, FROM-END, and UNORDERED-TO-END are passed through to
 `ordering`.
 
-[View source](sequences.lisp#L1896)
+[View source](sequences.lisp#L1902)
 
 ### `(intersperse new-elt seq)`
 
 Return a sequence like SEQ, but with NEW-ELT inserted between each
 element.
 
-[View source](sequences.lisp#L1958)
+[View source](sequences.lisp#L1964)
 
 ### `(mvfold fn seq &rest seeds)`
 
@@ -4684,14 +4685,14 @@ explicit iteration.
 Has a compiler macro that generates efficient code when the number of
 SEEDS is fixed at compile time (as it usually is).
 
-[View source](sequences.lisp#L1988)
+[View source](sequences.lisp#L1994)
 
 ### `(mvfoldr fn seq &rest seeds)`
 
 Like `(reduce FN SEQ :from-end t)' extended to multiple
 values. Cf. `mvfold`.
 
-[View source](sequences.lisp#L2030)
+[View source](sequences.lisp#L2036)
 
 ### `(repeat-sequence seq n)`
 
@@ -4715,7 +4716,7 @@ as long as SEQ is empty.
     => ""
 
 
-[View source](sequences.lisp#L2070)
+[View source](sequences.lisp#L2076)
 
 ### `(seq= &rest xs)`
 
@@ -4724,7 +4725,7 @@ Like `equal`, but recursively compare sequences element-by-element.
 Two elements X and Y are `seq=` if they are `equal`, or if they are
 both sequences of the same length and their elements are all `seq=`.
 
-[View source](sequences.lisp#L2153)
+[View source](sequences.lisp#L2159)
 
 ### `(do-splits ((left right &optional not-at-end?) (seq split-fn &key (start 0) end from-end) &optional return) &body body)`
 
@@ -4746,7 +4747,7 @@ In general `do-splits` will be found useful in situations where you
 want to iterate over subsequences in the manner of `split-sequence`,
 but don't actually need to realize the sequences.
 
-[View source](sequences.lisp#L2217)
+[View source](sequences.lisp#L2223)
 
 ### `(collapse-duplicates seq &key key test)`
 
@@ -4757,20 +4758,20 @@ Repetitions that are not adjacent are left alone.
     (remove-duplicates '(1 1 2 2 1 1)) => '(1 2)
     (collapse-duplicates  '(1 1 2 2 1 1)) => '(1 2 1)
 
-[View source](sequences.lisp#L2269)
+[View source](sequences.lisp#L2275)
 
 ### `(same key-fn seq &key test start end)`
 
 Return true if KEY-FN returns the same value for any/all members of LIST.
 
-[View source](sequences.lisp#L2300)
+[View source](sequences.lisp#L2306)
 
 ### `(copy-firstn list n)`
 
 Like COPY-LIST, but copies at most the first N conses of LIST. Handles cyclic
 lists gracefully.
 
-[View source](sequences.lisp#L2313)
+[View source](sequences.lisp#L2319)
 
 ### `(splice-seq sequence &key new start end)`
 
@@ -4789,7 +4790,7 @@ Omitting NEW removes elements from SEQUENCE:
     (splice-seq '(1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2455)
+[View source](sequences.lisp#L2461)
 
 ### `(nsplice-seq sequence &key new start end)`
 
@@ -4809,19 +4810,19 @@ Omitting NEW removes elements from SEQUENCE:
     (nsplice-seq (list 1 2 3 4 5) :start 1 :end 3)
     => '(1 4 5)
 
-[View source](sequences.lisp#L2482)
+[View source](sequences.lisp#L2488)
 
 ### `(splice-seqf g &rest keyword-args)`
 
 Modify macro for SPLICE-SEQ.
 
-[View source](sequences.lisp#L2505)
+[View source](sequences.lisp#L2511)
 
 ### `(nsplice-seqf g &rest keyword-args)`
 
 Modify macro for NSPLICE-seq.
 
-[View source](sequences.lisp#L2508)
+[View source](sequences.lisp#L2514)
 
 ## Strings
 

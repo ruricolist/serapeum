@@ -319,8 +319,9 @@ with HASH-TABLE-ARGS."
 
 (-> maphash-into (hash-table function &rest sequence)
     hash-table)
-(defun maphash-into (hash-table fn &rest seqs)
-  "Map FN over SEQS, updating HASH-TABLE with the results. Return HASH-TABLE.
+(defun maphash-into (hash-table fn seq &rest more-seqs)
+  "Map FN over SEQ and MORE-SEQs, updating HASH-TABLE with the results.
+Return HASH-TABLE.
 
 FN is required to return two values, and key and a value."
   (prog1 hash-table
@@ -331,7 +332,8 @@ FN is required to return two values, and key and a value."
              (lambda (&rest args)
                (receive (k v) (apply fn args)
                  (setf (gethash k hash-table) v)))
-             seqs))))
+             seq
+             more-seqs))))
 
 ;; Clojure
 (defun merge-tables* (table &rest tables)

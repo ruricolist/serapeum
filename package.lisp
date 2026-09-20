@@ -431,6 +431,7 @@
    #:pad-end
    ;; Sequences.
    #:sequencep
+   #:do-vector
    #:do-each
    #:keep
    #:filter

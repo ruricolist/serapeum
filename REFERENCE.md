@@ -1,4 +1,4 @@
-# Function Listing For serapeum (44 files, 475 functions)
+# Function Listing For serapeum (44 files, 476 functions)
 
 - [Portability](#portability)
 - [Macro Tools](#macro-tools)
@@ -3954,6 +3954,12 @@ zero.
 Hash tables are considered empty if their count is 0.
 
 [View source](sequences.lisp#L31)
+
+### `(do-vector (var vec &optional return) &body body)`
+
+Iterate over the items of a vector in a manner similar to `dolist`.
+
+[View source](sequences.lisp#L99)
 
 ### `(do-each (var seq &optional return) &body body)`
 

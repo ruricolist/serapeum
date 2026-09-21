@@ -240,7 +240,12 @@ Using `values' types is supported, with caveats:
 - Types defined with `deftype' that expand into values types may not be checked in some Lisps.
 
 From ISLISP."
-  (match (typexpand type-spec env)
+  ;; ECL 26.5.5 signals an error while TYPEXPAND asks it to expand
+  ;; ordinary built-in types such as FUNCTION and SYMBOL.  Matching
+  ;; the written type still handles explicit VALUES types; expanding a
+  ;; user-defined type into VALUES is already documented as optional.
+  (match #+ecl type-spec
+         #-ecl (typexpand type-spec env)
     ((list* 'values typespecs)
      `(assure-values ,typespecs ,form))
     (otherwise

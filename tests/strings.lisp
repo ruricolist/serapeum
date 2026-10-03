@@ -217,7 +217,15 @@
   (is (same-case-p "foo"))
   (is (same-case-p "foo-bar"))
   (is (not (same-case-p "Foo")))
-  (is (not (same-case-p "-Foo"))))
+  (is (not (same-case-p "-Foo")))
+
+  (is (eql :caseless (same-case-p "" :strict t)))
+  (is (same-case-p "f" :strict t))
+  (is (eql :caseless (same-case-p "." :strict t)))
+  (is (eql :lower (same-case-p "foo" :strict t)))
+  (is (eql :lower (same-case-p "foo-bar" :strict t )))
+  (is (not (same-case-p "Foo" :strict t)))
+  (is (not (same-case-p "-Foo" :strict t))))
 
 (test string-invert-case
   (is (equal "ZEBRA" (string-invert-case "zebra")))

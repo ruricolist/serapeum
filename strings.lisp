@@ -281,27 +281,32 @@ From Emacs Lisp (where it is simply `upcase-initials')."
 
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/EO1mZBtiXX0/JuuhKJ6eMHIJ
 ;;; https://groups.google.com/d/msg/comp.lang.lisp/0CSkbAd8NTg/UnHQf9YIf8kJ
-(defun same-case-p (string)
+(defun same-case-p (string &key strict)
   "Every character with case in STRING has the same case.
-Return `:upper' or `:lower' as appropriate."
+Return `:upper' or `:lower' as appropriate.
+When STRICT is non-nil, return :caseless for strings that are empty or contain caseless characters only."
   (let ((string (string string)))
     (with-string-dispatch () string
       (let ((length (length string)))
         (declare (array-length length))
         (nlet invert ((i 0)
                       (ucp nil)
-                      (lcp nil))
+                      (lcp nil)
+					  (ccp nil))
           (declare (array-length i))
           (if (= i length)
-              (cond ((eq ucp lcp) nil)
-                    (ucp :upper)
-                    (lcp :lower))
+              (cond ((and strict (or (zerop length)
+									 (and ccp (not ucp) (not lcp))))
+					 :caseless)
+					((eq ucp lcp) nil)
+					(ucp :upper)
+					(lcp :lower))
               (let ((char (vref string i)))
                 (cond ((upper-case-p char)
-                       (invert (1+ i) t lcp))
+                       (invert (1+ i) t lcp ccp))
                       ((lower-case-p char)
-                       (invert (1+ i) ucp t))
-                      (t (invert (1+ i) ucp lcp))))))))))
+                       (invert (1+ i) ucp t ccp))
+                      (t (invert (1+ i) ucp lcp t))))))))))
 
 (-> nstring-invert-case (string-designator) string)
 (defun nstring-invert-case (string)

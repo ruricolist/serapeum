@@ -229,7 +229,8 @@
                  (:file "dispatch-case")
                  (:file "range" :depends-on ("dispatch-case"))
                  (:file "generalized-arrays" :depends-on ("range"))
-                 (:file "units")))))
+                 (:file "units-data")
+                 (:file "units" :depends-on ("units-data"))))))
 
 (defsystem "serapeum/tests"
   :description "Test suite for Serapeum."

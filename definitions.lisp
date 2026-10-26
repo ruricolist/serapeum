@@ -85,6 +85,7 @@ VAL)`."
        ;; over VAR.
        `(progn
           (define-symbol-macro ,var ,backing-var)
+          (setf (documentation ',var 'variable) ,documentation)
           (global-vars:define-global-parameter* ,backing-var ,val
             ,@(unsplice documentation))
           ',var)))))

@@ -1462,7 +1462,7 @@ Like `def`, but for multiple values.
 Each variable in VALUES is given a global, lexical binding, as with
 `def`, then set all at once, as with `multiple-value-setq`.
 
-[View source](definitions.lisp#L99)
+[View source](definitions.lisp#L100)
 
 ### `(defconst symbol init &optional docstring)`
 
@@ -1481,7 +1481,7 @@ for `defconstant`.
 
 The name is from Emacs Lisp.
 
-[View source](definitions.lisp#L123)
+[View source](definitions.lisp#L124)
 
 ### `(defsubst name params &body body)`
 
@@ -1497,7 +1497,7 @@ without which it may not actually end up being inlined.
 
 From Emacs and other ancient Lisps.
 
-[View source](definitions.lisp#L152)
+[View source](definitions.lisp#L153)
 
 ### `(defalias alias &body (def &optional docstring))`
 
@@ -1514,7 +1514,7 @@ we must make it assignable (which is what `notinline` means).
 
 Name from Emacs Lisp.
 
-[View source](definitions.lisp#L174)
+[View source](definitions.lisp#L175)
 
 ### `(defplace name args &body body)`
 
@@ -1523,7 +1523,7 @@ Define NAME and (SETF NAME) in one go.
 BODY is a list of forms, starting with an optional docstring. The last
 form in BODY, however, must be a single, setf-able expression.
 
-[View source](definitions.lisp#L219)
+[View source](definitions.lisp#L220)
 
 ### `(defvar-unbound var &body (docstring))`
 
@@ -1532,20 +1532,20 @@ as its documentation.
 
 I believe the name comes from Edi Weitz.
 
-[View source](definitions.lisp#L238)
+[View source](definitions.lisp#L239)
 
 ### `(defparameter-unbound var &body (docstring))`
 
 Like `defvar-unbound`, but ensures VAR is unbound when evaluated.
 
-[View source](definitions.lisp#L248)
+[View source](definitions.lisp#L249)
 
 ### `(defloop name args &body body)`
 
 Define a function, ensuring proper tail recursion.
 This is entirely equivalent to `defun` over `nlet`.
 
-[View source](definitions.lisp#L256)
+[View source](definitions.lisp#L257)
 
 ## Defining Types
 
